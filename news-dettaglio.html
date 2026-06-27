@@ -1,0 +1,148 @@
+﻿<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="assets/logo.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Articolo — Victor Volley</title>
+  <meta name="description" content="Leggi le ultime notizie dalla Victor Volley di Melissano.">
+  <script>if(sessionStorage.getItem('vv_splash_shown')){document.documentElement.classList.add('no-splash');}</script>
+  <noscript><style>#splash-screen{display:none!important}</style></noscript>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div id="splash-screen" role="status" aria-label="Caricamento Victor Volley">
+    <div class="splash-top">
+      <img src="assets/logo.png" alt="Victor Volley" class="splash-logo">
+    </div>
+    <div class="splash-line" aria-hidden="true"></div>
+    <div class="splash-bottom" aria-hidden="true">
+      <div class="splash-percent" id="splashPercent">0%</div>
+    </div>
+  </div>
+
+  <header class="site-header" role="banner"></header>
+
+  <main id="main-content">
+
+    <section class="section">
+      <div class="container">
+
+        <div style="margin-bottom:32px">
+          <a href="news.html" style="color:var(--c-azzurro);font-size:14px;font-weight:500;text-decoration:none">
+            &larr; Torna alle news
+          </a>
+        </div>
+
+        <article class="article-content" id="articleContent">
+
+          <!-- Copertina -->
+          <div id="articleCover" style="margin-bottom:32px"></div>
+
+          <div class="article-header">
+            <div class="article-meta" style="margin-bottom:16px">
+              <span class="badge badge--azzurro" id="articleCategory"></span>
+              <span class="article-date" id="articleDate"></span>
+            </div>
+            <h1 id="articleTitle"></h1>
+          </div>
+
+          <div class="article-body" id="articleBody"></div>
+
+        </article>
+
+        <!-- Articoli correlati -->
+        <div id="relatedSection" style="margin-top:64px;padding-top:48px;border-top:1px solid var(--c-gray-light);display:none">
+          <h3 style="margin-bottom:24px">Altri articoli</h3>
+          <div class="news-grid" id="relatedGrid"></div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer" role="contentinfo"></footer>
+
+  <!-- Firebase SDK (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/splash.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/animations.js"></script>
+  <script src="js/main.js"></script>
+
+  <script>
+  (function () {
+    function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function badgeCls(cat) { return cat === 'Prima Divisione' ? 'badge--magenta' : 'badge--azzurro'; }
+
+    var id = parseInt(new URLSearchParams(window.location.search).get('id'));
+    if (!id) { window.location.href = 'news.html'; return; }
+
+    DB.init(function () {
+    var content = document.getElementById('articleContent');
+    var article = VV.getArticle(id);
+
+    if (!article) {
+      content.innerHTML =
+        '<p style="color:#888;text-align:center;padding:64px 0;font-size:16px">Articolo non trovato.<br>' +
+        '<a href="news.html" style="color:var(--c-azzurro)">Torna alle news</a></p>';
+      return;
+    }
+
+    /* Cover */
+    var cover = document.getElementById('articleCover');
+    if (article.image) {
+      cover.innerHTML = '<img src="' + esc(article.image) + '" alt="' + esc(article.title) + '" class="article-img" style="width:100%;height:360px;object-fit:cover;border-radius:var(--card-radius)">';
+    } else {
+      cover.innerHTML = '<div style="height:220px;border-radius:var(--card-radius);background:linear-gradient(135deg,#053063,#008CFD);display:flex;align-items:center;justify-content:center;font-size:64px">&#127944;</div>';
+    }
+
+    /* Metadati */
+    var catEl  = document.getElementById('articleCategory');
+    catEl.className  = 'badge ' + badgeCls(article.category);
+    catEl.textContent = article.category;
+    document.getElementById('articleDate').textContent  = VV.formatDate(article.date);
+    document.getElementById('articleTitle').textContent = article.title;
+    document.title = article.title + ' — Victor Volley';
+
+    /* Corpo */
+    var bodyEl = document.getElementById('articleBody');
+    bodyEl.innerHTML = article.content
+      ? article.content
+      : '<p style="color:#aaa;font-style:italic">Contenuto non disponibile.</p>';
+
+    /* Articoli correlati */
+    var others = VV.getArticles(true).filter(function (a) { return a.id !== article.id; }).slice(0, 3);
+    if (others.length) {
+      document.getElementById('relatedSection').style.display = '';
+      document.getElementById('relatedGrid').innerHTML = others.map(function (a) {
+        var imgHtml = a.image
+          ? '<img src="' + esc(a.image) + '" alt="' + esc(a.title) + '" style="width:100%;height:100%;object-fit:cover">'
+          : '<div class="news-card-img-placeholder" style="background:linear-gradient(135deg,#053063,#008CFD)">&#127944;</div>';
+        return '<article class="news-card reveal">' +
+          '<div class="news-card-img">' + imgHtml + '</div>' +
+          '<div class="news-card-body">' +
+            '<div class="news-card-meta">' +
+              '<span class="badge ' + badgeCls(a.category) + '">' + esc(a.category) + '</span>' +
+              '<span class="news-card-date">' + VV.formatDateShort(a.date) + '</span>' +
+            '</div>' +
+            '<h3 class="news-card-title">' + esc(a.title) + '</h3>' +
+            '<a href="news-dettaglio.html?id=' + a.id + '" class="news-card-link">Leggi di pi&ugrave; &rarr;</a>' +
+          '</div>' +
+        '</article>';
+      }).join('');
+    }
+    }); // DB.init
+  })();
+  </script>
+</body>
+</html>

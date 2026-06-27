@@ -1,0 +1,177 @@
+﻿<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="assets/logo.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Le squadre — Victor Volley</title>
+  <meta name="description" content="Scopri le squadre di Victor Volley: roster, staff tecnico e orari di allenamento.">
+  <script>if(sessionStorage.getItem('vv_splash_shown')){document.documentElement.classList.add('no-splash');}</script>
+  <noscript><style>#splash-screen{display:none!important}</style></noscript>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .cat-tab-link {
+      display:inline-block;padding:14px 20px;font-size:14px;font-weight:500;
+      color:#555;text-decoration:none;white-space:nowrap;border-bottom:3px solid transparent;
+      transition:color .2s ease,border-color .2s ease;
+    }
+    .cat-tab-link:hover { color:var(--c-azzurro);border-color:var(--c-azzurro); }
+  </style>
+</head>
+<body>
+
+  <div id="splash-screen" role="status" aria-label="Caricamento Victor Volley">
+    <div class="splash-top">
+      <img src="assets/logo.png" alt="Victor Volley" class="splash-logo">
+    </div>
+    <div class="splash-line" aria-hidden="true"></div>
+    <div class="splash-bottom" aria-hidden="true">
+      <div class="splash-percent" id="splashPercent">0%</div>
+    </div>
+  </div>
+
+  <header class="site-header" role="banner"></header>
+
+  <main id="main-content">
+
+    <div class="page-header">
+      <div class="container">
+        <p class="breadcrumb"><a href="index.html">Home</a> / Le squadre</p>
+        <h1>Le nostre squadre</h1>
+        <p style="color:rgba(255,255,255,0.65);margin-top:8px">Roster, staff tecnico e orari di allenamento</p>
+      </div>
+    </div>
+
+    <!-- Navigazione rapida (generata da JS) -->
+    <div style="background:var(--c-gray-light);border-bottom:1px solid #e8e8ee;position:sticky;top:112px;z-index:50">
+      <div class="container" style="padding-top:0;padding-bottom:0">
+        <nav id="squadreNav" style="display:flex;gap:0;overflow-x:auto;-webkit-overflow-scrolling:touch" aria-label="Categorie"></nav>
+      </div>
+    </div>
+
+    <!-- Sezioni categorie (generate da JS) -->
+    <div id="squadreMain"></div>
+
+    <!-- CTA -->
+    <section class="cta-banner" aria-labelledby="squadre-cta-title">
+      <div class="container" style="position:relative;z-index:1">
+        <h2 id="squadre-cta-title">Vuoi unirti a una delle nostre squadre?</h2>
+        <p>Contattaci e vieni a provare un allenamento gratuitamente, senza impegno.</p>
+        <a href="unisciti-a-noi.html" class="btn btn--primary">Vieni a giocare con noi</a>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer" role="contentinfo"></footer>
+
+  <!-- Firebase SDK (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/splash.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/animations.js"></script>
+  <script src="js/main.js"></script>
+
+  <script>
+  (function () {
+    function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    DB.init(function () {
+    var categories = VV.getCategories(true).filter(function (c) { return c.showInSquadre !== false; });
+
+    /* Nav tab */
+    var nav = document.getElementById('squadreNav');
+    nav.innerHTML = categories.map(function (c) {
+      return '<a href="#cat-' + c.id + '" class="cat-tab-link">' + esc(c.name) + '</a>';
+    }).join('');
+
+    /* Sezioni */
+    var main = document.getElementById('squadreMain');
+
+    if (!categories.length) {
+      main.innerHTML = '<section class="section"><div class="container"><p style="color:#888;text-align:center;padding:48px 0">Nessuna categoria disponibile al momento.</p></div></section>';
+      return;
+    }
+
+    main.innerHTML = categories.map(function (cat, idx) {
+      var players = VV.getPlayers(cat.id).sort(function (a, b) { return (a.number || 99) - (b.number || 99); });
+      var staff   = VV.getStaff(cat.id);
+
+      /* Staff cards */
+      var staffHtml = '';
+      if (staff.length) {
+        staffHtml = '<h3 style="margin-bottom:20px">Staff tecnico</h3>' +
+          '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:48px">' +
+          staff.map(function (s) {
+            var avatar = s.photo
+              ? '<img src="' + esc(s.photo) + '" style="width:48px;height:48px;border-radius:50%;object-fit:cover;flex-shrink:0">'
+              : '<div style="width:48px;height:48px;border-radius:50%;background:var(--c-gray-light);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">&#128100;</div>';
+            return '<div class="card reveal" style="display:flex;gap:16px;align-items:center;padding:16px 20px">' +
+              avatar +
+              '<div>' +
+                '<div style="font-family:var(--font-heading);font-weight:600;font-size:14px;color:var(--c-navy)">' + esc(s.name) + '</div>' +
+                '<div style="font-size:12px;color:#888">' + esc(s.role) + '</div>' +
+              '</div>' +
+            '</div>';
+          }).join('') +
+          '</div>';
+      }
+
+      /* Roster grid */
+      var rosterHtml = '';
+      if (players.length) {
+        rosterHtml = '<h3 style="margin-bottom:20px">Roster</h3>' +
+          '<div class="roster-grid">' +
+          players.map(function (p) {
+            var photoEl = p.photo
+              ? '<img src="' + esc(p.photo) + '" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block">'
+              : '&#128100;';
+            var numEl = p.number ? '<div class="giocatore-numero">' + p.number + '</div>' : '';
+            var yearEl = p.year ? ' <span style="color:#bbb;font-size:10px">(' + p.year + ')</span>' : '';
+            return '<div class="giocatore-card reveal">' +
+              '<div class="giocatore-foto">' + photoEl + numEl + '</div>' +
+              '<div class="giocatore-info">' +
+                '<div class="giocatore-nome">' + esc(p.name) + yearEl + '</div>' +
+                '<div class="giocatore-ruolo">' + esc(p.role) + '</div>' +
+              '</div>' +
+            '</div>';
+          }).join('') +
+          '</div>';
+      }
+
+      /* Empty state */
+      if (!staff.length && !players.length) {
+        rosterHtml = '<p style="color:#888;font-size:14px">Informazioni in aggiornamento.</p>';
+      }
+
+      var secClass = idx % 2 === 0 ? 'section' : 'section section--alt';
+
+      return '<section class="' + secClass + '" id="cat-' + cat.id + '" aria-labelledby="cat-h-' + cat.id + '">' +
+        '<div class="container">' +
+          '<div class="categoria-header">' +
+            '<div class="squadra-card-icon" style="width:52px;height:52px;border-radius:50%;background:' + esc(cat.color) + ';display:flex;align-items:center;justify-content:center;color:white;font-family:var(--font-heading);font-size:15px;font-weight:700;flex-shrink:0">' + esc(cat.abbr) + '</div>' +
+            '<div>' +
+              '<h2 id="cat-h-' + cat.id + '">' + esc(cat.name) + '</h2>' +
+              '<p style="color:#888;font-size:14px">' +
+                esc(cat.description) +
+                (cat.schedule ? ' &mdash; <strong>' + esc(cat.schedule) + '</strong>' : '') +
+              '</p>' +
+            '</div>' +
+          '</div>' +
+          staffHtml + rosterHtml +
+        '</div>' +
+      '</section>';
+    }).join('');
+
+    }); // DB.init
+  })();
+  </script>
+</body>
+</html>

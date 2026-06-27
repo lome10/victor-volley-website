@@ -1,0 +1,231 @@
+﻿<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="assets/logo.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendario e risultati — Victor Volley</title>
+  <meta name="description" content="Calendario partite e risultati di Victor Volley Melissano. Prima Divisione, Under 19, Under 13, Under 12 e Minivolley.">
+  <script>if(sessionStorage.getItem('vv_splash_shown')){document.documentElement.classList.add('no-splash');}</script>
+  <noscript><style>#splash-screen{display:none!important}</style></noscript>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div id="splash-screen" role="status" aria-label="Caricamento Victor Volley">
+    <div class="splash-top">
+      <img src="assets/logo.png" alt="Victor Volley" class="splash-logo">
+    </div>
+    <div class="splash-line" aria-hidden="true"></div>
+    <div class="splash-bottom" aria-hidden="true">
+      <div class="splash-percent" id="splashPercent">0%</div>
+    </div>
+  </div>
+
+  <header class="site-header" role="banner"></header>
+
+  <main id="main-content">
+
+    <div class="page-header">
+      <div class="container">
+        <p class="breadcrumb"><a href="index.html">Home</a> / Calendario</p>
+        <h1>Calendario e risultati</h1>
+        <p style="color:rgba(255,255,255,0.65);margin-top:8px">Stagione 2025/2026</p>
+      </div>
+    </div>
+
+    <!-- ===== PROSSIME PARTITE ===== -->
+    <section class="section" id="prossime" aria-labelledby="prox-title">
+      <div class="container">
+        <div class="section-heading">
+          <h2 id="prox-title">Prossime partite</h2>
+        </div>
+
+        <div class="filter-bar" id="calFilterBar" role="group" aria-label="Filtra per categoria"></div>
+
+        <div class="table-responsive">
+          <table class="partite-table" id="tabellaPartite">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Ora</th>
+                <th>Categoria</th>
+                <th>Partita</th>
+                <th>Luogo</th>
+                <th>Tipo</th>
+              </tr>
+            </thead>
+            <tbody id="upcomingBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== RISULTATI ===== -->
+    <section class="section section--alt" id="risultati" aria-labelledby="ris-title">
+      <div class="container">
+        <div class="section-heading">
+          <h2 id="ris-title">Risultati recenti</h2>
+        </div>
+
+        <div class="table-responsive">
+          <table class="partite-table">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Categoria</th>
+                <th>Partita</th>
+                <th>Risultato</th>
+                <th>Tipo</th>
+              </tr>
+            </thead>
+            <tbody id="pastBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== CLASSIFICHE ===== -->
+    <section class="section" id="classifiche" aria-labelledby="class-title">
+      <div class="container">
+        <div class="section-heading">
+          <h2 id="class-title">Classifiche</h2>
+          <p>Prima Divisione &mdash; Girone placeholder</p>
+        </div>
+
+        <div class="table-responsive">
+          <table class="partite-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Squadra</th>
+                <th>G</th>
+                <th>V</th>
+                <th>P</th>
+                <th>Punti</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="background:rgba(0,140,253,0.05)">
+                <td><strong>1</strong></td>
+                <td><strong style="color:var(--c-navy)">Victor Volley</strong> <span class="badge badge--magenta" style="font-size:10px">noi</span></td>
+                <td>4</td><td>3</td><td>1</td>
+                <td><strong style="color:var(--c-azzurro)">9</strong></td>
+              </tr>
+              <tr><td>2</td><td>Squadra B &mdash; placeholder</td><td>4</td><td>3</td><td>1</td><td>8</td></tr>
+              <tr><td>3</td><td>Squadra C &mdash; placeholder</td><td>4</td><td>2</td><td>2</td><td>6</td></tr>
+              <tr><td>4</td><td>Squadra D &mdash; placeholder</td><td>4</td><td>1</td><td>3</td><td>3</td></tr>
+              <tr><td>5</td><td>Squadra E &mdash; placeholder</td><td>4</td><td>0</td><td>4</td><td>0</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p style="font-size:12px;color:#aaa;margin-top:12px">&#9888; Classifica di esempio &mdash; dati reali da inserire a stagione in corso</p>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer" role="contentinfo"></footer>
+
+  <!-- Firebase SDK (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/splash.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/animations.js"></script>
+  <script src="js/main.js"></script>
+
+  <script>
+  (function () {
+    function slug(s) { return s.toLowerCase().replace(/\s+/g, '-').replace(/[àáâ]/g,'a').replace(/[èéê]/g,'e').replace(/[ìí]/g,'i').replace(/[òó]/g,'o').replace(/[ùú]/g,'u'); }
+    function esc(s)  { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    DB.init(function () {
+    var today    = new Date().toISOString().slice(0, 10);
+    var matches  = VV.getMatches(); /* già ordinato per data asc */
+    var upcoming = matches.filter(function (m) { return !m.result && m.date >= today; });
+    var past     = matches.filter(function (m) { return m.result || m.date < today; }).reverse();
+
+    /* ---- FILTRO ---- */
+    var filterBar = document.getElementById('calFilterBar');
+    var cats = [];
+    upcoming.forEach(function (m) { if (cats.indexOf(m.category) < 0) cats.push(m.category); });
+
+    filterBar.innerHTML =
+      '<button class="filter-btn is-active" data-filter="all">Tutte</button>' +
+      cats.map(function (c) {
+        return '<button class="filter-btn" data-filter="' + slug(c) + '">' + esc(c) + '</button>';
+      }).join('');
+
+    /* ---- PROSSIME PARTITE ---- */
+    var upcomingBody = document.getElementById('upcomingBody');
+    upcomingBody.innerHTML = upcoming.length
+      ? upcoming.map(function (m) {
+          var homeStrong = m.isHome;
+          var homeName   = homeStrong ? '<strong>' + esc(m.homeTeam) + '</strong>' : esc(m.homeTeam);
+          var awayName   = !homeStrong ? '<strong>' + esc(m.awayTeam) + '</strong>' : esc(m.awayTeam);
+          var homeLogo   = m.homeLogo ? '<img src="' + esc(m.homeLogo) + '" style="height:18px;vertical-align:middle;margin-right:4px">' : '';
+          var awayLogo   = m.awayLogo ? '<img src="' + esc(m.awayLogo) + '" style="height:18px;vertical-align:middle;margin-right:4px">' : '';
+          return '<tr data-cat="' + slug(m.category) + '">' +
+            '<td><strong>' + VV.formatDateShort(m.date) + '</strong></td>' +
+            '<td>' + esc(m.time || '—') + '</td>' +
+            '<td><span class="badge badge--azzurro">' + esc(m.category) + '</span></td>' +
+            '<td>' + homeLogo + homeName + ' vs ' + awayLogo + awayName + '</td>' +
+            '<td>' + esc(m.venue || '—') + '</td>' +
+            '<td><span class="badge ' + (m.isHome ? 'badge--magenta' : 'badge--azzurro') + '">' + (m.isHome ? 'Casa' : 'Trasferta') + '</span></td>' +
+          '</tr>';
+        }).join('')
+      : '<tr><td colspan="6" style="text-align:center;color:#888;padding:32px">Nessuna partita in programma</td></tr>';
+
+    /* ---- RISULTATI ---- */
+    var pastBody = document.getElementById('pastBody');
+
+    function resultClass(res) {
+      if (!res) return '';
+      var parts = res.split('-');
+      if (parts.length !== 2) return '';
+      var a = parseInt(parts[0]), b = parseInt(parts[1]);
+      return isNaN(a) || isNaN(b) ? '' : (a > b ? 'risultato--vittoria' : 'risultato--sconfitta');
+    }
+
+    pastBody.innerHTML = past.length
+      ? past.map(function (m) {
+          var homeStrong = m.isHome;
+          var homeName   = homeStrong ? '<strong>' + esc(m.homeTeam) + '</strong>' : esc(m.homeTeam);
+          var awayName   = !homeStrong ? '<strong>' + esc(m.awayTeam) + '</strong>' : esc(m.awayTeam);
+          var rCls       = m.result ? resultClass(m.result) : '';
+          var resHtml    = m.result
+            ? '<span class="risultato ' + rCls + '">' + esc(m.result) + (rCls === 'risultato--vittoria' ? ' &#10003;' : rCls === 'risultato--sconfitta' ? ' &#10007;' : '') + '</span>'
+            : '<span style="color:#aaa">—</span>';
+          return '<tr>' +
+            '<td>' + VV.formatDateShort(m.date) + '</td>' +
+            '<td><span class="badge badge--azzurro">' + esc(m.category) + '</span></td>' +
+            '<td>' + homeName + ' vs ' + awayName + '</td>' +
+            '<td>' + resHtml + '</td>' +
+            '<td><span class="badge ' + (m.isHome ? 'badge--magenta' : 'badge--azzurro') + '">' + (m.isHome ? 'Casa' : 'Trasferta') + '</span></td>' +
+          '</tr>';
+        }).join('')
+      : '<tr><td colspan="5" style="text-align:center;color:#888;padding:32px">Nessun risultato ancora</td></tr>';
+
+    /* ---- LOGICA FILTRO ---- */
+    filterBar.querySelectorAll('.filter-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        filterBar.querySelectorAll('.filter-btn').forEach(function (b) { b.classList.remove('is-active'); });
+        btn.classList.add('is-active');
+        var f = btn.getAttribute('data-filter');
+        document.querySelectorAll('#upcomingBody tr[data-cat]').forEach(function (row) {
+          row.style.display = (f === 'all' || row.getAttribute('data-cat') === f) ? '' : 'none';
+        });
+      });
+    });
+    }); // DB.init
+  })();
+  </script>
+</body>
+</html>

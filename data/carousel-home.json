@@ -1,0 +1,19 @@
+{
+  "slides": [
+    {
+      "immagine": "assets/img/carousel-1.jpg",
+      "didascalia": "Victor Volley — in campo per la nuova stagione",
+      "link": null
+    },
+    {
+      "immagine": "assets/img/carousel-2.jpg",
+      "didascalia": "Under 13 — allenamento",
+      "link": null
+    },
+    {
+      "immagine": "assets/img/carousel-3.jpg",
+      "didascalia": "Prima Divisione — partita in casa",
+      "link": null
+    }
+  ]
+}

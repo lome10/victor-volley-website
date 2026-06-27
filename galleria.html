@@ -1,0 +1,245 @@
+﻿<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="assets/logo.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Galleria — Victor Volley</title>
+  <meta name="description" content="Galleria fotografica della Victor Volley di Melissano: partite, allenamenti, eventi.">
+  <script>if(sessionStorage.getItem('vv_splash_shown')){document.documentElement.classList.add('no-splash');}</script>
+  <noscript><style>#splash-screen{display:none!important}</style></noscript>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .gallery-album-section { margin-bottom: 56px; }
+    .gallery-album-section + .gallery-album-section { border-top: 1px solid var(--c-gray-light); padding-top: 48px; }
+    .gallery-album-hd { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+    .gallery-album-hd h3 { font-size: 20px; font-weight: 700; color: var(--c-navy); margin: 0; }
+    .gallery-album-meta { color: #aaa; font-size: 13px; }
+    .gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .gallery-empty { text-align: center; padding: 80px 0; color: #aaa; font-size: 16px; line-height: 1.7; }
+
+    /* Lightbox: nav arrows */
+    .lightbox { position: relative; }
+    .lightbox-nav {
+      position: fixed; top: 50%; transform: translateY(-50%);
+      background: rgba(255,255,255,0.12); border: none; color: #fff;
+      width: 48px; height: 48px; border-radius: 50%; cursor: pointer;
+      font-size: 24px; display: flex; align-items: center; justify-content: center;
+      z-index: 601; transition: background 0.2s;
+    }
+    .lightbox-nav:hover { background: rgba(255,255,255,0.28); }
+    #lightboxPrev { left: 16px; }
+    #lightboxNext { right: 16px; }
+    #lightboxImg { max-width: min(85vw, 960px); max-height: 78vh; border-radius: 8px; display: block; margin: 0 auto; object-fit: contain; }
+    .lightbox-body { text-align: center; }
+    #lightboxCaption { color: rgba(255,255,255,0.65); margin-top: 14px; font-size: 14px; }
+  </style>
+</head>
+<body>
+
+  <div id="splash-screen" role="status" aria-label="Caricamento Victor Volley">
+    <div class="splash-top">
+      <img src="assets/logo.png" alt="Victor Volley" class="splash-logo">
+    </div>
+    <div class="splash-line" aria-hidden="true"></div>
+    <div class="splash-bottom" aria-hidden="true">
+      <div class="splash-percent" id="splashPercent">0%</div>
+    </div>
+  </div>
+
+  <header class="site-header" role="banner"></header>
+
+  <main id="main-content">
+
+    <div class="page-header">
+      <div class="container">
+        <p class="breadcrumb"><a href="index.html">Home</a> / Galleria</p>
+        <h1>Galleria</h1>
+        <p style="color:rgba(255,255,255,0.65);margin-top:8px">Momenti di gioco, allenamento ed eventi</p>
+      </div>
+    </div>
+
+    <section class="section">
+      <div class="container">
+
+        <div class="filter-bar" id="galFilterBar" role="group" aria-label="Filtra per categoria"></div>
+
+        <div id="galleriaContainer">
+          <div class="gallery-empty">
+            <p>&#9203; Caricamento galleria&hellip;</p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Lightbox -->
+    <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Visualizzatore foto">
+      <button class="lightbox-close" id="lightboxClose" aria-label="Chiudi">&times;</button>
+      <button class="lightbox-nav" id="lightboxPrev" aria-label="Foto precedente" style="display:none">&#8249;</button>
+      <button class="lightbox-nav" id="lightboxNext" aria-label="Foto successiva" style="display:none">&#8250;</button>
+      <div class="lightbox-body">
+        <img id="lightboxImg" src="" alt="">
+        <p id="lightboxCaption"></p>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="site-footer" role="contentinfo"></footer>
+
+  <!-- Firebase SDK (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/photodb.js"></script>
+  <script src="js/splash.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/animations.js"></script>
+  <script src="js/main.js"></script>
+
+  <script>
+  (function () {
+    function slug(s) { return s.toLowerCase().replace(/\s+/g, '-').replace(/[àáâ]/g,'a').replace(/[èéê]/g,'e').replace(/[ìí]/g,'i').replace(/[òó]/g,'o').replace(/[ùú]/g,'u'); }
+    function esc(s)  { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    var container  = document.getElementById('galleriaContainer');
+    var filterBar  = document.getElementById('galFilterBar');
+    var lightboxEl = document.getElementById('lightbox');
+    var lightboxImg = document.getElementById('lightboxImg');
+    var lightboxCap = document.getElementById('lightboxCaption');
+    var prevBtn    = document.getElementById('lightboxPrev');
+    var nextBtn    = document.getElementById('lightboxNext');
+
+    /* Stato lightbox */
+    var lbPhotos = [];
+    var lbIdx    = 0;
+
+    function showPhoto(idx) {
+      lbIdx = idx;
+      var p = lbPhotos[idx];
+      lightboxImg.src = p.dataUrl;
+      lightboxCap.textContent = p.name || '';
+      prevBtn.style.display = lbPhotos.length > 1 ? '' : 'none';
+      nextBtn.style.display = lbPhotos.length > 1 ? '' : 'none';
+    }
+
+    function openLightbox(photos, startIdx) {
+      lbPhotos = photos;
+      showPhoto(startIdx);
+      lightboxEl.classList.add('is-open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeLightbox() {
+      lightboxEl.classList.remove('is-open');
+      document.body.style.overflow = '';
+    }
+
+    document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+    lightboxEl.addEventListener('click', function (e) { if (e.target === lightboxEl) closeLightbox(); });
+    prevBtn.addEventListener('click', function () { showPhoto((lbIdx - 1 + lbPhotos.length) % lbPhotos.length); });
+    nextBtn.addEventListener('click', function () { showPhoto((lbIdx + 1) % lbPhotos.length); });
+    document.addEventListener('keydown', function (e) {
+      if (!lightboxEl.classList.contains('is-open')) return;
+      if (e.key === 'Escape')      closeLightbox();
+      if (e.key === 'ArrowLeft')   showPhoto((lbIdx - 1 + lbPhotos.length) % lbPhotos.length);
+      if (e.key === 'ArrowRight')  showPhoto((lbIdx + 1) % lbPhotos.length);
+    });
+
+    /* ---- Carica dati ---- */
+    /* DB.init carica i metadati album da Firestore; PhotoDB carica le foto binarie da IndexedDB */
+    DB.init(function () {
+      PhotoDB.init(function () {
+        var albums = VV.getAlbums();
+
+        if (!albums.length) {
+          container.innerHTML = '<div class="gallery-empty"><p>Nessun album ancora.<br><span style="font-size:14px">Le foto verranno caricate dalla societ&agrave;.</span></p></div>';
+          filterBar.innerHTML = '<button class="filter-btn is-active" data-filter="all">Tutte le foto</button>';
+          return;
+        }
+
+        /* Carica foto di tutti gli album in parallelo */
+        var allPhotos  = {};
+        var remaining  = albums.length;
+
+        albums.forEach(function (album) {
+          PhotoDB.getPhotos(album.id, function (photos) {
+            allPhotos[album.id] = photos;
+            remaining--;
+            if (remaining === 0) render(albums, allPhotos);
+          });
+        });
+      });
+    });
+
+    function render(albums, allPhotos) {
+      /* Filtra album che hanno almeno una foto */
+      var populated = albums.filter(function (a) { return (allPhotos[a.id] || []).length > 0; });
+
+      if (!populated.length) {
+        container.innerHTML = '<div class="gallery-empty"><p>Nessuna foto ancora.<br><span style="font-size:14px">Le foto verranno caricate dalla societ&agrave;.</span></p></div>';
+        filterBar.innerHTML = '<button class="filter-btn is-active" data-filter="all">Tutte le foto</button>';
+        return;
+      }
+
+      /* Categorie per filtro */
+      var cats = [];
+      populated.forEach(function (a) { if (cats.indexOf(a.category) < 0) cats.push(a.category); });
+      filterBar.innerHTML =
+        '<button class="filter-btn is-active" data-filter="all">Tutte le foto</button>' +
+        cats.map(function (c) {
+          return '<button class="filter-btn" data-filter="' + slug(c) + '">' + esc(c) + '</button>';
+        }).join('');
+
+      /* Sezioni per album */
+      container.innerHTML = populated.map(function (album) {
+        var photos = allPhotos[album.id];
+        var items  = photos.map(function (p, i) {
+          return '<div class="gallery-item reveal" data-album-id="' + album.id + '" data-photo-idx="' + i + '" tabindex="0" role="button" aria-label="' + esc(p.name || 'Foto') + '">' +
+            '<img src="' + p.dataUrl + '" alt="' + esc(p.name || '') + '" loading="lazy">' +
+          '</div>';
+        }).join('');
+        return '<div class="gallery-album-section" data-cat="' + slug(album.category) + '">' +
+          '<div class="gallery-album-hd">' +
+            '<h3>' + esc(album.title) + '</h3>' +
+            '<span class="badge badge--azzurro">' + esc(album.category) + '</span>' +
+            '<span class="gallery-album-meta">' + VV.formatDateShort(album.date) + ' &mdash; ' + photos.length + ' foto</span>' +
+          '</div>' +
+          '<div class="gallery-grid">' + items + '</div>' +
+        '</div>';
+      }).join('');
+
+      /* Click sulle foto → apri lightbox con le foto dell'album */
+      container.querySelectorAll('.gallery-item').forEach(function (item) {
+        function open() {
+          var albumId = parseInt(item.getAttribute('data-album-id'));
+          var photoIdx = parseInt(item.getAttribute('data-photo-idx'));
+          var photos  = allPhotos[albumId] || [];
+          openLightbox(photos, photoIdx);
+        }
+        item.addEventListener('click',   open);
+        item.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
+      });
+
+      /* Filtro per categoria */
+      filterBar.querySelectorAll('.filter-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          filterBar.querySelectorAll('.filter-btn').forEach(function (b) { b.classList.remove('is-active'); });
+          btn.classList.add('is-active');
+          var f = btn.getAttribute('data-filter');
+          container.querySelectorAll('.gallery-album-section').forEach(function (section) {
+            section.style.display = (f === 'all' || section.getAttribute('data-cat') === f) ? '' : 'none';
+          });
+        });
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

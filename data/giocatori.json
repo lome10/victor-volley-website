@@ -1,0 +1,62 @@
+{
+  "squadre": {
+    "prima-divisione": {
+      "id": "prima-divisione",
+      "nome": "Prima Divisione",
+      "descrizione": "Squadra senior della Victor Volley, impegnata nel campionato di Prima Divisione FIPAV. Allenamenti: PLACEHOLDER giorni e orari da confermare.",
+      "giocatori": [
+        { "id": 1, "nome": "Nome Giocatore", "cognome": "Cognome", "numero": 1, "ruolo": "Palleggiatore", "foto": "assets/img/giocatore-placeholder.jpg" },
+        { "id": 2, "nome": "Nome Giocatore", "cognome": "Cognome", "numero": 3, "ruolo": "Schiacciatore", "foto": "assets/img/giocatore-placeholder.jpg" },
+        { "id": 3, "nome": "Nome Giocatore", "cognome": "Cognome", "numero": 7, "ruolo": "Opposto", "foto": "assets/img/giocatore-placeholder.jpg" },
+        { "id": 4, "nome": "Nome Giocatore", "cognome": "Cognome", "numero": 10, "ruolo": "Centrale", "foto": "assets/img/giocatore-placeholder.jpg" },
+        { "id": 5, "nome": "Nome Giocatore", "cognome": "Cognome", "numero": 12, "ruolo": "Libero", "foto": "assets/img/giocatore-placeholder.jpg" }
+      ],
+      "staff": [
+        { "nome": "Nome Allenatore", "ruolo": "Allenatore" },
+        { "nome": "Nome Assistente", "ruolo": "Assistente allenatore" }
+      ]
+    },
+    "under-19": {
+      "id": "under-19",
+      "nome": "Under 19",
+      "descrizione": "Categoria Under 19. Allenamenti: PLACEHOLDER giorni e orari da confermare.",
+      "giocatori": [
+        { "id": 1, "nome": "Nome Giocatore", "cognome": "Cognome", "numero": 1, "ruolo": "Palleggiatore", "foto": "assets/img/giocatore-placeholder.jpg" }
+      ],
+      "staff": [
+        { "nome": "Nome Allenatore", "ruolo": "Allenatore" }
+      ]
+    },
+    "under-13": {
+      "id": "under-13",
+      "nome": "Under 13",
+      "descrizione": "Categoria Under 13. Allenamenti: PLACEHOLDER giorni e orari da confermare.",
+      "giocatori": [
+        { "id": 1, "nome": "Nome Giocatore", "cognome": "Cognome", "numero": 1, "ruolo": "Schiacciatore", "foto": "assets/img/giocatore-placeholder.jpg" }
+      ],
+      "staff": [
+        { "nome": "Nome Allenatore", "ruolo": "Allenatore" }
+      ]
+    },
+    "under-12": {
+      "id": "under-12",
+      "nome": "Under 12",
+      "descrizione": "Categoria Under 12. Allenamenti: PLACEHOLDER giorni e orari da confermare.",
+      "giocatori": [
+        { "id": 1, "nome": "Nome Giocatore", "cognome": "Cognome", "numero": 1, "ruolo": "Schiacciatore", "foto": "assets/img/giocatore-placeholder.jpg" }
+      ],
+      "staff": [
+        { "nome": "Nome Allenatore", "ruolo": "Allenatore" }
+      ]
+    },
+    "minivolley": {
+      "id": "minivolley",
+      "nome": "Minivolley",
+      "descrizione": "Minivolley per bambini dai 6 ai 10 anni. Il modo migliore per avvicinarsi alla pallavolo divertendosi. Allenamenti: PLACEHOLDER giorni e orari da confermare.",
+      "giocatori": [],
+      "staff": [
+        { "nome": "Nome Allenatore", "ruolo": "Responsabile Minivolley" }
+      ]
+    }
+  }
+}

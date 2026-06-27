@@ -1,0 +1,34 @@
+{
+  "news": [
+    {
+      "id": 1,
+      "titolo": "Inizia la nuova stagione: presentate tutte le squadre",
+      "data": "2025-10-01",
+      "categoria": "Società",
+      "estratto": "La Victor Volley è pronta per la nuova stagione sportiva. Presentate ufficialmente le cinque categorie: Prima Divisione, Under 19, Under 13, Under 12 e Minivolley.",
+      "immagine": "assets/img/news-placeholder-1.jpg",
+      "slug": "nuova-stagione-2025",
+      "contenuto": "Testo completo dell'articolo — PLACEHOLDER. La stagione 2025/2026 della Victor Volley si apre con grandi aspettative. Tutte le categorie sono pronte a scendere in campo dopo un'estate di preparazione."
+    },
+    {
+      "id": 2,
+      "titolo": "Vittoria convincente della Prima Divisione all'esordio",
+      "data": "2025-10-12",
+      "categoria": "Prima Divisione",
+      "estratto": "Prima giornata di campionato positiva per la Victor Volley: la Prima Divisione conquista i tre punti in casa contro la squadra avversaria.",
+      "immagine": "assets/img/news-placeholder-2.jpg",
+      "slug": "prima-divisione-esordio-vittoria",
+      "contenuto": "Testo completo dell'articolo — PLACEHOLDER."
+    },
+    {
+      "id": 3,
+      "titolo": "Aperte le iscrizioni al Minivolley — stagione 2025/2026",
+      "data": "2025-09-15",
+      "categoria": "Minivolley",
+      "estratto": "Sono aperte le iscrizioni al Minivolley per la stagione 2025/2026. I bambini dai 6 ai 10 anni possono venire a provare gratuitamente.",
+      "immagine": "assets/img/news-placeholder-3.jpg",
+      "slug": "iscrizioni-minivolley-2025",
+      "contenuto": "Testo completo dell'articolo — PLACEHOLDER."
+    }
+  ]
+}

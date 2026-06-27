@@ -1,0 +1,122 @@
+﻿<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="assets/logo.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>News — Victor Volley</title>
+  <meta name="description" content="Comunicati, risultati e aggiornamenti dalla Victor Volley di Melissano.">
+  <script>if(sessionStorage.getItem('vv_splash_shown')){document.documentElement.classList.add('no-splash');}</script>
+  <noscript><style>#splash-screen{display:none!important}</style></noscript>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div id="splash-screen" role="status" aria-label="Caricamento Victor Volley">
+    <div class="splash-top">
+      <img src="assets/logo.png" alt="Victor Volley" class="splash-logo">
+    </div>
+    <div class="splash-line" aria-hidden="true"></div>
+    <div class="splash-bottom" aria-hidden="true">
+      <div class="splash-percent" id="splashPercent">0%</div>
+    </div>
+  </div>
+
+  <header class="site-header" role="banner"></header>
+
+  <main id="main-content">
+
+    <div class="page-header">
+      <div class="container">
+        <p class="breadcrumb"><a href="index.html">Home</a> / News</p>
+        <h1>News</h1>
+        <p style="color:rgba(255,255,255,0.65);margin-top:8px">Comunicati, risultati e aggiornamenti</p>
+      </div>
+    </div>
+
+    <section class="section">
+      <div class="container">
+        <div class="filter-bar" id="newsFilterBar" role="group" aria-label="Filtra per categoria"></div>
+        <div class="news-grid" id="newsGrid"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer" role="contentinfo"></footer>
+
+  <!-- Firebase SDK (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/splash.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/animations.js"></script>
+  <script src="js/main.js"></script>
+
+  <script>
+  (function () {
+    function slug(s) { return s.toLowerCase().replace(/\s+/g, '-').replace(/[àáâ]/g,'a').replace(/[èéê]/g,'e').replace(/[ìí]/g,'i').replace(/[òó]/g,'o').replace(/[ùú]/g,'u'); }
+    function esc(s)  { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function badgeCls(cat) { return cat === 'Prima Divisione' ? 'badge--magenta' : 'badge--azzurro'; }
+
+    DB.init(function () {
+    var articles   = VV.getArticles(true);
+    var grid       = document.getElementById('newsGrid');
+    var filterBar  = document.getElementById('newsFilterBar');
+
+    /* Categorie presenti */
+    var cats = [];
+    articles.forEach(function (a) { if (cats.indexOf(a.category) < 0) cats.push(a.category); });
+
+    /* Filtro */
+    filterBar.innerHTML =
+      '<button class="filter-btn is-active" data-filter="all">Tutte</button>' +
+      cats.map(function (c) {
+        return '<button class="filter-btn" data-filter="' + slug(c) + '">' + esc(c) + '</button>';
+      }).join('');
+
+    /* Griglia articoli */
+    if (!articles.length) {
+      grid.innerHTML = '<p style="color:#888;text-align:center;padding:48px 0;grid-column:1/-1">Nessun articolo pubblicato.</p>';
+    } else {
+      grid.innerHTML = articles.map(function (a) {
+        var imgHtml = a.image
+          ? '<img src="' + esc(a.image) + '" alt="' + esc(a.title) + '" style="width:100%;height:100%;object-fit:cover">'
+          : '<div class="news-card-img-placeholder" style="background:linear-gradient(135deg,#053063,#008CFD)">&#128248;</div>';
+        return '<article class="news-card reveal" data-cat="' + slug(a.category) + '">' +
+          '<div class="news-card-img">' + imgHtml + '</div>' +
+          '<div class="news-card-body">' +
+            '<div class="news-card-meta">' +
+              '<span class="badge ' + badgeCls(a.category) + '">' + esc(a.category) + '</span>' +
+              '<span class="news-card-date">' + VV.formatDateShort(a.date) + '</span>' +
+            '</div>' +
+            '<h2 class="news-card-title">' + esc(a.title) + '</h2>' +
+            '<p class="news-card-excerpt">' + esc(a.excerpt) + '</p>' +
+            '<a href="news-dettaglio.html?id=' + a.id + '" class="news-card-link">Leggi di pi&ugrave; &rarr;</a>' +
+          '</div>' +
+        '</article>';
+      }).join('');
+    }
+
+    /* Logica filtro */
+    filterBar.querySelectorAll('.filter-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        filterBar.querySelectorAll('.filter-btn').forEach(function (b) { b.classList.remove('is-active'); });
+        btn.classList.add('is-active');
+        var f = btn.getAttribute('data-filter');
+        grid.querySelectorAll('.news-card').forEach(function (card) {
+          card.style.display = (f === 'all' || card.getAttribute('data-cat') === f) ? '' : 'none';
+        });
+      });
+    });
+    }); // DB.init
+  })();
+  </script>
+</body>
+</html>

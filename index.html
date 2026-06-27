@@ -1,0 +1,420 @@
+﻿<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="assets/logo.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Victor Volley — Melissano</title>
+  <meta name="description" content="Victor Volley, società di pallavolo di Melissano (LE). Prima Divisione, Under 19, Under 13, Under 12 e Minivolley.">
+  <script>if(sessionStorage.getItem('vv_splash_shown')){document.documentElement.classList.add('no-splash');}</script>
+  <noscript><style>#splash-screen{display:none!important}</style></noscript>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Splash screen -->
+  <div id="splash-screen" role="status" aria-label="Caricamento Victor Volley">
+    <div class="splash-top">
+      <img src="assets/logo.png" alt="Victor Volley" class="splash-logo">
+    </div>
+    <div class="splash-line" aria-hidden="true"></div>
+    <div class="splash-bottom" aria-hidden="true">
+      <div class="splash-percent" id="splashPercent">0%</div>
+    </div>
+  </div>
+
+  <header class="site-header" role="banner"></header>
+
+  <main id="main-content">
+
+    <!-- 1. HERO SLIDER ========================================= -->
+    <section class="hero-slider" aria-label="Slider principale" id="heroSlider">
+      <div class="hero-slider-track" id="heroSliderTrack"></div>
+
+      <button class="hero-slider-arrow hero-slider-arrow--prev" id="heroSliderPrev" aria-label="Slide precedente">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><polyline points="15,18 9,12 15,6"/></svg>
+      </button>
+      <button class="hero-slider-arrow hero-slider-arrow--next" id="heroSliderNext" aria-label="Slide successiva">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><polyline points="9,18 15,12 9,6"/></svg>
+      </button>
+      <div class="hero-slider-dots" id="heroSliderDots" role="tablist" aria-label="Seleziona slide"></div>
+    </section>
+
+    <!-- 3. STATISTICHE ========================================= -->
+    <section class="stats-strip" aria-label="Victor Volley in numeri">
+      <div class="container">
+        <div class="stats-grid">
+          <div class="reveal">
+            <div class="stat-number" data-count="2019" data-prefix="Dal ">Dal 2019</div>
+            <div class="stat-label">Anno di fondazione</div>
+          </div>
+          <div class="reveal">
+            <div class="stat-number" data-count="5">5</div>
+            <div class="stat-label">Categorie attive</div>
+          </div>
+          <div class="reveal">
+            <div class="stat-number" data-count="150" data-suffix="+">150+</div>
+            <div class="stat-label">Atleti in rosa</div>
+          </div>
+          <div class="reveal">
+            <div class="stat-number" data-count="1">1</div>
+            <div class="stat-label">Palazzetto di casa</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. PROSSIME PARTITE ==================================== -->
+    <section class="section" aria-labelledby="partite-title">
+      <div class="container">
+        <div class="section-heading">
+          <h2 id="partite-title">Prossime partite</h2>
+          <p>Il calendario aggiornato delle nostre squadre</p>
+        </div>
+        <div class="partite-grid" id="partiteGrid"></div>
+        <div style="text-align:center;margin-top:32px">
+          <a href="calendario.html" class="btn btn--outline">Vedi tutto il calendario</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. ULTIME NEWS ========================================= -->
+    <section class="section section--alt" aria-labelledby="news-title">
+      <div class="container">
+        <div class="section-heading">
+          <h2 id="news-title">Ultime news</h2>
+          <p>Comunicati, risultati e aggiornamenti dalla societ&agrave;</p>
+        </div>
+        <div class="news-grid" id="homeNewsGrid"></div>
+        <div style="text-align:center;margin-top:32px">
+          <a href="news.html" class="btn btn--outline">Tutte le news</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. LE NOSTRE SQUADRE =================================== -->
+    <section class="section" aria-labelledby="squadre-title">
+      <div class="container">
+        <div class="section-heading section-heading--center">
+          <h2 id="squadre-title">Le nostre squadre</h2>
+          <p>Cinque categorie per ogni et&agrave; e livello</p>
+        </div>
+        <div class="squadre-grid">
+          <a href="squadre.html#prima-divisione" class="squadra-card reveal">
+            <div class="squadra-card-icon">PD</div>
+            <div class="squadra-card-name">Prima Divisione</div>
+            <div class="squadra-card-desc">Campionato senior</div>
+          </a>
+          <a href="squadre.html#under-19" class="squadra-card reveal">
+            <div class="squadra-card-icon">U19</div>
+            <div class="squadra-card-name">Under 19</div>
+            <div class="squadra-card-desc">Categoria giovanile</div>
+          </a>
+          <a href="squadre.html#under-13" class="squadra-card reveal">
+            <div class="squadra-card-icon">U13</div>
+            <div class="squadra-card-name">Under 13</div>
+            <div class="squadra-card-desc">Categoria giovanile</div>
+          </a>
+          <a href="squadre.html#under-12" class="squadra-card reveal">
+            <div class="squadra-card-icon">U12</div>
+            <div class="squadra-card-name">Under 12</div>
+            <div class="squadra-card-desc">Categoria giovanile</div>
+          </a>
+          <a href="squadre.html#minivolley" class="squadra-card reveal">
+            <div class="squadra-card-icon" style="background:linear-gradient(135deg,var(--c-magenta),#e05090)">MV</div>
+            <div class="squadra-card-name">Minivolley</div>
+            <div class="squadra-card-desc">Dai 6 ai 10 anni</div>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. GALLERIA PREVIEW ==================================== -->
+    <section class="section section--alt" aria-labelledby="gallery-preview-title">
+      <div class="container">
+        <div class="section-heading">
+          <h2 id="gallery-preview-title">Galleria foto</h2>
+          <p>Momenti di gioco, allenamento ed eventi</p>
+        </div>
+        <div class="gallery-preview-grid" style="margin-bottom:28px">
+          <div class="gallery-preview-item reveal">
+            <div class="gallery-preview-placeholder" style="background:linear-gradient(135deg,#053063,#008CFD)"></div>
+          </div>
+          <div class="gallery-preview-item reveal">
+            <div class="gallery-preview-placeholder" style="background:linear-gradient(135deg,#0a3a70,#CB2168)"></div>
+          </div>
+          <div class="gallery-preview-item reveal">
+            <div class="gallery-preview-placeholder" style="background:linear-gradient(135deg,#031e3a,#0070D6)"></div>
+          </div>
+          <div class="gallery-preview-item reveal">
+            <div class="gallery-preview-placeholder" style="background:linear-gradient(135deg,#053063,#053063)"></div>
+          </div>
+        </div>
+        <div style="text-align:center">
+          <a href="galleria.html" class="btn btn--outline">Vedi tutta la galleria</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. SPONSOR ============================================= -->
+    <section class="sponsor-strip" aria-label="I nostri sponsor">
+      <div class="container">
+        <p class="text-meta" style="text-align:center;color:#aaa;margin-bottom:24px">Con il supporto di</p>
+        <div class="sponsor-logos">
+          <div class="sponsor-item"><span class="sponsor-placeholder">SPONSOR 1</span></div>
+          <div class="sponsor-item"><span class="sponsor-placeholder">SPONSOR 2</span></div>
+          <div class="sponsor-item"><span class="sponsor-placeholder">SPONSOR 3</span></div>
+          <div class="sponsor-item"><span class="sponsor-placeholder">SPONSOR 4</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9. VIENI A GIOCARE CON NOI ============================ -->
+    <section class="cta-banner" aria-labelledby="cta-title">
+      <!-- Pallone decorativo animato (2.ter punto 3) -->
+      <svg class="deco-ball" style="width:220px;right:-40px;top:50%;transform:translateY(-50%)" viewBox="0 0 200 200" fill="none" aria-hidden="true">
+        <circle cx="100" cy="100" r="90" stroke="white" stroke-width="4"/>
+        <path d="M100 10 Q140 55 100 100 Q60 55 100 10Z" stroke="white" stroke-width="3" fill="none"/>
+        <path d="M100 190 Q60 145 100 100 Q140 145 100 190Z" stroke="white" stroke-width="3" fill="none"/>
+        <path d="M10 100 Q55 60 100 100 Q55 140 10 100Z" stroke="white" stroke-width="3" fill="none"/>
+        <path d="M190 100 Q145 140 100 100 Q145 60 190 100Z" stroke="white" stroke-width="3" fill="none"/>
+      </svg>
+      <svg class="deco-ball" style="width:160px;left:-20px;bottom:-20px;opacity:0.04" viewBox="0 0 200 200" fill="none" aria-hidden="true">
+        <circle cx="100" cy="100" r="90" stroke="white" stroke-width="4"/>
+        <path d="M100 10 Q140 55 100 100 Q60 55 100 10Z" stroke="white" stroke-width="3" fill="none"/>
+        <path d="M100 190 Q60 145 100 100 Q140 145 100 190Z" stroke="white" stroke-width="3" fill="none"/>
+      </svg>
+      <div class="container" style="position:relative;z-index:1">
+        <h2 id="cta-title">Vuoi giocare con noi?</h2>
+        <p>Siamo sempre alla ricerca di nuovi atleti, da qualsiasi et&agrave; e livello. Contattaci e vieni a provare un allenamento gratuitamente.</p>
+        <a href="unisciti-a-noi.html" class="btn btn--primary">Mandaci un messaggio</a>
+        <a href="contatti.html" class="btn btn--outline-white">Dove siamo</a>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer" role="contentinfo"></footer>
+
+  <!-- Firebase SDK (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/splash.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/animations.js"></script>
+  <script src="js/main.js"></script>
+
+  <!-- Prossime partite dinamiche -->
+  <script>
+  (function () {
+    function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    DB.init(function () {
+    var today    = new Date().toISOString().slice(0, 10);
+    var upcoming = VV.getMatches()
+      .filter(function (m) { return !m.result && m.date >= today; })
+      .slice(0, 3);
+
+    var grid = document.getElementById('partiteGrid');
+
+    if (!upcoming.length) {
+      grid.innerHTML = '<p style="color:#888;text-align:center;padding:32px 0;grid-column:1/-1">Nessuna partita in programma al momento.</p>';
+      return;
+    }
+
+    var volleyIcon = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="9.5"/><path d="M6.5 3.8c1.5 3.5 1 8-1.5 11.5"/><path d="M17.5 20.2c-1.5-3.5-1-8 1.5-11.5"/><path d="M3 14c4-2 9-1.5 16.5 1"/></svg>';
+
+    grid.innerHTML = upcoming.map(function (m) {
+      /* top = "other" team (lighter), bottom = featured team (bold) */
+      var topTeam, topLogo, bottomTeam, bottomLogo;
+      if (m.isHome) {
+        topTeam = m.awayTeam; topLogo = m.awayLogo;
+        bottomTeam = m.homeTeam; bottomLogo = m.homeLogo;
+      } else {
+        topTeam = m.homeTeam; topLogo = m.homeLogo;
+        bottomTeam = m.awayTeam; bottomLogo = m.awayLogo;
+      }
+
+      function logoWrap(logo) {
+        return '<div class="pc-logo-wrap">' +
+          (logo ? '<img src="' + esc(logo) + '" alt="">' : '<div class="pc-logo-placeholder"></div>') +
+        '</div>';
+      }
+
+      var dateStr = VV.formatDateShort(m.date).toUpperCase();
+      var timeStr = m.time ? ' · ' + m.time : '';
+
+      var countdown = '';
+      if (m.isHome && m.time) {
+        var dt = m.date + 'T' + m.time + ':00';
+        countdown = '<div class="countdown" data-match="' + dt + '">' +
+          '<div class="countdown-unit"><div class="countdown-num cd-days">--</div><div class="countdown-label">GG</div></div>' +
+          '<div class="countdown-unit"><div class="countdown-num cd-hours">--</div><div class="countdown-label">ORE</div></div>' +
+          '<div class="countdown-unit"><div class="countdown-num cd-mins">--</div><div class="countdown-label">MIN</div></div>' +
+        '</div>';
+      }
+
+      return '<div class="partita-card ' + (m.isHome ? 'partita-card--home' : '') + ' reveal">' +
+        '<div class="pc-icon">' + volleyIcon + '</div>' +
+        '<div class="pc-meta">' +
+          '<span class="pc-cat">' + esc(m.category) + (m.isHome ? ' · Casa' : ' · Trasferta') + '</span>' +
+          '<span class="pc-datetime">' + dateStr + timeStr + '</span>' +
+        '</div>' +
+        '<div class="pc-logos">' + logoWrap(topLogo) + logoWrap(bottomLogo) + '</div>' +
+        '<div class="pc-teams">' +
+          '<div class="pc-team-name">' + esc(topTeam) + '</div>' +
+          '<div class="pc-team-name pc-team-bold">' + esc(bottomTeam) + '</div>' +
+        '</div>' +
+        countdown +
+        '<div class="pc-footer">' +
+          '<a href="calendario.html" class="pc-cta">Vedi tutti i match</a>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    /* Countdown live */
+    function tick() {
+      document.querySelectorAll('.countdown[data-match]').forEach(function (el) {
+        var diff = new Date(el.getAttribute('data-match')) - new Date();
+        if (diff <= 0) { el.style.display = 'none'; return; }
+        var d = Math.floor(diff / 86400000);
+        var h = Math.floor((diff % 86400000) / 3600000);
+        var mn = Math.floor((diff % 3600000) / 60000);
+        el.querySelector('.cd-days').textContent  = String(d).padStart(2, '0');
+        el.querySelector('.cd-hours').textContent = String(h).padStart(2, '0');
+        el.querySelector('.cd-mins').textContent  = String(mn).padStart(2, '0');
+      });
+    }
+    tick();
+    setInterval(tick, 60000);
+    }); // DB.init
+  })();
+  </script>
+
+  <!-- Ultime news dinamiche -->
+  <script>
+  (function () {
+    function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function badgeCls(cat) { return cat === 'Prima Divisione' ? 'badge--magenta' : 'badge--azzurro'; }
+
+    DB.init(function () {
+    var grid     = document.getElementById('homeNewsGrid');
+    var articles = VV.getArticles(true)
+      .sort(function (a, b) { return a.date < b.date ? 1 : -1; })
+      .slice(0, 3);
+
+    if (!articles.length) {
+      grid.innerHTML = '<p style="color:#888;text-align:center;padding:32px 0;grid-column:1/-1">Nessun articolo pubblicato.</p>';
+      return;
+    }
+
+    grid.innerHTML = articles.map(function (a) {
+      var imgHtml = a.image
+        ? '<img src="' + esc(a.image) + '" alt="' + esc(a.title) + '" style="width:100%;height:100%;object-fit:cover">'
+        : '<div class="news-card-img-placeholder">&#127944;</div>';
+      return '<article class="news-card reveal">' +
+        '<div class="news-card-img">' + imgHtml + '</div>' +
+        '<div class="news-card-body">' +
+          '<div class="news-card-meta">' +
+            '<span class="badge ' + badgeCls(a.category) + '">' + esc(a.category) + '</span>' +
+            '<span class="news-card-date">' + VV.formatDateShort(a.date) + '</span>' +
+          '</div>' +
+          '<h3 class="news-card-title">' + esc(a.title) + '</h3>' +
+          '<p class="news-card-excerpt">' + esc(a.excerpt) + '</p>' +
+          '<a href="news-dettaglio.html?id=' + a.id + '" class="news-card-link">Leggi di pi&ugrave; &rarr;</a>' +
+        '</div>' +
+      '</article>';
+    }).join('');
+    }); // DB.init
+  })();
+  </script>
+
+  <!-- Hero Slider dinamico -->
+  <script>
+  (function () {
+    var GRADIENTS = [
+      'linear-gradient(135deg,#031e3e 0%,#053063 55%,#084080 100%)',
+      'linear-gradient(135deg,#0a3a70 0%,#053063 50%,#CB2168 100%)',
+      'linear-gradient(135deg,#031e3a 0%,#053063 60%,#0070D6 100%)'
+    ];
+
+    function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    DB.init(function () {
+    /* Articoli con posizione slider → fallback ai 3 più recenti */
+    var all      = VV.getArticles(true).sort(function (a, b) { return a.date < b.date ? 1 : -1; });
+    var ordered  = all.filter(function (a) { return a.heroOrder > 0; })
+                      .sort(function (a, b) { return a.heroOrder - b.heroOrder; });
+    var slides   = ordered.length ? ordered : all.slice(0, 3);
+
+    var track = document.getElementById('heroSliderTrack');
+    var dots  = document.getElementById('heroSliderDots');
+    if (!track || !slides.length) return;
+
+    /* Costruisce le slide */
+    track.innerHTML = slides.map(function (a, i) {
+      var bg = a.image
+        ? 'background-image:url(' + esc(a.image) + ');background-size:cover;background-position:center top'
+        : 'background:' + GRADIENTS[i % GRADIENTS.length];
+
+      var meta = VV.formatDateShort(a.date).toUpperCase() + ' / ' + esc(a.category).toUpperCase();
+
+      return '<div class="hero-slide" style="' + bg + '">' +
+        '<div class="hero-slide-bg" style="' + bg + '"></div>' +
+        '<div class="hero-slide-inner">' +
+          '<div class="hero-slide-content">' +
+            '<span class="hero-slide-meta">' + meta + '</span>' +
+            '<h1 class="hero-slide-title">' + esc(a.title) + '</h1>' +
+            '<a href="news-dettaglio.html?id=' + a.id + '" class="hero-slide-cta">Leggi l&rsquo;articolo &rarr;</a>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    /* Dot e navigazione */
+    var total = slides.length, current = 0, timer;
+
+    slides.forEach(function (_, i) {
+      var dot = document.createElement('button');
+      dot.className = 'hero-slider-dot' + (i === 0 ? ' is-active' : '');
+      dot.setAttribute('role', 'tab');
+      dot.setAttribute('aria-label', 'Slide ' + (i + 1));
+      dot.addEventListener('click', function () { goTo(i); resetTimer(); });
+      dots.appendChild(dot);
+    });
+
+    function goTo(n) {
+      current = (n + total) % total;
+      track.style.transform = 'translateX(-' + current * 100 + '%)';
+      dots.querySelectorAll('.hero-slider-dot').forEach(function (d, i) {
+        d.classList.toggle('is-active', i === current);
+      });
+    }
+
+    document.getElementById('heroSliderPrev').addEventListener('click', function () { goTo(current - 1); resetTimer(); });
+    document.getElementById('heroSliderNext').addEventListener('click', function () { goTo(current + 1); resetTimer(); });
+
+    /* Touch swipe */
+    var tsX = 0;
+    track.addEventListener('touchstart', function (e) { tsX = e.changedTouches[0].screenX; }, { passive: true });
+    track.addEventListener('touchend', function (e) {
+      var dx = e.changedTouches[0].screenX - tsX;
+      if (Math.abs(dx) > 40) { goTo(current + (dx < 0 ? 1 : -1)); resetTimer(); }
+    }, { passive: true });
+
+    function resetTimer() {
+      clearInterval(timer);
+      if (total > 1) timer = setInterval(function () { goTo(current + 1); }, 5000);
+    }
+    resetTimer();
+    }); // DB.init
+  })();
+  </script>
+</body>
+</html>

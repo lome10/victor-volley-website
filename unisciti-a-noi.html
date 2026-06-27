@@ -1,0 +1,209 @@
+﻿<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="assets/logo.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vieni a giocare con noi — Victor Volley</title>
+  <meta name="description" content="Vuoi giocare a pallavolo a Melissano? Contattaci e vieni a provare un allenamento con la Victor Volley, gratuitamente.">
+  <script>if(sessionStorage.getItem('vv_splash_shown')){document.documentElement.classList.add('no-splash');}</script>
+  <noscript><style>#splash-screen{display:none!important}</style></noscript>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div id="splash-screen" role="status" aria-label="Caricamento Victor Volley">
+    <div class="splash-top">
+      <img src="assets/logo.png" alt="Victor Volley" class="splash-logo">
+    </div>
+    <div class="splash-line" aria-hidden="true"></div>
+    <div class="splash-bottom" aria-hidden="true">
+      <div class="splash-percent" id="splashPercent">0%</div>
+    </div>
+  </div>
+
+  <header class="site-header" role="banner"></header>
+
+  <main id="main-content">
+
+    <div class="page-header">
+      <div class="container">
+        <p class="breadcrumb"><a href="index.html">Home</a> / Vieni a giocare con noi</p>
+        <h1>Vieni a giocare con noi</h1>
+        <p style="color:rgba(255,255,255,0.65);margin-top:8px">Inviaci un messaggio &mdash; ti ricontattiamo noi</p>
+      </div>
+    </div>
+
+    <section class="section">
+      <div class="container">
+        <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:64px;align-items:start">
+
+          <!-- Info colonna sinistra -->
+          <div>
+            <h2 style="margin-bottom:16px">Perch&eacute; Victor Volley?</h2>
+            <p style="color:#555;margin-bottom:24px">Siamo una societ&agrave; sportiva dilettantistica nata nel 2019 a Melissano. Il nostro obiettivo &egrave; offrire a bambini, ragazzi e adulti la possibilit&agrave; di praticare la pallavolo in un ambiente sereno, inclusivo e stimolante.</p>
+
+            <div style="display:flex;flex-direction:column;gap:16px;margin-bottom:32px">
+              <div style="display:flex;gap:12px;align-items:flex-start">
+                <div style="width:36px;height:36px;border-radius:50%;background:rgba(0,140,253,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--c-azzurro);font-size:16px">&#127944;</div>
+                <div>
+                  <div style="font-weight:600;font-size:14px;color:var(--c-navy);margin-bottom:2px">Cinque categorie</div>
+                  <div style="font-size:13px;color:#888">Da Minivolley (6 anni) fino alla Prima Divisione senior</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:12px;align-items:flex-start">
+                <div style="width:36px;height:36px;border-radius:50%;background:rgba(0,140,253,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--c-azzurro);font-size:16px">&#127959;</div>
+                <div>
+                  <div style="font-weight:600;font-size:14px;color:var(--c-navy);margin-bottom:2px">Palazzetto moderno</div>
+                  <div style="font-size:13px;color:#888">Palazzetto ARK&Eacute; di Melissano &mdash; &#9888; indirizzo da confermare</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:12px;align-items:flex-start">
+                <div style="width:36px;height:36px;border-radius:50%;background:rgba(0,140,253,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--c-azzurro);font-size:16px">&#128137;</div>
+                <div>
+                  <div style="font-weight:600;font-size:14px;color:var(--c-navy);margin-bottom:2px">Prima prova gratuita</div>
+                  <div style="font-size:13px;color:#888">Vieni a provare un allenamento senza impegno</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card" style="background:var(--c-gray-light);border:none">
+              <p style="font-size:13px;color:#666">
+                <strong>Questo non &egrave; un modulo di tesseramento ufficiale.</strong><br>
+                &Egrave; un semplice messaggio di contatto per conoscerci. Ti ricontattiamo noi per fissare una prova o darti informazioni sulle categorie.
+              </p>
+            </div>
+          </div>
+
+          <!-- Form colonna destra -->
+          <div>
+            <div id="formSuccess" style="display:none;padding:24px;background:rgba(26,138,46,0.08);border:1px solid rgba(26,138,46,0.25);border-radius:var(--card-radius);margin-bottom:24px">
+              <strong style="color:#1a8a2e">&#10003; Messaggio inviato!</strong>
+              <p style="font-size:14px;margin-top:4px;color:#555">Ti contatteremo presto. Grazie per il tuo interesse!</p>
+            </div>
+
+            <!-- TODO: collegare a Formspree o EmailJS per invio email reale.
+                 URL attuale usa mailto: come fallback.
+                 Per integrare Formspree: cambia action con "https://formspree.io/f/TUO_ID"
+                 e rimuovi il handler JS per mailto. -->
+            <form class="form-wrapper" id="uniscitiForm" novalidate>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label" for="nome">Nome <span class="required">*</span></label>
+                  <input class="form-input" type="text" id="nome" name="nome" autocomplete="given-name" required placeholder="Il tuo nome">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="cognome">Cognome <span class="required">*</span></label>
+                  <input class="form-input" type="text" id="cognome" name="cognome" autocomplete="family-name" required placeholder="Il tuo cognome">
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label" for="email">Email <span class="required">*</span></label>
+                  <input class="form-input" type="email" id="email" name="email" autocomplete="email" required placeholder="esempio@email.it">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="telefono">Telefono</label>
+                  <input class="form-input" type="tel" id="telefono" name="telefono" autocomplete="tel" placeholder="+39 000 000 0000">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="eta">Et&agrave; (o data di nascita) <span class="required">*</span></label>
+                <input class="form-input" type="text" id="eta" name="eta" required placeholder="Es. 14 anni oppure 15/03/2010">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="categoria">Categoria di interesse <span class="required">*</span></label>
+                <select class="form-select" id="categoria" name="categoria" required>
+                  <option value="" disabled selected>Seleziona una categoria</option>
+                  <option value="Prima Divisione">Prima Divisione (senior)</option>
+                  <option value="Under 19">Under 19</option>
+                  <option value="Under 13">Under 13</option>
+                  <option value="Under 12">Under 12</option>
+                  <option value="Minivolley">Minivolley (6-10 anni)</option>
+                  <option value="Non so">Non so / aiutatemi a scegliere</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="messaggio">Messaggio (opzionale)</label>
+                <textarea class="form-textarea" id="messaggio" name="messaggio" placeholder="Scrivi qui eventuali domande o informazioni aggiuntive..."></textarea>
+              </div>
+
+              <button type="submit" class="btn btn--primary" style="width:100%;padding:14px">Invia il messaggio</button>
+
+              <p style="font-size:12px;color:#aaa;margin-top:12px;text-align:center">
+                Inviando il modulo accetti che i tuoi dati vengano utilizzati per rispondere alla tua richiesta.
+              </p>
+            </form>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer" role="contentinfo"></footer>
+
+  <script src="js/splash.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/animations.js"></script>
+  <script src="js/main.js"></script>
+
+  <script>
+  (function(){
+    var form = document.getElementById('uniscitiForm');
+    var success = document.getElementById('formSuccess');
+    if(!form) return;
+
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+
+      // Validazione base
+      var nome     = document.getElementById('nome').value.trim();
+      var cognome  = document.getElementById('cognome').value.trim();
+      var email    = document.getElementById('email').value.trim();
+      var eta      = document.getElementById('eta').value.trim();
+      var categoria = document.getElementById('categoria').value;
+
+      if(!nome || !cognome || !email || !eta || !categoria){
+        alert('Compila tutti i campi obbligatori.');
+        return;
+      }
+
+      var messaggio = document.getElementById('messaggio').value.trim();
+      var telefono  = document.getElementById('telefono').value.trim();
+
+      // Fallback mailto: — sostituire con Formspree/EmailJS in produzione
+      var subject = encodeURIComponent('Richiesta informazioni: ' + nome + ' ' + cognome);
+      var body = encodeURIComponent(
+        'Nome: ' + nome + ' ' + cognome + '\n' +
+        'Email: ' + email + '\n' +
+        'Telefono: ' + (telefono||'non indicato') + '\n' +
+        'Età: ' + eta + '\n' +
+        'Categoria: ' + categoria + '\n\n' +
+        'Messaggio:\n' + (messaggio||'—')
+      );
+
+      window.location.href = 'mailto:info@victorvolley.it?subject=' + subject + '&body=' + body;
+
+      success.style.display = 'block';
+      form.reset();
+      success.scrollIntoView({ behavior: 'smooth' });
+    });
+  })();
+  </script>
+
+  <style>
+    @media(max-width:768px){
+      main .container > div { grid-template-columns:1fr !important; gap:40px !important; }
+    }
+  </style>
+</body>
+</html>

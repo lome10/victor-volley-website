@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="assets/logo.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Victor Volley</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+  <!-- ========== LOGIN ========== -->
+  <div id="loginScreen" class="login-screen">
+    <div class="login-box">
+      <img src="assets/logo.png" alt="Victor Volley" class="login-logo">
+      <h1 class="login-title">Admin Panel</h1>
+      <p class="login-sub">Victor Volley &mdash; Melissano</p>
+      <form id="loginForm" autocomplete="off">
+        <input type="email" id="emailInput" class="login-input" placeholder="Email" required autocomplete="username">
+        <input type="password" id="passwordInput" class="login-input" placeholder="Password" required autocomplete="current-password">
+        <button type="submit" class="btn-primary btn-block">Accedi</button>
+        <p id="loginError" class="login-error"></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========== APP ========== -->
+  <div id="adminApp" class="admin-app is-hidden">
+
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+      <div class="admin-sidebar-logo">
+        <img src="assets/logo.png" alt="Victor Volley">
+        <span>Admin</span>
+      </div>
+
+      <nav class="admin-nav">
+        <a href="#" class="admin-nav-item is-active" data-section="dashboard">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </a>
+        <a href="#" class="admin-nav-item" data-section="articoli">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10,9 9,9 8,9"/></svg>
+          Articoli
+        </a>
+        <a href="#" class="admin-nav-item" data-section="calendario">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Calendario
+        </a>
+        <a href="#" class="admin-nav-item" data-section="galleria">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/></svg>
+          Galleria
+        </a>
+        <a href="#" class="admin-nav-item" data-section="squadre">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+          Squadre
+        </a>
+      </nav>
+
+      <div class="admin-sidebar-footer">
+        <a href="index.html" target="_blank" class="admin-footer-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Vai al sito
+        </a>
+        <button id="logoutBtn" class="admin-footer-link admin-logout">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Esci
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="admin-main">
+
+      <!-- Topbar -->
+      <header class="admin-topbar">
+        <h2 id="topbarTitle">Dashboard</h2>
+        <div id="topbarActions"></div>
+      </header>
+
+      <!-- ---- DASHBOARD ---- -->
+      <section id="sectionDashboard" class="admin-section">
+        <div class="dash-stats" id="dashStats"></div>
+        <div class="dash-recent">
+          <div class="dash-card">
+            <div class="dash-card-title">Ultimi articoli</div>
+            <div id="dashArticles"></div>
+          </div>
+          <div class="dash-card">
+            <div class="dash-card-title">Prossime partite</div>
+            <div id="dashMatches"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---- ARTICOLI ---- -->
+      <section id="sectionArticoli" class="admin-section is-hidden">
+        <!-- List -->
+        <div id="articoliList">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Titolo</th>
+                <th>Categoria</th>
+                <th>Data</th>
+                <th>Stato</th>
+                <th title="Posizione nello slider homepage (1 = primo)">Slider</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="articoliBody"></tbody>
+          </table>
+        </div>
+        <!-- Form -->
+        <div id="articoliForm" class="is-hidden">
+          <div class="form-grid">
+            <div class="form-group form-full">
+              <label class="form-label">Titolo *</label>
+              <input type="text" id="artTitle" class="form-input" placeholder="Titolo dell'articolo">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Categoria</label>
+              <select id="artCategory" class="form-input"></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Data</label>
+              <input type="date" id="artDate" class="form-input">
+            </div>
+            <div class="form-group form-full">
+              <label class="form-label">Immagine di copertina (URL)</label>
+              <input type="url" id="artImage" class="form-input" placeholder="https://...">
+            </div>
+            <div class="form-group form-full">
+              <label class="form-label">Estratto</label>
+              <textarea id="artExcerpt" class="form-input form-textarea" rows="2" placeholder="Breve descrizione (max 200 caratteri)"></textarea>
+            </div>
+            <div class="form-group form-full">
+              <label class="form-label">Contenuto</label>
+              <textarea id="artContent" class="form-input form-textarea form-textarea--lg" placeholder="Testo dell'articolo (HTML supportato)"></textarea>
+            </div>
+            <div class="form-group form-full">
+              <label class="toggle-label">
+                <input type="checkbox" id="artPublished" checked>
+                <span class="toggle-track"></span>
+                Pubblica subito
+              </label>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button id="artCancel" class="btn-ghost">Annulla</button>
+            <button id="artSave" class="btn-primary">Salva articolo</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---- CALENDARIO ---- -->
+      <section id="sectionCalendario" class="admin-section is-hidden">
+        <!-- List -->
+        <div id="calendarioList">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Ora</th>
+                <th>Categoria</th>
+                <th>Partita</th>
+                <th>Campo</th>
+                <th>Risultato</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="calendarioBody"></tbody>
+          </table>
+        </div>
+        <!-- Form -->
+        <div id="calendarioForm" class="is-hidden">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Data *</label>
+              <input type="date" id="matchDate" class="form-input">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Ora</label>
+              <input type="time" id="matchTime" class="form-input" value="18:30">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Categoria</label>
+              <select id="matchCategory" class="form-input"></select>
+            </div>
+            <div class="form-group">
+              <label class="toggle-label" style="margin-top:28px">
+                <input type="checkbox" id="matchIsHome" checked>
+                <span class="toggle-track"></span>
+                Partita in casa
+              </label>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Squadra di casa</label>
+              <input type="text" id="matchHomeTeam" class="form-input" value="Victor Volley">
+              <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
+                <input type="text" id="matchHomeLogo" class="form-input form-input--sm" placeholder="Logo: URL esterno o carica file" style="flex:1;min-width:0">
+                <label class="btn-ghost" style="cursor:pointer;padding:6px 10px;white-space:nowrap;flex-shrink:0" title="Carica immagine — viene convertita in PNG 128 px">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  Carica
+                  <input type="file" id="homeLogoFile" accept="image/*" style="display:none">
+                </label>
+                <img id="homeLogoPreview" src="" alt="" style="height:34px;width:34px;object-fit:contain;border-radius:4px;border:1px solid #e2e8f0;padding:3px;background:#f8fafc;flex-shrink:0;display:none">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Squadra ospite</label>
+              <input type="text" id="matchAwayTeam" class="form-input" placeholder="Avversario">
+              <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
+                <input type="text" id="matchAwayLogo" class="form-input form-input--sm" placeholder="Logo: URL esterno o carica file" style="flex:1;min-width:0">
+                <label class="btn-ghost" style="cursor:pointer;padding:6px 10px;white-space:nowrap;flex-shrink:0" title="Carica immagine — viene convertita in PNG 128 px">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  Carica
+                  <input type="file" id="awayLogoFile" accept="image/*" style="display:none">
+                </label>
+                <img id="awayLogoPreview" src="" alt="" style="height:34px;width:34px;object-fit:contain;border-radius:4px;border:1px solid #e2e8f0;padding:3px;background:#f8fafc;flex-shrink:0;display:none">
+              </div>
+            </div>
+            <div class="form-group form-full">
+              <label class="form-label">Palazzetto / Luogo</label>
+              <input type="text" id="matchVenue" class="form-input" placeholder="es. Palazzetto ARKÉ — Melissano">
+            </div>
+            <div class="form-group form-full">
+              <label class="form-label">Risultato (se già giocata)</label>
+              <input type="text" id="matchResult" class="form-input" placeholder="es. 3-1">
+            </div>
+          </div>
+          <div class="form-actions">
+            <button id="matchCancel" class="btn-ghost">Annulla</button>
+            <button id="matchSave" class="btn-primary">Salva partita</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---- SQUADRE ---- -->
+      <section id="sectionSquadre" class="admin-section is-hidden">
+
+        <!-- Accordion categorie -->
+        <div id="squadreList">
+          <div id="squadreAccordion"></div>
+        </div>
+
+        <!-- Form: categoria -->
+        <div id="squadreCatForm" class="is-hidden">
+          <div class="form-grid">
+            <div class="form-group form-full">
+              <label class="form-label">Nome categoria *</label>
+              <input type="text" id="catName" class="form-input" placeholder="es. Prima Divisione">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Abbreviazione (max 4 car.)</label>
+              <input type="text" id="catAbbr" class="form-input" placeholder="es. PD" maxlength="4">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Colore</label>
+              <input type="color" id="catColor" class="form-input" style="height:40px;padding:4px 6px" value="#008CFD">
+            </div>
+            <div class="form-group form-full">
+              <label class="form-label">Descrizione</label>
+              <input type="text" id="catDescription" class="form-input" placeholder="es. Campionato senior FIPAV">
+            </div>
+            <div class="form-group form-full">
+              <label class="form-label">Orari allenamento</label>
+              <input type="text" id="catSchedule" class="form-input" placeholder="es. Lunedì e Mercoledì ore 19:00">
+            </div>
+            <div class="form-group form-full">
+              <label class="toggle-label">
+                <input type="checkbox" id="catShowInSquadre" checked>
+                <span class="toggle-track"></span>
+                Mostra nella pagina Squadre
+              </label>
+            </div>
+            <div class="form-group form-full">
+              <label class="toggle-label">
+                <input type="checkbox" id="catActive" checked>
+                <span class="toggle-track"></span>
+                Categoria attiva
+              </label>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button id="catCancel" class="btn-ghost">Annulla</button>
+            <button id="catSave" class="btn-primary">Salva categoria</button>
+          </div>
+        </div>
+
+        <!-- Form: giocatrice / giocatore -->
+        <div id="squadrePlayerForm" class="is-hidden">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Nome e cognome *</label>
+              <input type="text" id="playerName" class="form-input" placeholder="es. Maria Rossi">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Numero di maglia</label>
+              <input type="number" id="playerNumber" class="form-input" min="1" max="99" placeholder="es. 7">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Ruolo</label>
+              <select id="playerRole" class="form-input">
+                <option>Palleggiatore</option>
+                <option>Schiacciatore</option>
+                <option>Opposto</option>
+                <option>Centrale</option>
+                <option>Libero</option>
+                <option>Universale</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Anno di nascita</label>
+              <input type="number" id="playerYear" class="form-input" placeholder="es. 2005" min="1970" max="2020">
+            </div>
+            <div class="form-group form-full">
+              <label class="form-label">Foto (URL o carica file)</label>
+              <div style="display:flex;gap:8px;align-items:center">
+                <input type="text" id="playerPhoto" class="form-input form-input--sm" placeholder="URL foto" style="flex:1;min-width:0">
+                <label class="btn-ghost" style="cursor:pointer;padding:6px 10px;white-space:nowrap;flex-shrink:0" title="Carica immagine">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  Carica
+                  <input type="file" id="playerPhotoFile" accept="image/*" style="display:none">
+                </label>
+                <img id="playerPhotoPreview" src="" alt="" style="height:40px;width:40px;object-fit:cover;border-radius:50%;border:1px solid #e2e8f0;flex-shrink:0;display:none">
+              </div>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button id="playerCancel" class="btn-ghost">Annulla</button>
+            <button id="playerSave" class="btn-primary">Salva</button>
+          </div>
+        </div>
+
+        <!-- Form: staff -->
+        <div id="squadreStaffForm" class="is-hidden">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Nome e cognome *</label>
+              <input type="text" id="staffName" class="form-input" placeholder="es. Marco Bianchi">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Ruolo</label>
+              <select id="staffRole" class="form-input">
+                <option>Allenatore</option>
+                <option>Assistente allenatore</option>
+                <option>Preparatore atletico</option>
+                <option>Dirigente accompagnatore</option>
+                <option>Responsabile</option>
+                <option>Team manager</option>
+              </select>
+            </div>
+            <div class="form-group form-full">
+              <label class="form-label">Foto (URL o carica file)</label>
+              <div style="display:flex;gap:8px;align-items:center">
+                <input type="text" id="staffPhoto" class="form-input form-input--sm" placeholder="URL foto" style="flex:1;min-width:0">
+                <label class="btn-ghost" style="cursor:pointer;padding:6px 10px;white-space:nowrap;flex-shrink:0" title="Carica immagine">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  Carica
+                  <input type="file" id="staffPhotoFile" accept="image/*" style="display:none">
+                </label>
+                <img id="staffPhotoPreview" src="" alt="" style="height:40px;width:40px;object-fit:cover;border-radius:50%;border:1px solid #e2e8f0;flex-shrink:0;display:none">
+              </div>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button id="staffCancel" class="btn-ghost">Annulla</button>
+            <button id="staffSave" class="btn-primary">Salva</button>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ---- GALLERIA ---- -->
+      <section id="sectionGalleria" class="admin-section is-hidden">
+        <!-- Albums list -->
+        <div id="galleriaList">
+          <div id="albumsGrid" class="albums-grid"></div>
+        </div>
+        <!-- Album form -->
+        <div id="galleriaForm" class="is-hidden">
+          <div class="form-grid">
+            <div class="form-group form-full">
+              <label class="form-label">Titolo album *</label>
+              <input type="text" id="albumTitle" class="form-input" placeholder="es. Prima giornata vs Avversario">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Data</label>
+              <input type="date" id="albumDate" class="form-input">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Categoria</label>
+              <select id="albumCategory" class="form-input"></select>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button id="albumCancel" class="btn-ghost">Annulla</button>
+            <button id="albumSave" class="btn-primary">Crea album</button>
+          </div>
+        </div>
+        <!-- Album photos view -->
+        <div id="galleriaPhotos" class="is-hidden">
+          <div class="photos-toolbar">
+            <div id="photosAlbumTitle" class="photos-album-title"></div>
+            <label class="btn-primary btn-upload">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Aggiungi foto
+              <input type="file" id="photoUpload" accept="image/*" multiple style="display:none">
+            </label>
+          </div>
+          <div id="uploadProgress" class="upload-progress is-hidden">
+            <div class="upload-bar"><div id="uploadBarFill" class="upload-bar-fill"></div></div>
+            <span id="uploadProgressText"></span>
+          </div>
+          <div id="photosGrid" class="photos-grid"></div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Confirm modal -->
+  <div id="confirmModal" class="modal-overlay is-hidden">
+    <div class="modal-box">
+      <p id="confirmText">Sei sicuro?</p>
+      <div class="modal-actions">
+        <button id="confirmCancel" class="btn-ghost">Annulla</button>
+        <button id="confirmOk" class="btn-danger">Elimina</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/photodb.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

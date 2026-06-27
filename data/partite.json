@@ -1,0 +1,37 @@
+{
+  "partite": [
+    {
+      "id": 1,
+      "data": "2025-11-08",
+      "ora": "18:30",
+      "categoria": "Prima Divisione",
+      "casa": true,
+      "avversario": "Squadra Avversaria 1",
+      "palazzetto": "ARKÈ Melissano",
+      "indirizzo": "⚠️ PLACEHOLDER — indirizzo da confermare",
+      "risultato": null
+    },
+    {
+      "id": 2,
+      "data": "2025-11-15",
+      "ora": "20:00",
+      "categoria": "Prima Divisione",
+      "casa": false,
+      "avversario": "Squadra Avversaria 2",
+      "palazzetto": "Palazzetto Avversario",
+      "indirizzo": "⚠️ PLACEHOLDER",
+      "risultato": null
+    },
+    {
+      "id": 3,
+      "data": "2025-11-10",
+      "ora": "10:00",
+      "categoria": "Under 13",
+      "casa": true,
+      "avversario": "Squadra U13 Avversaria",
+      "palazzetto": "ARKÈ Melissano",
+      "indirizzo": "⚠️ PLACEHOLDER — indirizzo da confermare",
+      "risultato": null
+    }
+  ]
+}
