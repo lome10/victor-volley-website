@@ -34,35 +34,59 @@
      Delay crescente di 80ms per i primi 8 elementi per griglia.
   ============================================================ */
   function initReveal() {
-    var revealEls = document.querySelectorAll('.reveal');
-    if (!revealEls.length) return;
+    var groups = new Map();
 
-    if (reducedMotion) {
-      // Con reduced motion: mostra tutto subito, solo opacity (no translateY)
-      Array.prototype.forEach.call(revealEls, function (el) {
-        el.style.opacity = '1';
-        el.style.transform = 'none';
-      });
-      return;
+    function showEl(el) {
+      el.style.opacity = '1';
+      el.style.transform = 'none';
     }
 
-    // Raggruppa elementi per parent grid (per calcolare stagger relativo al gruppo)
-    var groups = new Map();
-    Array.prototype.forEach.call(revealEls, function (el) {
+    function watchEl(el) {
       var parent = el.parentElement;
       if (!groups.has(parent)) groups.set(parent, []);
-      groups.get(parent).push(el);
-    });
+      if (groups.get(parent).indexOf(el) === -1) groups.get(parent).push(el);
+      iObs.observe(el);
+    }
 
-    onVisible(revealEls, function (el) {
-      var parent = el.parentElement;
-      var siblings = groups.get(parent) || [el];
-      var idx = siblings.indexOf(el);
-      // Stagger: max 8 posizioni diverse, poi delay fisso a 640ms
-      var delay = Math.min(idx, 8) * 80;
-      el.style.transitionDelay = delay + 'ms';
-      el.classList.add('is-visible');
+    function handleNewNodes(nodes) {
+      Array.prototype.forEach.call(nodes, function (node) {
+        if (node.nodeType !== 1) return;
+        if (node.classList && node.classList.contains('reveal')) {
+          reducedMotion ? showEl(node) : watchEl(node);
+        }
+        if (node.querySelectorAll) {
+          Array.prototype.forEach.call(node.querySelectorAll('.reveal'), function (el) {
+            reducedMotion ? showEl(el) : watchEl(el);
+          });
+        }
+      });
+    }
+
+    var iObs = reducedMotion ? null : new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        var el = entry.target;
+        var parent = el.parentElement;
+        var siblings = groups.get(parent) || [el];
+        var idx = siblings.indexOf(el);
+        el.style.transitionDelay = Math.min(idx, 8) * 80 + 'ms';
+        el.classList.add('is-visible');
+        iObs.unobserve(el);
+      });
     }, { threshold: 0.1 });
+
+    // Osserva gli elementi già presenti nel DOM
+    var existing = document.querySelectorAll('.reveal');
+    if (reducedMotion) {
+      Array.prototype.forEach.call(existing, showEl);
+    } else {
+      Array.prototype.forEach.call(existing, watchEl);
+    }
+
+    // Osserva gli elementi aggiunti dinamicamente (es. da DB.init)
+    new MutationObserver(function (mutations) {
+      mutations.forEach(function (mut) { handleNewNodes(mut.addedNodes); });
+    }).observe(document.body, { childList: true, subtree: true });
   }
 
   /* ============================================================
