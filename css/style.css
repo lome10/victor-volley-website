@@ -36,6 +36,16 @@
 
   /* Sidebar */
   --sidebar-w: 160px;
+
+  /* Mobile topbar */
+  --topbar-h: 0px;
+
+  /* -------------------------------------------------------
+     SFONDO HERO — cambia solo questa riga per aggiornare
+     l'immagine di sfondo della sezione hero / first-screen.
+     Percorso relativo a css/style.css (es. ../assets/foto.webp)
+  ------------------------------------------------------- */
+  --hero-bg: url('../assets/team-bg.webp');
 }
 
 /* --- Reset --- */
@@ -192,7 +202,7 @@ a:hover {
   left: 0; top: 0;
   width: var(--sidebar-w);
   height: 100vh;
-  z-index: 200;
+  z-index: 270;
   background-color: #021e3a;
   display: flex;
   flex-direction: column;
@@ -396,6 +406,7 @@ main, footer.site-footer {
   padding: 10px 0;
   font-family: var(--font-heading);
   font-size: 13px;
+  text-transform: uppercase;
   font-weight: 600;
   color: rgba(255,255,255,0.72);
   text-decoration: none;
@@ -492,7 +503,7 @@ main, footer.site-footer {
   position: fixed;
   inset: 0;
   background-color: rgba(0,0,0,0.52);
-  z-index: 190;
+  z-index: 265;
 }
 
 .sidebar-overlay.is-open { display: block; }
@@ -776,6 +787,7 @@ main, footer.site-footer {
   font-size: 11px;
   font-weight: 600;
   color: #fff;
+  text-transform: uppercase;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -851,9 +863,9 @@ main, footer.site-footer {
   content: '';
   position: absolute;
   inset: -20px;
-  background: url('../assets/hero-bg.jpg') center center / cover no-repeat;
-  filter: blur(10px);
-  opacity: 0.22;
+  background: var(--hero-bg) center center / cover no-repeat;
+  filter: blur(12px);
+  opacity: 0.32;
   z-index: 0;
 }
 
@@ -995,14 +1007,15 @@ main, footer.site-footer {
   /* first-screen: altezza auto — hero + partite si impilano */
   .first-screen { height: auto; }
 
-  /* Hero: prende tutto il viewport, card 9:16 quasi full-screen */
+  /* Hero: prende il viewport rimanente sotto la topbar */
   .hero-cards {
     order: 1;
     flex: none;
-    height: 100vh;
-    height: 100svh;
-    --card-w: min(calc(100vw - 20px), calc((100svh - 20px) * 9 / 16));
-    --card-h: calc(var(--card-w) * 16 / 9);
+    height: calc(100vh - var(--topbar-h));
+    height: calc(100svh - var(--topbar-h));
+    align-items: center;
+    --card-h: calc((100svh - var(--topbar-h)) * 0.80);
+    --card-w: min(calc(var(--card-h) * 9 / 16), calc(100vw - 20px));
   }
 
   /* Partite bar: si sposta sotto la hero */
@@ -1018,6 +1031,7 @@ main, footer.site-footer {
   .hero-cards-track {
     width: 100%;
     justify-content: flex-start;
+    align-items: center;
     overflow-x: scroll;
     scroll-snap-type: x mandatory;
     scrollbar-width: none;
@@ -1028,7 +1042,11 @@ main, footer.site-footer {
   }
   .hero-cards-track::-webkit-scrollbar { display: none; }
 
-  .hero-card { scroll-snap-align: center; }
+  .hero-card {
+    scroll-snap-align: center;
+    height: var(--card-h);
+    width: var(--card-w);
+  }
 
   .hero-dots-mobile { display: flex; }
 }
@@ -1958,10 +1976,193 @@ main, footer.site-footer {
 .risultato--pareggio { color: #888; }
 
 /* ================================================
+   Mobile topbar
+================================================ */
+.mobile-topbar {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 260;
+  background: #020d1a;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  flex-direction: column;
+}
+
+/* Riga 1: hamburger + logo + nome (tutto un unico tasto) */
+.mtb-bar {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.mtb-ham-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  height: 54px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.mtb-identity {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.mtb-tv-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 54px;
+  background: none;
+  border: none;
+  color: var(--c-magenta);
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0 14px 0 0;
+  transition: color 0.2s;
+}
+.mtb-tv-btn:active { color: rgba(203,33,104,0.6); }
+
+
+.mtb-ham {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex-shrink: 0;
+}
+.mtb-line {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: #fff;
+  border-radius: 2px;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+.mtb-ham-btn.is-open .mtb-line:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.mtb-ham-btn.is-open .mtb-line:nth-child(2) { opacity: 0; }
+.mtb-ham-btn.is-open .mtb-line:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+.mtb-logo {
+  width: 34px; height: 34px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.mtb-name {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+  font-family: 'Barlow', sans-serif;
+}
+
+/* Riga 2: prossima partita — usa .partite-card desktop */
+.mtb-match {
+  border-top: 1px solid rgba(255,255,255,0.07);
+  flex-shrink: 0;
+  padding: 8px 12px 10px;
+}
+.mtb-match:empty { display: none; }
+.mtb-match .partite-card {
+  width: 100%;
+  border: none;
+  background: transparent;
+}
+
+/* ================================================
+   YouTube modal (mobile streaming)
+================================================ */
+.yt-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  align-items: flex-end;
+}
+.yt-modal.is-open { display: flex; }
+.yt-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+}
+.yt-modal-box {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  background: #020d1a;
+  border-radius: 18px 18px 0 0;
+  padding: 16px 16px 24px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+.yt-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.yt-modal-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.yt-modal-close {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  border: none;
+  color: #fff;
+  font-size: 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.yt-modal-embed {
+  position: relative;
+  padding-top: 56.25%;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #000;
+}
+.yt-modal-embed iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+.yt-modal-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: rgba(255,255,255,0.45);
+  font-size: 13px;
+  text-align: center;
+  padding: 16px;
+}
+
+/* ================================================
    Responsive sidebar + hero
 ================================================ */
 @media (max-width: 900px) {
-  :root { --sidebar-w: 0px; }
+  :root { --sidebar-w: 0px; --topbar-h: 54px; }
 
   .site-header {
     width: 260px;
@@ -1970,9 +2171,85 @@ main, footer.site-footer {
 
   .site-header.is-open { transform: translateX(0); }
 
-  .sidebar-toggle { display: flex; }
+  /* topbar sostituisce hamburger floating */
+  .sidebar-toggle { display: none !important; }
+  .mobile-topbar  { display: flex; }
+  .sidebar-logo   { display: flex; justify-content: center; align-items: center; }
 
-  main, footer.site-footer { margin-left: 0; }
+  /* Sidebar mobile — tutto centrato verticalmente */
+  .site-header {
+    overflow-y: auto;
+    padding-top: 0;
+    height: 100svh;
+    justify-content: center;
+  }
+  .site-header::before { display: none; }
+  .sidebar-nav {
+    flex: none;
+    overflow-y: visible;
+    padding: 0;
+    width: 100%;
+  }
+  .sidebar-nav-list {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    padding: 0;
+  }
+  .sidebar-nav-list > li { width: 100%; }
+  .sidebar-nav-link,
+  .sidebar-nav-trigger {
+    font-size: 21px;
+    padding: 10px 24px;
+    border-left: none;
+    text-align: center;
+    justify-content: center;
+    background: none;
+  }
+  .sidebar-nav-link:hover,
+  .sidebar-nav-trigger:hover { background: none; border-left: none; }
+  .sidebar-nav-link.is-active { border-left: none; }
+  .sidebar-nav-item.is-open > .sidebar-nav-trigger { background: none; border-left: none; }
+  .sidebar-flyout-link {
+    padding: 8px 0;
+    font-size: 14px;
+    text-align: center;
+    display: block;
+  }
+  .sidebar-flyout {
+    position: static;
+    width: 100%;
+    height: auto;
+    box-shadow: none;
+    background-color: transparent;
+    padding: 0 0 4px;
+  }
+  /* CTA stesso font size, subito sotto Contatti */
+  .sidebar-cta {
+    padding: 8px 24px 0;
+    display: flex;
+    justify-content: center;
+  }
+  .sidebar-cta-btn {
+    font-size: 21px;
+    padding: 10px 28px;
+    width: auto;
+    line-height: 1.2;
+  }
+  /* Social spostati su, ingranditi */
+  .sidebar-bottom {
+    border-top: none;
+    padding: 20px 24px 0;
+    justify-content: center;
+    gap: 28px;
+  }
+  .sidebar-social-link svg { width: 26px; height: 26px; }
+
+  main { margin-left: 0; padding-top: var(--topbar-h); }
+  footer.site-footer { margin-left: 0; }
+
+  .first-screen { height: calc(100vh - var(--topbar-h)); }
 
   /* Flyout inline su mobile */
   .sidebar-flyout {
@@ -1980,8 +2257,8 @@ main, footer.site-footer {
     width: 100%;
     height: auto;
     box-shadow: none;
-    background-color: rgba(0,0,0,0.18);
-    padding: 4px 0 4px 14px;
+    background-color: transparent;
+    padding: 2px 0 8px;
   }
 
 }

@@ -239,8 +239,170 @@
       '</div>';
   }
 
+  /* ---- MOBILE TOPBAR ---- */
+  function buildMobileTopbar() {
+    /* Crea il nav */
+    var nav = document.createElement('nav');
+    nav.className = 'mobile-topbar';
+    nav.id = 'mobileTopbar';
+    nav.setAttribute('aria-label', 'Navigazione mobile');
+    nav.innerHTML =
+      '<div class="mtb-bar">' +
+        '<button class="mtb-ham-btn" id="mtbBrand" aria-label="Apri menu di navigazione">' +
+          '<span class="mtb-ham" aria-hidden="true">' +
+            '<span class="mtb-line"></span>' +
+            '<span class="mtb-line"></span>' +
+            '<span class="mtb-line"></span>' +
+          '</span>' +
+        '</button>' +
+        '<div class="mtb-identity" aria-hidden="true">' +
+          '<img src="assets/logo.png" alt="" class="mtb-logo">' +
+          '<span class="mtb-name">Victor Volley</span>' +
+        '</div>' +
+        '<button class="mtb-tv-btn" id="mtbTv" aria-label="Guarda streaming live">' +
+          '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>' +
+        '</button>' +
+      '</div>' +
+      '<div class="mtb-match" id="mtbMatch"></div>';
+
+    /* Inserisci prima di <main> o come primo figlio di body */
+    var main = document.querySelector('main') || document.body.firstElementChild;
+    document.body.insertBefore(nav, main);
+
+    /* Crea il modal YouTube */
+    var modal = document.createElement('div');
+    modal.innerHTML =
+      '<div class="yt-modal" id="ytModal" role="dialog" aria-modal="true" aria-label="Live streaming">' +
+        '<div class="yt-modal-backdrop" id="ytModalBackdrop"></div>' +
+        '<div class="yt-modal-box">' +
+          '<div class="yt-modal-header">' +
+            '<span class="yt-modal-title">Live Streaming</span>' +
+            '<button class="yt-modal-close" id="ytModalClose" aria-label="Chiudi">&#x2715;</button>' +
+          '</div>' +
+          '<div class="yt-modal-embed" id="ytModalEmbed"></div>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(modal.firstElementChild);
+
+    /* ---- Logica topbar ---- */
+    var topbar  = nav;
+    var brand   = document.getElementById('mtbBrand');
+    var tvBtn   = document.getElementById('mtbTv');
+    var matchEl = document.getElementById('mtbMatch');
+    var sidebar = document.querySelector('.site-header');
+    if (!brand || !sidebar) return;
+
+    /* --topbar-h dinamico */
+    if (window.ResizeObserver) {
+      new ResizeObserver(function () {
+        document.documentElement.style.setProperty('--topbar-h', topbar.offsetHeight + 'px');
+      }).observe(topbar);
+    }
+
+    /* Hamburger → toggle sidebar */
+    brand.addEventListener('click', function () {
+      var toggle = document.getElementById('sidebarToggle');
+      if (toggle) toggle.click();
+    });
+
+    /* Sincronizza animazione hamburger con stato sidebar */
+    new MutationObserver(function () {
+      var isOpen = sidebar.classList.contains('is-open');
+      brand.classList.toggle('is-open', isOpen);
+      topbar.classList.toggle('sidebar-is-open', isOpen);
+    }).observe(sidebar, { attributes: true, attributeFilter: ['class'] });
+
+    /* YouTube modal */
+    var ytModal    = document.getElementById('ytModal');
+    var ytEmbed    = document.getElementById('ytModalEmbed');
+    var ytClose    = document.getElementById('ytModalClose');
+    var ytBackdrop = document.getElementById('ytModalBackdrop');
+    var streamUrl  = '';
+
+    function toEmbedUrl(url) {
+      if (!url) return null;
+      var m = url.match(/[?&]v=([^&]+)/) || url.match(/youtu\.be\/([^?]+)/);
+      return m ? 'https://www.youtube.com/embed/' + m[1] + '?autoplay=1' : null;
+    }
+    function openYt(embedUrl) {
+      if (embedUrl) {
+        ytEmbed.innerHTML = '<iframe src="' + embedUrl + '" allowfullscreen allow="autoplay; encrypted-media"></iframe>';
+      } else {
+        ytEmbed.innerHTML =
+          '<div class="yt-modal-placeholder">' +
+            '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>' +
+            '<span>Il link dello streaming sarà<br>disponibile il giorno della partita</span>' +
+          '</div>';
+      }
+      ytModal.classList.add('is-open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeYt() {
+      ytModal.classList.remove('is-open');
+      ytEmbed.innerHTML = '';
+      document.body.style.overflow = '';
+    }
+    if (ytClose)    ytClose.addEventListener('click', closeYt);
+    if (ytBackdrop) ytBackdrop.addEventListener('click', closeYt);
+
+    if (tvBtn) {
+      tvBtn.addEventListener('click', function () { openYt(toEmbedUrl(streamUrl)); });
+    }
+
+    /* Match card — solo se Firebase/DB è disponibile */
+    if (window.DB && typeof DB.init === 'function') {
+      DB.init(function () {
+        var next = VV.getMatches()
+          .filter(function (m) { return !(m.result || '').trim(); })
+          .sort(function (a, b) { return a.date > b.date ? 1 : -1; })[0];
+        if (!next || !matchEl) return;
+        streamUrl = next.streamUrl || '';
+
+        function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+        var ABBREV = { 'Prima Divisione': 'P.DIV', 'Under 18': 'U18', 'Under 13': 'U13', 'Under 12': 'U12', 'Minivolley': 'MINI' };
+        function abbrevCat(c) { return ABBREV[c] || c; }
+        function catCls(c) { return c === 'Prima Divisione' ? 'partite-card-cat--magenta' : ''; }
+        function formatData(dateStr, ora) {
+          var d = new Date(dateStr);
+          var giorni = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
+          var mesi   = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'];
+          return giorni[d.getDay()] + ' ' + d.getDate() + ' ' + mesi[d.getMonth()] + (ora ? ' · ' + ora : '');
+        }
+        var LOGO_MAP = { 'victor volley': 'assets/logo.png' };
+        function logoHtml(nome, src) {
+          var resolved = src || LOGO_MAP[(nome || '').toLowerCase().trim()];
+          return resolved
+            ? '<img src="' + esc(resolved) + '" alt="' + esc(nome) + '" class="partite-card-logo-img">'
+            : '<span class="partite-card-logo-init">' + esc((nome || '?').charAt(0).toUpperCase()) + '</span>';
+        }
+        function teamEl(nome, src) {
+          return '<div class="partite-card-team">' +
+            '<div class="partite-card-logo">' + logoHtml(nome, src) + '</div>' +
+            '<span class="partite-card-tname">' + esc(nome) + '</span>' +
+          '</div>';
+        }
+        matchEl.innerHTML =
+          '<p class="partite-col-title">Prossime partite</p>' +
+          '<div class="partite-card">' +
+            '<div class="partite-card-top">' +
+              '<span class="partite-card-cat ' + catCls(next.category) + '">' + esc(abbrevCat(next.category)) + '</span>' +
+              '<span class="partite-card-date">' + esc(formatData(next.date, next.time)) + '</span>' +
+            '</div>' +
+            '<div class="partite-card-body">' +
+              '<div class="partite-card-teams">' +
+                teamEl(next.homeTeam, next.homeLogo) +
+                teamEl(next.awayTeam, next.awayLogo) +
+              '</div>' +
+              '<div class="partite-card-vs-col"><span class="partite-card-vs">VS</span></div>' +
+            '</div>' +
+          '</div>';
+      });
+    }
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
     buildSidebar();
+    buildMobileTopbar();
     buildFooter();
   });
 })();
