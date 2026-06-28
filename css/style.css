@@ -1020,8 +1020,7 @@ main, footer.site-footer {
 
   /* Partite bar: si sposta sotto la hero */
   .partite-bar {
-    order: 2;
-    height: auto;
+    display: none;
   }
 
   /* Carosello: tutte e 3 le card visibili, scroll-snap */
