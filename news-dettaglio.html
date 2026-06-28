@@ -84,8 +84,8 @@
     function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
     function badgeCls(cat) { return cat === 'Prima Divisione' ? 'badge--magenta' : 'badge--azzurro'; }
 
-    var id = parseInt(new URLSearchParams(window.location.search).get('id'));
-    if (!id) { window.location.href = 'news.html'; return; }
+    var id = parseInt(new URLSearchParams(window.location.search).get('id'), 10);
+    if (isNaN(id) || id <= 0) { window.location.href = 'news.html'; return; }
 
     DB.init(function () {
     var content = document.getElementById('articleContent');

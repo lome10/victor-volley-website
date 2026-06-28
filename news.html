@@ -66,7 +66,9 @@
     function badgeCls(cat) { return cat === 'Prima Divisione' ? 'badge--magenta' : 'badge--azzurro'; }
 
     DB.init(function () {
-    var articles   = VV.getArticles(true);
+    var articles   = VV.getArticles(true)
+      .filter(function (a) { return a.id && !isNaN(+a.id); })
+      .sort(function (a, b) { return a.date < b.date ? 1 : -1; });
     var grid       = document.getElementById('newsGrid');
     var filterBar  = document.getElementById('newsFilterBar');
 
