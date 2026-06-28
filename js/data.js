@@ -14,6 +14,15 @@
     staff:      'vv_staff'
   };
 
+  var DEFAULT_STATS = [
+    { id: 1, value: '2019', prefix: 'Dal ', suffix: '',  label: 'Anno di fondazione' },
+    { id: 2, value: '5',    prefix: '',     suffix: '',  label: 'Categorie attive'   },
+    { id: 3, value: '150',  prefix: '',     suffix: '+', label: 'Atleti in rosa'     },
+    { id: 4, value: '1',    prefix: '',     suffix: '',  label: 'Palazzetto di casa' }
+  ];
+
+  var _stats = null;
+
   var DEFAULTS = {
     articles: [
       { id: 1, title: 'Inizia la nuova stagione: presentate tutte le squadre', category: 'Società', date: '2025-10-01', excerpt: 'La Victor Volley è pronta per la nuova stagione sportiva. Presentate ufficialmente le cinque categorie.', content: '<p>La Victor Volley è pronta per la nuova stagione sportiva. Presentate ufficialmente le cinque categorie.</p>', image: '', published: true },
@@ -176,6 +185,10 @@
     get CATEGORIES() {
       return this.getCategoryNames();
     },
+
+    /* ---- STATS ---- */
+    getStats: function () { return _stats || DEFAULT_STATS.slice(); },
+    setStats: function (items) { _stats = items && items.length ? items : DEFAULT_STATS.slice(); },
 
     /* Chiamato da db.js per popolare la cache da Firestore */
     _load: function (col, items) {

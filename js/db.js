@@ -79,13 +79,21 @@
       if (_loading) return;
       _loading = true;
 
+      var loadStats = global.db.collection('settings').doc('stats').get()
+        .then(function (doc) {
+          if (doc.exists && Array.isArray(doc.data().items)) {
+            VV.setStats(doc.data().items);
+          }
+        });
+
       Promise.all([
         _loadOne('articles'),
         _loadOne('matches'),
         _loadOne('albums'),
         _loadOne('categories'),
         _loadOne('players'),
-        _loadOne('staff')
+        _loadOne('staff'),
+        loadStats
       ]).then(function () {
         _initialized = true;
         _loading     = false;
@@ -182,6 +190,14 @@
       VV.deleteStaffMember(id);
       if (cb) cb();
       _remove('staff', id).catch(function (e) { console.error('[DB] deleteStaff', e); });
+    },
+
+    /* ---- STATS ---------------------------------------------- */
+    saveStats: function (items, cb) {
+      VV.setStats(items);
+      if (cb) cb();
+      global.db.collection('settings').doc('stats').set({ items: items })
+        .catch(function (e) { console.error('[DB] saveStats', e); });
     },
 
     /* ---- MIGRATION HELPER ------------------------------------ */

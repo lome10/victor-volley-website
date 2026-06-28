@@ -780,32 +780,86 @@ main, footer.site-footer {
    Stats strip
 ================================================ */
 .stats-strip {
-  background-color: var(--c-navy);
-  padding: 56px 0;
+  background: linear-gradient(160deg, #031828 0%, #042244 50%, #031828 100%);
+  padding: 72px 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.stats-strip::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent 0%, var(--c-azzurro) 30%, var(--c-magenta) 70%, transparent 100%);
+}
+
+.stats-eyebrow-wrap {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.stats-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--c-azzurro);
+  padding: 5px 18px;
+  border: 1px solid rgba(0, 140, 253, 0.35);
+  border-radius: 20px;
 }
 
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 32px;
   text-align: center;
+}
+
+.stat-item {
+  padding: 0 28px;
+}
+
+.stat-item + .stat-item {
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.stat-icon-wrap {
+  width: 48px;
+  height: 48px;
+  background: rgba(0, 140, 253, 0.1);
+  border: 1px solid rgba(0, 140, 253, 0.2);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  color: var(--c-azzurro);
 }
 
 .stat-number {
   font-family: var(--font-heading);
-  font-size: 48px;
+  font-size: 52px;
   font-weight: 700;
   color: var(--c-azzurro);
   line-height: 1;
-  margin-bottom: 8px;
+  margin-bottom: 0;
+}
+
+.stat-sep {
+  width: 28px;
+  height: 2px;
+  background: rgba(0, 140, 253, 0.4);
+  border-radius: 1px;
+  margin: 12px auto;
 }
 
 .stat-label {
-  font-size: 12px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.55);
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.45);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.09em;
 }
 
 /* ================================================
@@ -1705,6 +1759,9 @@ main, footer.site-footer {
   .hero-title { font-size: 36px; }
   .hero-subtitle { font-size: 16px; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .stat-item { padding: 0 16px; }
+  .stat-item:nth-child(2n+1) { border-left: none; }
+  .stat-item:nth-child(n+3) { border-top: 1px solid rgba(255,255,255,0.08); padding-top: 32px; margin-top: 32px; }
   .news-grid { grid-template-columns: 1fr; }
   .squadre-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
   .gallery-preview-grid { grid-template-columns: repeat(2, 1fr); }
