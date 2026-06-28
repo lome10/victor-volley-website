@@ -100,7 +100,7 @@
             '</div>' +
             '<h2 class="news-card-title">' + esc(a.title) + '</h2>' +
             '<p class="news-card-excerpt">' + esc(a.excerpt) + '</p>' +
-            '<a href="news-dettaglio.html?id=' + a.id + '" class="news-card-link">Leggi di pi&ugrave; &rarr;</a>' +
+            '<a href="news-dettaglio.html?id=' + a.id + '" class="news-card-link" onclick="sessionStorage.setItem(\'vv_nav_id\',\'' + a.id + '\')">Leggi di pi&ugrave; &rarr;</a>' +
           '</div>' +
         '</article>';
       }).join('');

@@ -382,7 +382,7 @@
           '</div>' +
           '<h3 class="news-card-title">' + esc(a.title) + '</h3>' +
           '<p class="news-card-excerpt">' + esc(a.excerpt) + '</p>' +
-          '<a href="news-dettaglio.html?id=' + a.id + '" class="news-card-link">Leggi di pi&ugrave; &rarr;</a>' +
+          '<a href="news-dettaglio.html?id=' + a.id + '" class="news-card-link" onclick="sessionStorage.setItem(\'vv_nav_id\',\'' + a.id + '\')">Leggi di pi&ugrave; &rarr;</a>' +
         '</div>' +
       '</article>';
     }).join('');
@@ -426,7 +426,7 @@
           '<div class="hero-slide-content">' +
             '<span class="hero-slide-meta">' + meta + '</span>' +
             '<h1 class="hero-slide-title">' + esc(a.title) + '</h1>' +
-            '<a href="news-dettaglio.html?id=' + a.id + '" class="hero-slide-cta">Leggi l&rsquo;articolo &rarr;</a>' +
+            '<a href="news-dettaglio.html?id=' + a.id + '" class="hero-slide-cta" onclick="sessionStorage.setItem(\'vv_nav_id\',\'' + a.id + '\')">Leggi l&rsquo;articolo &rarr;</a>' +
           '</div>' +
         '</div>' +
       '</div>';

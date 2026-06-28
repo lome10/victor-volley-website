@@ -84,7 +84,10 @@
     function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
     function badgeCls(cat) { return cat === 'Prima Divisione' ? 'badge--magenta' : 'badge--azzurro'; }
 
-    var id = parseInt(new URLSearchParams(window.location.search).get('id'), 10);
+    var _qs  = (window.location.search.match(/[?&]id=([^&#]+)/) || [])[1];
+    var _ss  = sessionStorage.getItem('vv_nav_id');
+    var id   = parseInt(_qs || _ss || '', 10);
+    sessionStorage.removeItem('vv_nav_id');
     if (isNaN(id) || id <= 0) { window.location.href = 'news.html'; return; }
 
     DB.init(function () {
@@ -136,7 +139,7 @@
               '<span class="news-card-date">' + VV.formatDateShort(a.date) + '</span>' +
             '</div>' +
             '<h3 class="news-card-title">' + esc(a.title) + '</h3>' +
-            '<a href="news-dettaglio.html?id=' + a.id + '" class="news-card-link">Leggi di pi&ugrave; &rarr;</a>' +
+            '<a href="news-dettaglio.html?id=' + a.id + '" class="news-card-link" onclick="sessionStorage.setItem(\'vv_nav_id\',\'' + a.id + '\')">Leggi di pi&ugrave; &rarr;</a>' +
           '</div>' +
         '</article>';
       }).join('');
