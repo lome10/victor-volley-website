@@ -2225,6 +2225,7 @@ main, footer.site-footer {
     background-color: transparent;
     padding: 0 0 4px;
   }
+  .sidebar-flyout-title { display: none; }
   /* CTA stesso font size, subito sotto Contatti */
   .sidebar-cta {
     padding: 8px 24px 0;
