@@ -255,10 +255,10 @@
             '<span class="mtb-line"></span>' +
           '</span>' +
         '</button>' +
-        '<div class="mtb-identity" aria-hidden="true">' +
+        '<a href="index.html" class="mtb-identity" aria-label="Victor Volley — home">' +
           '<img src="assets/logo.png" alt="" class="mtb-logo">' +
           '<span class="mtb-name">Victor Volley</span>' +
-        '</div>' +
+        '</a>' +
         '<button class="mtb-tv-btn" id="mtbTv" aria-label="Guarda streaming live">' +
           '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>' +
         '</button>' +
@@ -382,7 +382,7 @@
           '</div>';
         }
         matchEl.innerHTML =
-          '<p class="partite-col-title">Prossime partite</p>' +
+          '<p class="partite-col-title">Prossima partita</p>' +
           '<div class="partite-card">' +
             '<div class="partite-card-top">' +
               '<span class="partite-card-cat ' + catCls(next.category) + '">' + esc(abbrevCat(next.category)) + '</span>' +

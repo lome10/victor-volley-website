@@ -1024,6 +1024,7 @@ main, footer.site-footer {
     height: auto;
   }
   .partite-cols .partite-col:first-child { display: none; }
+  .partite-scroll-wrap { justify-content: flex-start; }
 
   /* Carosello: tutte e 3 le card visibili, scroll-snap */
   .hero-cards-track .hero-card:nth-child(2),
@@ -2014,7 +2015,8 @@ main, footer.site-footer {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  pointer-events: none;
+  text-decoration: none;
+  color: inherit;
 }
 
 .mtb-tv-btn {
