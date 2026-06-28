@@ -2251,7 +2251,7 @@ main, footer.site-footer {
   main { margin-left: 0; padding-top: var(--topbar-h); }
   footer.site-footer { margin-left: 0; }
 
-  .first-screen { height: calc(100vh - var(--topbar-h)); }
+  .first-screen { height: auto; }
 
   /* Flyout inline su mobile */
   .sidebar-flyout {
