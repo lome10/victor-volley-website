@@ -672,6 +672,8 @@ main, footer.site-footer {
   overflow-y: hidden;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  display: flex;
+  justify-content: center;
 }
 .partite-scroll-wrap::-webkit-scrollbar { display: none; }
 
@@ -961,15 +963,74 @@ main, footer.site-footer {
   }
 }
 
+/* ---- Dots carosello mobile ---- */
+.hero-dots-mobile {
+  display: none;
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  gap: 8px;
+  z-index: 5;
+}
+.hero-dot-m {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+  transition: background 0.2s, transform 0.2s;
+  flex-shrink: 0;
+}
+.hero-dot-m.is-active {
+  background: #fff;
+  transform: scale(1.25);
+}
+
 /* ---- Responsive ---- */
 @media (max-width: 900px) {
   .hero-cards { --card-h: calc(100vh - 240px - 40px); }
   .hero-cards-track .hero-card:nth-child(3) { display: none; }
 }
 @media (max-width: 640px) {
-  .hero-cards { --card-h: calc(100vh - 320px); }
+  /* first-screen: altezza auto — hero + partite si impilano */
+  .first-screen { height: auto; }
+
+  /* Hero: prende tutto il viewport, card 9:16 quasi full-screen */
+  .hero-cards {
+    order: 1;
+    flex: none;
+    height: 100vh;
+    height: 100svh;
+    --card-w: min(calc(100vw - 20px), calc((100svh - 20px) * 9 / 16));
+    --card-h: calc(var(--card-w) * 16 / 9);
+  }
+
+  /* Partite bar: si sposta sotto la hero */
+  .partite-bar {
+    order: 2;
+    height: auto;
+  }
+
+  /* Carosello: tutte e 3 le card visibili, scroll-snap */
   .hero-cards-track .hero-card:nth-child(2),
-  .hero-cards-track .hero-card:nth-child(3) { display: none; }
+  .hero-cards-track .hero-card:nth-child(3) { display: block; }
+
+  .hero-cards-track {
+    width: 100%;
+    justify-content: flex-start;
+    overflow-x: scroll;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 0 10px;
+    box-sizing: border-box;
+    gap: 10px;
+  }
+  .hero-cards-track::-webkit-scrollbar { display: none; }
+
+  .hero-card { scroll-snap-align: center; }
+
+  .hero-dots-mobile { display: flex; }
 }
 
 .btn--outline-white {

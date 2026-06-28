@@ -589,6 +589,28 @@
         window.location.href = 'news-dettaglio.html?id=' + id;
       });
     });
+
+    /* Dots carosello — visibili solo su mobile via CSS */
+    var dotsWrap = document.createElement('div');
+    dotsWrap.className = 'hero-dots-mobile';
+    articles.forEach(function (_, i) {
+      var dot = document.createElement('span');
+      dot.className = 'hero-dot-m' + (i === 0 ? ' is-active' : '');
+      dotsWrap.appendChild(dot);
+    });
+    track.parentElement.appendChild(dotsWrap);
+
+    var dotEls = dotsWrap.querySelectorAll('.hero-dot-m');
+    track.addEventListener('scroll', function () {
+      var mid = track.scrollLeft + track.clientWidth / 2;
+      var closest = 0, minDist = Infinity;
+      cards.forEach(function (card, i) {
+        var dist = Math.abs(card.offsetLeft + card.offsetWidth / 2 - mid);
+        if (dist < minDist) { minDist = dist; closest = i; }
+      });
+      dotEls.forEach(function (d, i) { d.classList.toggle('is-active', i === closest); });
+    }, { passive: true });
+
     }); // DB.init
   })();
   </script>
