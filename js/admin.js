@@ -178,6 +178,7 @@
       document.getElementById('artExcerpt').value     = article.excerpt || '';
       document.getElementById('artContent').value     = article.content || '';
       document.getElementById('artPublished').checked = !!article.published;
+      _setArtPreview(article.image || null, article.image ? 'Immagine salvata' : '');
     } else {
       document.getElementById('artTitle').value      = '';
       catSel.value                                    = VV.CATEGORIES[0];
@@ -186,6 +187,7 @@
       document.getElementById('artExcerpt').value     = '';
       document.getElementById('artContent').value     = '';
       document.getElementById('artPublished').checked = true;
+      _setArtPreview(null);
     }
   }
 
@@ -443,8 +445,153 @@
   document.getElementById('albumCancel').addEventListener('click', renderGalleria);
 
   /* ================================================
+     IMMAGINE COPERTINA ARTICOLO — resize Full HD
+  ================================================ */
+
+  function resizeToFullHD(file, cb) {
+    var MAX_W = 1920, MAX_H = 1080;
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      var img = new Image();
+      img.onload = function () {
+        var w = img.naturalWidth, h = img.naturalHeight;
+        var scale = Math.min(1, MAX_W / w, MAX_H / h);
+        var outW = Math.round(w * scale), outH = Math.round(h * scale);
+        var canvas = document.createElement('canvas');
+        canvas.width = outW; canvas.height = outH;
+        canvas.getContext('2d').drawImage(img, 0, 0, outW, outH);
+        var dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+        cb(dataUrl, outW, outH);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function _setArtPreview(src, info) {
+    var wrap   = document.getElementById('artImagePreview');
+    var imgEl  = document.getElementById('artImagePreviewImg');
+    var infoEl = document.getElementById('artImagePreviewInfo');
+    if (src) {
+      imgEl.src = src;
+      wrap.style.display = '';
+    } else {
+      wrap.style.display = 'none';
+      imgEl.src = '';
+    }
+    if (infoEl) infoEl.textContent = info || '';
+  }
+
+  document.getElementById('artImageFile').addEventListener('change', function () {
+    var file = this.files[0];
+    if (!file) return;
+    document.getElementById('artImagePreviewInfo').textContent = 'Ridimensionamento in corso…';
+    document.getElementById('artImagePreview').style.display = '';
+    resizeToFullHD(file, function (dataUrl, w, h) {
+      document.getElementById('artImage').value = dataUrl;
+      var kb = Math.round(dataUrl.length * 0.75 / 1024);
+      var info = w + ' × ' + h + ' px · ~' + kb + ' KB';
+      if (kb > 750) info += '  ⚠ file grande';
+      _setArtPreview(dataUrl, info);
+    });
+    this.value = '';
+  });
+
+  document.getElementById('artImageClear').addEventListener('click', function () {
+    document.getElementById('artImage').value = '';
+    _setArtPreview(null);
+  });
+
+  /* ================================================
      LOGO UPLOAD INTEGRATO NEL FORM PARTITA
   ================================================ */
+
+  /* Flood fill dai bordi: rimuove solo il bianco esterno al logo */
+  function _removeWhiteBg(ctx, w, h) {
+    var data    = ctx.getImageData(0, 0, w, h);
+    var px      = data.data;
+    var visited = new Uint8Array(w * h);
+    var queue   = [];
+    var THR     = 240;
+
+    for (var x = 0; x < w; x++) { queue.push(x, 0); queue.push(x, h - 1); }
+    for (var y = 1; y < h - 1; y++) { queue.push(0, y); queue.push(w - 1, y); }
+
+    var i = 0;
+    while (i < queue.length) {
+      var qx = queue[i++], qy = queue[i++];
+      if (qx < 0 || qx >= w || qy < 0 || qy >= h) continue;
+      var idx = qy * w + qx;
+      if (visited[idx]) continue;
+      visited[idx] = 1;
+      var pi = idx * 4;
+      var isWhitish = px[pi] >= THR && px[pi + 1] >= THR && px[pi + 2] >= THR;
+      var isTransparent = px[pi + 3] < 10;
+      if (isWhitish || isTransparent) {
+        px[pi + 3] = 0;
+        queue.push(qx - 1, qy); queue.push(qx + 1, qy);
+        queue.push(qx, qy - 1); queue.push(qx, qy + 1);
+      }
+    }
+    ctx.putImageData(data, 0, 0);
+  }
+
+  /* Trova il bounding box del contenuto non-trasparente e riscala a size×size */
+  function _trimAndScale(srcCanvas, size) {
+    var ctx  = srcCanvas.getContext('2d');
+    var data = ctx.getImageData(0, 0, srcCanvas.width, srcCanvas.height);
+    var px   = data.data;
+    var w    = srcCanvas.width, h = srcCanvas.height;
+    var minX = w, minY = h, maxX = 0, maxY = 0;
+
+    for (var y = 0; y < h; y++) {
+      for (var x = 0; x < w; x++) {
+        if (px[(y * w + x) * 4 + 3] > 10) {
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
+      }
+    }
+
+    if (minX > maxX || minY > maxY) return srcCanvas;
+
+    var cropW   = maxX - minX + 1;
+    var cropH   = maxY - minY + 1;
+    var padding = Math.round(size * 0.05);
+    var avail   = size - padding * 2;
+    var scale   = Math.min(avail / cropW, avail / cropH);
+    var drawW   = Math.round(cropW * scale);
+    var drawH   = Math.round(cropH * scale);
+    var offX    = Math.round((size - drawW) / 2);
+    var offY    = Math.round((size - drawH) / 2);
+
+    /* Step-wise upscale: raddoppia al massimo 2x per step per preservare i dettagli */
+    var tmp = document.createElement('canvas');
+    tmp.width = cropW; tmp.height = cropH;
+    tmp.getContext('2d').drawImage(srcCanvas, minX, minY, cropW, cropH, 0, 0, cropW, cropH);
+
+    while (tmp.width < drawW * 0.75 || tmp.height < drawH * 0.75) {
+      var nextW = Math.min(tmp.width * 2, drawW);
+      var nextH = Math.min(tmp.height * 2, drawH);
+      var step  = document.createElement('canvas');
+      step.width = nextW; step.height = nextH;
+      var sCtx  = step.getContext('2d');
+      sCtx.imageSmoothingEnabled = true;
+      sCtx.imageSmoothingQuality = 'high';
+      sCtx.drawImage(tmp, 0, 0, nextW, nextH);
+      tmp = step;
+    }
+
+    var out    = document.createElement('canvas');
+    out.width  = out.height = size;
+    var outCtx = out.getContext('2d');
+    outCtx.imageSmoothingEnabled = true;
+    outCtx.imageSmoothingQuality = 'high';
+    outCtx.drawImage(tmp, 0, 0, tmp.width, tmp.height, offX, offY, drawW, drawH);
+    return out;
+  }
 
   function convertLogoToPng(file, size, cb) {
     var reader = new FileReader();
@@ -467,15 +614,15 @@
         if (w === 0) w = 128;
         if (h === 0) h = 128;
 
-        var ratio = h / w;
-        var outW  = size;
-        var outH  = Math.round(size * ratio);
-
         var canvas = document.createElement('canvas');
-        canvas.width  = outW;
-        canvas.height = outH;
-        canvas.getContext('2d').drawImage(img, 0, 0, outW, outH);
-        cb(canvas.toDataURL('image/png'));
+        canvas.width  = w;
+        canvas.height = h;
+        var ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0);
+        _removeWhiteBg(ctx, w, h);
+        cb(_trimAndScale(canvas, size).toDataURL('image/png'));
       };
       img.src = dataUrl;
     };

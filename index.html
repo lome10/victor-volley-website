@@ -30,18 +30,32 @@
 
   <main id="main-content">
 
-    <!-- 1. HERO SLIDER ========================================= -->
-    <section class="hero-slider" aria-label="Slider principale" id="heroSlider">
-      <div class="hero-slider-track" id="heroSliderTrack"></div>
+    <div class="first-screen">
 
-      <button class="hero-slider-arrow hero-slider-arrow--prev" id="heroSliderPrev" aria-label="Slide precedente">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><polyline points="15,18 9,12 15,6"/></svg>
-      </button>
-      <button class="hero-slider-arrow hero-slider-arrow--next" id="heroSliderNext" aria-label="Slide successiva">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><polyline points="9,18 15,12 9,6"/></svg>
-      </button>
-      <div class="hero-slider-dots" id="heroSliderDots" role="tablist" aria-label="Seleziona slide"></div>
+    <!-- 0. PARTITE BAR ======================================== -->
+    <div class="partite-bar" id="partiteBar">
+      <div class="partite-cols">
+        <div class="partite-col">
+          <p class="partite-col-title">Prossime partite</p>
+          <div class="partite-scroll-wrap">
+            <div class="partite-scroll" id="partiteProssime"></div>
+          </div>
+        </div>
+        <div class="partite-col">
+          <p class="partite-col-title">Partite concluse</p>
+          <div class="partite-scroll-wrap">
+            <div class="partite-scroll" id="partiteConcluse"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 1. HERO CARDS ========================================= -->
+    <section class="hero-cards" aria-label="Articoli in evidenza">
+      <div class="hero-cards-track" id="heroCardsTrack"></div>
     </section>
+
+    </div><!-- /first-screen -->
 
     <!-- 3. STATISTICHE ========================================= -->
     <section class="stats-strip" aria-label="Victor Volley in numeri">
@@ -390,84 +404,191 @@
   })();
   </script>
 
-  <!-- Hero Slider dinamico -->
+  <!-- Partite Bar -->
   <script>
   (function () {
-    var GRADIENTS = [
-      'linear-gradient(135deg,#031e3e 0%,#053063 55%,#084080 100%)',
-      'linear-gradient(135deg,#0a3a70 0%,#053063 50%,#CB2168 100%)',
-      'linear-gradient(135deg,#031e3a 0%,#053063 60%,#0070D6 100%)'
-    ];
+    function mapMatch(m) {
+      var result = (m.result || '').trim();
+      var parts  = result ? result.split('-') : [];
+      return {
+        id:             m.id,
+        categoria:      m.category || '',
+        squadra_casa:   m.homeTeam || '',
+        squadra_ospite: m.awayTeam || '',
+        logo_casa:      m.homeLogo || '',
+        logo_ospite:    m.awayLogo || '',
+        data:           m.date || '',
+        ora:            m.time || '',
+        stato:          result ? 'conclusa' : 'programmata',
+        set_casa:       parts[0] !== undefined ? parseInt(parts[0], 10) : null,
+        set_ospite:     parts[1] !== undefined ? parseInt(parts[1], 10) : null
+      };
+    }
 
-    function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-    DB.init(function () {
-    /* Articoli con posizione slider → fallback ai 3 più recenti */
-    var all      = VV.getArticles(true).sort(function (a, b) { return a.date < b.date ? 1 : -1; });
-    var ordered  = all.filter(function (a) { return a.heroOrder > 0; })
-                      .sort(function (a, b) { return a.heroOrder - b.heroOrder; });
-    var slides   = ordered.length ? ordered : all.slice(0, 3);
+    /* ---- LOGHI SQUADRE: aggiungere qui nome → percorso logo ----
+       Chiave = nome squadra in minuscolo esatto.
+       Esempio: 'galatina volley': 'assets/loghi/galatina.png'       */
+    var LOGO_MAP = {
+      'victor volley': 'assets/logo.png'
+    };
+    /* ------------------------------------------------------------ */
 
-    var track = document.getElementById('heroSliderTrack');
-    var dots  = document.getElementById('heroSliderDots');
-    if (!track || !slides.length) return;
+    function catCls(cat) { return cat === 'Prima Divisione' ? 'partite-card-cat--magenta' : ''; }
 
-    /* Costruisce le slide */
-    track.innerHTML = slides.map(function (a, i) {
-      var bg = a.image
-        ? 'background-image:url(' + esc(a.image) + ');background-size:cover;background-position:center top'
-        : 'background:' + GRADIENTS[i % GRADIENTS.length];
+    var CAT_ABBREV = {
+      'prima divisione': 'P.DIV',
+      'under 18': 'U18', 'under 13': 'U13', 'under 12': 'U12',
+      'minivolley': 'MINI'
+    };
+    function abbrevCat(cat) { return CAT_ABBREV[cat.toLowerCase()] || cat; }
 
-      var meta = VV.formatDateShort(a.date).toUpperCase() + ' / ' + esc(a.category).toUpperCase();
+    function logoHtml(nome, logoSrc) {
+      var src = logoSrc || LOGO_MAP[nome.toLowerCase().trim()];
+      return src
+        ? '<img src="' + esc(src) + '" alt="' + esc(nome) + '" class="partite-card-logo-img">'
+        : '<span class="partite-card-logo-init">' + esc(nome.charAt(0).toUpperCase()) + '</span>';
+    }
 
-      return '<div class="hero-slide" style="' + bg + '">' +
-        '<div class="hero-slide-bg" style="' + bg + '"></div>' +
-        '<div class="hero-slide-inner">' +
-          '<div class="hero-slide-content">' +
-            '<span class="hero-slide-meta">' + meta + '</span>' +
-            '<h1 class="hero-slide-title">' + esc(a.title) + '</h1>' +
-            '<a href="news-dettaglio.html?id=' + a.id + '" class="hero-slide-cta" onclick="sessionStorage.setItem(\'vv_nav_id\',\'' + a.id + '\')">Leggi l&rsquo;articolo &rarr;</a>' +
+    function teamEl(nome, logoSrc) {
+      return '<div class="partite-card-team">' +
+        '<div class="partite-card-logo">' + logoHtml(nome, logoSrc) + '</div>' +
+        '<span class="partite-card-tname">' + esc(nome) + '</span>' +
+      '</div>';
+    }
+
+    function formatData(dateStr, ora) {
+      var d = new Date(dateStr);
+      var giorni = ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
+      var mesi   = ['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
+      return giorni[d.getDay()] + ' ' + d.getDate() + ' ' + mesi[d.getMonth()] + (ora ? ' · ' + ora : '');
+    }
+
+    function cardProssima(p) {
+      return '<div class="partite-card">' +
+        '<div class="partite-card-top">' +
+          '<span class="partite-card-cat ' + catCls(p.categoria) + '">' + esc(abbrevCat(p.categoria)) + '</span>' +
+          '<span class="partite-card-date">' + esc(formatData(p.data, p.ora)) + '</span>' +
+        '</div>' +
+        '<div class="partite-card-body">' +
+          '<div class="partite-card-teams">' +
+            teamEl(p.squadra_casa, p.logo_casa) +
+            teamEl(p.squadra_ospite, p.logo_ospite) +
+          '</div>' +
+          '<div class="partite-card-vs-col"><span class="partite-card-vs">VS</span></div>' +
+        '</div>' +
+      '</div>';
+    }
+
+    function cardConclusa(p) {
+      return '<div class="partite-card">' +
+        '<div class="partite-card-top">' +
+          '<span class="partite-card-cat ' + catCls(p.categoria) + '">' + esc(abbrevCat(p.categoria)) + '</span>' +
+          '<span class="partite-card-date">' + esc(formatData(p.data, null)) + '</span>' +
+        '</div>' +
+        '<div class="partite-card-body">' +
+          '<div class="partite-card-teams">' +
+            teamEl(p.squadra_casa, p.logo_casa) +
+            teamEl(p.squadra_ospite, p.logo_ospite) +
+          '</div>' +
+          '<div class="partite-card-scores-col">' +
+            '<div class="partite-card-pts">' + p.set_casa + '</div>' +
+            '<div class="partite-card-pts">' + p.set_ospite + '</div>' +
           '</div>' +
         '</div>' +
       '</div>';
+    }
+
+    function init(matches) {
+      var partite = matches.map(mapMatch);
+      var prossime = partite
+        .filter(function (p) { return p.stato === 'programmata'; })
+        .sort(function (a, b) { return a.data > b.data ? 1 : -1; })
+        .slice(0, 2);
+      var concluse = partite
+        .filter(function (p) { return p.stato === 'conclusa'; })
+        .sort(function (a, b) { return a.data < b.data ? 1 : -1; })
+        .slice(0, 2);
+
+      /* Fallback colonna destra vuota: mostra le prossime extra */
+      var concluseRender = concluse.length ? concluse : prossime.slice(2);
+      var renderFn = concluse.length ? cardConclusa : cardProssima;
+
+      var elP = document.getElementById('partiteProssime');
+      var elC = document.getElementById('partiteConcluse');
+
+      if (elP) elP.innerHTML = prossime.length
+        ? prossime.map(cardProssima).join('')
+        : '<div class="partite-empty">Nessuna partita in programma.</div>';
+
+      if (elC) elC.innerHTML = concluseRender.length
+        ? concluseRender.map(renderFn).join('')
+        : '<div class="partite-empty">Nessun risultato disponibile.</div>';
+    }
+
+    DB.init(function () { init(VV.getMatches()); });
+  })();
+  </script>
+
+  <!-- Hero Cards dinamico -->
+  <script>
+  (function () {
+    var GRADIENTS = [
+      'linear-gradient(180deg,#031e3e 0%,#053063 60%,#084080 100%)',
+      'linear-gradient(180deg,#0a3a70 0%,#053063 55%,#CB2168 100%)',
+      'linear-gradient(180deg,#031e3a 0%,#053063 60%,#0070D6 100%)',
+      'linear-gradient(180deg,#1a0533 0%,#3d0b72 55%,#CB2168 100%)'
+    ];
+
+    function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function badgeCls(cat) { return cat === 'Prima Divisione' ? 'hero-card-cat--magenta' : 'hero-card-cat--azzurro'; }
+
+    DB.init(function () {
+    var all      = VV.getArticles(true).sort(function (a, b) { return a.date < b.date ? 1 : -1; });
+    var ordered  = all.filter(function (a) { return a.heroOrder > 0; })
+                      .sort(function (a, b) { return a.heroOrder - b.heroOrder; });
+    var articles = (ordered.length ? ordered : all).slice(0, 3);
+
+    var track = document.getElementById('heroCardsTrack');
+    if (!track || !articles.length) return;
+
+    /* Costruisce le card */
+    track.innerHTML = articles.map(function (a, i) {
+      var bgStyle = a.image
+        ? 'background-image:url(' + esc(a.image) + ')'
+        : 'background:' + GRADIENTS[i % GRADIENTS.length];
+      return '<article class="hero-card" data-id="' + a.id + '">' +
+        '<div class="hero-card-bg" style="' + bgStyle + '"></div>' +
+        '<div class="hero-card-overlay"></div>' +
+        '<div class="hero-card-content">' +
+          '<span class="hero-card-cat ' + badgeCls(a.category) + '">' + esc(a.category) + '</span>' +
+          '<h2 class="hero-card-title">' + esc(a.title) + '</h2>' +
+          '<a href="news-dettaglio.html?id=' + a.id + '" class="hero-card-cta" ' +
+             'onclick="sessionStorage.setItem(\'vv_nav_id\',\'' + a.id + '\')">Leggi &rarr;</a>' +
+        '</div>' +
+      '</article>';
     }).join('');
 
-    /* Dot e navigazione */
-    var total = slides.length, current = 0, timer;
-
-    slides.forEach(function (_, i) {
-      var dot = document.createElement('button');
-      dot.className = 'hero-slider-dot' + (i === 0 ? ' is-active' : '');
-      dot.setAttribute('role', 'tab');
-      dot.setAttribute('aria-label', 'Slide ' + (i + 1));
-      dot.addEventListener('click', function () { goTo(i); resetTimer(); });
-      dots.appendChild(dot);
-    });
-
-    function goTo(n) {
-      current = (n + total) % total;
-      track.style.transform = 'translateX(-' + current * 100 + '%)';
-      dots.querySelectorAll('.hero-slider-dot').forEach(function (d, i) {
-        d.classList.toggle('is-active', i === current);
+    /* Hover */
+    var cards = track.querySelectorAll('.hero-card');
+    cards.forEach(function (card) {
+      card.addEventListener('mouseenter', function () {
+        track.classList.add('has-hover');
+        cards.forEach(function (c) { c.classList.remove('is-hovered'); });
+        card.classList.add('is-hovered');
       });
-    }
-
-    document.getElementById('heroSliderPrev').addEventListener('click', function () { goTo(current - 1); resetTimer(); });
-    document.getElementById('heroSliderNext').addEventListener('click', function () { goTo(current + 1); resetTimer(); });
-
-    /* Touch swipe */
-    var tsX = 0;
-    track.addEventListener('touchstart', function (e) { tsX = e.changedTouches[0].screenX; }, { passive: true });
-    track.addEventListener('touchend', function (e) {
-      var dx = e.changedTouches[0].screenX - tsX;
-      if (Math.abs(dx) > 40) { goTo(current + (dx < 0 ? 1 : -1)); resetTimer(); }
-    }, { passive: true });
-
-    function resetTimer() {
-      clearInterval(timer);
-      if (total > 1) timer = setInterval(function () { goTo(current + 1); }, 5000);
-    }
-    resetTimer();
+      card.addEventListener('mouseleave', function () {
+        card.classList.remove('is-hovered');
+        track.classList.remove('has-hover');
+      });
+      card.addEventListener('click', function (e) {
+        if (e.target.tagName === 'A') return;
+        var id = card.getAttribute('data-id');
+        sessionStorage.setItem('vv_nav_id', id);
+        window.location.href = 'news-dettaglio.html?id=' + id;
+      });
+    });
     }); // DB.init
   })();
   </script>

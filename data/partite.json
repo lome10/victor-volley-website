@@ -1,37 +1,90 @@
-{
-  "partite": [
-    {
-      "id": 1,
-      "data": "2025-11-08",
-      "ora": "18:30",
-      "categoria": "Prima Divisione",
-      "casa": true,
-      "avversario": "Squadra Avversaria 1",
-      "palazzetto": "ARKÈ Melissano",
-      "indirizzo": "⚠️ PLACEHOLDER — indirizzo da confermare",
-      "risultato": null
-    },
-    {
-      "id": 2,
-      "data": "2025-11-15",
-      "ora": "20:00",
-      "categoria": "Prima Divisione",
-      "casa": false,
-      "avversario": "Squadra Avversaria 2",
-      "palazzetto": "Palazzetto Avversario",
-      "indirizzo": "⚠️ PLACEHOLDER",
-      "risultato": null
-    },
-    {
-      "id": 3,
-      "data": "2025-11-10",
-      "ora": "10:00",
-      "categoria": "Under 13",
-      "casa": true,
-      "avversario": "Squadra U13 Avversaria",
-      "palazzetto": "ARKÈ Melissano",
-      "indirizzo": "⚠️ PLACEHOLDER — indirizzo da confermare",
-      "risultato": null
-    }
-  ]
-}
+[
+  {
+    "id": "p1",
+    "categoria": "Prima Divisione",
+    "squadra_casa": "Victor Volley",
+    "squadra_ospite": "Pallavolo Tricase",
+    "data": "2026-07-12",
+    "ora": "18:30",
+    "palazzetto": "ARKÈ Melissano",
+    "stato": "programmata"
+  },
+  {
+    "id": "p2",
+    "categoria": "Under 18",
+    "squadra_casa": "Galatina Volley",
+    "squadra_ospite": "Victor Volley",
+    "data": "2026-07-19",
+    "ora": "16:00",
+    "palazzetto": "PalaSport Galatina",
+    "stato": "programmata"
+  },
+  {
+    "id": "p3",
+    "categoria": "Minivolley",
+    "squadra_casa": "Victor Volley",
+    "squadra_ospite": "Aradeo Volley",
+    "data": "2026-08-02",
+    "ora": "10:00",
+    "palazzetto": "ARKÈ Melissano",
+    "stato": "programmata"
+  },
+  {
+    "id": "p4",
+    "categoria": "Prima Divisione",
+    "squadra_casa": "Victor Volley",
+    "squadra_ospite": "Brindisi Volley",
+    "data": "2026-08-16",
+    "ora": "20:30",
+    "palazzetto": "ARKÈ Melissano",
+    "stato": "programmata"
+  },
+  {
+    "id": "c1",
+    "categoria": "Prima Divisione",
+    "squadra_casa": "Victor Volley",
+    "squadra_ospite": "Galatina Volley",
+    "data": "2026-06-21",
+    "ora": "18:30",
+    "palazzetto": "ARKÈ Melissano",
+    "stato": "conclusa",
+    "set_casa": 3,
+    "set_ospite": 1
+  },
+  {
+    "id": "c2",
+    "categoria": "Under 18",
+    "squadra_casa": "Aradeo Volley",
+    "squadra_ospite": "Victor Volley",
+    "data": "2026-06-14",
+    "ora": "16:00",
+    "palazzetto": "PalaSport Aradeo",
+    "stato": "conclusa",
+    "set_casa": 2,
+    "set_ospite": 3
+  },
+  {
+    "id": "c3",
+    "categoria": "Prima Divisione",
+    "squadra_casa": "Pallavolo Tricase",
+    "squadra_ospite": "Victor Volley",
+    "data": "2026-06-07",
+    "ora": "19:00",
+    "palazzetto": "PalaSport Tricase",
+    "stato": "conclusa",
+    "set_casa": 3,
+    "set_ospite": 0
+  },
+  {
+    "id": "c4",
+    "categoria": "Minivolley",
+    "squadra_casa": "Victor Volley",
+    "squadra_ospite": "Squinzano Volley",
+    "data": "2026-05-31",
+    "ora": "10:00",
+    "palazzetto": "ARKÈ Melissano",
+    "stato": "conclusa",
+    "set_casa": 2,
+    "set_ospite": 2
+  }
+]
