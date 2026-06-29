@@ -64,6 +64,13 @@
             '<a href="contatti.html" class="sidebar-nav-link' + isActive('contatti.html') + '">Contatti</a>' +
           '</li>' +
 
+          '<li style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.08)">' +
+            '<a href="atleta.html" class="sidebar-nav-link sidebar-nav-link--atleti' + isActive('atleta.html') + '">' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="margin-right:5px;vertical-align:middle;opacity:.7"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>' +
+              'Area Atleti' +
+            '</a>' +
+          '</li>' +
+
         '</ul>' +
       '</nav>' +
 
@@ -215,6 +222,7 @@
               '<li><a href="galleria.html">Galleria</a></li>' +
               '<li><a href="unisciti-a-noi.html">Vieni a giocare con noi</a></li>' +
               '<li><a href="contatti.html">Contatti</a></li>' +
+              '<li><a href="atleta.html">Area Atleti</a></li>' +
             '</ul>' +
           '</div>' +
           '<div>' +

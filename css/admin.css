@@ -810,3 +810,79 @@ button { font-family: var(--font-body); cursor: pointer; }
 @media (max-width: 600px) {
   .numeri-grid { grid-template-columns: 1fr; }
 }
+
+/* ================================================
+   ATLETI SECTION
+================================================ */
+.atleta-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--a-border);
+}
+
+.atleta-detail-title {
+  font-family: var(--font-head);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--a-text);
+}
+
+.atleta-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 24px;
+  border-bottom: 2px solid var(--a-border);
+}
+
+.atleta-tab {
+  padding: 10px 20px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--a-muted);
+  cursor: pointer;
+  transition: color var(--a-t), border-color var(--a-t);
+}
+.atleta-tab:hover { color: var(--a-text); }
+.atleta-tab.is-active { color: var(--a-blue); border-bottom-color: var(--a-blue); font-weight: 600; }
+
+.atleta-tab-pane { max-width: 860px; }
+
+.atleta-add-rata {
+  background: var(--a-bg);
+  border: 1px solid var(--a-border);
+  border-radius: var(--a-radius);
+  padding: 20px;
+}
+
+.atleta-add-rata-title {
+  font-family: var(--font-head);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--a-text);
+  margin-bottom: 16px;
+}
+
+.atleta-rate-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--a-border);
+  background: var(--a-card);
+  margin-bottom: 8px;
+}
+
+.atleta-rate-info { flex: 1; min-width: 0; }
+.atleta-rate-desc { font-size: 13px; font-weight: 600; color: var(--a-text); }
+.atleta-rate-meta { font-size: 12px; color: var(--a-muted); margin-top: 2px; }
+.atleta-rate-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }

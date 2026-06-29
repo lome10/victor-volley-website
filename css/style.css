@@ -353,6 +353,14 @@ main, footer.site-footer {
   border-left-color: var(--c-azzurro);
 }
 
+.sidebar-nav-link--atleti {
+  color: rgba(255,255,255,0.55);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+.sidebar-nav-link--atleti:hover { color: rgba(255,255,255,0.9); }
+.sidebar-nav-link--atleti.is-active { color: var(--c-azzurro); }
+
 .sidebar-nav-item.is-open > .sidebar-nav-trigger {
   color: var(--c-white);
   background-color: rgba(255,255,255,0.06);
@@ -833,6 +841,78 @@ main, footer.site-footer {
   color: rgba(255, 255, 255, 0.3);
   font-style: italic;
   padding: 4px 0;
+}
+
+/* ---- Card LIVE ---- */
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.35; transform: scale(0.65); }
+}
+
+.partite-card-live-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #ff4d4d;
+}
+
+.partite-card-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ff4d4d;
+  flex-shrink: 0;
+  animation: live-pulse 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .partite-card-live-dot { animation: none; }
+}
+
+.partite-card-live-detail {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  padding-top: 5px;
+  margin-top: 1px;
+}
+
+.partite-card-live-score {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.45);
+  font-variant-numeric: tabular-nums;
+}
+
+.partite-card-live-expand {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 10px;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+  transition: color 0.15s;
+}
+.partite-card-live-expand:hover { color: rgba(255, 255, 255, 0.7); }
+
+.partite-card-set-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 5px;
+  margin-top: 1px;
+}
+
+.partite-card-set-row {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.4);
+  font-variant-numeric: tabular-nums;
 }
 
 /* ---- Responsive: colonne impilate su mobile ---- */

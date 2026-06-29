@@ -62,6 +62,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
           Numeri
         </a>
+        <a href="#" class="admin-nav-item" data-section="atleti">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Atleti
+        </a>
       </nav>
 
       <div class="admin-sidebar-footer">
@@ -441,6 +445,174 @@
             <span id="uploadProgressText"></span>
           </div>
           <div id="photosGrid" class="photos-grid"></div>
+        </div>
+      </section>
+
+      <!-- ---- ATLETI ---- -->
+      <section id="sectionAtleti" class="admin-section is-hidden">
+
+        <!-- List -->
+        <div id="atletiList">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Atleta</th>
+                <th>Categoria</th>
+                <th>Cert. Medico (scadenza)</th>
+                <th>Quota totale</th>
+                <th>Saldato</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="atletiBody">
+              <tr><td colspan="6" style="text-align:center;color:var(--a-muted);padding:20px">—</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Nuovo atleta form -->
+        <div id="atletiForm" class="is-hidden">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Nome *</label>
+              <input type="text" id="atletaNome" class="form-input" placeholder="Nome">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Cognome *</label>
+              <input type="text" id="atletaCognome" class="form-input" placeholder="Cognome">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email *</label>
+              <input type="email" id="atletaEmail" class="form-input" placeholder="Email per il login">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Password iniziale *</label>
+              <input type="text" id="atletaPassword" class="form-input" placeholder="Minimo 6 caratteri">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Categoria</label>
+              <select id="atletaCategoria" class="form-input"><option value="">Nessuna</option></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Scad. Cert. Medico</label>
+              <input type="date" id="atletaCertScadenza" class="form-input">
+            </div>
+          </div>
+          <div class="form-actions">
+            <button id="atletaFormCancel" class="btn-ghost">Annulla</button>
+            <button id="atletaFormSave" class="btn-primary">Crea atleta</button>
+          </div>
+        </div>
+
+        <!-- Detail view -->
+        <div id="atletiDetail" class="is-hidden">
+          <div class="atleta-detail-header">
+            <button id="atletaBackBtn" class="btn-ghost">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="15,18 9,12 15,6"/></svg>
+              Lista atleti
+            </button>
+            <h3 id="atletaDetailNome" class="atleta-detail-title"></h3>
+          </div>
+
+          <div class="atleta-tabs">
+            <button class="atleta-tab is-active" data-tab="anagrafica">Anagrafica</button>
+            <button class="atleta-tab" data-tab="certmedico">Cert. Medico</button>
+            <button class="atleta-tab" data-tab="rate">Rate &amp; Quote</button>
+            <button class="atleta-tab" data-tab="modulo">Modulo Iscrizione</button>
+          </div>
+
+          <!-- Tab: Anagrafica -->
+          <div id="tabAnagrafica" class="atleta-tab-pane">
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">Nome</label>
+                <input type="text" id="detNome" class="form-input">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Cognome</label>
+                <input type="text" id="detCognome" class="form-input">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Email (non modificabile)</label>
+                <input type="email" id="detEmail" class="form-input" disabled style="opacity:.6">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Categoria</label>
+                <select id="detCategoria" class="form-input"><option value="">Nessuna</option></select>
+              </div>
+              <div class="form-group form-full">
+                <label class="form-label">Note interne</label>
+                <textarea id="detNote" class="form-input form-textarea" rows="3" placeholder="Annotazioni visibili solo agli admin…"></textarea>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button id="detAnagraficaSave" class="btn-primary">Salva anagrafica</button>
+            </div>
+          </div>
+
+          <!-- Tab: Cert Medico -->
+          <div id="tabCertmedico" class="atleta-tab-pane is-hidden">
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">Data scadenza</label>
+                <input type="date" id="detCertScadenza" class="form-input">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Link PDF (Google Drive)</label>
+                <input type="url" id="certPdfUrl" class="form-input" placeholder="https://drive.google.com/file/d/…/view?usp=sharing">
+                <p style="font-size:11px;color:var(--a-muted);margin-top:5px">Carica su Drive → tasto destro → "Ottieni link" → imposta <strong>Chiunque con il link</strong> → incolla qui.</p>
+                <div id="certPdfLinkWrap" class="is-hidden" style="margin-top:8px">
+                  <a id="certPdfLink" href="#" target="_blank" class="btn-ghost" style="font-size:12px;display:inline-flex">Apri PDF salvato</a>
+                </div>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button id="detCertSave" class="btn-primary">Salva</button>
+            </div>
+          </div>
+
+          <!-- Tab: Rate -->
+          <div id="tabRate" class="atleta-tab-pane is-hidden">
+            <div id="rateAdminList" style="margin-bottom:24px"></div>
+            <div class="atleta-add-rata">
+              <div class="atleta-add-rata-title">Aggiungi quota / rata</div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label">Descrizione</label>
+                  <input type="text" id="rataDesc" class="form-input" placeholder="es. Prima rata">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Importo (€)</label>
+                  <input type="number" id="rataImporto" class="form-input" min="0" step="0.01" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Scadenza</label>
+                  <input type="date" id="rataScadenza" class="form-input">
+                </div>
+              </div>
+              <div class="form-actions">
+                <button id="rataAdd" class="btn-primary">Aggiungi</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab: Modulo Iscrizione -->
+          <div id="tabModulo" class="atleta-tab-pane is-hidden">
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">Link PDF (Google Drive)</label>
+                <input type="url" id="moduloPdfUrl" class="form-input" placeholder="https://drive.google.com/file/d/…/view?usp=sharing">
+                <p style="font-size:11px;color:var(--a-muted);margin-top:5px">Carica su Drive → tasto destro → "Ottieni link" → imposta <strong>Chiunque con il link</strong> → incolla qui.</p>
+                <div id="moduloPdfLinkWrap" class="is-hidden" style="margin-top:8px">
+                  <a id="moduloPdfLink" href="#" target="_blank" class="btn-ghost" style="font-size:12px;display:inline-flex">Apri modulo salvato</a>
+                </div>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button id="detModuloSave" class="btn-primary">Salva</button>
+            </div>
+          </div>
+
         </div>
       </section>
 

@@ -209,6 +209,7 @@
   <script src="js/components.js"></script>
   <script src="js/animations.js"></script>
   <script src="js/main.js"></script>
+  <script src="js/partite-live.js"></script>
 
   <!-- Statistiche dinamiche -->
   <script>
@@ -404,131 +405,7 @@
   })();
   </script>
 
-  <!-- Partite Bar -->
-  <script>
-  (function () {
-    function mapMatch(m) {
-      var result = (m.result || '').trim();
-      var parts  = result ? result.split('-') : [];
-      return {
-        id:             m.id,
-        categoria:      m.category || '',
-        squadra_casa:   m.homeTeam || '',
-        squadra_ospite: m.awayTeam || '',
-        logo_casa:      m.homeLogo || '',
-        logo_ospite:    m.awayLogo || '',
-        data:           m.date || '',
-        ora:            m.time || '',
-        stato:          result ? 'conclusa' : 'programmata',
-        set_casa:       parts[0] !== undefined ? parseInt(parts[0], 10) : null,
-        set_ospite:     parts[1] !== undefined ? parseInt(parts[1], 10) : null
-      };
-    }
-
-    function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-    /* ---- LOGHI SQUADRE: aggiungere qui nome → percorso logo ----
-       Chiave = nome squadra in minuscolo esatto.
-       Esempio: 'galatina volley': 'assets/loghi/galatina.png'       */
-    var LOGO_MAP = {
-      'victor volley': 'assets/logo.png'
-    };
-    /* ------------------------------------------------------------ */
-
-    function catCls(cat) { return cat === 'Prima Divisione' ? 'partite-card-cat--magenta' : ''; }
-
-    var CAT_ABBREV = {
-      'prima divisione': 'P.DIV',
-      'under 18': 'U18', 'under 13': 'U13', 'under 12': 'U12',
-      'minivolley': 'MINI'
-    };
-    function abbrevCat(cat) { return CAT_ABBREV[cat.toLowerCase()] || cat; }
-
-    function logoHtml(nome, logoSrc) {
-      var src = logoSrc || LOGO_MAP[nome.toLowerCase().trim()];
-      return src
-        ? '<img src="' + esc(src) + '" alt="' + esc(nome) + '" class="partite-card-logo-img">'
-        : '<span class="partite-card-logo-init">' + esc(nome.charAt(0).toUpperCase()) + '</span>';
-    }
-
-    function teamEl(nome, logoSrc) {
-      return '<div class="partite-card-team">' +
-        '<div class="partite-card-logo">' + logoHtml(nome, logoSrc) + '</div>' +
-        '<span class="partite-card-tname">' + esc(nome) + '</span>' +
-      '</div>';
-    }
-
-    function formatData(dateStr, ora) {
-      var d = new Date(dateStr);
-      var giorni = ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
-      var mesi   = ['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
-      return giorni[d.getDay()] + ' ' + d.getDate() + ' ' + mesi[d.getMonth()] + (ora ? ' · ' + ora : '');
-    }
-
-    function cardProssima(p) {
-      return '<div class="partite-card">' +
-        '<div class="partite-card-top">' +
-          '<span class="partite-card-cat ' + catCls(p.categoria) + '">' + esc(abbrevCat(p.categoria)) + '</span>' +
-          '<span class="partite-card-date">' + esc(formatData(p.data, p.ora)) + '</span>' +
-        '</div>' +
-        '<div class="partite-card-body">' +
-          '<div class="partite-card-teams">' +
-            teamEl(p.squadra_casa, p.logo_casa) +
-            teamEl(p.squadra_ospite, p.logo_ospite) +
-          '</div>' +
-          '<div class="partite-card-vs-col"><span class="partite-card-vs">VS</span></div>' +
-        '</div>' +
-      '</div>';
-    }
-
-    function cardConclusa(p) {
-      return '<div class="partite-card">' +
-        '<div class="partite-card-top">' +
-          '<span class="partite-card-cat ' + catCls(p.categoria) + '">' + esc(abbrevCat(p.categoria)) + '</span>' +
-          '<span class="partite-card-date">' + esc(formatData(p.data, null)) + '</span>' +
-        '</div>' +
-        '<div class="partite-card-body">' +
-          '<div class="partite-card-teams">' +
-            teamEl(p.squadra_casa, p.logo_casa) +
-            teamEl(p.squadra_ospite, p.logo_ospite) +
-          '</div>' +
-          '<div class="partite-card-scores-col">' +
-            '<div class="partite-card-pts">' + p.set_casa + '</div>' +
-            '<div class="partite-card-pts">' + p.set_ospite + '</div>' +
-          '</div>' +
-        '</div>' +
-      '</div>';
-    }
-
-    function init(matches) {
-      var partite = matches.map(mapMatch);
-      var prossime = partite
-        .filter(function (p) { return p.stato === 'programmata'; })
-        .sort(function (a, b) { return a.data > b.data ? 1 : -1; })
-        .slice(0, 2);
-      var concluse = partite
-        .filter(function (p) { return p.stato === 'conclusa'; })
-        .sort(function (a, b) { return a.data < b.data ? 1 : -1; });
-
-      /* Fallback colonna destra vuota: mostra le prossime extra */
-      var concluseRender = concluse.length ? concluse : prossime.slice(2);
-      var renderFn = concluse.length ? cardConclusa : cardProssima;
-
-      var elP = document.getElementById('partiteProssime');
-      var elC = document.getElementById('partiteConcluse');
-
-      if (elP) elP.innerHTML = prossime.length
-        ? prossime.map(cardProssima).join('')
-        : '<div class="partite-empty">Nessuna partita in programma.</div>';
-
-      if (elC) elC.innerHTML = concluseRender.length
-        ? concluseRender.map(renderFn).join('')
-        : '<div class="partite-empty">Nessun risultato disponibile.</div>';
-    }
-
-    DB.init(function () { init(VV.getMatches()); });
-  })();
-  </script>
+  <!-- Partite Bar: gestita da js/partite-live.js -->
 
   <!-- Hero Cards dinamico -->
   <script>

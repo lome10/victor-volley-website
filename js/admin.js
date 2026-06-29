@@ -41,7 +41,7 @@
   /* ================================================
      NAVIGATION
   ================================================ */
-  var SECTIONS = { dashboard: 'Dashboard', articoli: 'Articoli', calendario: 'Calendario', galleria: 'Galleria', squadre: 'Squadre', numeri: 'Numeri homepage' };
+  var SECTIONS = { dashboard: 'Dashboard', articoli: 'Articoli', calendario: 'Calendario', galleria: 'Galleria', squadre: 'Squadre', numeri: 'Numeri homepage', atleti: 'Atleti' };
 
   function initNav() {
     document.querySelectorAll('.admin-nav-item').forEach(function (el) {
@@ -69,6 +69,7 @@
     if (section === 'galleria')   renderGalleria();
     if (section === 'squadre')    renderSquadre();
     if (section === 'numeri')     renderNumeri();
+    if (section === 'atleti')     renderAtleti();
   }
 
   function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
@@ -1058,5 +1059,356 @@
     if (!str) return '';
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
+
+
+  /* ================================================
+     ATLETI
+  ================================================ */
+  var _atletiCache   = [];
+  var _editingAtleta = null;
+
+  function renderAtleti() {
+    _showAtletiView('list');
+    setTopbarBtn('Nuovo atleta', function () { _openAtletaForm(); });
+    _loadAtleti();
+  }
+
+  function _showAtletiView(view) {
+    document.getElementById('atletiList').classList.toggle('is-hidden', view !== 'list');
+    document.getElementById('atletiForm').classList.toggle('is-hidden', view !== 'form');
+    document.getElementById('atletiDetail').classList.toggle('is-hidden', view !== 'detail');
+  }
+
+  function _loadAtleti() {
+    document.getElementById('atletiBody').innerHTML =
+      '<tr><td colspan="6" style="text-align:center;color:var(--a-muted);padding:20px">Caricamento…</td></tr>';
+
+    db.collection('atleti').get().then(function (snap) {
+      _atletiCache = [];
+      snap.forEach(function (doc) {
+        _atletiCache.push(Object.assign({ uid: doc.id }, doc.data()));
+      });
+      /* ordina per scadenza cert. medico più imminente */
+      _atletiCache.sort(function (a, b) {
+        var da = a.certMedicoScadenza || '9999-12-31';
+        var db_ = b.certMedicoScadenza || '9999-12-31';
+        return da < db_ ? -1 : da > db_ ? 1 : 0;
+      });
+      _renderAtletiRows();
+    }).catch(function (err) {
+      console.error('[Atleti]', err);
+      document.getElementById('atletiBody').innerHTML =
+        '<tr><td colspan="6" style="text-align:center;color:var(--a-red)">Errore nel caricamento.</td></tr>';
+    });
+  }
+
+  function _renderAtletiRows() {
+    if (!_atletiCache.length) {
+      document.getElementById('atletiBody').innerHTML =
+        '<tr><td colspan="6"><div class="empty-state"><p>Nessun atleta registrato.</p></div></td></tr>';
+      return;
+    }
+    document.getElementById('atletiBody').innerHTML = _atletiCache.map(function (a) {
+      var rate    = a.rate || [];
+      var totale  = rate.reduce(function (s, r) { return s + (+r.importo || 0); }, 0);
+      var saldato = rate.filter(function (r) { return r.pagata; })
+                        .reduce(function (s, r) { return s + (+r.importo || 0); }, 0);
+      return '<tr>' +
+        '<td><div class="table-title">' + esc(a.cognome) + ' ' + esc(a.nome) + '</div>' +
+          '<div class="table-sub">' + esc(a.email) + '</div></td>' +
+        '<td>' + (a.categoria
+          ? '<span class="chip chip--blue">' + esc(a.categoria) + '</span>'
+          : '<span class="chip chip--gray">—</span>') + '</td>' +
+        '<td>' + _certChip(a.certMedicoScadenza) + '</td>' +
+        '<td style="font-weight:600">€' + totale.toFixed(2) + '</td>' +
+        '<td>' + (saldato > 0
+          ? '<span style="color:var(--a-green);font-weight:600">€' + saldato.toFixed(2) + '</span>'
+          : '—') + '</td>' +
+        '<td><div class="table-actions">' +
+          '<button class="btn-icon" onclick="AdminActions.editAtleta(\'' + a.uid + '\')" title="Gestisci">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' +
+          '</button>' +
+          '<button class="btn-icon btn-icon--danger" onclick="AdminActions.deleteAtleta(\'' + a.uid + '\')" title="Elimina">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>' +
+          '</button>' +
+        '</div></td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  function _certChip(scadenza) {
+    if (!scadenza) return '<span class="chip chip--gray">Non inserita</span>';
+    var days  = _daysDiff(scadenza);
+    var label = _fmtDate(scadenza);
+    if (days < 0)   return '<span class="chip chip--red">Scaduto · ' + label + '</span>';
+    if (days <= 30) return '<span class="chip" style="background:rgba(245,158,11,.12);color:#B45309">In scadenza · ' + label + '</span>';
+    return '<span class="chip chip--green">' + label + '</span>';
+  }
+
+  function _daysDiff(dateStr) {
+    var t = new Date(); t.setHours(0, 0, 0, 0);
+    var d = new Date(dateStr); d.setHours(0, 0, 0, 0);
+    return Math.round((d - t) / 86400000);
+  }
+
+  function _fmtDate(str) {
+    if (!str) return '—';
+    var p = str.split('-');
+    return p[2] + '/' + p[1] + '/' + p[0];
+  }
+
+  /* ---- Nuovo atleta form ---- */
+
+  function _openAtletaForm() {
+    _showAtletiView('form');
+    document.getElementById('topbarActions').innerHTML = '';
+    var sel = document.getElementById('atletaCategoria');
+    sel.innerHTML = '<option value="">Nessuna</option>' +
+      VV.getCategories().map(function (c) {
+        return '<option value="' + esc(c.name) + '">' + esc(c.name) + '</option>';
+      }).join('');
+    ['atletaNome', 'atletaCognome', 'atletaEmail', 'atletaPassword'].forEach(function (id) {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('atletaCertScadenza').value = '';
+  }
+
+  document.getElementById('atletaFormCancel').addEventListener('click', renderAtleti);
+
+  document.getElementById('atletaFormSave').addEventListener('click', function () {
+    var nome    = document.getElementById('atletaNome').value.trim();
+    var cognome = document.getElementById('atletaCognome').value.trim();
+    var email   = document.getElementById('atletaEmail').value.trim();
+    var pwd     = document.getElementById('atletaPassword').value;
+    var categ   = document.getElementById('atletaCategoria').value;
+    var certSc  = document.getElementById('atletaCertScadenza').value;
+
+    if (!nome || !cognome || !email || !pwd) {
+      alert('Nome, cognome, email e password sono obbligatori.'); return;
+    }
+    if (pwd.length < 6) { alert('La password deve avere almeno 6 caratteri.'); return; }
+
+    var btn = document.getElementById('atletaFormSave');
+    btn.textContent = 'Creazione…'; btn.disabled = true;
+
+    /* secondary app per non disconnettere l'admin */
+    var existing  = firebase.apps.find(function (a) { return a.name === 'atleta-creator'; });
+    var secondary = existing || firebase.initializeApp(firebase.app().options, 'atleta-creator');
+    var secAuth   = secondary.auth();
+
+    secAuth.createUserWithEmailAndPassword(email, pwd)
+      .then(function (cred) {
+        var uid = cred.user.uid;
+        return secAuth.signOut().then(function () {
+          return db.collection('atleti').doc(uid).set({
+            uid: uid, nome: nome, cognome: cognome, email: email,
+            categoria: categ, certMedicoScadenza: certSc,
+            certMedicoUrl: '', moduloIscrizioneUrl: '',
+            rate: [], note: '', createdAt: new Date().toISOString()
+          });
+        });
+      })
+      .then(renderAtleti)
+      .catch(function (err) {
+        var msg = err.code === 'auth/email-already-in-use'
+          ? 'Email già registrata.' : err.message;
+        alert('Errore: ' + msg);
+        btn.textContent = 'Crea atleta'; btn.disabled = false;
+      });
+  });
+
+  /* ---- Detail view ---- */
+
+  function _openAtletaDetail(uid) {
+    _editingAtleta = _atletiCache.find(function (a) { return a.uid === uid; }) || null;
+    if (!_editingAtleta) return;
+
+    _showAtletiView('detail');
+    document.getElementById('topbarActions').innerHTML = '';
+    document.getElementById('atletaDetailNome').textContent =
+      (_editingAtleta.cognome || '') + ' ' + (_editingAtleta.nome || '');
+
+    var catSel = document.getElementById('detCategoria');
+    catSel.innerHTML = '<option value="">Nessuna</option>' +
+      VV.getCategories().map(function (c) {
+        return '<option value="' + esc(c.name) + '">' + esc(c.name) + '</option>';
+      }).join('');
+
+    document.getElementById('detNome').value      = _editingAtleta.nome     || '';
+    document.getElementById('detCognome').value   = _editingAtleta.cognome  || '';
+    document.getElementById('detEmail').value     = _editingAtleta.email    || '';
+    document.getElementById('detCategoria').value = _editingAtleta.categoria || '';
+    document.getElementById('detNote').value      = _editingAtleta.note     || '';
+
+    document.getElementById('detCertScadenza').value = _editingAtleta.certMedicoScadenza || '';
+    var certUrl = _editingAtleta.certMedicoUrl || '';
+    document.getElementById('certPdfUrl').value = certUrl;
+    document.getElementById('certPdfLinkWrap').classList.toggle('is-hidden', !certUrl);
+    if (certUrl) document.getElementById('certPdfLink').href = _driveViewUrl(certUrl);
+
+    var modUrl = _editingAtleta.moduloIscrizioneUrl || '';
+    document.getElementById('moduloPdfUrl').value = modUrl;
+    document.getElementById('moduloPdfLinkWrap').classList.toggle('is-hidden', !modUrl);
+    if (modUrl) document.getElementById('moduloPdfLink').href = _driveViewUrl(modUrl);
+
+    _switchAtletaTab('anagrafica');
+    _renderRateAdmin();
+  }
+
+  function _switchAtletaTab(tab) {
+    document.querySelectorAll('.atleta-tab').forEach(function (btn) {
+      btn.classList.toggle('is-active', btn.dataset.tab === tab);
+    });
+    ['tabAnagrafica', 'tabCertmedico', 'tabRate', 'tabModulo'].forEach(function (id) {
+      document.getElementById(id).classList.add('is-hidden');
+    });
+    document.getElementById('tab' + cap(tab)).classList.remove('is-hidden');
+  }
+
+  document.querySelectorAll('.atleta-tab').forEach(function (btn) {
+    btn.addEventListener('click', function () { _switchAtletaTab(btn.dataset.tab); });
+  });
+
+  document.getElementById('atletaBackBtn').addEventListener('click', renderAtleti);
+
+  /* ---- Salva anagrafica ---- */
+  document.getElementById('detAnagraficaSave').addEventListener('click', function () {
+    if (!_editingAtleta) return;
+    var upd = {
+      nome:      document.getElementById('detNome').value.trim(),
+      cognome:   document.getElementById('detCognome').value.trim(),
+      categoria: document.getElementById('detCategoria').value,
+      note:      document.getElementById('detNote').value.trim()
+    };
+    Object.assign(_editingAtleta, upd);
+    document.getElementById('atletaDetailNome').textContent =
+      _editingAtleta.cognome + ' ' + _editingAtleta.nome;
+    db.collection('atleti').doc(_editingAtleta.uid).update(upd)
+      .catch(function (e) { alert('Errore: ' + e.message); });
+  });
+
+  /* ---- Salva cert. medico ---- */
+  document.getElementById('detCertSave').addEventListener('click', function () {
+    if (!_editingAtleta) return;
+    var scadenza = document.getElementById('detCertScadenza').value;
+    var url      = document.getElementById('certPdfUrl').value.trim();
+    _editingAtleta.certMedicoScadenza = scadenza;
+    _editingAtleta.certMedicoUrl      = url;
+    document.getElementById('certPdfLinkWrap').classList.toggle('is-hidden', !url);
+    if (url) document.getElementById('certPdfLink').href = _driveViewUrl(url);
+    db.collection('atleti').doc(_editingAtleta.uid)
+      .update({ certMedicoScadenza: scadenza, certMedicoUrl: url })
+      .catch(function (e) { alert('Errore: ' + e.message); });
+  });
+
+  /* ---- Salva modulo iscrizione ---- */
+  document.getElementById('detModuloSave').addEventListener('click', function () {
+    if (!_editingAtleta) return;
+    var url = document.getElementById('moduloPdfUrl').value.trim();
+    _editingAtleta.moduloIscrizioneUrl = url;
+    document.getElementById('moduloPdfLinkWrap').classList.toggle('is-hidden', !url);
+    if (url) document.getElementById('moduloPdfLink').href = _driveViewUrl(url);
+    db.collection('atleti').doc(_editingAtleta.uid)
+      .update({ moduloIscrizioneUrl: url })
+      .catch(function (e) { alert('Errore: ' + e.message); });
+  });
+
+  /* ---- Rate / Quote ---- */
+  function _renderRateAdmin() {
+    var rate = (_editingAtleta && _editingAtleta.rate) || [];
+    var el   = document.getElementById('rateAdminList');
+
+    if (!rate.length) {
+      el.innerHTML = '<p style="color:var(--a-muted);font-size:13px">Nessuna quota inserita.</p>';
+      return;
+    }
+
+    el.innerHTML = rate.map(function (r, i) {
+      return '<div class="atleta-rate-item">' +
+        '<div class="atleta-rate-info">' +
+          '<div class="atleta-rate-desc">' + esc(r.descrizione || 'Quota') + '</div>' +
+          '<div class="atleta-rate-meta">Scadenza: ' + _fmtDate(r.scadenza) +
+            ' &nbsp;·&nbsp; €' + (+r.importo || 0).toFixed(2) + '</div>' +
+        '</div>' +
+        '<div class="atleta-rate-actions">' +
+          '<button class="btn-ghost" style="font-size:12px;padding:5px 10px;color:' +
+            (r.pagata ? 'var(--a-green)' : 'var(--a-text)') +
+            '" onclick="AdminActions.toggleRata(' + i + ')">' +
+            (r.pagata ? '✓ Pagata' : 'Segna pagata') +
+          '</button>' +
+          '<button class="btn-icon btn-icon--danger" onclick="AdminActions.deleteRata(' + i + ')" title="Rimuovi">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>' +
+          '</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  document.getElementById('rataAdd').addEventListener('click', function () {
+    if (!_editingAtleta) return;
+    var desc    = document.getElementById('rataDesc').value.trim();
+    var importo = parseFloat(document.getElementById('rataImporto').value) || 0;
+    var scad    = document.getElementById('rataScadenza').value;
+    if (!desc) { alert('Inserisci una descrizione.'); return; }
+
+    if (!_editingAtleta.rate) _editingAtleta.rate = [];
+    _editingAtleta.rate.push({
+      id: Date.now().toString(), descrizione: desc,
+      importo: importo, scadenza: scad, pagata: false, dataPagamento: null
+    });
+
+    db.collection('atleti').doc(_editingAtleta.uid).update({ rate: _editingAtleta.rate })
+      .then(function () {
+        document.getElementById('rataDesc').value    = '';
+        document.getElementById('rataImporto').value = '';
+        document.getElementById('rataScadenza').value = '';
+        _renderRateAdmin();
+      })
+      .catch(function (e) { alert('Errore: ' + e.message); });
+  });
+
+  /* ---- Google Drive URL helper ---- */
+  function _driveViewUrl(url) {
+    /* converte link di condivisione Drive in link di visualizzazione diretto */
+    if (!url) return '#';
+    var m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (m) return 'https://drive.google.com/file/d/' + m[1] + '/view';
+    return url;
+  }
+
+  /* ---- AdminActions: atleti ---- */
+  window.AdminActions.editAtleta = function (uid) { _openAtletaDetail(uid); };
+
+  window.AdminActions.deleteAtleta = function (uid) {
+    confirm(
+      'Eliminare l\'atleta dal gestionale? Le credenziali Firebase resteranno attive.',
+      function () {
+        db.collection('atleti').doc(uid).delete()
+          .then(function () {
+            _atletiCache = _atletiCache.filter(function (a) { return a.uid !== uid; });
+            _renderAtletiRows();
+          })
+          .catch(function (e) { alert('Errore: ' + e.message); });
+      }
+    );
+  };
+
+  window.AdminActions.toggleRata = function (idx) {
+    if (!_editingAtleta || !_editingAtleta.rate) return;
+    var r = _editingAtleta.rate[idx];
+    r.pagata = !r.pagata;
+    r.dataPagamento = r.pagata ? new Date().toISOString().slice(0, 10) : null;
+    db.collection('atleti').doc(_editingAtleta.uid).update({ rate: _editingAtleta.rate })
+      .then(_renderRateAdmin)
+      .catch(function (e) { alert('Errore: ' + e.message); });
+  };
+
+  window.AdminActions.deleteRata = function (idx) {
+    if (!_editingAtleta || !_editingAtleta.rate) return;
+    _editingAtleta.rate.splice(idx, 1);
+    db.collection('atleti').doc(_editingAtleta.uid).update({ rate: _editingAtleta.rate })
+      .then(_renderRateAdmin)
+      .catch(function (e) { alert('Errore: ' + e.message); });
+  };
 
 })();

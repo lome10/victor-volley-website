@@ -1,0 +1,395 @@
+/* ================================================
+   Victor Volley — Area Atleti
+================================================ */
+
+:root {
+  --al-bg:     #F1F5F9;
+  --al-card:   #FFFFFF;
+  --al-text:   #1E293B;
+  --al-muted:  #64748B;
+  --al-border: #E2E8F0;
+  --al-blue:   #008CFD;
+  --al-green:  #10B981;
+  --al-red:    #EF4444;
+  --al-orange: #F59E0B;
+  --al-yellow: #EAB308;
+  --al-radius: 10px;
+  --al-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --al-t:      0.15s ease;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: var(--al-text);
+  background: var(--al-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--al-blue); }
+img { display: block; max-width: 100%; }
+button { font-family: inherit; cursor: pointer; }
+
+.is-hidden { display: none !important; }
+
+/* ================================================
+   LOGIN
+================================================ */
+.al-login-screen {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0F172A 0%, #1E3A5F 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.al-login-box {
+  background: var(--al-card);
+  border-radius: 14px;
+  padding: 40px 36px;
+  width: 100%;
+  max-width: 340px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+.al-login-logo {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  margin: 0 auto 16px;
+}
+
+.al-login-title {
+  font-family: 'Barlow', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--al-text);
+  margin-bottom: 4px;
+}
+
+.al-login-sub {
+  font-size: 13px;
+  color: var(--al-muted);
+  margin-bottom: 28px;
+}
+
+.al-login-input {
+  display: block;
+  width: 100%;
+  padding: 11px 14px;
+  border: 2px solid var(--al-border);
+  border-radius: 7px;
+  font-size: 15px;
+  font-family: inherit;
+  color: var(--al-text);
+  outline: none;
+  transition: border-color var(--al-t);
+  margin-bottom: 12px;
+}
+.al-login-input:focus { border-color: var(--al-blue); }
+
+.al-login-error {
+  font-size: 13px;
+  color: var(--al-red);
+  margin-top: 8px;
+  min-height: 18px;
+}
+
+/* ================================================
+   BUTTONS
+================================================ */
+.al-btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 12px 20px;
+  background: var(--al-blue);
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--al-t);
+}
+.al-btn-primary:hover { background: #0070D6; }
+
+.al-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  background: transparent;
+  color: var(--al-muted);
+  border: 1px solid var(--al-border);
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--al-t);
+  text-decoration: none;
+}
+.al-btn-ghost:hover { border-color: var(--al-text); color: var(--al-text); }
+.al-btn-sm { padding: 7px 14px; font-size: 12px; }
+
+.al-btn-logout {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  background: transparent;
+  color: rgba(255,255,255,0.7);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all var(--al-t);
+}
+.al-btn-logout:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+/* ================================================
+   HEADER
+================================================ */
+.al-header {
+  background: linear-gradient(135deg, #0F172A 0%, #1E3A5F 100%);
+  padding: 0 24px;
+}
+
+.al-header-inner {
+  max-width: 860px;
+  margin: 0 auto;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.al-header-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.al-header-logo a { display: flex; }
+.al-header-logo img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+.al-header-logo span {
+  font-family: 'Barlow', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.9);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.al-header-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.al-header-nome {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.8);
+}
+
+/* ================================================
+   MAIN / LAYOUT
+================================================ */
+.al-main {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 28px 24px 60px;
+}
+
+.al-loading {
+  text-align: center;
+  color: var(--al-muted);
+  padding: 80px 0;
+  font-size: 15px;
+}
+
+.al-no-data {
+  text-align: center;
+  color: var(--al-muted);
+  padding: 80px 0;
+  font-size: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.al-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ================================================
+   CARDS
+================================================ */
+.al-card {
+  background: var(--al-card);
+  border-radius: var(--al-radius);
+  box-shadow: var(--al-shadow);
+  border: 1px solid var(--al-border);
+  overflow: hidden;
+}
+
+.al-card-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--al-border);
+}
+
+.al-card-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.al-card-icon--blue   { background: #EFF6FF; color: var(--al-blue); }
+.al-card-icon--green  { background: #ECFDF5; color: #059669; }
+.al-card-icon--yellow { background: #FFFBEB; color: #B45309; }
+
+.al-card-title {
+  font-family: 'Barlow', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--al-text);
+}
+
+.al-card-sub {
+  font-size: 12px;
+  color: var(--al-muted);
+  margin-top: 2px;
+}
+
+.al-card-body {
+  padding: 20px 24px;
+}
+
+/* ================================================
+   CERT MEDICO
+================================================ */
+.al-cert-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.al-cert-label {
+  font-size: 13px;
+  color: var(--al-muted);
+}
+
+.al-cert-value {
+  font-family: 'Barlow', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--al-text);
+}
+
+.al-cert-pdf {
+  margin-top: 14px;
+}
+
+/* ================================================
+   BADGES
+================================================ */
+.al-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.al-badge--green  { background: #ECFDF5; color: #059669; }
+.al-badge--red    { background: #FEF2F2; color: #DC2626; }
+.al-badge--orange { background: #FFFBEB; color: #D97706; }
+
+/* ================================================
+   RATE
+================================================ */
+.al-rate-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.al-rate-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--al-border);
+  background: #FAFAFA;
+}
+
+.al-rate-item--paid { opacity: 0.65; }
+
+.al-rate-info { flex: 1; min-width: 0; }
+
+.al-rate-desc {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--al-text);
+}
+
+.al-rate-date {
+  font-size: 12px;
+  color: var(--al-muted);
+  margin-top: 2px;
+}
+
+.al-rate-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.al-rate-amount {
+  font-family: 'Barlow', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--al-text);
+}
+
+/* ================================================
+   MISC
+================================================ */
+.al-muted {
+  font-size: 14px;
+  color: var(--al-muted);
+}
+
+/* ================================================
+   RESPONSIVE
+================================================ */
+@media (max-width: 600px) {
+  .al-login-box { padding: 32px 24px; }
+  .al-header-logo span { display: none; }
+  .al-main { padding: 20px 16px 48px; }
+  .al-card-header { padding: 16px 18px; }
+  .al-card-body   { padding: 16px 18px; }
+  .al-rate-item   { flex-direction: column; align-items: flex-start; }
+  .al-rate-right  { align-items: flex-start; flex-direction: row; gap: 10px; }
+}
