@@ -1890,6 +1890,67 @@ main, footer.site-footer {
 .news-card-link:hover { color: var(--c-azzurro-dark); }
 
 /* ================================================
+   News page — grid 9:16 con paginazione
+================================================ */
+.news-page-cards {
+  --card-h: 420px;
+  --card-w: calc(var(--card-h) * 9 / 16);
+  --card-gap: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--card-gap);
+  justify-content: flex-start;
+  padding: 8px 0 0;
+}
+
+.news-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 40px;
+  padding-bottom: 8px;
+}
+
+.news-pagination-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 22px;
+  border-radius: 8px;
+  border: 1px solid var(--c-border);
+  background: var(--c-white);
+  color: var(--c-navy);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--t), border-color var(--t);
+}
+.news-pagination-btn:hover:not(:disabled) {
+  background: var(--c-gray-light);
+  border-color: var(--c-azzurro);
+}
+.news-pagination-btn:disabled { opacity: 0.35; cursor: default; }
+
+.news-pagination-info {
+  font-size: 14px;
+  color: #666;
+  min-width: 80px;
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .news-page-cards { --card-h: 380px; }
+}
+@media (max-width: 640px) {
+  .news-page-cards {
+    --card-h: 270px;
+    --card-w: calc(50vw - 20px);
+    gap: 8px;
+  }
+}
+
+/* ================================================
    Squadre grid
 ================================================ */
 .squadre-grid {

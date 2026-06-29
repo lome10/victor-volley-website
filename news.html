@@ -40,7 +40,8 @@
     <section class="section">
       <div class="container">
         <div class="filter-bar" id="newsFilterBar" role="group" aria-label="Filtra per categoria"></div>
-        <div class="news-grid" id="newsGrid"></div>
+        <div class="news-page-cards" id="newsPageCards"></div>
+        <div class="news-pagination" id="newsPagination"></div>
       </div>
     </section>
 
@@ -61,62 +62,117 @@
 
   <script>
   (function () {
-    function slug(s) { return s.toLowerCase().replace(/\s+/g, '-').replace(/[àáâ]/g,'a').replace(/[èéê]/g,'e').replace(/[ìí]/g,'i').replace(/[òó]/g,'o').replace(/[ùú]/g,'u'); }
-    function esc(s)  { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-    function badgeCls(cat) { return cat === 'Prima Divisione' ? 'badge--magenta' : 'badge--azzurro'; }
+    var PAGE_SIZE = 12;
+    var currentPage = 0;
+    var currentFilter = 'all';
+
+    var GRADIENTS = [
+      'linear-gradient(180deg,#053063 0%,#0a5cbf 55%,#008CFD 100%)',
+      'linear-gradient(180deg,#3d0b1e 0%,#8a1040 55%,#CB2168 100%)',
+      'linear-gradient(180deg,#0a3d2e 0%,#145c44 55%,#1a8a5a 100%)',
+      'linear-gradient(180deg,#0d2a04 0%,#1a4a0e 55%,#2d7a1f 100%)',
+      'linear-gradient(180deg,#1a0533 0%,#3d0b72 55%,#CB2168 100%)'
+    ];
+
+    function slug(s) { return s.toLowerCase().replace(/\s+/g,'-').replace(/[àáâ]/g,'a').replace(/[èéê]/g,'e').replace(/[ìí]/g,'i').replace(/[òó]/g,'o').replace(/[ùú]/g,'u'); }
+    function esc(s)  { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function badgeCls(cat) { return cat === 'Prima Divisione' ? 'hero-card-cat--magenta' : 'hero-card-cat--azzurro'; }
 
     DB.init(function () {
-    var articles   = VV.getArticles(true)
-      .filter(function (a) { return a.id && !isNaN(+a.id); })
-      .sort(function (a, b) { return a.date < b.date ? 1 : -1; });
-    var grid       = document.getElementById('newsGrid');
-    var filterBar  = document.getElementById('newsFilterBar');
+      var articles = VV.getArticles(true)
+        .filter(function (a) { return a.id && !isNaN(+a.id); })
+        .sort(function (a, b) { return a.date < b.date ? 1 : -1; });
 
-    /* Categorie presenti */
-    var cats = [];
-    articles.forEach(function (a) { if (cats.indexOf(a.category) < 0) cats.push(a.category); });
+      var grid       = document.getElementById('newsPageCards');
+      var filterBar  = document.getElementById('newsFilterBar');
+      var pagination = document.getElementById('newsPagination');
 
-    /* Filtro */
-    filterBar.innerHTML =
-      '<button class="filter-btn is-active" data-filter="all">Tutte</button>' +
-      cats.map(function (c) {
-        return '<button class="filter-btn" data-filter="' + slug(c) + '">' + esc(c) + '</button>';
-      }).join('');
+      /* Categorie */
+      var cats = [];
+      articles.forEach(function (a) { if (cats.indexOf(a.category) < 0) cats.push(a.category); });
 
-    /* Griglia articoli */
-    if (!articles.length) {
-      grid.innerHTML = '<p style="color:#888;text-align:center;padding:48px 0;grid-column:1/-1">Nessun articolo pubblicato.</p>';
-    } else {
-      grid.innerHTML = articles.map(function (a) {
-        var imgHtml = a.image
-          ? '<img src="' + esc(a.image) + '" alt="' + esc(a.title) + '" style="width:100%;height:100%;object-fit:cover">'
-          : '<div class="news-card-img-placeholder" style="background:linear-gradient(135deg,#053063,#008CFD)">&#128248;</div>';
-        return '<article class="news-card reveal" data-cat="' + slug(a.category) + '">' +
-          '<div class="news-card-img">' + imgHtml + '</div>' +
-          '<div class="news-card-body">' +
-            '<div class="news-card-meta">' +
-              '<span class="badge ' + badgeCls(a.category) + '">' + esc(a.category) + '</span>' +
-              '<span class="news-card-date">' + VV.formatDateShort(a.date) + '</span>' +
-            '</div>' +
-            '<h2 class="news-card-title">' + esc(a.title) + '</h2>' +
-            '<p class="news-card-excerpt">' + esc(a.excerpt) + '</p>' +
-            '<a href="news-dettaglio.html?id=' + a.id + '" class="news-card-link" onclick="sessionStorage.setItem(\'vv_nav_id\',\'' + a.id + '\')">Leggi di pi&ugrave; &rarr;</a>' +
-          '</div>' +
-        '</article>';
-      }).join('');
-    }
+      filterBar.innerHTML =
+        '<button class="filter-btn is-active" data-filter="all">Tutte</button>' +
+        cats.map(function (c) {
+          return '<button class="filter-btn" data-filter="' + slug(c) + '">' + esc(c) + '</button>';
+        }).join('');
 
-    /* Logica filtro */
-    filterBar.querySelectorAll('.filter-btn').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        filterBar.querySelectorAll('.filter-btn').forEach(function (b) { b.classList.remove('is-active'); });
-        btn.classList.add('is-active');
-        var f = btn.getAttribute('data-filter');
-        grid.querySelectorAll('.news-card').forEach(function (card) {
-          card.style.display = (f === 'all' || card.getAttribute('data-cat') === f) ? '' : 'none';
+      function getFiltered() {
+        if (currentFilter === 'all') return articles;
+        return articles.filter(function (a) { return slug(a.category) === currentFilter; });
+      }
+
+      function render() {
+        var filtered   = getFiltered();
+        var totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+        if (currentPage >= totalPages) currentPage = totalPages - 1;
+        var start = currentPage * PAGE_SIZE;
+        var page  = filtered.slice(start, start + PAGE_SIZE);
+
+        if (!page.length) {
+          grid.innerHTML = '<p style="color:#888;text-align:center;padding:48px 0;width:100%">Nessun articolo pubblicato.</p>';
+        } else {
+          grid.innerHTML = page.map(function (a, i) {
+            var bgStyle = a.image
+              ? 'background-image:url(' + esc(a.image) + ')'
+              : 'background:' + GRADIENTS[(start + i) % GRADIENTS.length];
+            return '<article class="hero-card" data-cat="' + slug(a.category) + '" data-id="' + esc(a.id) + '">' +
+              '<div class="hero-card-bg" style="' + bgStyle + '"></div>' +
+              '<div class="hero-card-overlay"></div>' +
+              '<div class="hero-card-content">' +
+                '<span class="hero-card-cat ' + badgeCls(a.category) + '">' + esc(a.category) + '</span>' +
+                '<h2 class="hero-card-title">' + esc(a.title) + '</h2>' +
+                '<a href="news-dettaglio.html?id=' + esc(a.id) + '" class="hero-card-cta" ' +
+                   'onclick="sessionStorage.setItem(\'vv_nav_id\',\'' + esc(a.id) + '\')">Leggi &rarr;</a>' +
+              '</div>' +
+            '</article>';
+          }).join('');
+
+          /* Hover lift senza dim (grid, non carosello) */
+          grid.querySelectorAll('.hero-card').forEach(function (card) {
+            card.addEventListener('mouseenter', function () { card.classList.add('is-hovered'); });
+            card.addEventListener('mouseleave', function () { card.classList.remove('is-hovered'); });
+          });
+        }
+
+        /* Paginazione */
+        if (totalPages <= 1) {
+          pagination.innerHTML = '';
+          return;
+        }
+        pagination.innerHTML =
+          '<button class="news-pagination-btn" id="pgPrev"' + (currentPage === 0 ? ' disabled' : '') + '>' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polyline points="15,18 9,12 15,6"/></svg> Precedente' +
+          '</button>' +
+          '<span class="news-pagination-info">Pag.&nbsp;' + (currentPage + 1) + ' / ' + totalPages + '</span>' +
+          '<button class="news-pagination-btn" id="pgNext"' + (currentPage >= totalPages - 1 ? ' disabled' : '') + '>' +
+            'Successiva <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polyline points="9,18 15,12 9,6"/></svg>' +
+          '</button>';
+
+        document.getElementById('pgPrev').addEventListener('click', function () {
+          currentPage--;
+          render();
+          grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+        document.getElementById('pgNext').addEventListener('click', function () {
+          currentPage++;
+          render();
+          grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      }
+
+      render();
+
+      /* Filtro */
+      filterBar.querySelectorAll('.filter-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          filterBar.querySelectorAll('.filter-btn').forEach(function (b) { b.classList.remove('is-active'); });
+          btn.classList.add('is-active');
+          currentFilter = btn.getAttribute('data-filter');
+          currentPage = 0;
+          render();
         });
       });
-    });
     }); // DB.init
   })();
   </script>
