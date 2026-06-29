@@ -1890,16 +1890,63 @@ main, footer.site-footer {
 .news-card-link:hover { color: var(--c-azzurro-dark); }
 
 /* ================================================
+   News page — sezione sfondo hero-bg
+================================================ */
+.section--news-bg {
+  background: #020d1a;
+  position: relative;
+  overflow: hidden;
+}
+.section--news-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--hero-bg) center top / cover no-repeat;
+  opacity: 0.25;
+  z-index: 0;
+  pointer-events: none;
+}
+.section--news-bg > .container {
+  position: relative;
+  z-index: 1;
+}
+.section--news-bg .filter-btn {
+  background: rgba(255,255,255,0.07);
+  border-color: rgba(255,255,255,0.18);
+  color: rgba(255,255,255,0.72);
+}
+.section--news-bg .filter-btn:hover {
+  background: rgba(255,255,255,0.13);
+  border-color: var(--c-azzurro);
+  color: #fff;
+}
+.section--news-bg .filter-btn.is-active {
+  background: var(--c-azzurro);
+  border-color: var(--c-azzurro);
+  color: #fff;
+}
+.section--news-bg .news-pagination-btn {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.18);
+  color: rgba(255,255,255,0.85);
+}
+.section--news-bg .news-pagination-btn:hover:not(:disabled) {
+  background: rgba(255,255,255,0.15);
+  border-color: var(--c-azzurro);
+}
+.section--news-bg .news-pagination-info { color: rgba(255,255,255,0.5); }
+
+/* ================================================
    News page — grid 9:16 con paginazione
 ================================================ */
 .news-page-cards {
-  --card-h: 420px;
-  --card-w: calc(var(--card-h) * 9 / 16);
   --card-gap: 16px;
+  --card-w: calc((100% - 3 * var(--card-gap)) / 4);
+  --card-h: calc(var(--card-w) * 16 / 9);
   display: flex;
   flex-wrap: wrap;
   gap: var(--card-gap);
-  justify-content: flex-start;
+  justify-content: center;
   padding: 8px 0 0;
 }
 
@@ -1940,13 +1987,14 @@ main, footer.site-footer {
 }
 
 @media (max-width: 900px) {
-  .news-page-cards { --card-h: 380px; }
+  .news-page-cards {
+    --card-w: calc((100% - 2 * var(--card-gap)) / 3);
+  }
 }
 @media (max-width: 640px) {
   .news-page-cards {
-    --card-h: 270px;
-    --card-w: calc(50vw - 20px);
-    gap: 8px;
+    --card-gap: 8px;
+    --card-w: calc((100% - var(--card-gap)) / 2);
   }
 }
 
