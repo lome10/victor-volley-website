@@ -1890,26 +1890,41 @@ main, footer.site-footer {
 .news-card-link:hover { color: var(--c-azzurro-dark); }
 
 /* ================================================
-   News page — sezione sfondo hero-bg
+   News page — wrapper sfondo hero-bg (page-header + section)
 ================================================ */
-.section--news-bg {
+.news-bg-wrap {
   background: #020d1a;
   position: relative;
   overflow: hidden;
 }
-.section--news-bg::before {
+.news-bg-wrap::before {
   content: '';
   position: absolute;
   inset: 0;
   background: var(--hero-bg) center top / cover no-repeat;
-  opacity: 0.25;
+  opacity: 0.28;
   z-index: 0;
   pointer-events: none;
 }
-.section--news-bg > .container {
+.news-bg-wrap > * {
   position: relative;
   z-index: 1;
 }
+.news-bg-wrap .page-header {
+  background: transparent;
+  padding-bottom: 0;
+}
+.news-bg-wrap .page-header h1 {
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  text-shadow: 0 2px 16px rgba(0,0,0,0.55);
+  letter-spacing: -0.01em;
+}
+.news-bg-wrap .page-header .breadcrumb,
+.news-bg-wrap .page-header .breadcrumb a {
+  color: rgba(255,255,255,0.65);
+}
+
+/* Dark-mode overrides per filtri e paginazione */
 .section--news-bg .filter-btn {
   background: rgba(255,255,255,0.07);
   border-color: rgba(255,255,255,0.18);
