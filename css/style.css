@@ -122,6 +122,12 @@ a:hover {
   background-color: var(--c-gray-light);
 }
 
+.section--dark {
+  background-color: #020d1a;
+}
+.section--dark .section-heading h2 { color: #fff; }
+.section--dark .section-heading p   { color: rgba(255,255,255,0.55); }
+
 /* --- Bottoni --- */
 .btn {
   display: inline-block;
@@ -1141,13 +1147,11 @@ main, footer.site-footer {
   --card-w: calc(var(--card-h) * 9 / 16);
   --card-gap: 16px;
   position: relative;
-  background: #020d1a;
   overflow: hidden;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 28px 0 32px;
-  margin: 40px 0;
+  padding: 8px 0 32px;
 }
 
 .news-cards-track {
