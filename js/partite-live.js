@@ -279,8 +279,16 @@
     var elC = document.getElementById('partiteConcluse');
     if (!elP && !elC) return;
 
-    fetch('data/partite.json')
-      .then(function (r) { return r.json(); })
+    var loadPartite = (window.firebase && firebase.apps && firebase.apps.length)
+      ? firebase.firestore().collection('siteData').doc('partite').get()
+          .then(function (doc) {
+            if (doc.exists && doc.data() && doc.data().json) return JSON.parse(doc.data().json);
+            return fetch('data/partite.json').then(function (r) { return r.json(); });
+          })
+          .catch(function () { return fetch('data/partite.json').then(function (r) { return r.json(); }); })
+      : fetch('data/partite.json').then(function (r) { return r.json(); });
+
+    loadPartite
       .then(function (partite) {
 
         /* Fetch sessioni Supabase per le partite con codice_tabellone */

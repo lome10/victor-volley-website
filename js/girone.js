@@ -214,6 +214,25 @@
   }
 
   /* ----------------------------------------------------------------
+     Caricamento: Firestore prima, fallback al file statico
+  ---------------------------------------------------------------- */
+  function loadGirone() {
+    if (window.firebase && firebase.apps && firebase.apps.length) {
+      return firebase.firestore().collection('siteData').doc('girone').get()
+        .then(function (doc) {
+          if (doc.exists && doc.data() && doc.data().json) {
+            return JSON.parse(doc.data().json);
+          }
+          return fetch('data/girone.json').then(function (r) { return r.json(); });
+        })
+        .catch(function () {
+          return fetch('data/girone.json').then(function (r) { return r.json(); });
+        });
+    }
+    return fetch('data/girone.json').then(function (r) { return r.json(); });
+  }
+
+  /* ----------------------------------------------------------------
      Init
   ---------------------------------------------------------------- */
   function init() {
@@ -223,8 +242,7 @@
     var elAdPt = document.getElementById('gironeAdminPartite');
     if (!elFeat && !elCl && !elAdCl && !elAdPt) return;
 
-    fetch('data/girone.json')
-      .then(function (r) { return r.json(); })
+    loadGirone()
       .then(function (girone) {
         var classifica = calcolaClassifica(girone);
         var homeSquadra = girone.squadre.filter(function (s) { return s.home; })[0];

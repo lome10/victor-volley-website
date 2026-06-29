@@ -70,6 +70,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="9.5"/><path d="M6.5 3.8c1.5 3.5 1 8-1.5 11.5"/><path d="M17.5 20.2c-1.5-3.5-1-8 1.5-11.5"/><path d="M3 14c4-2 9-1.5 16.5 1"/></svg>
           Girone
         </a>
+        <a href="#" class="admin-nav-item" data-section="datiJson">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><polyline points="16,18 22,12 16,6"/><polyline points="8,6 2,12 8,18"/></svg>
+          File JSON
+        </a>
       </nav>
 
       <div class="admin-sidebar-footer">
@@ -638,6 +642,54 @@
               </div>
               <button id="btnCambiaPassword" class="btn-primary">Salva password</button>
               <p id="sicurezzaMsg" class="sicurezza-msg is-hidden"></p>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ---- DATI JSON ---- -->
+      <section id="sectionDatiJson" class="admin-section is-hidden">
+        <p class="json-section-desc">
+          Modifica i file JSON che alimentano il sito. Le modifiche vengono salvate su Firestore e applicate immediatamente — senza bisogno di deploy.
+        </p>
+        <div class="json-editors-grid">
+
+          <!-- girone.json -->
+          <div class="json-file-card">
+            <div class="json-file-header">
+              <div>
+                <span class="json-file-name">data/girone.json</span>
+                <span class="json-file-desc">Squadre e partite del girone Prima Divisione. Aggiungi <code>set_casa</code> e <code>set_ospite</code> alle partite giocate per aggiornare la classifica.</span>
+              </div>
+              <span class="json-file-updated" id="gironeJsonUpdated"></span>
+            </div>
+            <textarea id="gironeJsonEditor" class="json-editor" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+            <div class="json-file-footer">
+              <span id="gironeJsonStatus" class="json-status"></span>
+              <div class="json-file-actions">
+                <button class="btn-ghost" onclick="AdminActions.formatJson('girone')">Formatta</button>
+                <button class="btn-primary" onclick="AdminActions.saveJson('girone')">Salva</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- partite.json -->
+          <div class="json-file-card">
+            <div class="json-file-header">
+              <div>
+                <span class="json-file-name">data/partite.json</span>
+                <span class="json-file-desc">Partite di tutte le categorie Victor Volley: prossime, live e concluse. Gestisce la partite-bar in cima alla homepage.</span>
+              </div>
+              <span class="json-file-updated" id="partiteJsonUpdated"></span>
+            </div>
+            <textarea id="partiteJsonEditor" class="json-editor" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+            <div class="json-file-footer">
+              <span id="partiteJsonStatus" class="json-status"></span>
+              <div class="json-file-actions">
+                <button class="btn-ghost" onclick="AdminActions.formatJson('partite')">Formatta</button>
+                <button class="btn-primary" onclick="AdminActions.saveJson('partite')">Salva</button>
+              </div>
             </div>
           </div>
 

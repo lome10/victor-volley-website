@@ -888,6 +888,122 @@ button { font-family: var(--font-body); cursor: pointer; }
 .atleta-rate-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
 
 /* ================================================
+   File JSON editor
+================================================ */
+.json-section-desc {
+  font-size: 13px;
+  color: var(--a-muted);
+  margin-bottom: 24px;
+  line-height: 1.6;
+}
+
+.json-editors-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.json-file-card {
+  background: var(--a-card);
+  border: 1px solid var(--a-border);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.json-file-header {
+  padding: 16px 20px 14px;
+  border-bottom: 1px solid var(--a-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.json-file-name {
+  display: block;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--a-blue);
+  margin-bottom: 5px;
+}
+
+.json-file-desc {
+  display: block;
+  font-size: 12px;
+  color: var(--a-muted);
+  line-height: 1.5;
+}
+
+.json-file-desc code {
+  background: #f1f5f9;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 11px;
+  color: var(--a-text);
+}
+
+.json-file-updated {
+  font-size: 11px;
+  color: var(--a-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.json-editor {
+  width: 100%;
+  flex: 1;
+  min-height: 480px;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 12.5px;
+  line-height: 1.55;
+  background: #0f172a;
+  color: #cbd5e1;
+  border: none;
+  border-radius: 0;
+  padding: 18px 20px;
+  resize: vertical;
+  outline: none;
+  tab-size: 2;
+  box-sizing: border-box;
+  display: block;
+}
+
+.json-editor:focus {
+  background: #0c1525;
+  color: #e2e8f0;
+}
+
+.json-file-footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--a-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #fafbfc;
+}
+
+.json-file-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.json-status {
+  font-size: 12px;
+  font-weight: 500;
+  min-height: 18px;
+}
+
+@media (max-width: 1100px) {
+  .json-editors-grid { grid-template-columns: 1fr; }
+}
+
+/* ================================================
    Atleta — tab Sicurezza
 ================================================ */
 .sicurezza-box {

@@ -41,7 +41,7 @@
   /* ================================================
      NAVIGATION
   ================================================ */
-  var SECTIONS = { dashboard: 'Dashboard', articoli: 'Articoli', calendario: 'Calendario', galleria: 'Galleria', squadre: 'Squadre', numeri: 'Numeri homepage', atleti: 'Atleti', girone: 'Girone Prima Divisione' };
+  var SECTIONS = { dashboard: 'Dashboard', articoli: 'Articoli', calendario: 'Calendario', galleria: 'Galleria', squadre: 'Squadre', numeri: 'Numeri homepage', atleti: 'Atleti', girone: 'Girone Prima Divisione', datiJson: 'File JSON' };
 
   function initNav() {
     document.querySelectorAll('.admin-nav-item').forEach(function (el) {
@@ -70,6 +70,7 @@
     if (section === 'squadre')    renderSquadre();
     if (section === 'numeri')     renderNumeri();
     if (section === 'atleti')     renderAtleti();
+    if (section === 'datiJson')   renderDatiJson();
   }
 
   function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
@@ -1461,6 +1462,97 @@
     db.collection('atleti').doc(_editingAtleta.uid).update({ rate: _editingAtleta.rate })
       .then(_renderRateAdmin)
       .catch(function (e) { alert('Errore: ' + e.message); });
+  };
+
+  /* ================================================
+     FILE JSON
+  ================================================ */
+  var JSON_FILES = {
+    girone:  { label: 'data/girone.json',  staticPath: 'data/girone.json'  },
+    partite: { label: 'data/partite.json', staticPath: 'data/partite.json' }
+  };
+
+  function renderDatiJson() {
+    Object.keys(JSON_FILES).forEach(function (key) {
+      var statusEl  = document.getElementById(key + 'JsonStatus');
+      var updatedEl = document.getElementById(key + 'JsonUpdated');
+      var editorEl  = document.getElementById(key + 'JsonEditor');
+      if (!editorEl) return;
+
+      statusEl.textContent = 'Caricamento…';
+      statusEl.style.color = '';
+
+      db.collection('siteData').doc(key).get()
+        .then(function (doc) {
+          if (doc.exists && doc.data() && doc.data().json) {
+            editorEl.value = JSON.stringify(JSON.parse(doc.data().json), null, 2);
+            var ts = doc.data().updatedAt;
+            if (ts) updatedEl.textContent = 'Salvato ' + _fmtDate(ts.toDate().toISOString().slice(0, 10));
+            statusEl.textContent = '';
+          } else {
+            return fetch(JSON_FILES[key].staticPath)
+              .then(function (r) { return r.json(); })
+              .then(function (data) {
+                editorEl.value = JSON.stringify(data, null, 2);
+                updatedEl.textContent = 'File locale (non ancora su Firestore)';
+                statusEl.textContent = '';
+              });
+          }
+        })
+        .catch(function () {
+          fetch(JSON_FILES[key].staticPath)
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+              editorEl.value = JSON.stringify(data, null, 2);
+              updatedEl.textContent = 'File locale';
+              statusEl.textContent = '';
+            });
+        });
+    });
+  }
+
+  window.AdminActions.formatJson = function (key) {
+    var editorEl = document.getElementById(key + 'JsonEditor');
+    var statusEl = document.getElementById(key + 'JsonStatus');
+    try {
+      editorEl.value = JSON.stringify(JSON.parse(editorEl.value), null, 2);
+      statusEl.textContent = '';
+    } catch (e) {
+      statusEl.textContent = 'JSON non valido: ' + e.message;
+      statusEl.style.color = 'var(--a-red)';
+    }
+  };
+
+  window.AdminActions.saveJson = function (key) {
+    var editorEl  = document.getElementById(key + 'JsonEditor');
+    var statusEl  = document.getElementById(key + 'JsonStatus');
+    var updatedEl = document.getElementById(key + 'JsonUpdated');
+
+    var parsed;
+    try {
+      parsed = JSON.parse(editorEl.value);
+    } catch (e) {
+      statusEl.textContent = 'JSON non valido: ' + e.message;
+      statusEl.style.color = 'var(--a-red)';
+      return;
+    }
+
+    editorEl.value = JSON.stringify(parsed, null, 2);
+    statusEl.textContent = 'Salvataggio…';
+    statusEl.style.color = '';
+
+    db.collection('siteData').doc(key).set({
+      json:      JSON.stringify(parsed),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(function () {
+      statusEl.textContent = '✓ Salvato con successo';
+      statusEl.style.color = 'var(--a-green)';
+      updatedEl.textContent = 'Salvato ora';
+      setTimeout(function () { statusEl.textContent = ''; }, 3000);
+    }).catch(function (e) {
+      statusEl.textContent = 'Errore: ' + e.message;
+      statusEl.style.color = 'var(--a-red)';
+    });
   };
 
 })();
