@@ -7,7 +7,9 @@
     "data": "2026-07-12",
     "ora": "18:30",
     "palazzetto": "ARKÈ Melissano",
-    "stato": "programmata"
+    "stato": "programmata",
+    "codice_tabellone": "SPP-XEYG",
+    "tabellone_squadra_casa": "A"
   },
   {
     "id": "p2",

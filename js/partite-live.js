@@ -312,7 +312,8 @@
 
           var concluse = enriched
             .filter(function (p) { return p.stato === 'conclusa'; })
-            .sort(function (a, b) { return a.data < b.data ? 1 : -1; });
+            .sort(function (a, b) { return a.data < b.data ? 1 : -1; })
+            .slice(0, 2);
 
           /* Fallback colonna concluse: usa extra prossime */
           var concluseRender = concluse.length ? concluse : prossime.slice(2);
