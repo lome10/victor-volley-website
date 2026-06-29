@@ -523,6 +523,7 @@
             <button class="atleta-tab" data-tab="certmedico">Cert. Medico</button>
             <button class="atleta-tab" data-tab="rate">Rate &amp; Quote</button>
             <button class="atleta-tab" data-tab="modulo">Modulo Iscrizione</button>
+            <button class="atleta-tab" data-tab="sicurezza">Sicurezza</button>
           </div>
 
           <!-- Tab: Anagrafica -->
@@ -614,6 +615,24 @@
             </div>
             <div class="form-actions">
               <button id="detModuloSave" class="btn-primary">Salva</button>
+            </div>
+          </div>
+
+          <!-- Tab: Sicurezza -->
+          <div id="tabSicurezza" class="atleta-tab-pane is-hidden">
+            <div class="sicurezza-box">
+              <div class="sicurezza-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="28" height="28"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+              </div>
+              <h4 class="sicurezza-title">Reset password</h4>
+              <p class="sicurezza-desc">
+                Verrà inviata una email a <strong id="sicurezzaEmail"></strong> con un link per impostare una nuova password.
+                Il link scade dopo 1 ora.
+              </p>
+              <button id="btnInviaReset" class="btn-primary">
+                Invia link di reset
+              </button>
+              <p id="sicurezzaMsg" class="sicurezza-msg is-hidden"></p>
             </div>
           </div>
 

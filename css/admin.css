@@ -888,6 +888,52 @@ button { font-family: var(--font-body); cursor: pointer; }
 .atleta-rate-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
 
 /* ================================================
+   Atleta — tab Sicurezza
+================================================ */
+.sicurezza-box {
+  max-width: 480px;
+  background: var(--a-card);
+  border: 1px solid var(--a-border);
+  border-radius: 12px;
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.sicurezza-icon {
+  width: 52px;
+  height: 52px;
+  background: #f1f5f9;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--a-muted);
+}
+
+.sicurezza-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--a-text);
+  margin: 0;
+}
+
+.sicurezza-desc {
+  font-size: 13px;
+  color: var(--a-muted);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.sicurezza-msg {
+  font-size: 13px;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* ================================================
    Girone
 ================================================ */
 .ga-info {

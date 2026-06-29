@@ -1251,6 +1251,10 @@
     document.getElementById('moduloPdfLinkWrap').classList.toggle('is-hidden', !modUrl);
     if (modUrl) document.getElementById('moduloPdfLink').href = _driveViewUrl(modUrl);
 
+    document.getElementById('sicurezzaEmail').textContent = _editingAtleta.email || '';
+    document.getElementById('sicurezzaMsg').classList.add('is-hidden');
+    document.getElementById('sicurezzaMsg').textContent = '';
+
     _switchAtletaTab('anagrafica');
     _renderRateAdmin();
   }
@@ -1259,7 +1263,7 @@
     document.querySelectorAll('.atleta-tab').forEach(function (btn) {
       btn.classList.toggle('is-active', btn.dataset.tab === tab);
     });
-    ['tabAnagrafica', 'tabCertmedico', 'tabRate', 'tabModulo'].forEach(function (id) {
+    ['tabAnagrafica', 'tabCertmedico', 'tabRate', 'tabModulo', 'tabSicurezza'].forEach(function (id) {
       document.getElementById(id).classList.add('is-hidden');
     });
     document.getElementById('tab' + cap(tab)).classList.remove('is-hidden');
@@ -1311,6 +1315,34 @@
     db.collection('atleti').doc(_editingAtleta.uid)
       .update({ moduloIscrizioneUrl: url })
       .catch(function (e) { alert('Errore: ' + e.message); });
+  });
+
+  /* ---- Reset password ---- */
+  document.getElementById('btnInviaReset').addEventListener('click', function () {
+    if (!_editingAtleta || !_editingAtleta.email) return;
+    var btn = this;
+    var msg = document.getElementById('sicurezzaMsg');
+    btn.disabled = true;
+    btn.textContent = 'Invio in corso…';
+    msg.classList.add('is-hidden');
+    auth.sendPasswordResetEmail(_editingAtleta.email)
+      .then(function () {
+        msg.textContent = 'Email inviata a ' + _editingAtleta.email + '. Il link scade tra 1 ora.';
+        msg.style.color = 'var(--a-green)';
+        msg.classList.remove('is-hidden');
+        btn.textContent = 'Email inviata';
+        setTimeout(function () {
+          btn.disabled = false;
+          btn.textContent = 'Invia link di reset';
+        }, 5000);
+      })
+      .catch(function (e) {
+        msg.textContent = 'Errore: ' + (e.message || 'riprova più tardi.');
+        msg.style.color = 'var(--a-red)';
+        msg.classList.remove('is-hidden');
+        btn.disabled = false;
+        btn.textContent = 'Invia link di reset';
+      });
   });
 
   /* ---- Rate / Quote ---- */
