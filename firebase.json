@@ -1,15 +1,4 @@
 {
-  "hosting": {
-    "public": ".",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**",
-      "functions/**",
-      "PIANO_SITO_VICTOR_VOLLEY.md",
-      "PROMPT_HERO_PARTITE_LIVE.md"
-    ]
-  },
   "firestore": {
     "rules": "firestore.rules"
   },
