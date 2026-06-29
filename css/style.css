@@ -1940,14 +1940,16 @@ main, footer.site-footer {
    News page — grid 9:16 con paginazione
 ================================================ */
 .news-page-cards {
-  --card-gap: 16px;
-  --card-w: calc((100% - 3 * var(--card-gap)) / 4);
-  --card-h: calc(var(--card-w) * 16 / 9);
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--card-gap);
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
   padding: 8px 0 0;
+}
+.news-page-cards .hero-card {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 9 / 16;
+  flex-shrink: unset;
 }
 
 .news-pagination {
@@ -1987,15 +1989,10 @@ main, footer.site-footer {
 }
 
 @media (max-width: 900px) {
-  .news-page-cards {
-    --card-w: calc((100% - 2 * var(--card-gap)) / 3);
-  }
+  .news-page-cards { grid-template-columns: repeat(3, 1fr); }
 }
 @media (max-width: 640px) {
-  .news-page-cards {
-    --card-gap: 8px;
-    --card-w: calc((100% - var(--card-gap)) / 2);
-  }
+  .news-page-cards { grid-template-columns: repeat(2, 1fr); gap: 8px; }
 }
 
 /* ================================================
