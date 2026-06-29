@@ -373,11 +373,6 @@
 
   document.getElementById('matchCancel').addEventListener('click', renderCalendario);
 
-  window.AdminActions.toggleResultFields = function () {
-    var stato = document.getElementById('matchStato').value;
-    document.getElementById('matchResultGroup').style.display = stato === 'conclusa' ? '' : 'none';
-  };
-
   /* ================================================
      GALLERIA
   ================================================ */
@@ -1028,6 +1023,10 @@
   }
 
   window.AdminActions = {
+    toggleResultFields: function () {
+      var stato = document.getElementById('matchStato').value;
+      document.getElementById('matchResultGroup').style.display = stato === 'conclusa' ? '' : 'none';
+    },
     editArt: function (id) { openArtForm(VV.getArticle(id)); },
     setHeroOrder: function (id, order) {
       order = +order;
