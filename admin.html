@@ -263,9 +263,20 @@
               <label class="form-label">Palazzetto / Luogo</label>
               <input type="text" id="matchVenue" class="form-input" placeholder="es. Palazzetto ARKÉ — Melissano">
             </div>
-            <div class="form-group form-full">
-              <label class="form-label">Risultato (se già giocata)</label>
-              <input type="text" id="matchResult" class="form-input" placeholder="es. 3-1">
+            <div class="form-group">
+              <label class="form-label">Stato</label>
+              <select id="matchStato" class="form-input" onchange="AdminActions.toggleResultFields()">
+                <option value="programmata">Programmata</option>
+                <option value="conclusa">Conclusa</option>
+              </select>
+            </div>
+            <div class="form-group" id="matchResultGroup" style="display:none">
+              <label class="form-label">Set (casa – ospite)</label>
+              <div style="display:flex;gap:10px;align-items:center">
+                <input type="number" id="matchSetCasa" class="form-input" min="0" max="3" placeholder="0" style="width:72px;text-align:center">
+                <span style="color:var(--a-muted);font-size:18px;font-weight:700;flex-shrink:0">–</span>
+                <input type="number" id="matchSetOspite" class="form-input" min="0" max="3" placeholder="0" style="width:72px;text-align:center">
+              </div>
             </div>
           </div>
           <div class="form-actions">

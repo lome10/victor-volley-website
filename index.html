@@ -290,90 +290,107 @@
   })();
   </script>
 
-  <!-- Prossime partite dinamiche -->
+  <!-- Prossime partite dinamiche (altre categorie) — legge siteData/partite -->
   <script>
   (function () {
     function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function isVV(nome) { return (nome || '').toLowerCase().indexOf('victor') !== -1; }
 
-    DB.init(function () {
-    var today    = new Date().toISOString().slice(0, 10);
-    var upcoming = VV.getMatches()
-      .filter(function (m) { return !m.result && m.date >= today && m.category !== 'Prima Divisione'; })
-      .slice(0, 3);
-
-    var grid = document.getElementById('partiteGrid');
-
-    if (!upcoming.length) {
-      document.getElementById('partiteAltri').style.display = 'none';
-      return;
+    var MESI_SHORT = ['GEN','FEB','MAR','APR','MAG','GIU','LUG','AGO','SET','OTT','NOV','DIC'];
+    function formatDataShort(dateStr) {
+      var d = new Date(dateStr + 'T00:00:00');
+      return d.getDate() + ' ' + MESI_SHORT[d.getMonth()] + ' ' + d.getFullYear();
     }
 
-    var volleyIcon = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="9.5"/><path d="M6.5 3.8c1.5 3.5 1 8-1.5 11.5"/><path d="M17.5 20.2c-1.5-3.5-1-8 1.5-11.5"/><path d="M3 14c4-2 9-1.5 16.5 1"/></svg>';
-
-    grid.innerHTML = upcoming.map(function (m) {
-      /* top = "other" team (lighter), bottom = featured team (bold) */
-      var topTeam, topLogo, bottomTeam, bottomLogo;
-      if (m.isHome) {
-        topTeam = m.awayTeam; topLogo = m.awayLogo;
-        bottomTeam = m.homeTeam; bottomLogo = m.homeLogo;
-      } else {
-        topTeam = m.homeTeam; topLogo = m.homeLogo;
-        bottomTeam = m.awayTeam; bottomLogo = m.awayLogo;
+    function loadPartite() {
+      if (window.firebase && firebase.apps && firebase.apps.length) {
+        return firebase.firestore().collection('siteData').doc('partite').get()
+          .then(function (doc) {
+            if (doc.exists && doc.data() && doc.data().json) return JSON.parse(doc.data().json);
+            return fetch('data/partite.json').then(function (r) { return r.json(); });
+          })
+          .catch(function () { return fetch('data/partite.json').then(function (r) { return r.json(); }); });
       }
-
-      function logoWrap(logo) {
-        return '<div class="pc-logo-wrap">' +
-          (logo ? '<img src="' + esc(logo) + '" alt="">' : '<div class="pc-logo-placeholder"></div>') +
-        '</div>';
-      }
-
-      var dateStr = VV.formatDateShort(m.date).toUpperCase();
-      var timeStr = m.time ? ' · ' + m.time : '';
-
-      var countdown = '';
-      if (m.isHome && m.time) {
-        var dt = m.date + 'T' + m.time + ':00';
-        countdown = '<div class="countdown" data-match="' + dt + '">' +
-          '<div class="countdown-unit"><div class="countdown-num cd-days">--</div><div class="countdown-label">GG</div></div>' +
-          '<div class="countdown-unit"><div class="countdown-num cd-hours">--</div><div class="countdown-label">ORE</div></div>' +
-          '<div class="countdown-unit"><div class="countdown-num cd-mins">--</div><div class="countdown-label">MIN</div></div>' +
-        '</div>';
-      }
-
-      return '<div class="partita-card ' + (m.isHome ? 'partita-card--home' : '') + ' reveal">' +
-        '<div class="pc-icon">' + volleyIcon + '</div>' +
-        '<div class="pc-meta">' +
-          '<span class="pc-cat">' + esc(m.category) + (m.isHome ? ' · Casa' : ' · Trasferta') + '</span>' +
-          '<span class="pc-datetime">' + dateStr + timeStr + '</span>' +
-        '</div>' +
-        '<div class="pc-logos">' + logoWrap(topLogo) + logoWrap(bottomLogo) + '</div>' +
-        '<div class="pc-teams">' +
-          '<div class="pc-team-name">' + esc(topTeam) + '</div>' +
-          '<div class="pc-team-name pc-team-bold">' + esc(bottomTeam) + '</div>' +
-        '</div>' +
-        countdown +
-        '<div class="pc-footer">' +
-          '<a href="calendario.html" class="pc-cta">Vedi tutti i match</a>' +
-        '</div>' +
-      '</div>';
-    }).join('');
-
-    /* Countdown live */
-    function tick() {
-      document.querySelectorAll('.countdown[data-match]').forEach(function (el) {
-        var diff = new Date(el.getAttribute('data-match')) - new Date();
-        if (diff <= 0) { el.style.display = 'none'; return; }
-        var d = Math.floor(diff / 86400000);
-        var h = Math.floor((diff % 86400000) / 3600000);
-        var mn = Math.floor((diff % 3600000) / 60000);
-        el.querySelector('.cd-days').textContent  = String(d).padStart(2, '0');
-        el.querySelector('.cd-hours').textContent = String(h).padStart(2, '0');
-        el.querySelector('.cd-mins').textContent  = String(mn).padStart(2, '0');
-      });
+      return fetch('data/partite.json').then(function (r) { return r.json(); });
     }
-    tick();
-    setInterval(tick, 60000);
-    }); // DB.init
+
+    loadPartite().then(function (partite) {
+      var today    = new Date().toISOString().slice(0, 10);
+      var upcoming = partite
+        .filter(function (p) {
+          return p.stato !== 'conclusa' && p.data >= today && p.categoria !== 'Prima Divisione';
+        })
+        .sort(function (a, b) { return a.data > b.data ? 1 : -1; })
+        .slice(0, 3);
+
+      var grid = document.getElementById('partiteGrid');
+
+      if (!upcoming.length) {
+        document.getElementById('partiteAltri').style.display = 'none';
+        return;
+      }
+
+      var volleyIcon = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="9.5"/><path d="M6.5 3.8c1.5 3.5 1 8-1.5 11.5"/><path d="M17.5 20.2c-1.5-3.5-1-8 1.5-11.5"/><path d="M3 14c4-2 9-1.5 16.5 1"/></svg>';
+
+      grid.innerHTML = upcoming.map(function (p) {
+        var home   = isVV(p.squadra_casa);
+        var vvTeam = home ? p.squadra_casa : p.squadra_ospite;
+        var oppTeam= home ? p.squadra_ospite : p.squadra_casa;
+        var vvLogo = home ? p.logo_casa : p.logo_ospite;
+        var oppLogo= home ? p.logo_ospite : p.logo_casa;
+
+        function logoWrap(logo) {
+          return '<div class="pc-logo-wrap">' +
+            (logo ? '<img src="' + esc(logo) + '" alt="">' : '<div class="pc-logo-placeholder"></div>') +
+          '</div>';
+        }
+
+        var dateStr = formatDataShort(p.data);
+        var timeStr = p.ora ? ' · ' + p.ora : '';
+
+        var countdown = '';
+        if (home && p.ora) {
+          var dt = p.data + 'T' + p.ora + ':00';
+          countdown = '<div class="countdown" data-match="' + esc(dt) + '">' +
+            '<div class="countdown-unit"><div class="countdown-num cd-days">--</div><div class="countdown-label">GG</div></div>' +
+            '<div class="countdown-unit"><div class="countdown-num cd-hours">--</div><div class="countdown-label">ORE</div></div>' +
+            '<div class="countdown-unit"><div class="countdown-num cd-mins">--</div><div class="countdown-label">MIN</div></div>' +
+          '</div>';
+        }
+
+        return '<div class="partita-card ' + (home ? 'partita-card--home' : '') + ' reveal">' +
+          '<div class="pc-icon">' + volleyIcon + '</div>' +
+          '<div class="pc-meta">' +
+            '<span class="pc-cat">' + esc(p.categoria || '') + (home ? ' · Casa' : ' · Trasferta') + '</span>' +
+            '<span class="pc-datetime">' + dateStr + timeStr + '</span>' +
+          '</div>' +
+          '<div class="pc-logos">' + logoWrap(oppLogo) + logoWrap(vvLogo) + '</div>' +
+          '<div class="pc-teams">' +
+            '<div class="pc-team-name">' + esc(oppTeam) + '</div>' +
+            '<div class="pc-team-name pc-team-bold">' + esc(vvTeam) + '</div>' +
+          '</div>' +
+          countdown +
+          '<div class="pc-footer">' +
+            '<a href="calendario.html" class="pc-cta">Vedi tutti i match</a>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+
+      function tick() {
+        document.querySelectorAll('.countdown[data-match]').forEach(function (el) {
+          var diff = new Date(el.getAttribute('data-match')) - new Date();
+          if (diff <= 0) { el.style.display = 'none'; return; }
+          var d  = Math.floor(diff / 86400000);
+          var h  = Math.floor((diff % 86400000) / 3600000);
+          var mn = Math.floor((diff % 3600000) / 60000);
+          el.querySelector('.cd-days').textContent  = String(d).padStart(2, '0');
+          el.querySelector('.cd-hours').textContent = String(h).padStart(2, '0');
+          el.querySelector('.cd-mins').textContent  = String(mn).padStart(2, '0');
+        });
+      }
+      tick();
+      setInterval(tick, 60000);
+    });
   })();
   </script>
 

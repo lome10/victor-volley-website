@@ -211,34 +211,72 @@
   document.getElementById('artCancel').addEventListener('click', renderArticoli);
 
   /* ================================================
-     CALENDARIO
+     CALENDARIO — fonte unica: siteData/partite
   ================================================ */
-  var _matchEditing = null;
+  var _matchEditing  = null;
+  var _partiteCache  = [];
+
+  function _isVV(nome) { return (nome || '').toLowerCase().indexOf('victor') !== -1; }
+
+  function _loadPartiteCache(cb) {
+    db.collection('siteData').doc('partite').get()
+      .then(function (doc) {
+        if (doc.exists && doc.data() && doc.data().json) {
+          _partiteCache = JSON.parse(doc.data().json);
+        } else {
+          return fetch('data/partite.json')
+            .then(function (r) { return r.json(); })
+            .then(function (data) { _partiteCache = data; if (cb) cb(); });
+        }
+        if (cb) cb();
+      })
+      .catch(function () {
+        fetch('data/partite.json')
+          .then(function (r) { return r.json(); })
+          .then(function (data) { _partiteCache = data; if (cb) cb(); });
+      });
+  }
+
+  function _savePartiteCache(cb) {
+    db.collection('siteData').doc('partite').set({
+      json:      JSON.stringify(_partiteCache),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(function () { if (cb) cb(); })
+      .catch(function (e) { alert('Errore salvataggio partite: ' + e.message); });
+  }
 
   function renderCalendario() {
     showSubview('calendario', 'list');
     setTopbarBtn('Aggiungi partita', function () { openMatchForm(null); });
-    refreshMatchTable();
+    _loadPartiteCache(refreshMatchTable);
   }
 
+  var EDIT_ICON_SM  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+  var DEL_ICON_SM   = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>';
+
   function refreshMatchTable() {
-    var rows = VV.getMatches().map(function (m) {
+    var sorted = _partiteCache.slice().sort(function (a, b) { return a.data > b.data ? 1 : -1; });
+    var rows = sorted.map(function (p) {
+      var isHome  = _isVV(p.squadra_casa);
+      var result  = (p.stato === 'conclusa' && p.set_casa != null)
+        ? '<strong>' + p.set_casa + '&ndash;' + p.set_ospite + '</strong>'
+        : '<span style="color:var(--a-muted)">—</span>';
       return '<tr>' +
-        '<td>' + VV.formatDateShort(m.date) + '</td>' +
-        '<td>' + (m.time || '—') + '</td>' +
-        '<td><span class="chip chip--blue">' + esc(m.category) + '</span></td>' +
+        '<td>' + esc(p.data || '—') + '</td>' +
+        '<td>' + esc(p.ora || '—') + '</td>' +
+        '<td><span class="chip chip--blue">' + esc(p.categoria || '') + '</span></td>' +
         '<td>' +
-          (m.homeLogo ? '<img src="' + esc(m.homeLogo) + '" style="height:20px;display:inline;vertical-align:middle;margin-right:4px">' : '') +
-          '<strong>' + esc(m.homeTeam) + '</strong> vs ' +
-          (m.awayLogo ? '<img src="' + esc(m.awayLogo) + '" style="height:20px;display:inline;vertical-align:middle;margin-right:4px">' : '') +
-          esc(m.awayTeam) +
-          ' <span class="chip ' + (m.isHome ? 'chip--green' : 'chip--gray') + '" style="margin-left:4px">' + (m.isHome ? 'Casa' : 'Trasferta') + '</span>' +
+          (p.logo_casa ? '<img src="' + esc(p.logo_casa) + '" style="height:20px;display:inline;vertical-align:middle;margin-right:4px">' : '') +
+          '<strong>' + esc(p.squadra_casa || '') + '</strong> vs ' +
+          (p.logo_ospite ? '<img src="' + esc(p.logo_ospite) + '" style="height:20px;display:inline;vertical-align:middle;margin-right:4px">' : '') +
+          esc(p.squadra_ospite || '') +
+          ' <span class="chip ' + (isHome ? 'chip--green' : 'chip--gray') + '" style="margin-left:4px">' + (isHome ? 'Casa' : 'Trasferta') + '</span>' +
         '</td>' +
-        '<td style="font-size:12px;color:var(--a-muted)">' + esc(m.venue || '—') + '</td>' +
-        '<td>' + (m.result ? '<strong>' + esc(m.result) + '</strong>' : '<span style="color:var(--a-muted)">—</span>') + '</td>' +
+        '<td style="font-size:12px;color:var(--a-muted)">' + esc(p.palazzetto || '—') + '</td>' +
+        '<td>' + result + '</td>' +
         '<td><div class="table-actions">' +
-          '<button class="btn-icon" onclick="AdminActions.editMatch(' + m.id + ')" title="Modifica"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>' +
-          '<button class="btn-icon btn-icon--danger" onclick="AdminActions.deleteMatch(' + m.id + ')" title="Elimina"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg></button>' +
+          '<button class="btn-icon" onclick="AdminActions.editMatch(\'' + esc(p.id) + '\')" title="Modifica">' + EDIT_ICON_SM + '</button>' +
+          '<button class="btn-icon btn-icon--danger" onclick="AdminActions.deleteMatch(\'' + esc(p.id) + '\')" title="Elimina">' + DEL_ICON_SM + '</button>' +
         '</div></td>' +
       '</tr>';
     }).join('');
@@ -247,30 +285,33 @@
       '<tr><td colspan="7"><div class="empty-state"><p>Nessuna partita. Aggiungine una!</p></div></td></tr>';
   }
 
-  function openMatchForm(match) {
+  function openMatchForm(p) {
     _initLogoInputs();
-    _matchEditing = match;
+    _matchEditing = p || null;
     showSubview('calendario', 'form');
     document.getElementById('topbarActions').innerHTML = '';
 
     var catSel = document.getElementById('matchCategory');
-    catSel.innerHTML = VV.CATEGORIES.filter(function(c){ return c !== 'Società'; }).map(function (c) {
+    catSel.innerHTML = VV.CATEGORIES.filter(function (c) { return c !== 'Società'; }).map(function (c) {
       return '<option value="' + c + '">' + c + '</option>';
     }).join('');
 
-    if (match) {
-      document.getElementById('matchDate').value     = match.date || '';
-      document.getElementById('matchTime').value     = match.time || '18:30';
-      catSel.value                                   = match.category || 'Prima Divisione';
-      document.getElementById('matchIsHome').checked = !!match.isHome;
-      document.getElementById('matchHomeTeam').value = match.homeTeam || 'Victor Volley';
-      document.getElementById('matchHomeLogo').value = match.homeLogo || '';
-      document.getElementById('matchAwayTeam').value = match.awayTeam || '';
-      document.getElementById('matchAwayLogo').value = match.awayLogo || '';
+    if (p) {
+      var isHome = _isVV(p.squadra_casa);
+      document.getElementById('matchDate').value     = p.data || '';
+      document.getElementById('matchTime').value     = p.ora  || '18:30';
+      catSel.value                                   = p.categoria || 'Prima Divisione';
+      document.getElementById('matchIsHome').checked = isHome;
+      document.getElementById('matchHomeTeam').value = isHome ? (p.squadra_casa || 'Victor Volley') : (p.squadra_ospite || 'Victor Volley');
+      document.getElementById('matchHomeLogo').value = isHome ? (p.logo_casa || '') : (p.logo_ospite || '');
+      document.getElementById('matchAwayTeam').value = isHome ? (p.squadra_ospite || '') : (p.squadra_casa || '');
+      document.getElementById('matchAwayLogo').value = isHome ? (p.logo_ospite || '') : (p.logo_casa || '');
       _syncLogoPreview('matchHomeLogo', 'homeLogoPreview');
       _syncLogoPreview('matchAwayLogo', 'awayLogoPreview');
-      document.getElementById('matchVenue').value    = match.venue || '';
-      document.getElementById('matchResult').value   = match.result || '';
+      document.getElementById('matchVenue').value    = p.palazzetto || '';
+      document.getElementById('matchStato').value    = p.stato || 'programmata';
+      document.getElementById('matchSetCasa').value    = (p.set_casa   != null) ? p.set_casa   : '';
+      document.getElementById('matchSetOspite').value  = (p.set_ospite != null) ? p.set_ospite : '';
     } else {
       document.getElementById('matchDate').value     = '';
       document.getElementById('matchTime').value     = '18:30';
@@ -282,33 +323,60 @@
       document.getElementById('matchAwayLogo').value = '';
       _syncLogoPreview('matchHomeLogo', 'homeLogoPreview');
       _syncLogoPreview('matchAwayLogo', 'awayLogoPreview');
-      document.getElementById('matchVenue').value    = 'Palazzetto ARKÉ — Melissano';
-      document.getElementById('matchResult').value   = '';
+      document.getElementById('matchVenue').value      = 'Palazzetto ARKÉ — Melissano';
+      document.getElementById('matchStato').value      = 'programmata';
+      document.getElementById('matchSetCasa').value    = '';
+      document.getElementById('matchSetOspite').value  = '';
     }
+    AdminActions.toggleResultFields();
   }
 
   document.getElementById('matchSave').addEventListener('click', function () {
-    var date = document.getElementById('matchDate').value;
-    if (!date) { alert('La data è obbligatoria.'); return; }
-    var awayTeam = document.getElementById('matchAwayTeam').value.trim();
-    if (!awayTeam) { alert('La squadra avversaria è obbligatoria.'); return; }
+    var data = document.getElementById('matchDate').value;
+    if (!data) { alert('La data è obbligatoria.'); return; }
+    var isHome    = document.getElementById('matchIsHome').checked;
+    var squadraVV = document.getElementById('matchHomeTeam').value.trim() || 'Victor Volley';
+    var avversario = document.getElementById('matchAwayTeam').value.trim();
+    if (!avversario) { alert('La squadra avversaria è obbligatoria.'); return; }
+    var logoVV    = document.getElementById('matchHomeLogo').value.trim();
+    var logoAvv   = document.getElementById('matchAwayLogo').value.trim();
+    var stato     = document.getElementById('matchStato').value;
+    var setC      = document.getElementById('matchSetCasa').value;
+    var setO      = document.getElementById('matchSetOspite').value;
 
-    var match = Object.assign({}, _matchEditing || {}, {
-      date:      date,
-      time:      document.getElementById('matchTime').value,
-      category:  document.getElementById('matchCategory').value,
-      isHome:    document.getElementById('matchIsHome').checked,
-      homeTeam:  document.getElementById('matchHomeTeam').value.trim(),
-      homeLogo:  document.getElementById('matchHomeLogo').value.trim(),
-      awayTeam:  awayTeam,
-      awayLogo:  document.getElementById('matchAwayLogo').value.trim(),
-      venue:     document.getElementById('matchVenue').value.trim(),
-      result:    document.getElementById('matchResult').value.trim()
-    });
-    DB.saveMatch(match, renderCalendario);
+    var partita = {
+      id:            (_matchEditing && _matchEditing.id) || ('m' + Date.now()),
+      categoria:     document.getElementById('matchCategory').value,
+      squadra_casa:  isHome ? squadraVV  : avversario,
+      squadra_ospite: isHome ? avversario : squadraVV,
+      logo_casa:     isHome ? logoVV     : logoAvv,
+      logo_ospite:   isHome ? logoAvv    : logoVV,
+      data:          data,
+      ora:           document.getElementById('matchTime').value,
+      palazzetto:    document.getElementById('matchVenue').value.trim(),
+      stato:         stato,
+      set_casa:      (stato === 'conclusa' && setC !== '') ? +setC : null,
+      set_ospite:    (stato === 'conclusa' && setO !== '') ? +setO : null
+    };
+
+    /* Mantieni campi live (codice_tabellone ecc.) se esistenti */
+    if (_matchEditing) {
+      ['codice_tabellone', 'tabellone_squadra_casa'].forEach(function (k) {
+        if (_matchEditing[k] != null) partita[k] = _matchEditing[k];
+      });
+    }
+
+    var idx = _partiteCache.findIndex(function (p) { return p.id === partita.id; });
+    if (idx >= 0) { _partiteCache[idx] = partita; } else { _partiteCache.push(partita); }
+    _savePartiteCache(renderCalendario);
   });
 
   document.getElementById('matchCancel').addEventListener('click', renderCalendario);
+
+  window.AdminActions.toggleResultFields = function () {
+    var stato = document.getElementById('matchStato').value;
+    document.getElementById('matchResultGroup').style.display = stato === 'conclusa' ? '' : 'none';
+  };
 
   /* ================================================
      GALLERIA
@@ -983,10 +1051,14 @@
         DB.deleteArticle(id, refreshArtTable);
       });
     },
-    editMatch: function (id) { openMatchForm(VV.getMatch(id)); },
+    editMatch: function (id) {
+      var p = _partiteCache.find(function (x) { return x.id === id; });
+      if (p) openMatchForm(p);
+    },
     deleteMatch: function (id) {
       confirm('Eliminare questa partita?', function () {
-        DB.deleteMatch(id, refreshMatchTable);
+        _partiteCache = _partiteCache.filter(function (x) { return x.id !== id; });
+        _savePartiteCache(refreshMatchTable);
       });
     },
     deleteAlbum: function (id) {
