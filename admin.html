@@ -58,9 +58,9 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
           Squadre
         </a>
-        <a href="#" class="admin-nav-item" data-section="numeri">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-          Numeri
+        <a href="#" class="admin-nav-item" data-section="sponsor">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+          Sponsor
         </a>
         <a href="#" class="admin-nav-item" data-section="atleti">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -723,12 +723,50 @@
         </div>
       </section>
 
-      <!-- ---- NUMERI ---- -->
-      <section id="sectionNumeri" class="admin-section is-hidden">
-        <p class="numeri-desc">Modifica i valori mostrati nella sezione statistica della homepage. Le modifiche sono visibili subito sul sito.</p>
-        <div class="numeri-grid" id="numeriGrid"></div>
-        <div class="form-actions" style="margin-top:24px">
-          <button id="numeriSave" class="btn-primary">Salva modifiche</button>
+      <!-- ---- SPONSOR ---- -->
+      <section id="sectionSponsor" class="admin-section is-hidden">
+        <div class="sp-admin-bar">
+          <p class="sp-admin-desc">Gestisci il nastro scorrevole degli sponsor in homepage. Cambia la <strong>posizione</strong> per riordinare.</p>
+          <button class="btn-primary" id="spAddBtn">+ Aggiungi sponsor</button>
+        </div>
+
+        <!-- Form aggiungi / modifica -->
+        <div class="sp-form is-hidden" id="spForm">
+          <h3 class="sp-form-title" id="spFormTitle">Nuovo sponsor</h3>
+          <div class="sp-form-grid">
+            <div class="form-group">
+              <label class="form-label">Logo</label>
+              <div style="display:flex;gap:8px;align-items:center">
+                <input type="text" id="spLogoUrl" class="form-input" placeholder="URL immagine (o carica file →)">
+                <label class="btn-ghost" style="cursor:pointer;padding:6px 14px;white-space:nowrap;flex-shrink:0" title="Carica PNG/SVG — ridimensionato a 160 px">
+                  Carica
+                  <input type="file" id="spLogoFile" accept="image/*" style="display:none">
+                </label>
+                <img id="spLogoPreview" src="" alt="" style="height:40px;width:80px;object-fit:contain;border-radius:4px;border:1px solid #e2e8f0;background:#f8fafc;padding:4px;display:none">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Nome sponsor *</label>
+              <input type="text" id="spNome" class="form-input" placeholder="es. Comune di Melissano">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Sito web</label>
+              <input type="url" id="spUrl" class="form-input" placeholder="https://...">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Posizione nel nastro</label>
+              <input type="number" id="spOrder" class="form-input" min="1" value="1" style="max-width:100px">
+            </div>
+          </div>
+          <div class="form-actions">
+            <button id="spFormCancel" class="btn-ghost">Annulla</button>
+            <button id="spFormSave" class="btn-primary">Salva sponsor</button>
+          </div>
+        </div>
+
+        <!-- Lista sponsor -->
+        <div class="sp-list" id="spList">
+          <p style="color:var(--a-muted)">Caricamento…</p>
         </div>
       </section>
 

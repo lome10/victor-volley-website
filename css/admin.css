@@ -1176,3 +1176,67 @@ button { font-family: var(--font-body); cursor: pointer; }
   .ga-layout { flex-direction: column; }
   .ga-classifica { width: 100%; }
 }
+
+/* ---- Sezione Sponsor ---- */
+.sp-admin-bar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.sp-admin-desc { font-size: 14px; color: var(--a-muted); margin: 0; }
+
+.sp-form {
+  background: var(--a-white);
+  border: 1px solid var(--a-border);
+  border-radius: var(--a-radius);
+  padding: 20px 24px;
+  margin-bottom: 24px;
+}
+.sp-form-title { font-size: 15px; font-weight: 600; margin-bottom: 16px; color: var(--a-text); }
+.sp-form-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.sp-form-grid .form-group:first-child { grid-column: 1 / -1; }
+
+.sp-list { display: flex; flex-direction: column; gap: 10px; }
+
+.sp-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--a-white);
+  border: 1px solid var(--a-border);
+  border-radius: var(--a-radius);
+  padding: 12px 16px;
+}
+.sp-item-pos {
+  width: 28px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--a-muted);
+  flex-shrink: 0;
+}
+.sp-item-thumb {
+  width: 80px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8fafc;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.sp-item-logo    { max-width: 72px; max-height: 36px; object-fit: contain; display: block; }
+.sp-item-no-logo { font-size: 18px; font-weight: 700; color: #cbd5e1; }
+.sp-item-info    { flex: 1; min-width: 0; }
+.sp-item-nome    { font-size: 14px; font-weight: 600; color: var(--a-text); }
+.sp-item-url     { font-size: 12px; color: var(--a-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sp-item-order   { width: 64px; flex-shrink: 0; text-align: center; padding: 4px 6px; font-size: 13px; }
+
+@media (max-width: 640px) {
+  .sp-form-grid { grid-template-columns: 1fr; }
+}

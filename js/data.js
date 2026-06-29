@@ -21,7 +21,8 @@
     { id: 4, value: '1',    prefix: '',     suffix: '',  label: 'Palazzetto di casa' }
   ];
 
-  var _stats = null;
+  var _stats    = null;
+  var _sponsors = [];
 
   var DEFAULTS = {
     articles: [
@@ -189,6 +190,10 @@
     /* ---- STATS ---- */
     getStats: function () { return _stats || DEFAULT_STATS.slice(); },
     setStats: function (items) { _stats = items && items.length ? items : DEFAULT_STATS.slice(); },
+
+    /* ---- SPONSORS ---- */
+    getSponsors: function () { return _sponsors.slice(); },
+    setSponsors: function (items) { _sponsors = Array.isArray(items) ? items : []; },
 
     /* Chiamato da db.js per popolare la cache da Firestore */
     _load: function (col, items) {

@@ -86,6 +86,13 @@
           }
         });
 
+      var loadSponsors = global.db.collection('settings').doc('sponsor').get()
+        .then(function (doc) {
+          if (doc.exists && Array.isArray(doc.data().items)) {
+            VV.setSponsors(doc.data().items);
+          }
+        });
+
       Promise.all([
         _loadOne('articles'),
         _loadOne('matches'),
@@ -93,6 +100,7 @@
         _loadOne('categories'),
         _loadOne('players'),
         _loadOne('staff'),
+        loadSponsors,
         loadStats
       ]).then(function () {
         _initialized = true;
@@ -198,6 +206,14 @@
       if (cb) cb();
       global.db.collection('settings').doc('stats').set({ items: items })
         .catch(function (e) { console.error('[DB] saveStats', e); });
+    },
+
+    /* ---- SPONSORS ------------------------------------------- */
+    saveSponsors: function (items, cb) {
+      VV.setSponsors(items);
+      if (cb) cb();
+      global.db.collection('settings').doc('sponsor').set({ items: items })
+        .catch(function (e) { console.error('[DB] saveSponsors', e); });
     },
 
     /* ---- MIGRATION HELPER ------------------------------------ */
