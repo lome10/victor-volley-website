@@ -97,10 +97,19 @@
           <h2 id="news-title">Ultime news</h2>
           <p>Comunicati, risultati e aggiornamenti dalla societ&agrave;</p>
         </div>
-        <div class="news-grid" id="homeNewsGrid"></div>
-        <div style="text-align:center;margin-top:32px">
-          <a href="news.html" class="btn btn--outline">Tutte le news</a>
-        </div>
+      </div>
+      <div class="news-cards" aria-label="Ultime news">
+        <div class="news-cards-track" id="newsCardsTrack"></div>
+        <button class="news-cards-arrow news-cards-arrow--prev" id="newsCardsPrev" aria-label="News precedenti" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><polyline points="15,18 9,12 15,6"/></svg>
+        </button>
+        <button class="news-cards-arrow news-cards-arrow--next" id="newsCardsNext" aria-label="News successive">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><polyline points="9,18 15,12 9,6"/></svg>
+        </button>
+        <div class="news-dots-mobile" id="newsDotsMobile"></div>
+      </div>
+      <div style="text-align:center;margin-bottom:8px">
+        <a href="news.html" class="btn btn--outline">Tutte le news</a>
       </div>
     </section>
 
@@ -394,41 +403,106 @@
   })();
   </script>
 
-  <!-- Ultime news dinamiche -->
+  <!-- Ultime news — slider card 9:16 -->
   <script>
   (function () {
-    function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-    function badgeCls(cat) { return cat === 'Prima Divisione' ? 'badge--magenta' : 'badge--azzurro'; }
+    var GRADIENTS = [
+      'linear-gradient(180deg,#031e3e 0%,#053063 60%,#084080 100%)',
+      'linear-gradient(180deg,#0a3a70 0%,#053063 55%,#CB2168 100%)',
+      'linear-gradient(180deg,#031e3a 0%,#053063 60%,#0070D6 100%)',
+      'linear-gradient(180deg,#1a0533 0%,#3d0b72 55%,#CB2168 100%)',
+      'linear-gradient(180deg,#0d2a04 0%,#1a4a0e 55%,#2d7a1f 100%)',
+      'linear-gradient(180deg,#2a0d04 0%,#5a1a0e 55%,#9a2f1f 100%)'
+    ];
+    function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function badgeCls(cat) { return cat === 'Prima Divisione' ? 'hero-card-cat--magenta' : 'hero-card-cat--azzurro'; }
 
     DB.init(function () {
-    var grid     = document.getElementById('homeNewsGrid');
-    var articles = VV.getArticles(true)
-      .sort(function (a, b) { return a.date < b.date ? 1 : -1; })
-      .slice(0, 3);
+      var articles = VV.getArticles(true)
+        .sort(function (a, b) { return a.date < b.date ? 1 : -1; })
+        .slice(0, 6);
 
-    if (!articles.length) {
-      grid.innerHTML = '<p style="color:#888;text-align:center;padding:32px 0;grid-column:1/-1">Nessun articolo pubblicato.</p>';
-      return;
-    }
+      var track    = document.getElementById('newsCardsTrack');
+      var prevBtn  = document.getElementById('newsCardsPrev');
+      var nextBtn  = document.getElementById('newsCardsNext');
+      var dotsWrap = document.getElementById('newsDotsMobile');
+      if (!track || !articles.length) return;
 
-    grid.innerHTML = articles.map(function (a) {
-      var imgHtml = a.image
-        ? '<img src="' + esc(a.image) + '" alt="' + esc(a.title) + '" style="width:100%;height:100%;object-fit:cover">'
-        : '<div class="news-card-img-placeholder">&#127944;</div>';
-      return '<article class="news-card reveal">' +
-        '<div class="news-card-img">' + imgHtml + '</div>' +
-        '<div class="news-card-body">' +
-          '<div class="news-card-meta">' +
-            '<span class="badge ' + badgeCls(a.category) + '">' + esc(a.category) + '</span>' +
-            '<span class="news-card-date">' + VV.formatDateShort(a.date) + '</span>' +
+      track.innerHTML = articles.map(function (a, i) {
+        var bgStyle = a.image
+          ? 'background-image:url(' + esc(a.image) + ')'
+          : 'background:' + GRADIENTS[i % GRADIENTS.length];
+        return '<article class="hero-card" data-id="' + a.id + '">' +
+          '<div class="hero-card-bg" style="' + bgStyle + '"></div>' +
+          '<div class="hero-card-overlay"></div>' +
+          '<div class="hero-card-content">' +
+            '<span class="hero-card-cat ' + badgeCls(a.category) + '">' + esc(a.category) + '</span>' +
+            '<h2 class="hero-card-title">' + esc(a.title) + '</h2>' +
+            '<a href="news-dettaglio.html?id=' + a.id + '" class="hero-card-cta" ' +
+               'onclick="sessionStorage.setItem(\'vv_nav_id\',\'' + a.id + '\')">Leggi &rarr;</a>' +
           '</div>' +
-          '<h3 class="news-card-title">' + esc(a.title) + '</h3>' +
-          '<p class="news-card-excerpt">' + esc(a.excerpt) + '</p>' +
-          '<a href="news-dettaglio.html?id=' + a.id + '" class="news-card-link" onclick="sessionStorage.setItem(\'vv_nav_id\',\'' + a.id + '\')">Leggi di pi&ugrave; &rarr;</a>' +
-        '</div>' +
-      '</article>';
-    }).join('');
-    }); // DB.init
+        '</article>';
+      }).join('');
+
+      var cards  = track.querySelectorAll('.hero-card');
+      var total  = articles.length;
+      var offset = 0;
+
+      function visibleCount() {
+        return window.innerWidth <= 640 ? 1 : window.innerWidth <= 900 ? 2 : 3;
+      }
+      function cardStep() {
+        return cards[0] ? cards[0].offsetWidth + 16 : 0;
+      }
+      function slideTo(n) {
+        var vc  = visibleCount();
+        offset  = Math.max(0, Math.min(n, total - vc));
+        track.style.transform = 'translateX(-' + offset * cardStep() + 'px)';
+        prevBtn.disabled = offset <= 0;
+        nextBtn.disabled = offset >= total - vc;
+      }
+
+      prevBtn.addEventListener('click', function () { slideTo(offset - 1); });
+      nextBtn.addEventListener('click', function () { slideTo(offset + 1); });
+      window.addEventListener('resize', function () { slideTo(offset); });
+      slideTo(0);
+
+      /* Hover (desktop) */
+      cards.forEach(function (card) {
+        card.addEventListener('mouseenter', function () {
+          track.classList.add('has-hover');
+          cards.forEach(function (c) { c.classList.remove('is-hovered'); });
+          card.classList.add('is-hovered');
+        });
+        card.addEventListener('mouseleave', function () {
+          card.classList.remove('is-hovered');
+          track.classList.remove('has-hover');
+        });
+        card.addEventListener('click', function (e) {
+          if (e.target.tagName === 'A') return;
+          var id = card.getAttribute('data-id');
+          sessionStorage.setItem('vv_nav_id', id);
+          window.location.href = 'news-dettaglio.html?id=' + id;
+        });
+      });
+
+      /* Dots (mobile scroll-snap) */
+      articles.forEach(function (_, i) {
+        var dot = document.createElement('span');
+        dot.className = 'hero-dot-m' + (i === 0 ? ' is-active' : '');
+        dotsWrap.appendChild(dot);
+      });
+      var dotEls = dotsWrap.querySelectorAll('.hero-dot-m');
+      track.addEventListener('scroll', function () {
+        var mid = track.scrollLeft + track.clientWidth / 2;
+        var closest = 0, minDist = Infinity;
+        cards.forEach(function (card, i) {
+          var dist = Math.abs(card.offsetLeft + card.offsetWidth / 2 - mid);
+          if (dist < minDist) { minDist = dist; closest = i; }
+        });
+        dotEls.forEach(function (d, i) { d.classList.toggle('is-active', i === closest); });
+      }, { passive: true });
+    });
   })();
   </script>
 

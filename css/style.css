@@ -1133,6 +1133,97 @@ main, footer.site-footer {
   .hero-dots-mobile { display: flex; }
 }
 
+/* ================================================
+   News Cards — slider ultime news (stessa card 9:16 dell'hero)
+================================================ */
+.news-cards {
+  --card-h: 460px;
+  --card-w: calc(var(--card-h) * 9 / 16);
+  --card-gap: 16px;
+  position: relative;
+  background: #020d1a;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 28px 0 32px;
+  margin: 40px 0;
+}
+
+.news-cards-track {
+  display: flex;
+  gap: var(--card-gap);
+  will-change: transform;
+  transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
+  z-index: 1;
+}
+
+@media (hover: hover) {
+  .news-cards-track.has-hover .hero-card:not(.is-hovered) {
+    opacity: 0.45;
+    transform: scale(0.97);
+  }
+}
+
+.news-cards-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.news-cards-arrow:hover:not(:disabled) { background: rgba(255, 255, 255, 0.22); }
+.news-cards-arrow:disabled { opacity: 0.25; cursor: default; }
+.news-cards-arrow--prev { left: 20px; }
+.news-cards-arrow--next { right: 20px; }
+
+.news-dots-mobile {
+  display: none;
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  gap: 8px;
+  z-index: 5;
+}
+
+@media (max-width: 900px) {
+  .news-cards { --card-h: 400px; }
+}
+
+@media (max-width: 640px) {
+  .news-cards {
+    --card-h: 340px;
+    --card-w: min(calc(var(--card-h) * 9 / 16), calc(100vw - 40px));
+    padding: 20px 0 40px;
+    justify-content: flex-start;
+  }
+  .news-cards-track {
+    width: 100%;
+    overflow-x: scroll;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 0 10px;
+    box-sizing: border-box;
+    gap: 10px;
+    transition: none;
+    transform: none !important;
+  }
+  .news-cards-track::-webkit-scrollbar { display: none; }
+  .news-cards-track .hero-card { scroll-snap-align: center; }
+  .news-cards-arrow { display: none; }
+  .news-dots-mobile { display: flex; }
+}
+
 .btn--outline-white {
   background-color: transparent;
   color: var(--c-white);
