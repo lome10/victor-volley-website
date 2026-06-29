@@ -74,7 +74,16 @@
           <h2 id="partite-title">Prossime partite</h2>
           <p>Il calendario aggiornato delle nostre squadre</p>
         </div>
-        <div class="partite-grid" id="partiteGrid"></div>
+        <!-- Prima Divisione: featured card + classifica girone -->
+        <div class="girone-row">
+          <div id="gironeFeatured" class="girone-featured"></div>
+          <div id="gironeClassifica" class="girone-classifica"></div>
+        </div>
+        <!-- Altre categorie -->
+        <div class="partite-altri" id="partiteAltri">
+          <p class="partite-altri-label">Altre categorie</p>
+          <div class="partite-grid" id="partiteGrid"></div>
+        </div>
         <div style="text-align:center;margin-top:32px">
           <a href="calendario.html" class="btn btn--outline">Vedi tutto il calendario</a>
         </div>
@@ -210,6 +219,7 @@
   <script src="js/animations.js"></script>
   <script src="js/main.js"></script>
   <script src="js/partite-live.js"></script>
+  <script src="js/girone.js"></script>
 
   <!-- Statistiche dinamiche -->
   <script>
@@ -288,13 +298,13 @@
     DB.init(function () {
     var today    = new Date().toISOString().slice(0, 10);
     var upcoming = VV.getMatches()
-      .filter(function (m) { return !m.result && m.date >= today; })
+      .filter(function (m) { return !m.result && m.date >= today && m.category !== 'Prima Divisione'; })
       .slice(0, 3);
 
     var grid = document.getElementById('partiteGrid');
 
     if (!upcoming.length) {
-      grid.innerHTML = '<p style="color:#888;text-align:center;padding:32px 0;grid-column:1/-1">Nessuna partita in programma al momento.</p>';
+      document.getElementById('partiteAltri').style.display = 'none';
       return;
     }
 

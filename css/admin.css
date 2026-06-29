@@ -886,3 +886,54 @@ button { font-family: var(--font-body); cursor: pointer; }
 .atleta-rate-desc { font-size: 13px; font-weight: 600; color: var(--a-text); }
 .atleta-rate-meta { font-size: 12px; color: var(--a-muted); margin-top: 2px; }
 .atleta-rate-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+
+/* ================================================
+   Girone
+================================================ */
+.ga-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #1e40af;
+  margin-bottom: 24px;
+}
+
+.ga-info svg { flex-shrink: 0; margin-top: 1px; }
+.ga-info code { background: rgba(30,64,175,0.12); padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+
+.ga-layout {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.ga-classifica { width: 280px; flex-shrink: 0; }
+.ga-partite    { flex: 1; min-width: 0; }
+
+.ga-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--a-muted);
+  margin-bottom: 10px;
+}
+
+.ga-vs     { text-align: center; color: var(--a-muted); width: 24px; }
+.ga-result { text-align: center; font-weight: 700; }
+.ga-result--empty { color: var(--a-muted); text-align: center; }
+
+/* Rende il gc-panel visibile nell'admin (sfondo bianco già ok) */
+.ga-classifica .gc-panel { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.ga-classifica .gc-row--vv td { background: rgba(0,140,253,0.06); }
+.ga-classifica .gc-row--vv .gc-name { color: #0070D6; }
+
+@media (max-width: 900px) {
+  .ga-layout { flex-direction: column; }
+  .ga-classifica { width: 100%; }
+}

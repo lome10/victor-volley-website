@@ -1,0 +1,100 @@
+{
+  "stagione": "2025/26",
+  "categoria": "Prima Divisione",
+  "girone": "A",
+  "squadre": [
+    { "id": "victor-volley",    "nome": "Victor Volley",       "logo": "assets/logo.png", "home": true },
+    { "id": "galatina-volley",  "nome": "Galatina Volley" },
+    { "id": "pallavolo-tricase","nome": "Pallavolo Tricase" },
+    { "id": "brindisi-volley",  "nome": "Brindisi Volley" },
+    { "id": "aradeo-volley",    "nome": "Aradeo Volley" }
+  ],
+  "partite": [
+    {
+      "id": "g1",
+      "data": "2026-06-07",
+      "ora": "19:00",
+      "squadra_casa": "pallavolo-tricase",
+      "squadra_ospite": "victor-volley",
+      "palazzetto": "PalaSport Tricase",
+      "set_casa": 3,
+      "set_ospite": 0
+    },
+    {
+      "id": "g2",
+      "data": "2026-06-14",
+      "ora": "16:00",
+      "squadra_casa": "brindisi-volley",
+      "squadra_ospite": "galatina-volley",
+      "palazzetto": "PalaSport Brindisi",
+      "set_casa": 2,
+      "set_ospite": 3
+    },
+    {
+      "id": "g3",
+      "data": "2026-06-21",
+      "ora": "18:30",
+      "squadra_casa": "victor-volley",
+      "squadra_ospite": "galatina-volley",
+      "palazzetto": "ARKÈ Melissano",
+      "set_casa": 3,
+      "set_ospite": 1
+    },
+    {
+      "id": "g4",
+      "data": "2026-06-28",
+      "ora": "17:00",
+      "squadra_casa": "aradeo-volley",
+      "squadra_ospite": "brindisi-volley",
+      "palazzetto": "PalaSport Aradeo"
+    },
+    {
+      "id": "g5",
+      "data": "2026-07-05",
+      "ora": "19:00",
+      "squadra_casa": "galatina-volley",
+      "squadra_ospite": "pallavolo-tricase",
+      "palazzetto": "PalaSport Galatina"
+    },
+    {
+      "id": "g6",
+      "data": "2026-07-12",
+      "ora": "18:30",
+      "squadra_casa": "victor-volley",
+      "squadra_ospite": "pallavolo-tricase",
+      "palazzetto": "ARKÈ Melissano"
+    },
+    {
+      "id": "g7",
+      "data": "2026-07-19",
+      "ora": "16:00",
+      "squadra_casa": "galatina-volley",
+      "squadra_ospite": "victor-volley",
+      "palazzetto": "PalaSport Galatina"
+    },
+    {
+      "id": "g8",
+      "data": "2026-08-02",
+      "ora": "18:00",
+      "squadra_casa": "brindisi-volley",
+      "squadra_ospite": "aradeo-volley",
+      "palazzetto": "PalaSport Brindisi"
+    },
+    {
+      "id": "g9",
+      "data": "2026-08-09",
+      "ora": "19:00",
+      "squadra_casa": "aradeo-volley",
+      "squadra_ospite": "galatina-volley",
+      "palazzetto": "PalaSport Aradeo"
+    },
+    {
+      "id": "g10",
+      "data": "2026-08-16",
+      "ora": "20:30",
+      "squadra_casa": "victor-volley",
+      "squadra_ospite": "brindisi-volley",
+      "palazzetto": "ARKÈ Melissano"
+    }
+  ]
+}

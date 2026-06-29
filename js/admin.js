@@ -41,7 +41,7 @@
   /* ================================================
      NAVIGATION
   ================================================ */
-  var SECTIONS = { dashboard: 'Dashboard', articoli: 'Articoli', calendario: 'Calendario', galleria: 'Galleria', squadre: 'Squadre', numeri: 'Numeri homepage', atleti: 'Atleti' };
+  var SECTIONS = { dashboard: 'Dashboard', articoli: 'Articoli', calendario: 'Calendario', galleria: 'Galleria', squadre: 'Squadre', numeri: 'Numeri homepage', atleti: 'Atleti', girone: 'Girone Prima Divisione' };
 
   function initNav() {
     document.querySelectorAll('.admin-nav-item').forEach(function (el) {

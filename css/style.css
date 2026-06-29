@@ -1429,6 +1429,300 @@ main, footer.site-footer {
 }
 
 /* ================================================
+   Girone — featured card + classifica
+================================================ */
+
+/* Layout row */
+.girone-row {
+  display: flex;
+  gap: 20px;
+  align-items: stretch;
+  margin-bottom: 36px;
+}
+
+.girone-featured { flex: 1; min-width: 0; }
+
+.girone-classifica { width: 290px; flex-shrink: 0; }
+
+/* Altre categorie label */
+.partite-altri-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #aaa;
+  margin-bottom: 14px;
+}
+
+/* ---- Featured card ---- */
+.gf-card {
+  background: linear-gradient(160deg, #0d2240 0%, #07111e 100%);
+  border-radius: 16px;
+  padding: 26px 28px 22px;
+  color: #fff;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.32);
+  box-sizing: border-box;
+}
+
+.gf-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0; height: 120px;
+  background: linear-gradient(to top, rgba(0,130,200,0.10), transparent);
+  pointer-events: none;
+}
+
+.gf-card--home::after {
+  background: linear-gradient(to top, rgba(203,33,104,0.12), transparent);
+}
+
+/* Top row */
+.gf-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 28px;
+}
+
+.gf-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.gf-badge--cat  { background: rgba(255,255,255,0.10); color: rgba(255,255,255,0.65); }
+.gf-badge--home { background: rgba(203,33,104,0.25);  color: #f07aaa; }
+.gf-badge--away { background: rgba(0,140,253,0.20);   color: #70c2ff; }
+
+.gf-date {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.45);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+/* Body: two teams + VS */
+.gf-body {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  margin-bottom: 20px;
+}
+
+.gf-team {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.gf-team--opp { align-items: flex-end; text-align: right; }
+
+.gf-logo {
+  width: 54px;
+  height: 54px;
+  background: rgba(255,255,255,0.92);
+  border-radius: 10px;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.gf-logo-img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.gf-logo-img--init {
+  font-size: 22px;
+  font-weight: 700;
+  color: #0d2240;
+}
+
+.gf-tname {
+  font-family: var(--font-heading);
+  font-size: clamp(17px, 2.2vw, 26px);
+  font-weight: 400;
+  text-transform: uppercase;
+  line-height: 1.05;
+  color: rgba(255,255,255,0.45);
+  letter-spacing: -0.01em;
+}
+
+.gf-tname--vv { color: #fff; font-weight: 700; }
+
+.gf-vs {
+  font-family: var(--font-heading);
+  font-size: clamp(28px, 4.5vw, 48px);
+  font-weight: 700;
+  color: rgba(255,255,255,0.12);
+  letter-spacing: -0.03em;
+  flex-shrink: 0;
+}
+
+/* Venue */
+.gf-venue {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.40);
+  margin-bottom: 16px;
+}
+
+/* Countdown */
+.gf-countdown {
+  display: flex;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+.gf-cd-unit {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  padding: 8px 14px;
+  text-align: center;
+  min-width: 54px;
+}
+
+.gf-cd-num {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+
+.gf-cd-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  color: rgba(255,255,255,0.30);
+  margin-top: 3px;
+}
+
+.gf-empty {
+  padding: 40px 20px;
+  color: rgba(255,255,255,0.40);
+  font-size: 14px;
+  text-align: center;
+}
+
+/* ---- Classifica panel ---- */
+.gc-panel {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.gc-header {
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid #f0f0f2;
+}
+
+.gc-title {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--c-navy);
+}
+
+.gc-sub {
+  display: block;
+  font-size: 11px;
+  color: #aaa;
+  margin-top: 1px;
+}
+
+.gc-table {
+  width: 100%;
+  border-collapse: collapse;
+  flex: 1;
+}
+
+.gc-table thead th {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #bbb;
+  padding: 8px 12px 6px;
+  border-bottom: 1px solid #f0f0f2;
+  text-align: left;
+}
+
+.gc-table thead th.gc-stat,
+.gc-table thead th.gc-pts,
+.gc-table thead th.gc-pos { text-align: center; }
+
+.gc-table td {
+  padding: 10px 12px;
+  font-size: 13px;
+  border-bottom: 1px solid #f6f6f8;
+  color: #333;
+}
+
+.gc-table tbody tr:last-child td { border-bottom: none; }
+
+.gc-pos  { text-align: center; width: 28px; color: #aaa; font-size: 11px; }
+.gc-name { display: flex; align-items: center; gap: 7px; font-weight: 500; }
+.gc-stat { text-align: center; width: 28px; color: #777; }
+.gc-pts  { text-align: center; width: 36px; font-weight: 700; color: #111; }
+
+.gc-logo {
+  width: 20px; height: 20px;
+  object-fit: contain; border-radius: 3px; flex-shrink: 0;
+}
+
+.gc-logo-init {
+  width: 20px; height: 20px;
+  background: #e8edf2; border-radius: 3px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; color: #555; flex-shrink: 0;
+}
+
+.gc-row--vv td             { background: rgba(5,48,99,0.04); }
+.gc-row--vv .gc-name       { font-weight: 700; color: var(--c-navy); }
+.gc-row--vv .gc-pts        { color: var(--c-azzurro); }
+
+.gc-footer {
+  padding: 9px 16px;
+  font-size: 11px;
+  color: #ccc;
+  border-top: 1px solid #f0f0f2;
+  text-align: right;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .girone-row {
+    flex-direction: column;
+  }
+  .girone-classifica { width: 100%; }
+}
+
+/* ================================================
    News grid
 ================================================ */
 .news-grid {
