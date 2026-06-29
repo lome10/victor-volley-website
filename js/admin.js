@@ -1254,6 +1254,8 @@
     document.getElementById('sicurezzaEmail').textContent = _editingAtleta.email || '';
     document.getElementById('sicurezzaMsg').classList.add('is-hidden');
     document.getElementById('sicurezzaMsg').textContent = '';
+    document.getElementById('newPassword').value     = '';
+    document.getElementById('confirmPassword').value = '';
 
     _switchAtletaTab('anagrafica');
     _renderRateAdmin();
@@ -1317,31 +1319,49 @@
       .catch(function (e) { alert('Errore: ' + e.message); });
   });
 
-  /* ---- Reset password ---- */
-  document.getElementById('btnInviaReset').addEventListener('click', function () {
-    if (!_editingAtleta || !_editingAtleta.email) return;
-    var btn = this;
-    var msg = document.getElementById('sicurezzaMsg');
-    btn.disabled = true;
-    btn.textContent = 'Invio in corso…';
+  /* ---- Cambia password atleta (via Cloud Function) ---- */
+  document.getElementById('btnCambiaPassword').addEventListener('click', function () {
+    if (!_editingAtleta) return;
+    var btn     = this;
+    var msg     = document.getElementById('sicurezzaMsg');
+    var pwd     = document.getElementById('newPassword').value;
+    var confirm = document.getElementById('confirmPassword').value;
+
     msg.classList.add('is-hidden');
-    auth.sendPasswordResetEmail(_editingAtleta.email)
+
+    if (pwd.length < 6) {
+      msg.textContent = 'La password deve avere almeno 6 caratteri.';
+      msg.style.color = 'var(--a-red)';
+      msg.classList.remove('is-hidden');
+      return;
+    }
+    if (pwd !== confirm) {
+      msg.textContent = 'Le due password non coincidono.';
+      msg.style.color = 'var(--a-red)';
+      msg.classList.remove('is-hidden');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Salvataggio…';
+
+    var setPassword = firebase.functions().httpsCallable('setAthletePassword');
+    setPassword({ uid: _editingAtleta.uid, password: pwd })
       .then(function () {
-        msg.textContent = 'Email inviata a ' + _editingAtleta.email + '. Il link scade tra 1 ora.';
+        msg.textContent = 'Password aggiornata con successo.';
         msg.style.color = 'var(--a-green)';
         msg.classList.remove('is-hidden');
-        btn.textContent = 'Email inviata';
-        setTimeout(function () {
-          btn.disabled = false;
-          btn.textContent = 'Invia link di reset';
-        }, 5000);
+        document.getElementById('newPassword').value    = '';
+        document.getElementById('confirmPassword').value = '';
+        btn.disabled = false;
+        btn.textContent = 'Salva password';
       })
       .catch(function (e) {
         msg.textContent = 'Errore: ' + (e.message || 'riprova più tardi.');
         msg.style.color = 'var(--a-red)';
         msg.classList.remove('is-hidden');
         btn.disabled = false;
-        btn.textContent = 'Invia link di reset';
+        btn.textContent = 'Salva password';
       });
   });
 
