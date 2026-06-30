@@ -2177,7 +2177,7 @@ main, footer.site-footer {
   overflow: hidden;
   box-shadow: var(--card-shadow);
   text-align: center;
-  transition: box-shadow 0.3s ease;
+  transition: box-shadow 0.35s ease;
 }
 
 .giocatore-card:hover {
@@ -2195,18 +2195,26 @@ main, footer.site-footer {
   overflow: hidden;
 }
 
+.giocatore-foto img {
+  transition: transform 0.45s ease;
+}
+
+.giocatore-card:hover .giocatore-foto img {
+  transform: scale(1.07);
+}
+
 .giocatore-foto::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at 50% 100%, rgba(203, 33, 104, 0.35) 0%, transparent 70%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
+  background: radial-gradient(circle at 50% 85%, rgba(203, 33, 104, 0.5) 0%, transparent 65%);
+  clip-path: circle(0% at 50% 85%);
+  transition: clip-path 0.45s ease;
   pointer-events: none;
 }
 
 .giocatore-card:hover .giocatore-foto::after {
-  opacity: 1;
+  clip-path: circle(100% at 50% 85%);
 }
 
 .giocatore-numero {
