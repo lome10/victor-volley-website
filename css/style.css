@@ -2177,11 +2177,31 @@ main, footer.site-footer {
   overflow: hidden;
   box-shadow: var(--card-shadow);
   text-align: center;
-  transition: box-shadow 0.35s ease;
+  position: relative;
+  transition: box-shadow 0.45s ease;
+}
+
+.giocatore-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--card-radius);
+  background: var(--c-magenta);
+  z-index: -1;
+  filter: blur(18px);
+  opacity: 0;
+  transform: scale(0.7);
+  transition: opacity 0.45s ease, transform 0.45s ease;
 }
 
 .giocatore-card:hover {
-  box-shadow: 0 0 0 2px var(--c-magenta), 0 6px 24px rgba(203, 33, 104, 0.22);
+  overflow: visible;
+  box-shadow: var(--card-shadow);
+}
+
+.giocatore-card:hover::before {
+  opacity: 0.55;
+  transform: scale(1.08);
 }
 
 .giocatore-foto {
@@ -2193,6 +2213,7 @@ main, footer.site-footer {
   color: rgba(255, 255, 255, 0.25);
   position: relative;
   overflow: hidden;
+  border-radius: var(--card-radius) var(--card-radius) 0 0;
 }
 
 .giocatore-foto img {
@@ -2203,18 +2224,10 @@ main, footer.site-footer {
   transform: scale(1.07);
 }
 
-.giocatore-foto::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at 50% 85%, rgba(203, 33, 104, 0.5) 0%, transparent 65%);
-  clip-path: circle(0% at 50% 85%);
-  transition: clip-path 0.45s ease;
-  pointer-events: none;
-}
-
-.giocatore-card:hover .giocatore-foto::after {
-  clip-path: circle(100% at 50% 85%);
+.giocatore-info {
+  background: var(--c-white);
+  border-radius: 0 0 var(--card-radius) var(--card-radius);
+  position: relative;
 }
 
 .giocatore-numero {
