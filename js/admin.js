@@ -856,7 +856,7 @@
     document.getElementById('topbarActions').innerHTML = '';
     document.getElementById('playerName').value    = player ? (player.name   || '') : '';
     document.getElementById('playerNumber').value  = player ? (player.number || '') : '';
-    document.getElementById('playerRole').value    = player ? (player.role   || 'Schiacciatore') : 'Schiacciatore';
+    document.getElementById('playerRole').value    = player ? (player.role   || 'Laterale') : 'Laterale';
     document.getElementById('playerYear').value    = player ? (player.year   || '') : '';
     document.getElementById('playerPhoto').value   = player ? (player.photo  || '') : '';
     document.getElementById('playerPhotoFocus').value = player ? (player.photoFocus || '50% 25%') : '50% 25%';
