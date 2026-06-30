@@ -156,16 +156,6 @@
 
       return '<section class="section" id="cat-' + cat.id + '" aria-labelledby="cat-h-' + cat.id + '" style="display:none">' +
         '<div class="container">' +
-          '<div class="categoria-header">' +
-            '<div class="squadra-card-icon" style="width:52px;height:52px;border-radius:50%;background:' + esc(cat.color) + ';display:flex;align-items:center;justify-content:center;color:white;font-family:var(--font-heading);font-size:15px;font-weight:700;flex-shrink:0">' + esc(cat.abbr) + '</div>' +
-            '<div>' +
-              '<h2 id="cat-h-' + cat.id + '">' + esc(cat.name) + '</h2>' +
-              '<p style="color:#888;font-size:14px">' +
-                esc(cat.description) +
-                (cat.schedule ? ' &mdash; <strong>' + esc(cat.schedule) + '</strong>' : '') +
-              '</p>' +
-            '</div>' +
-          '</div>' +
           staffHtml + rosterHtml +
         '</div>' +
       '</section>';
