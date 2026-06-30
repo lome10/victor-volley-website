@@ -2177,16 +2177,11 @@ main, footer.site-footer {
   overflow: hidden;
   box-shadow: var(--card-shadow);
   text-align: center;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  transition: box-shadow 0.3s ease;
 }
 
 .giocatore-card:hover {
-  transform: translateY(-5px);
-  box-shadow: var(--card-shadow-hover);
-}
-
-.giocatore-card:hover .giocatore-foto img {
-  transform: scale(1.06);
+  box-shadow: 0 0 0 2px var(--c-magenta), 0 6px 24px rgba(203, 33, 104, 0.22);
 }
 
 .giocatore-foto {
@@ -2200,8 +2195,18 @@ main, footer.site-footer {
   overflow: hidden;
 }
 
-.giocatore-foto img {
-  transition: transform 0.35s ease;
+.giocatore-foto::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 100%, rgba(203, 33, 104, 0.35) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.giocatore-card:hover .giocatore-foto::after {
+  opacity: 1;
 }
 
 .giocatore-numero {
