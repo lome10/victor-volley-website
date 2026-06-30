@@ -2177,6 +2177,16 @@ main, footer.site-footer {
   overflow: hidden;
   box-shadow: var(--card-shadow);
   text-align: center;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.giocatore-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--card-shadow-hover);
+}
+
+.giocatore-card:hover .giocatore-foto img {
+  transform: scale(1.06);
 }
 
 .giocatore-foto {
@@ -2188,6 +2198,10 @@ main, footer.site-footer {
   color: rgba(255, 255, 255, 0.25);
   position: relative;
   overflow: hidden;
+}
+
+.giocatore-foto img {
+  transition: transform 0.35s ease;
 }
 
 .giocatore-numero {
