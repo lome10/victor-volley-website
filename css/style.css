@@ -2180,13 +2180,14 @@ main, footer.site-footer {
 }
 
 .giocatore-foto {
-  height: 180px;
+  aspect-ratio: 1 / 1;
   background: linear-gradient(135deg, var(--c-navy), #0a4a8c);
   display: flex;
   align-items: center;
   justify-content: center;
   color: rgba(255, 255, 255, 0.25);
   position: relative;
+  overflow: hidden;
 }
 
 .giocatore-numero {

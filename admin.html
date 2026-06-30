@@ -365,15 +365,31 @@
               <input type="number" id="playerYear" class="form-input" placeholder="es. 2005" min="1970" max="2020">
             </div>
             <div class="form-group form-full">
-              <label class="form-label">Foto (URL o carica file)</label>
-              <div style="display:flex;gap:8px;align-items:center">
+              <label class="form-label">Foto</label>
+              <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
                 <input type="text" id="playerPhoto" class="form-input form-input--sm" placeholder="URL foto" style="flex:1;min-width:0">
-                <label class="btn-ghost" style="cursor:pointer;padding:6px 10px;white-space:nowrap;flex-shrink:0" title="Carica immagine">
+                <input type="hidden" id="playerPhotoFocus" value="50% 25%">
+                <label class="btn-ghost" style="cursor:pointer;padding:6px 10px;white-space:nowrap;flex-shrink:0" title="Carica da file — ridimensionata automaticamente">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                   Carica
                   <input type="file" id="playerPhotoFile" accept="image/*" style="display:none">
                 </label>
-                <img id="playerPhotoPreview" src="" alt="" style="height:40px;width:40px;object-fit:cover;border-radius:50%;border:1px solid #e2e8f0;flex-shrink:0;display:none">
+              </div>
+              <!-- Focal point picker -->
+              <div id="playerFocusPicker" style="display:none">
+                <p style="font-size:12px;color:var(--a-muted);margin-bottom:8px">Clicca sull'immagine per scegliere la zona da centrare nella card quadrata:</p>
+                <div style="display:flex;gap:16px;align-items:flex-start">
+                  <div id="playerFocusWrap" style="position:relative;width:160px;height:160px;border-radius:8px;overflow:hidden;border:2px solid var(--a-accent);cursor:crosshair;flex-shrink:0">
+                    <img id="playerFocusImg" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:block;pointer-events:none">
+                    <div id="playerFocusDot" style="position:absolute;width:18px;height:18px;border-radius:50%;background:rgba(0,140,253,0.75);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.6);transform:translate(-50%,-50%);pointer-events:none"></div>
+                  </div>
+                  <div style="flex-shrink:0">
+                    <p style="font-size:11px;color:var(--a-muted);margin-bottom:6px">Anteprima card:</p>
+                    <div style="width:100px;height:100px;border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,0.15)">
+                      <img id="playerFocusCard" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:block">
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

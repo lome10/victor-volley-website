@@ -131,7 +131,7 @@
           '<div class="roster-grid">' +
           players.map(function (p) {
             var photoEl = p.photo
-              ? '<img src="' + esc(p.photo) + '" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block">'
+              ? '<img src="' + esc(p.photo) + '" style="width:100%;height:100%;object-fit:cover;object-position:' + esc(p.photoFocus || '50% 25%') + ';border-radius:inherit;display:block">'
               : '&#128100;';
             var numEl = p.number ? '<div class="giocatore-numero">' + p.number + '</div>' : '';
             var yearEl = p.year ? ' <span style="color:#bbb;font-size:10px">(' + p.year + ')</span>' : '';

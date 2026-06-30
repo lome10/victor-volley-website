@@ -859,7 +859,12 @@
     document.getElementById('playerRole').value    = player ? (player.role   || 'Schiacciatore') : 'Schiacciatore';
     document.getElementById('playerYear').value    = player ? (player.year   || '') : '';
     document.getElementById('playerPhoto').value   = player ? (player.photo  || '') : '';
-    _syncPersonPreview('playerPhoto', 'playerPhotoPreview');
+    document.getElementById('playerPhotoFocus').value = player ? (player.photoFocus || '50% 25%') : '50% 25%';
+    if (player && player.photo) {
+      _showPlayerFocusPicker(player.photo, player.photoFocus || '50% 25%');
+    } else {
+      _hidePlayerFocusPicker();
+    }
   }
 
   document.getElementById('playerSave').addEventListener('click', function () {
@@ -868,12 +873,13 @@
     var numVal  = document.getElementById('playerNumber').value;
     var yearVal = document.getElementById('playerYear').value;
     var player = Object.assign({}, _playerEditing || {}, {
-      categoryId: _currentCatId,
-      name:       name,
-      number:     numVal  ? +numVal  : null,
-      role:       document.getElementById('playerRole').value,
-      year:       yearVal ? +yearVal : null,
-      photo:      document.getElementById('playerPhoto').value.trim()
+      categoryId:  _currentCatId,
+      name:        name,
+      number:      numVal  ? +numVal  : null,
+      role:        document.getElementById('playerRole').value,
+      year:        yearVal ? +yearVal : null,
+      photo:       document.getElementById('playerPhoto').value.trim(),
+      photoFocus:  document.getElementById('playerPhotoFocus').value || '50% 25%'
     });
     DB.savePlayer(player, renderSquadre);
   });
@@ -915,26 +921,100 @@
     else       prev.style.display = 'none';
   }
 
+  function resizePlayerPhoto(file, cb) {
+    var MAX = 800;
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      var img = new Image();
+      img.onload = function () {
+        var w = img.naturalWidth, h = img.naturalHeight;
+        var scale = Math.min(1, MAX / w, MAX / h);
+        var outW = Math.round(w * scale), outH = Math.round(h * scale);
+        var canvas = document.createElement('canvas');
+        canvas.width = outW; canvas.height = outH;
+        var ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, outW, outH);
+        cb(canvas.toDataURL('image/jpeg', 0.85));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function _showPlayerFocusPicker(src, focus) {
+    var picker = document.getElementById('playerFocusPicker');
+    picker.style.display = '';
+    document.getElementById('playerFocusImg').src  = src;
+    document.getElementById('playerFocusCard').src = src;
+    var parts = (focus || '50% 25%').match(/(\d+(?:\.\d+)?)%\s*(\d+(?:\.\d+)?)%/);
+    var x = parts ? +parts[1] : 50;
+    var y = parts ? +parts[2] : 25;
+    var pos = x + '% ' + y + '%';
+    document.getElementById('playerFocusImg').style.objectPosition  = pos;
+    document.getElementById('playerFocusCard').style.objectPosition = pos;
+    _updateFocusDot(x, y);
+  }
+
+  function _hidePlayerFocusPicker() {
+    document.getElementById('playerFocusPicker').style.display = 'none';
+  }
+
+  function _updateFocusDot(x, y) {
+    var dot = document.getElementById('playerFocusDot');
+    dot.style.left = x + '%';
+    dot.style.top  = y + '%';
+  }
+
   var _personPhotoInputsReady = false;
   function _initPersonPhotoInputs() {
     if (_personPhotoInputsReady) return;
     _personPhotoInputsReady = true;
-    [
-      { file: 'playerPhotoFile', url: 'playerPhoto', preview: 'playerPhotoPreview' },
-      { file: 'staffPhotoFile',  url: 'staffPhoto',  preview: 'staffPhotoPreview'  }
-    ].forEach(function (cfg) {
-      document.getElementById(cfg.file).addEventListener('change', function () {
-        if (!this.files.length) return;
-        var fileEl = this;
-        convertLogoToPng(this.files[0], 200, function (dataUrl) {
-          document.getElementById(cfg.url).value = dataUrl;
-          _syncPersonPreview(cfg.url, cfg.preview);
-          fileEl.value = '';
-        });
+
+    /* Player: resize JPEG + focal point picker */
+    document.getElementById('playerPhotoFile').addEventListener('change', function () {
+      if (!this.files.length) return;
+      var fileEl = this;
+      resizePlayerPhoto(this.files[0], function (dataUrl) {
+        document.getElementById('playerPhoto').value = dataUrl;
+        var focus = document.getElementById('playerPhotoFocus').value || '50% 25%';
+        _showPlayerFocusPicker(dataUrl, focus);
+        fileEl.value = '';
       });
-      document.getElementById(cfg.url).addEventListener('input', function () {
-        _syncPersonPreview(cfg.url, cfg.preview);
+    });
+    document.getElementById('playerPhoto').addEventListener('input', function () {
+      var val = this.value.trim();
+      if (val) _showPlayerFocusPicker(val, document.getElementById('playerPhotoFocus').value || '50% 25%');
+      else     _hidePlayerFocusPicker();
+    });
+
+    /* Focal point click on picker */
+    document.getElementById('playerFocusWrap').addEventListener('click', function (e) {
+      var rect = this.getBoundingClientRect();
+      var x = Math.round((e.clientX - rect.left) / rect.width  * 100);
+      var y = Math.round((e.clientY - rect.top)  / rect.height * 100);
+      x = Math.max(0, Math.min(100, x));
+      y = Math.max(0, Math.min(100, y));
+      var focus = x + '% ' + y + '%';
+      document.getElementById('playerPhotoFocus').value = focus;
+      document.getElementById('playerFocusImg').style.objectPosition  = focus;
+      document.getElementById('playerFocusCard').style.objectPosition = focus;
+      _updateFocusDot(x, y);
+    });
+
+    /* Staff: simple resize, no focal point */
+    document.getElementById('staffPhotoFile').addEventListener('change', function () {
+      if (!this.files.length) return;
+      var fileEl = this;
+      resizePlayerPhoto(this.files[0], function (dataUrl) {
+        document.getElementById('staffPhoto').value = dataUrl;
+        _syncPersonPreview('staffPhoto', 'staffPhotoPreview');
+        fileEl.value = '';
       });
+    });
+    document.getElementById('staffPhoto').addEventListener('input', function () {
+      _syncPersonPreview('staffPhoto', 'staffPhotoPreview');
     });
   }
 
