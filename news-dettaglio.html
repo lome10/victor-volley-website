@@ -33,7 +33,7 @@
       <div class="container">
 
         <div style="margin-bottom:32px">
-          <a href="news.html" style="color:var(--c-azzurro);font-size:14px;font-weight:500;text-decoration:none">
+          <a href="/news" style="color:var(--c-azzurro);font-size:14px;font-weight:500;text-decoration:none">
             &larr; Torna alle news
           </a>
         </div>
@@ -88,7 +88,7 @@
     var _ss  = sessionStorage.getItem('vv_nav_id');
     var id   = parseInt(_qs || _ss || '', 10);
     sessionStorage.removeItem('vv_nav_id');
-    if (isNaN(id) || id <= 0) { window.location.href = 'news.html'; return; }
+    if (isNaN(id) || id <= 0) { window.location.href = '/news'; return; }
 
     DB.init(function () {
     var content = document.getElementById('articleContent');
@@ -97,7 +97,7 @@
     if (!article) {
       content.innerHTML =
         '<p style="color:#888;text-align:center;padding:64px 0;font-size:16px">Articolo non trovato.<br>' +
-        '<a href="news.html" style="color:var(--c-azzurro)">Torna alle news</a></p>';
+        '<a href="/news" style="color:var(--c-azzurro)">Torna alle news</a></p>';
       return;
     }
 
@@ -139,7 +139,7 @@
               '<span class="news-card-date">' + VV.formatDateShort(a.date) + '</span>' +
             '</div>' +
             '<h3 class="news-card-title">' + esc(a.title) + '</h3>' +
-            '<a href="news-dettaglio.html?id=' + a.id + '" class="news-card-link" onclick="sessionStorage.setItem(\'vv_nav_id\',\'' + a.id + '\')">Leggi di pi&ugrave; &rarr;</a>' +
+            '<a href="/news-dettaglio?id=' + a.id + '" class="news-card-link" onclick="sessionStorage.setItem(\'vv_nav_id\',\'' + a.id + '\')">Leggi di pi&ugrave; &rarr;</a>' +
           '</div>' +
         '</article>';
       }).join('');

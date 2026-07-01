@@ -1,6 +1,6 @@
 /* Victor Volley — sidebar + footer condivisi */
 (function () {
-  var page = window.location.pathname.split('/').pop() || 'index.html';
+  var page = window.location.pathname.split('/').pop().replace(/\.html$/, '') || 'index';
 
   var SVG = {
     fb:      '<svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>',
@@ -22,7 +22,7 @@
 
     el.innerHTML =
       '<div class="sidebar-logo">' +
-        '<a href="index.html" aria-label="Victor Volley — home">' +
+        '<a href="/" aria-label="Victor Volley — home">' +
           '<img src="assets/logo.png" alt="Victor Volley">' +
         '</a>' +
       '</div>' +
@@ -31,41 +31,41 @@
         '<ul class="sidebar-nav-list">' +
 
           '<li>' +
-            '<a href="index.html" class="sidebar-nav-link' + (page === 'index.html' || page === '' ? ' is-active' : '') + '">Home</a>' +
+            '<a href="/" class="sidebar-nav-link' + (page === 'index' ? ' is-active' : '') + '">Home</a>' +
           '</li>' +
 
           _sidebarItem('snav-squadre', 'Squadre', 'Le nostre squadre', [
-            ['squadre.html#prima-divisione', 'Prima Divisione'],
-            ['squadre.html#under-19',        'Under 19'],
-            ['squadre.html#under-13',        'Under 13'],
-            ['squadre.html#under-12',        'Under 12'],
-            ['squadre.html#minivolley',      'Minivolley']
-          ], page === 'squadre.html') +
+            ['/squadre#prima-divisione', 'Prima Divisione'],
+            ['/squadre#under-19',        'Under 19'],
+            ['/squadre#under-13',        'Under 13'],
+            ['/squadre#under-12',        'Under 12'],
+            ['/squadre#minivolley',      'Minivolley']
+          ], page === 'squadre') +
 
           _sidebarItem('snav-stagione', 'Stagione', 'Stagione 2025/26', [
-            ['calendario.html',           'Calendario'],
-            ['calendario.html#risultati', 'Risultati'],
-            ['contatti.html#palazzetto',  'Palazzetto ARKÉ']
-          ], page === 'calendario.html') +
+            ['/calendario',           'Calendario'],
+            ['/calendario#risultati', 'Risultati'],
+            ['/contatti#palazzetto',  'Palazzetto ARKÉ']
+          ], page === 'calendario') +
 
           '<li>' +
-            '<a href="news.html" class="sidebar-nav-link' + isActive('news.html') + '">News</a>' +
+            '<a href="/news" class="sidebar-nav-link' + isActive('news') + '">News</a>' +
           '</li>' +
 
           '<li>' +
-            '<a href="galleria.html" class="sidebar-nav-link' + isActive('galleria.html') + '">Galleria</a>' +
+            '<a href="/galleria" class="sidebar-nav-link' + isActive('galleria') + '">Galleria</a>' +
           '</li>' +
 
           '<li>' +
-            '<a href="sponsor.html" class="sidebar-nav-link' + isActive('sponsor.html') + '">Sponsor</a>' +
+            '<a href="/sponsor" class="sidebar-nav-link' + isActive('sponsor') + '">Sponsor</a>' +
           '</li>' +
 
           '<li>' +
-            '<a href="contatti.html" class="sidebar-nav-link' + isActive('contatti.html') + '">Contatti</a>' +
+            '<a href="/contatti" class="sidebar-nav-link' + isActive('contatti') + '">Contatti</a>' +
           '</li>' +
 
           '<li style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.08)">' +
-            '<a href="atleta.html" class="sidebar-nav-link sidebar-nav-link--atleti' + isActive('atleta.html') + '">' +
+            '<a href="/atleta" class="sidebar-nav-link sidebar-nav-link--atleti' + isActive('atleta') + '">' +
               '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="margin-right:5px;vertical-align:middle;opacity:.7"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>' +
               'Area Atleti' +
             '</a>' +
@@ -75,7 +75,7 @@
       '</nav>' +
 
       '<div class="sidebar-cta">' +
-        '<a href="unisciti-a-noi.html" class="sidebar-cta-btn">' +
+        '<a href="/unisciti-a-noi" class="sidebar-cta-btn">' +
           'Gioca<br>con noi' +
         '</a>' +
       '</div>' +
@@ -215,14 +215,14 @@
           '<div>' +
             '<div class="footer-col-title">Link rapidi</div>' +
             '<ul class="footer-links">' +
-              '<li><a href="index.html">Home</a></li>' +
-              '<li><a href="squadre.html">Le squadre</a></li>' +
-              '<li><a href="calendario.html">Calendario</a></li>' +
-              '<li><a href="news.html">News</a></li>' +
-              '<li><a href="galleria.html">Galleria</a></li>' +
-              '<li><a href="unisciti-a-noi.html">Vieni a giocare con noi</a></li>' +
-              '<li><a href="contatti.html">Contatti</a></li>' +
-              '<li><a href="atleta.html">Area Atleti</a></li>' +
+              '<li><a href="/">Home</a></li>' +
+              '<li><a href="/squadre">Le squadre</a></li>' +
+              '<li><a href="/calendario">Calendario</a></li>' +
+              '<li><a href="/news">News</a></li>' +
+              '<li><a href="/galleria">Galleria</a></li>' +
+              '<li><a href="/unisciti-a-noi">Vieni a giocare con noi</a></li>' +
+              '<li><a href="/contatti">Contatti</a></li>' +
+              '<li><a href="/atleta">Area Atleti</a></li>' +
             '</ul>' +
           '</div>' +
           '<div>' +
@@ -263,7 +263,7 @@
             '<span class="mtb-line"></span>' +
           '</span>' +
         '</button>' +
-        '<a href="index.html" class="mtb-identity" aria-label="Victor Volley — home">' +
+        '<a href="/" class="mtb-identity" aria-label="Victor Volley — home">' +
           '<img src="assets/logo.png" alt="" class="mtb-logo">' +
           '<span class="mtb-name">Victor Volley</span>' +
         '</a>' +

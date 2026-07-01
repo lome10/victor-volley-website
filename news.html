@@ -33,7 +33,7 @@
 
       <div class="page-header">
         <div class="container">
-          <p class="breadcrumb"><a href="index.html">Home</a> / News</p>
+          <p class="breadcrumb"><a href="/">Home</a> / News</p>
           <h1>News</h1>
           <p style="color:rgba(255,255,255,0.80);margin-top:8px">Comunicati, risultati e aggiornamenti</p>
         </div>
@@ -126,7 +126,7 @@
               '<div class="hero-card-content">' +
                 '<span class="hero-card-cat ' + badgeCls(a.category) + '">' + esc(a.category) + '</span>' +
                 '<h2 class="hero-card-title">' + esc(a.title) + '</h2>' +
-                '<a href="news-dettaglio.html?id=' + esc(a.id) + '" class="hero-card-cta" ' +
+                '<a href="/news-dettaglio?id=' + esc(a.id) + '" class="hero-card-cta" ' +
                    'onclick="sessionStorage.setItem(\'vv_nav_id\',\'' + esc(a.id) + '\')">Leggi &rarr;</a>' +
               '</div>' +
             '</article>';

@@ -80,7 +80,7 @@
           <div class="partite-grid" id="partiteGrid"></div>
         </div>
         <div style="text-align:center;margin-top:32px">
-          <a href="calendario.html" class="btn btn--outline">Vedi tutto il calendario</a>
+          <a href="/calendario" class="btn btn--outline">Vedi tutto il calendario</a>
         </div>
       </div>
     </section>
@@ -104,7 +104,7 @@
         <div class="news-dots-mobile" id="newsDotsMobile"></div>
       </div>
       <div style="text-align:center;margin-bottom:8px">
-        <a href="news.html" class="btn btn--outline-white">Tutte le news</a>
+        <a href="/news" class="btn btn--outline-white">Tutte le news</a>
       </div>
     </section>
 
@@ -116,27 +116,27 @@
           <p>Cinque categorie per ogni et&agrave; e livello</p>
         </div>
         <div class="squadre-grid">
-          <a href="squadre.html#prima-divisione" class="squadra-card reveal">
+          <a href="/squadre#prima-divisione" class="squadra-card reveal">
             <div class="squadra-card-icon">PD</div>
             <div class="squadra-card-name">Prima Divisione</div>
             <div class="squadra-card-desc">Campionato senior</div>
           </a>
-          <a href="squadre.html#under-19" class="squadra-card reveal">
+          <a href="/squadre#under-19" class="squadra-card reveal">
             <div class="squadra-card-icon">U19</div>
             <div class="squadra-card-name">Under 19</div>
             <div class="squadra-card-desc">Categoria giovanile</div>
           </a>
-          <a href="squadre.html#under-13" class="squadra-card reveal">
+          <a href="/squadre#under-13" class="squadra-card reveal">
             <div class="squadra-card-icon">U13</div>
             <div class="squadra-card-name">Under 13</div>
             <div class="squadra-card-desc">Categoria giovanile</div>
           </a>
-          <a href="squadre.html#under-12" class="squadra-card reveal">
+          <a href="/squadre#under-12" class="squadra-card reveal">
             <div class="squadra-card-icon">U12</div>
             <div class="squadra-card-name">Under 12</div>
             <div class="squadra-card-desc">Categoria giovanile</div>
           </a>
-          <a href="squadre.html#minivolley" class="squadra-card reveal">
+          <a href="/squadre#minivolley" class="squadra-card reveal">
             <div class="squadra-card-icon" style="background:linear-gradient(135deg,var(--c-magenta),#e05090)">MV</div>
             <div class="squadra-card-name">Minivolley</div>
             <div class="squadra-card-desc">Dai 6 ai 10 anni</div>
@@ -167,7 +167,7 @@
           </div>
         </div>
         <div style="text-align:center">
-          <a href="galleria.html" class="btn btn--outline">Vedi tutta la galleria</a>
+          <a href="/galleria" class="btn btn--outline">Vedi tutta la galleria</a>
         </div>
       </div>
     </section>
@@ -203,8 +203,8 @@
       <div class="container" style="position:relative;z-index:1">
         <h2 id="cta-title">Vuoi giocare con noi?</h2>
         <p>Siamo sempre alla ricerca di nuovi atleti, da qualsiasi et&agrave; e livello. Contattaci e vieni a provare un allenamento gratuitamente.</p>
-        <a href="unisciti-a-noi.html" class="btn btn--primary">Mandaci un messaggio</a>
-        <a href="contatti.html" class="btn btn--outline-white">Dove siamo</a>
+        <a href="/unisciti-a-noi" class="btn btn--primary">Mandaci un messaggio</a>
+        <a href="/contatti" class="btn btn--outline-white">Dove siamo</a>
       </div>
     </section>
 
@@ -334,7 +334,7 @@
           '</div>' +
           countdown +
           '<div class="pc-footer">' +
-            '<a href="calendario.html" class="pc-cta">Vedi tutti i match</a>' +
+            '<a href="/calendario" class="pc-cta">Vedi tutti i match</a>' +
           '</div>' +
         '</div>';
       }).join('');
@@ -392,7 +392,7 @@
           '<div class="hero-card-content">' +
             '<span class="hero-card-cat ' + badgeCls(a.category) + '">' + esc(a.category) + '</span>' +
             '<h2 class="hero-card-title">' + esc(a.title) + '</h2>' +
-            '<a href="news-dettaglio.html?id=' + a.id + '" class="hero-card-cta" ' +
+            '<a href="/news-dettaglio?id=' + a.id + '" class="hero-card-cta" ' +
                'onclick="sessionStorage.setItem(\'vv_nav_id\',\'' + a.id + '\')">Leggi &rarr;</a>' +
           '</div>' +
         '</article>';
@@ -436,7 +436,7 @@
           if (e.target.tagName === 'A') return;
           var id = card.getAttribute('data-id');
           sessionStorage.setItem('vv_nav_id', id);
-          window.location.href = 'news-dettaglio.html?id=' + id;
+          window.location.href = '/news-dettaglio?id=' + id;
         });
       });
 
@@ -495,7 +495,7 @@
         '<div class="hero-card-content">' +
           '<span class="hero-card-cat ' + badgeCls(a.category) + '">' + esc(a.category) + '</span>' +
           '<h2 class="hero-card-title">' + esc(a.title) + '</h2>' +
-          '<a href="news-dettaglio.html?id=' + a.id + '" class="hero-card-cta" ' +
+          '<a href="/news-dettaglio?id=' + a.id + '" class="hero-card-cta" ' +
              'onclick="sessionStorage.setItem(\'vv_nav_id\',\'' + a.id + '\')">Leggi &rarr;</a>' +
         '</div>' +
       '</article>';
@@ -517,7 +517,7 @@
         if (e.target.tagName === 'A') return;
         var id = card.getAttribute('data-id');
         sessionStorage.setItem('vv_nav_id', id);
-        window.location.href = 'news-dettaglio.html?id=' + id;
+        window.location.href = '/news-dettaglio?id=' + id;
       });
     });
 
