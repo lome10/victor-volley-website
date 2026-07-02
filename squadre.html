@@ -162,11 +162,12 @@
           var warm  = !!WARM_ROLES[r];
           var label = roleLabel(r, groups[r][0].gender);
           var list  = groups[r].slice().sort(function (a, b) { return (a.number || 99) - (b.number || 99); });
+          var gridClass = 'sq-shelf-grid' + (list.length > 2 ? ' sq-shelf-grid--scroll' : '');
           return '<section class="sq-shelf" data-role="' + slugify(r) + '">' +
             '<div class="sq-shelf-head">' +
               '<div class="sq-shelf-title"><h3>' + esc(label) + '</h3></div>' +
             '</div>' +
-            '<div class="sq-shelf-grid">' + list.map(function (p) { return rosterCardHtml(p, warm); }).join('') + '</div>' +
+            '<div class="' + gridClass + '">' + list.map(function (p) { return rosterCardHtml(p, warm); }).join('') + '</div>' +
           '</section>';
         }).join('');
 
