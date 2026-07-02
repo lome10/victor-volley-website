@@ -138,20 +138,23 @@
 
 /* Su mobile, i ruoli con più di due atlete/i restano scorribili orizzontalmente:
    le card sono più leggibili in coda che schiacciate in una griglia stretta.
-   La card successiva "sbircia" dal bordo per segnalare che si può scorrere.
    La dimensione della card è fissa (160px) in entrambe le modalità, così
-   nessuna sezione appare "zoomata" rispetto alle altre. */
+   nessuna sezione appare "zoomata" rispetto alle altre.
+   La card attiva resta centrata (scroll-snap center) con un bordo laterale
+   calcolato apposta perché quella successiva (e precedente) sbirchi in modo
+   ben visibile su entrambi i lati: così è inequivocabile che si può scorrere. */
 @media (max-width: 720px) {
   .sq-shelf-grid { grid-template-columns: repeat(auto-fill, 160px); justify-content: start; }
   .sq-shelf-grid--scroll {
     display: flex; grid-template-columns: none; gap: 14px;
-    overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    mask-image: linear-gradient(to right, black 0%, black 88%, transparent 100%);
-    -webkit-mask-image: linear-gradient(to right, black 0%, black 88%, transparent 100%);
+    padding-left: calc((100% - 160px) / 2); padding-right: calc((100% - 160px) / 2);
+    overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: calc((100% - 160px) / 2);
+    -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
   }
   .sq-shelf-grid--scroll::-webkit-scrollbar { display: none; }
-  .sq-shelf-grid--scroll .sq-roster-card { flex: 0 0 160px; width: 160px; scroll-snap-align: start; }
+  .sq-shelf-grid--scroll .sq-roster-card { flex: 0 0 160px; width: 160px; scroll-snap-align: center; }
 }
 
 .sq-roster-card {
