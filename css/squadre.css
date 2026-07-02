@@ -142,7 +142,9 @@
    nessuna sezione appare "zoomata" rispetto alle altre.
    La card attiva resta centrata (scroll-snap center) con un bordo laterale
    calcolato apposta perché quella successiva (e precedente) sbirchi in modo
-   ben visibile su entrambi i lati: così è inequivocabile che si può scorrere. */
+   ben visibile su entrambi i lati. Lo stato iniziale parte già centrato sulla
+   seconda card (vedi centerShelfSliders in squadre.html), non sulla prima,
+   così da mostrare subito un'anteprima sia a sinistra che a destra. */
 @media (max-width: 720px) {
   .sq-shelf-grid { grid-template-columns: repeat(auto-fill, 160px); justify-content: start; }
   .sq-shelf-grid--scroll {

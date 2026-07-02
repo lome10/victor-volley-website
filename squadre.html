@@ -184,6 +184,16 @@
       '</section>';
     }
 
+    function centerShelfSliders(section) {
+      if (section.dataset.sqCentered) return;
+      section.dataset.sqCentered = '1';
+      if (!window.matchMedia('(max-width: 720px)').matches) return;
+      section.querySelectorAll('.sq-shelf-grid--scroll').forEach(function (grid) {
+        var second = grid.children[1];
+        if (second) second.scrollIntoView({ inline: 'center', block: 'nearest' });
+      });
+    }
+
     function initSquadreSection(section) {
       var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -255,7 +265,7 @@
       _activeCatId = id;
       main.querySelectorAll('.sq-cat-section').forEach(function (s) { s.style.display = 'none'; });
       var target = document.getElementById('cat-' + id);
-      if (target) target.style.display = '';
+      if (target) { target.style.display = ''; centerShelfSliders(target); }
       catSelect.value = String(id);
       var cat = categories.find(function (c) { return String(c.id) === String(id); });
       catTitle.textContent = cat ? cat.name : 'Le nostre squadre';
