@@ -41,7 +41,7 @@
   /* ================================================
      NAVIGATION
   ================================================ */
-  var SECTIONS = { dashboard: 'Dashboard', articoli: 'Articoli', calendario: 'Calendario', galleria: 'Galleria', squadre: 'Squadre', sponsor: 'Sponsor', atleti: 'Atleti', girone: 'Girone Prima Divisione', datiJson: 'File JSON' };
+  var SECTIONS = { dashboard: 'Dashboard', articoli: 'Articoli', calendario: 'Calendario', galleria: 'Galleria', squadre: 'Squadre', sponsor: 'Sponsor', atleti: 'Atleti', girone: 'Girone Prima Divisione', stagioni: 'Stagioni', datiJson: 'File JSON' };
 
   function initNav() {
     document.querySelectorAll('.admin-nav-item').forEach(function (el) {
@@ -70,6 +70,7 @@
     if (section === 'squadre')    renderSquadre();
     if (section === 'sponsor')    renderSponsor();
     if (section === 'atleti')     renderAtleti();
+    if (section === 'stagioni')   renderStagioni();
     if (section === 'datiJson')   renderDatiJson();
   }
 
@@ -346,6 +347,7 @@
 
     var partita = {
       id:            (_matchEditing && _matchEditing.id) || ('m' + Date.now()),
+      stagione:      (_matchEditing && _matchEditing.stagione) || (VV.getCurrentSeason() || {}).id || '2025/2026',
       categoria:     document.getElementById('matchCategory').value,
       squadra_casa:  isHome ? squadraVV  : avversario,
       squadra_ospite: isHome ? avversario : squadraVV,
@@ -729,10 +731,11 @@
   /* ================================================
      SQUADRE
   ================================================ */
-  var _catEditing    = null;
-  var _playerEditing = null;
-  var _staffEditing  = null;
-  var _currentCatId  = null;
+  var _catEditing          = null;
+  var _playerEditing       = null;
+  var _staffEditing        = null;
+  var _currentCatId        = null;
+  var _currentAdminSeason  = null;
 
   var _SQUAD_PANELS = ['squadreList', 'squadreCatForm', 'squadrePlayerForm', 'squadreStaffForm'];
 
@@ -745,6 +748,22 @@
   function renderSquadre() {
     _showSquadrePanel('squadreList');
     setTopbarBtn('Nuova categoria', function () { openCategoryForm(null); });
+
+    /* Popola select stagioni */
+    var seasons = VV.getSeasons();
+    if (!_currentAdminSeason) {
+      _currentAdminSeason = (VV.getCurrentSeason() || seasons[0] || { id: '2025/2026' }).id;
+    }
+    var sel = document.getElementById('squadreStagioneSelect');
+    sel.innerHTML = seasons.map(function (s) {
+      return '<option value="' + s.id + '"' + (s.id === _currentAdminSeason ? ' selected' : '') + '>' +
+        s.name + (s.current ? ' (corrente)' : '') + '</option>';
+    }).join('');
+    sel.onchange = function () {
+      _currentAdminSeason = this.value;
+      refreshSquadreAccordion();
+    };
+
     refreshSquadreAccordion();
   }
 
@@ -761,8 +780,11 @@
     var DEL_ICON  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>';
 
     accordion.innerHTML = categories.map(function (cat) {
-      var players = VV.getPlayers(cat.id).sort(function (a, b) { return (a.number || 99) - (b.number || 99); });
-      var staff   = VV.getStaff(cat.id);
+      var players = VV.getPlayers(cat.id)
+        .filter(function (p) { return !p.stagione || p.stagione === _currentAdminSeason; })
+        .sort(function (a, b) { return (a.number || 99) - (b.number || 99); });
+      var staff = VV.getStaff(cat.id)
+        .filter(function (s) { return !s.stagione || s.stagione === _currentAdminSeason; });
 
       function personRow(p, isPlayer) {
         var avatar = p.photo
@@ -857,13 +879,14 @@
     document.getElementById('playerName').value    = player ? (player.name   || '') : '';
     document.getElementById('playerNumber').value  = player ? (player.number || '') : '';
     document.getElementById('playerRole').value    = player ? (player.role   || 'Laterale') : 'Laterale';
+    document.getElementById('playerGender').value  = player ? (player.gender || 'M') : 'M';
     document.getElementById('playerYear').value    = player ? (player.year   || '') : '';
     document.getElementById('playerPhoto').value   = player ? (player.photo  || '') : '';
     document.getElementById('playerPhotoFocus').value = player ? (player.photoFocus || '50% 25%') : '50% 25%';
     if (player && player.photo) {
-      _showPlayerFocusPicker(player.photo, player.photoFocus || '50% 25%');
+      _showFocusPicker('player', player.photo, player.photoFocus || '50% 25%');
     } else {
-      _hidePlayerFocusPicker();
+      _hideFocusPicker('player');
     }
   }
 
@@ -877,10 +900,12 @@
       name:        name,
       number:      numVal  ? +numVal  : null,
       role:        document.getElementById('playerRole').value,
+      gender:      document.getElementById('playerGender').value || 'M',
       year:        yearVal ? +yearVal : null,
       photo:       document.getElementById('playerPhoto').value.trim(),
       photoFocus:  document.getElementById('playerPhotoFocus').value || '50% 25%'
     });
+    if (!player.stagione) player.stagione = _currentAdminSeason || (VV.getCurrentSeason() || {}).id || '2025/2026';
     DB.savePlayer(player, renderSquadre);
   });
 
@@ -896,7 +921,12 @@
     document.getElementById('staffName').value  = person ? (person.name  || '') : '';
     document.getElementById('staffRole').value  = person ? (person.role  || 'Allenatore') : 'Allenatore';
     document.getElementById('staffPhoto').value = person ? (person.photo || '') : '';
-    _syncPersonPreview('staffPhoto', 'staffPhotoPreview');
+    document.getElementById('staffPhotoFocus').value = person ? (person.photoFocus || '50% 25%') : '50% 25%';
+    if (person && person.photo) {
+      _showFocusPicker('staff', person.photo, person.photoFocus || '50% 25%');
+    } else {
+      _hideFocusPicker('staff');
+    }
   }
 
   document.getElementById('staffSave').addEventListener('click', function () {
@@ -906,20 +936,14 @@
       categoryId: _currentCatId,
       name:       name,
       role:       document.getElementById('staffRole').value,
-      photo:      document.getElementById('staffPhoto').value.trim()
+      photo:      document.getElementById('staffPhoto').value.trim(),
+      photoFocus: document.getElementById('staffPhotoFocus').value || '50% 25%'
     });
+    if (!person.stagione) person.stagione = _currentAdminSeason || (VV.getCurrentSeason() || {}).id || '2025/2026';
     DB.saveStaffMember(person, renderSquadre);
   });
 
   document.getElementById('staffCancel').addEventListener('click', renderSquadre);
-
-  /* ---- Person photo upload (shared) ---- */
-  function _syncPersonPreview(inputId, previewId) {
-    var val  = document.getElementById(inputId).value;
-    var prev = document.getElementById(previewId);
-    if (val) { prev.src = val; prev.style.display = ''; }
-    else       prev.style.display = 'none';
-  }
 
   function resizePlayerPhoto(file, cb) {
     var MAX = 800;
@@ -943,28 +967,43 @@
     reader.readAsDataURL(file);
   }
 
-  function _showPlayerFocusPicker(src, focus) {
-    var picker = document.getElementById('playerFocusPicker');
+  function _showFocusPicker(prefix, src, focus) {
+    var picker = document.getElementById(prefix + 'FocusPicker');
     picker.style.display = '';
-    document.getElementById('playerFocusImg').src  = src;
-    document.getElementById('playerFocusCard').src = src;
+    document.getElementById(prefix + 'FocusImg').src  = src;
+    document.getElementById(prefix + 'FocusCard').src = src;
     var parts = (focus || '50% 25%').match(/(\d+(?:\.\d+)?)%\s*(\d+(?:\.\d+)?)%/);
     var x = parts ? +parts[1] : 50;
     var y = parts ? +parts[2] : 25;
     var pos = x + '% ' + y + '%';
-    document.getElementById('playerFocusImg').style.objectPosition  = pos;
-    document.getElementById('playerFocusCard').style.objectPosition = pos;
-    _updateFocusDot(x, y);
+    document.getElementById(prefix + 'FocusImg').style.objectPosition  = pos;
+    document.getElementById(prefix + 'FocusCard').style.objectPosition = pos;
+    _updateFocusDot(prefix, x, y);
   }
 
-  function _hidePlayerFocusPicker() {
-    document.getElementById('playerFocusPicker').style.display = 'none';
+  function _hideFocusPicker(prefix) {
+    document.getElementById(prefix + 'FocusPicker').style.display = 'none';
   }
 
-  function _updateFocusDot(x, y) {
-    var dot = document.getElementById('playerFocusDot');
+  function _updateFocusDot(prefix, x, y) {
+    var dot = document.getElementById(prefix + 'FocusDot');
     dot.style.left = x + '%';
     dot.style.top  = y + '%';
+  }
+
+  function _initFocusWrap(prefix) {
+    document.getElementById(prefix + 'FocusWrap').addEventListener('click', function (e) {
+      var rect = this.getBoundingClientRect();
+      var x = Math.round((e.clientX - rect.left) / rect.width  * 100);
+      var y = Math.round((e.clientY - rect.top)  / rect.height * 100);
+      x = Math.max(0, Math.min(100, x));
+      y = Math.max(0, Math.min(100, y));
+      var focus = x + '% ' + y + '%';
+      document.getElementById(prefix + 'PhotoFocus').value = focus;
+      document.getElementById(prefix + 'FocusImg').style.objectPosition  = focus;
+      document.getElementById(prefix + 'FocusCard').style.objectPosition = focus;
+      _updateFocusDot(prefix, x, y);
+    });
   }
 
   var _personPhotoInputsReady = false;
@@ -979,44 +1018,87 @@
       resizePlayerPhoto(this.files[0], function (dataUrl) {
         document.getElementById('playerPhoto').value = dataUrl;
         var focus = document.getElementById('playerPhotoFocus').value || '50% 25%';
-        _showPlayerFocusPicker(dataUrl, focus);
+        _showFocusPicker('player', dataUrl, focus);
         fileEl.value = '';
       });
     });
     document.getElementById('playerPhoto').addEventListener('input', function () {
       var val = this.value.trim();
-      if (val) _showPlayerFocusPicker(val, document.getElementById('playerPhotoFocus').value || '50% 25%');
-      else     _hidePlayerFocusPicker();
+      if (val) _showFocusPicker('player', val, document.getElementById('playerPhotoFocus').value || '50% 25%');
+      else     _hideFocusPicker('player');
     });
+    _initFocusWrap('player');
 
-    /* Focal point click on picker */
-    document.getElementById('playerFocusWrap').addEventListener('click', function (e) {
-      var rect = this.getBoundingClientRect();
-      var x = Math.round((e.clientX - rect.left) / rect.width  * 100);
-      var y = Math.round((e.clientY - rect.top)  / rect.height * 100);
-      x = Math.max(0, Math.min(100, x));
-      y = Math.max(0, Math.min(100, y));
-      var focus = x + '% ' + y + '%';
-      document.getElementById('playerPhotoFocus').value = focus;
-      document.getElementById('playerFocusImg').style.objectPosition  = focus;
-      document.getElementById('playerFocusCard').style.objectPosition = focus;
-      _updateFocusDot(x, y);
-    });
-
-    /* Staff: simple resize, no focal point */
+    /* Staff: resize JPEG + focal point picker */
     document.getElementById('staffPhotoFile').addEventListener('change', function () {
       if (!this.files.length) return;
       var fileEl = this;
       resizePlayerPhoto(this.files[0], function (dataUrl) {
         document.getElementById('staffPhoto').value = dataUrl;
-        _syncPersonPreview('staffPhoto', 'staffPhotoPreview');
+        var focus = document.getElementById('staffPhotoFocus').value || '50% 25%';
+        _showFocusPicker('staff', dataUrl, focus);
         fileEl.value = '';
       });
     });
     document.getElementById('staffPhoto').addEventListener('input', function () {
-      _syncPersonPreview('staffPhoto', 'staffPhotoPreview');
+      var val = this.value.trim();
+      if (val) _showFocusPicker('staff', val, document.getElementById('staffPhotoFocus').value || '50% 25%');
+      else     _hideFocusPicker('staff');
     });
+    _initFocusWrap('staff');
   }
+
+  /* ================================================
+     STAGIONI
+  ================================================ */
+  function renderStagioni() {
+    setTopbarBtn('Nuova stagione', function () {
+      document.getElementById('stagioneName').value = '';
+      document.getElementById('stagioneCurrent').checked = false;
+      document.getElementById('stagionForm').classList.remove('is-hidden');
+      document.getElementById('stagioneName').focus();
+    });
+    refreshStagionList();
+  }
+
+  function refreshStagionList() {
+    var seasons = VV.getSeasons();
+    var list    = document.getElementById('stagionList');
+
+    list.innerHTML = seasons.map(function (s) {
+      var isCurrent = !!s.current;
+      return '<div class="sp-item" style="align-items:center">' +
+        '<div style="flex:1;min-width:0">' +
+          '<div class="sp-item-nome" style="font-size:15px">' + esc(s.name || s.id) + '</div>' +
+          (isCurrent
+            ? '<span class="chip chip--green" style="font-size:11px;margin-top:4px">Corrente</span>'
+            : '') +
+        '</div>' +
+        (!isCurrent
+          ? '<button class="btn-ghost" style="font-size:12px;padding:5px 12px" onclick="AdminActions.setCurrentSeason(\'' + esc(s.id) + '\')">Imposta come corrente</button>'
+          : '') +
+        (!isCurrent
+          ? '<button class="btn-icon btn-icon--danger" onclick="AdminActions.deleteSeason(\'' + esc(s.id) + '\')" title="Elimina stagione" style="margin-left:8px">' + DEL_ICON_SM + '</button>'
+          : '') +
+      '</div>';
+    }).join('') || '<p style="color:var(--a-muted);padding:24px 0">Nessuna stagione. Crea la prima!</p>';
+  }
+
+  document.getElementById('stagioneSave').addEventListener('click', function () {
+    var name = document.getElementById('stagioneName').value.trim();
+    if (!name) { alert('Il nome è obbligatorio.'); return; }
+    var setCurrent = document.getElementById('stagioneCurrent').checked;
+    if (setCurrent) VV.setCurrentSeason(null); /* deseleziona tutte */
+    var season = { id: name, name: name, current: setCurrent };
+    DB.saveSeason(season, function () {
+      document.getElementById('stagionForm').classList.add('is-hidden');
+      refreshStagionList();
+    });
+  });
+
+  document.getElementById('stagioneCancel').addEventListener('click', function () {
+    document.getElementById('stagionForm').classList.add('is-hidden');
+  });
 
   /* ================================================
      CONFIRM MODAL
@@ -1201,6 +1283,16 @@
         DB.deleteStaffMember(id, refreshSquadreAccordion);
       });
     },
+    /* ---- Stagioni ---- */
+    setCurrentSeason: function (id) {
+      DB.setCurrentSeason(id, refreshStagionList);
+    },
+    deleteSeason: function (id) {
+      confirm('Eliminare la stagione "' + id + '"? I dati associati non vengono eliminati.', function () {
+        DB.deleteSeason(id, refreshStagionList);
+      });
+    },
+
     addPlayer:  function (catId)     { openPlayerForm(null, catId); },
     editPlayer: function (id, catId) {
       var p = VV.getPlayers().find(function (x) { return x.id === +id; });

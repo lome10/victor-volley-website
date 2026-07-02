@@ -34,13 +34,9 @@
             '<a href="/" class="sidebar-nav-link' + (page === 'index' ? ' is-active' : '') + '">Home</a>' +
           '</li>' +
 
-          _sidebarItem('snav-squadre', 'Squadre', 'Le nostre squadre', [
-            ['/squadre#prima-divisione', 'Prima Divisione'],
-            ['/squadre#under-19',        'Under 19'],
-            ['/squadre#under-13',        'Under 13'],
-            ['/squadre#under-12',        'Under 12'],
-            ['/squadre#minivolley',      'Minivolley']
-          ], page === 'squadre') +
+          '<li>' +
+            '<a href="/squadre" class="sidebar-nav-link' + isActive('squadre') + '">Squadre</a>' +
+          '</li>' +
 
           _sidebarItem('snav-stagione', 'Stagione', 'Stagione 2025/26', [
             ['/calendario',           'Calendario'],

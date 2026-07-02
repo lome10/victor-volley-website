@@ -93,6 +93,13 @@
           }
         });
 
+      var loadSeasons = global.db.collection('settings').doc('seasons').get()
+        .then(function (doc) {
+          if (doc.exists && Array.isArray(doc.data().items)) {
+            VV.setSeasons(doc.data().items);
+          }
+        });
+
       Promise.all([
         _loadOne('articles'),
         _loadOne('matches'),
@@ -101,6 +108,7 @@
         _loadOne('players'),
         _loadOne('staff'),
         loadSponsors,
+        loadSeasons,
         loadStats
       ]).then(function () {
         _initialized = true;
@@ -214,6 +222,26 @@
       if (cb) cb();
       global.db.collection('settings').doc('sponsor').set({ items: items })
         .catch(function (e) { console.error('[DB] saveSponsors', e); });
+    },
+
+    /* ---- SEASONS -------------------------------------------- */
+    saveSeason: function (season, cb) {
+      VV.saveSeason(season);
+      if (cb) cb();
+      global.db.collection('settings').doc('seasons').set({ items: VV.getSeasons() })
+        .catch(function (e) { console.error('[DB] saveSeason', e); });
+    },
+    deleteSeason: function (id, cb) {
+      VV.deleteSeason(id);
+      if (cb) cb();
+      global.db.collection('settings').doc('seasons').set({ items: VV.getSeasons() })
+        .catch(function (e) { console.error('[DB] deleteSeason', e); });
+    },
+    setCurrentSeason: function (id, cb) {
+      VV.setCurrentSeason(id);
+      if (cb) cb();
+      global.db.collection('settings').doc('seasons').set({ items: VV.getSeasons() })
+        .catch(function (e) { console.error('[DB] setCurrentSeason', e); });
     },
 
     /* ---- MIGRATION HELPER ------------------------------------ */

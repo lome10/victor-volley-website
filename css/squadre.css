@@ -1,0 +1,182 @@
+/* ================================================
+   Squadre — "Muro di spogliatoio"
+   Staff a nastro, roster raggruppato per ruolo
+================================================ */
+:root {
+  --sq-navy-deep:   #050e1f;
+  --sq-ink:         #0b1b33;
+  --sq-azzurro-dim: #3aa6ff;
+  --sq-magenta-dim: #e05c92;
+  --sq-grad-cool:   linear-gradient(158deg, #0a2c57 0%, #0d1830 55%, #051022 100%);
+  --sq-grad-warm:   linear-gradient(158deg, #5a1638 0%, #33112c 55%, #150a1c 100%);
+  --sq-font-display: 'Arial Narrow', 'Helvetica Neue Condensed', var(--font-heading), sans-serif;
+}
+
+/* ---- Header: breadcrumb + titolo + switcher stagione/categoria ---- */
+.page-header--squadre {
+  position: relative;
+  padding-bottom: 34px;
+  background:
+    radial-gradient(ellipse 900px 420px at 15% -10%, rgba(0,140,253,0.22), transparent 60%),
+    radial-gradient(ellipse 700px 380px at 100% 0%, rgba(203,33,104,0.20), transparent 55%),
+    var(--c-navy);
+}
+
+.sq-head-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.sq-eyebrow {
+  font-family: var(--sq-font-display);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 12.5px;
+  color: var(--sq-azzurro-dim);
+  margin: 0 0 6px;
+}
+
+.sq-switcher { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+.sq-switch-group {
+  display: flex;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 11px;
+  padding: 3px;
+  gap: 2px;
+}
+.sq-switch-group button {
+  border: none; background: none; color: rgba(255,255,255,0.6);
+  font-family: var(--font-body);
+  font-size: 13px; font-weight: 600; padding: 8px 14px; border-radius: 8px; cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+.sq-switch-group button.is-active { background: var(--c-azzurro); color: #fff; }
+.sq-switch-group button:hover:not(.is-active) { color: #fff; }
+.sq-switch-group button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+.sq-cat-select {
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #fff;
+  font-family: var(--font-body);
+  font-size: 13px; font-weight: 600; padding: 9px 34px 9px 14px; border-radius: 11px;
+  appearance: none; cursor: pointer; max-width: 260px;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="6"><path d="M1 1l4 4 4-4" stroke="white" stroke-width="1.6" fill="none"/></svg>');
+  background-repeat: no-repeat; background-position: right 13px center;
+}
+.sq-cat-select:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.sq-cat-select option { color: #000; }
+
+/* ---- Categoria: contenitore ---- */
+.sq-cat-section { background: var(--sq-navy-deep); }
+.sq-empty { color: rgba(255,255,255,0.5); text-align: center; padding: 64px 0; font-size: 14px; }
+
+/* ---- Staff a nastro ---- */
+.sq-staff-zone {
+  background: linear-gradient(180deg, var(--c-navy) 0%, var(--sq-navy-deep) 100%);
+  padding: 34px 0 40px; border-top: 1px solid rgba(255,255,255,0.08); border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.sq-staff-zone .sq-eyebrow { margin-bottom: 4px; }
+.sq-section-title { font-family: var(--font-heading); font-weight: 800; font-size: 22px; margin: 0 0 22px; color: #fff; }
+
+.sq-staff-strip { position: relative; display: flex; gap: 28px; overflow-x: auto; padding: 4px 2px 8px; scrollbar-width: none; }
+.sq-staff-strip::-webkit-scrollbar { display: none; }
+.sq-staff-strip::before {
+  content: ''; position: absolute; left: 34px; right: 34px; top: 34px; height: 1px;
+  background: repeating-linear-gradient(90deg, rgba(255,255,255,0.22) 0 6px, transparent 6px 12px);
+  z-index: 0;
+}
+.sq-staff-card { position: relative; z-index: 1; flex: 0 0 auto; width: 120px; text-align: center; }
+.sq-staff-avatar {
+  width: 68px; height: 68px; border-radius: 50%; margin: 0 auto 12px; position: relative; overflow: hidden;
+  background: var(--sq-grad-cool); border: 3px solid var(--sq-navy-deep);
+  display: flex; align-items: center; justify-content: center;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.sq-staff-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.sq-staff-avatar .sq-initial { font-family: var(--font-heading); font-weight: 800; font-size: 22px; color: rgba(255,255,255,0.55); }
+.sq-staff-card:hover .sq-staff-avatar { box-shadow: 0 0 0 4px rgba(203,33,104,0.45); transform: scale(1.06); }
+.sq-staff-name { font-size: 13.5px; font-weight: 700; color: #fff; }
+.sq-staff-role { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 3px; line-height: 1.3; }
+
+/* ---- Filtro per ruolo (sticky) ---- */
+.sq-filter-zone {
+  position: sticky; top: 0; z-index: 45;
+  background: rgba(5,14,31,0.9); backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  padding: 14px 0;
+}
+.sq-filter-row { display: flex; align-items: center; gap: 10px; overflow-x: auto; scrollbar-width: none; }
+.sq-filter-row::-webkit-scrollbar { display: none; }
+.sq-chip {
+  flex-shrink: 0; border: 1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.7); font-family: var(--font-body); font-size: 13px; font-weight: 600; padding: 9px 16px;
+  border-radius: 99px; cursor: pointer; display: flex; align-items: center; gap: 8px;
+  transition: all 0.15s ease;
+}
+.sq-chip:hover { border-color: rgba(255,255,255,0.35); color: #fff; }
+.sq-chip.is-active { background: var(--c-magenta); border-color: var(--c-magenta); color: #fff; }
+.sq-chip:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+/* ---- Scaffali per ruolo ---- */
+.sq-shelves { padding: 40px 0 20px; }
+.sq-shelf { margin-bottom: 44px; scroll-margin-top: 74px; }
+.sq-shelf-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 16px; gap: 12px; }
+.sq-shelf-title { display: flex; align-items: baseline; gap: 10px; }
+.sq-shelf-title h3 { font-family: var(--font-heading); font-weight: 800; font-size: 20px; margin: 0; color: #fff; }
+
+.sq-shelf-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px;
+  padding: 6px 2px 4px;
+}
+
+.sq-roster-card {
+  position: relative; width: 100%; aspect-ratio: 3/4;
+  border-radius: 16px; overflow: hidden;
+  isolation: isolate; transition: transform 0.4s cubic-bezier(.2,.8,.2,1), opacity 0.4s ease-out;
+}
+.sq-roster-card::before {
+  content: ''; position: absolute; inset: -14px; z-index: -1; border-radius: 20px;
+  background: var(--c-magenta); filter: blur(22px); opacity: 0; transform: scale(0.75);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.sq-roster-card:hover { transform: translateY(-8px); }
+.sq-roster-card:hover::before { opacity: 0.6; transform: scale(1); }
+.sq-roster-card .sq-face { position: absolute; inset: 0; }
+.sq-roster-card.cool .sq-face { background: var(--sq-grad-cool); }
+.sq-roster-card.warm .sq-face { background: var(--sq-grad-warm); }
+.sq-roster-card .sq-face img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.sq-roster-card .sq-face .sq-initial {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-heading); font-weight: 800; font-size: 44px; color: rgba(255,255,255,0.22);
+}
+.sq-roster-card .sq-ghost-num {
+  position: absolute; right: -0.12em; top: -0.1em; z-index: 1;
+  font-family: var(--sq-font-display); font-weight: 800; font-size: 5.4rem; line-height: 1;
+  color: rgba(255,255,255,0.14); letter-spacing: -0.04em; pointer-events: none; mix-blend-mode: overlay;
+}
+.sq-roster-card .sq-scrim {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 56%; z-index: 1;
+  background: linear-gradient(to top, rgba(3,8,18,0.94), rgba(3,8,18,0.55) 55%, transparent);
+  padding: 14px 14px 12px; display: flex; flex-direction: column; justify-content: flex-end;
+}
+.sq-roster-card .sq-num-badge {
+  position: absolute; top: 10px; left: 10px; z-index: 2; width: 26px; height: 26px; border-radius: 7px;
+  background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.25);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--sq-font-display); font-weight: 800; font-size: 12px; color: #fff;
+}
+.sq-roster-card .sq-name { font-family: var(--font-body); font-weight: 800; font-size: 14.5px; color: #fff; line-height: 1.15; }
+.sq-roster-card .sq-role { font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; margin-top: 3px; }
+.sq-roster-card.cool .sq-role { color: var(--sq-azzurro-dim); }
+.sq-roster-card.warm .sq-role { color: var(--sq-magenta-dim); }
+
+@media (prefers-reduced-motion: reduce) {
+  .sq-roster-card, .sq-roster-card::before, .sq-staff-avatar { transition: none !important; animation: none !important; }
+}

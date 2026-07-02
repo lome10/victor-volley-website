@@ -70,6 +70,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="9.5"/><path d="M6.5 3.8c1.5 3.5 1 8-1.5 11.5"/><path d="M17.5 20.2c-1.5-3.5-1-8 1.5-11.5"/><path d="M3 14c4-2 9-1.5 16.5 1"/></svg>
           Girone
         </a>
+        <a href="#" class="admin-nav-item" data-section="stagioni">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M3 3h7v7H3z"/><path d="M14 3h7v7h-7z"/><path d="M3 14h7v7H3z"/><path d="M17.5 17.5m-3.5 0a3.5 3.5 0 1 0 7 0 3.5 3.5 0 1 0-7 0"/><line x1="17.5" y1="15" x2="17.5" y2="14"/></svg>
+          Stagioni
+        </a>
         <a href="#" class="admin-nav-item" data-section="datiJson">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><polyline points="16,18 22,12 16,6"/><polyline points="8,6 2,12 8,18"/></svg>
           File JSON
@@ -289,6 +293,12 @@
       <!-- ---- SQUADRE ---- -->
       <section id="sectionSquadre" class="admin-section is-hidden">
 
+        <!-- Selettore stagione -->
+        <div id="squadreStagionBar" style="display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--a-border)">
+          <label class="form-label" style="margin:0;white-space:nowrap">Stagione:</label>
+          <select id="squadreStagioneSelect" class="form-input" style="max-width:200px"></select>
+        </div>
+
         <!-- Accordion categorie -->
         <div id="squadreList">
           <div id="squadreAccordion"></div>
@@ -361,6 +371,13 @@
               </select>
             </div>
             <div class="form-group">
+              <label class="form-label">Genere</label>
+              <select id="playerGender" class="form-input">
+                <option value="M">Maschile</option>
+                <option value="F">Femminile</option>
+              </select>
+            </div>
+            <div class="form-group">
               <label class="form-label">Anno di nascita</label>
               <input type="number" id="playerYear" class="form-input" placeholder="es. 2005" min="1970" max="2020">
             </div>
@@ -418,15 +435,31 @@
               </select>
             </div>
             <div class="form-group form-full">
-              <label class="form-label">Foto (URL o carica file)</label>
-              <div style="display:flex;gap:8px;align-items:center">
+              <label class="form-label">Foto</label>
+              <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
                 <input type="text" id="staffPhoto" class="form-input form-input--sm" placeholder="URL foto" style="flex:1;min-width:0">
-                <label class="btn-ghost" style="cursor:pointer;padding:6px 10px;white-space:nowrap;flex-shrink:0" title="Carica immagine">
+                <input type="hidden" id="staffPhotoFocus" value="50% 25%">
+                <label class="btn-ghost" style="cursor:pointer;padding:6px 10px;white-space:nowrap;flex-shrink:0" title="Carica da file — ridimensionata automaticamente">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                   Carica
                   <input type="file" id="staffPhotoFile" accept="image/*" style="display:none">
                 </label>
-                <img id="staffPhotoPreview" src="" alt="" style="height:40px;width:40px;object-fit:cover;border-radius:50%;border:1px solid #e2e8f0;flex-shrink:0;display:none">
+              </div>
+              <!-- Focal point picker -->
+              <div id="staffFocusPicker" style="display:none">
+                <p style="font-size:12px;color:var(--a-muted);margin-bottom:8px">Clicca sull'immagine per scegliere la zona da centrare nella card quadrata:</p>
+                <div style="display:flex;gap:16px;align-items:flex-start">
+                  <div id="staffFocusWrap" style="position:relative;width:160px;height:160px;border-radius:8px;overflow:hidden;border:2px solid var(--a-accent);cursor:crosshair;flex-shrink:0">
+                    <img id="staffFocusImg" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:block;pointer-events:none">
+                    <div id="staffFocusDot" style="position:absolute;width:18px;height:18px;border-radius:50%;background:rgba(0,140,253,0.75);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.6);transform:translate(-50%,-50%);pointer-events:none"></div>
+                  </div>
+                  <div style="flex-shrink:0">
+                    <p style="font-size:11px;color:var(--a-muted);margin-bottom:6px">Anteprima card:</p>
+                    <div style="width:100px;height:100px;border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,0.15)">
+                      <img id="staffFocusCard" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:block">
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -673,6 +706,42 @@
           </div>
 
         </div>
+      </section>
+
+      <!-- ---- STAGIONI ---- -->
+      <section id="sectionStagioni" class="admin-section is-hidden">
+
+        <div class="ga-info" style="margin-bottom:24px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          La stagione contrassegnata come <strong>Corrente</strong> viene usata come default nelle pagine Squadre e Calendario. I nuovi giocatori, staff e partite vengono associati automaticamente alla stagione corrente.
+        </div>
+
+        <!-- Lista stagioni -->
+        <div id="stagionList"></div>
+
+        <!-- Form nuova stagione -->
+        <div id="stagionForm" class="is-hidden" style="max-width:480px">
+          <h3 style="margin-bottom:20px;font-family:var(--font-heading);font-size:16px">Nuova stagione</h3>
+          <div class="form-grid">
+            <div class="form-group form-full">
+              <label class="form-label">Nome stagione *</label>
+              <input type="text" id="stagioneName" class="form-input" placeholder="es. 2026/2027" maxlength="20">
+              <p style="font-size:11px;color:var(--a-muted);margin-top:4px">Usa il formato AAAA/AAAA, es. 2026/2027</p>
+            </div>
+            <div class="form-group form-full">
+              <label class="toggle-label">
+                <input type="checkbox" id="stagioneCurrent">
+                <span class="toggle-track"></span>
+                Imposta subito come stagione corrente
+              </label>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button id="stagioneCancel" class="btn-ghost">Annulla</button>
+            <button id="stagioneSave" class="btn-primary">Crea stagione</button>
+          </div>
+        </div>
+
       </section>
 
       <!-- ---- DATI JSON ---- -->

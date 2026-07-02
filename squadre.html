@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
   <meta charset="UTF-8">
@@ -12,17 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
-  <style>
-    .cat-tab-link {
-      display:inline-block;padding:14px 20px;font-size:14px;font-weight:500;
-      color:#555;white-space:nowrap;border-bottom:3px solid transparent;
-      background:none;border-top:none;border-left:none;border-right:none;
-      cursor:pointer;font-family:inherit;
-      transition:color .2s ease,border-color .2s ease;
-    }
-    .cat-tab-link:hover { color:var(--c-azzurro);border-color:var(--c-azzurro); }
-    .cat-tab-link.is-active { color:var(--c-azzurro);border-color:var(--c-azzurro);font-weight:600; }
-  </style>
+  <link rel="stylesheet" href="css/squadre.css">
 </head>
 <body>
 
@@ -40,18 +30,19 @@
 
   <main id="main-content">
 
-    <div class="page-header">
+    <div class="page-header page-header--squadre">
       <div class="container">
         <p class="breadcrumb"><a href="/">Home</a> / Le squadre</p>
-        <h1>Le nostre squadre</h1>
-        <p style="color:rgba(255,255,255,0.65);margin-top:8px">Roster, staff tecnico e orari di allenamento</p>
-      </div>
-    </div>
-
-    <!-- Navigazione rapida (generata da JS) -->
-    <div style="background:var(--c-gray-light);border-bottom:1px solid #e8e8ee;position:sticky;top:112px;z-index:50">
-      <div class="container" style="padding-top:0;padding-bottom:0">
-        <nav id="squadreNav" style="display:flex;gap:0;overflow-x:auto;-webkit-overflow-scrolling:touch" aria-label="Categorie"></nav>
+        <div class="sq-head-row">
+          <div>
+            <p class="sq-eyebrow" id="sqSeasonLabel">Stagione</p>
+            <h1 id="sqCatTitle">Le nostre squadre</h1>
+          </div>
+          <div class="sq-switcher">
+            <div class="sq-switch-group" id="stagionNav"></div>
+            <select class="sq-cat-select" id="sqCatSelect" aria-label="Categoria"></select>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -86,98 +77,211 @@
   (function () {
     function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-    DB.init(function () {
-    var categories = VV.getCategories(true).filter(function (c) { return c.showInSquadre !== false; });
-
-    /* Nav tab */
-    var nav = document.getElementById('squadreNav');
-    nav.innerHTML = categories.map(function (c) {
-      return '<button type="button" class="cat-tab-link" data-cat="' + c.id + '">' + esc(c.name) + '</button>';
-    }).join('');
-
-    /* Sezioni */
-    var main = document.getElementById('squadreMain');
-
-    if (!categories.length) {
-      main.innerHTML = '<section class="section"><div class="container"><p style="color:#888;text-align:center;padding:48px 0">Nessuna categoria disponibile al momento.</p></div></section>';
-      return;
+    function slugify(s) {
+      return String(s || '').toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'ruolo';
     }
 
-    main.innerHTML = categories.map(function (cat) {
-      var players = VV.getPlayers(cat.id).sort(function (a, b) { return (a.number || 99) - (b.number || 99); });
-      var staff   = VV.getStaff(cat.id);
+    function initials(name) {
+      var parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+      var a = parts[0] ? parts[0][0] : '';
+      var b = parts.length > 1 ? parts[parts.length - 1][0] : '';
+      return (a + b).toUpperCase();
+    }
 
-      /* Staff cards */
+    function inSeason(record, seasonId) {
+      return !record.stagione || record.stagione === seasonId;
+    }
+
+    var ROLE_ORDER = ['Palleggiatore', 'Laterale', 'Opposto', 'Centrale', 'Libero', 'Universale'];
+    var WARM_ROLES = { Laterale: true, Opposto: true, Universale: true };
+    var FEMININE_ROLES = { Palleggiatore: 'Palleggiatrice' };
+
+    function roleLabel(role, gender) {
+      return (gender === 'F' && FEMININE_ROLES[role]) ? FEMININE_ROLES[role] : role;
+    }
+
+    function personPhotoHtml(p) {
+      if (p.photo) {
+        return '<img src="' + esc(p.photo) + '" alt="" style="object-position:' + esc(p.photoFocus || '50% 25%') + '">';
+      }
+      return '<span class="sq-initial">' + esc(initials(p.name)) + '</span>';
+    }
+
+    function rosterCardHtml(p, warm) {
+      var numBadge = p.number ? '<span class="sq-num-badge">' + p.number + '</span>' : '';
+      var ghost    = p.number ? '<span class="sq-ghost-num">' + p.number + '</span>' : '';
+      return '<article class="sq-roster-card ' + (warm ? 'warm' : 'cool') + ' reveal">' +
+        '<div class="sq-face">' + personPhotoHtml(p) + '</div>' +
+        ghost + numBadge +
+        '<div class="sq-scrim"><div class="sq-name">' + esc(p.name) + '</div><div class="sq-role">' + esc(roleLabel(p.role, p.gender)) + '</div></div>' +
+      '</article>';
+    }
+
+    function staffCardHtml(s) {
+      return '<div class="sq-staff-card">' +
+        '<div class="sq-staff-avatar">' + personPhotoHtml(s) + '</div>' +
+        '<div class="sq-staff-name">' + esc(s.name) + '</div>' +
+        '<div class="sq-staff-role">' + esc(s.role) + '</div>' +
+      '</div>';
+    }
+
+    function renderCategorySection(cat, players, staff) {
+      var hasPlayers = players.length > 0;
+      var hasStaff   = staff.length > 0;
+
+      /* ---- Staff a nastro: subito in cima, non in fondo alla pagina ---- */
       var staffHtml = '';
-      if (staff.length) {
-        staffHtml = '<h3 style="margin-bottom:20px">Staff tecnico</h3>' +
-          '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:48px">' +
-          staff.map(function (s) {
-            var avatar = s.photo
-              ? '<img src="' + esc(s.photo) + '" style="width:48px;height:48px;border-radius:50%;object-fit:cover;flex-shrink:0">'
-              : '<div style="width:48px;height:48px;border-radius:50%;background:var(--c-gray-light);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">&#128100;</div>';
-            return '<div class="card reveal" style="display:flex;gap:16px;align-items:center;padding:16px 20px">' +
-              avatar +
-              '<div>' +
-                '<div style="font-family:var(--font-heading);font-weight:600;font-size:14px;color:var(--c-navy)">' + esc(s.name) + '</div>' +
-                '<div style="font-size:12px;color:#888">' + esc(s.role) + '</div>' +
-              '</div>' +
-            '</div>';
-          }).join('') +
-          '</div>';
+      if (hasStaff) {
+        staffHtml = '<section class="sq-staff-zone"><div class="container">' +
+          '<p class="sq-eyebrow">Panchina</p>' +
+          '<h3 class="sq-section-title">Staff tecnico</h3>' +
+          '<div class="sq-staff-strip">' + staff.map(staffCardHtml).join('') + '</div>' +
+        '</div></section>';
       }
 
-      /* Roster grid */
+      /* ---- Roster: raggruppato per ruolo, un carosello orizzontale per riga ---- */
       var rosterHtml = '';
-      if (players.length) {
-        rosterHtml = '<h3 style="margin-bottom:20px">Roster</h3>' +
-          '<div class="roster-grid">' +
-          players.map(function (p) {
-            var photoEl = p.photo
-              ? '<img src="' + esc(p.photo) + '" style="width:100%;height:100%;object-fit:cover;object-position:' + esc(p.photoFocus || '50% 25%') + ';border-radius:inherit;display:block">'
-              : '&#128100;';
-            var numEl = p.number ? '<div class="giocatore-numero">' + p.number + '</div>' : '';
-            var yearEl = p.year ? ' <span style="color:#bbb;font-size:10px">(' + p.year + ')</span>' : '';
-            return '<div class="giocatore-card reveal">' +
-              '<div class="giocatore-foto">' + photoEl + numEl + '</div>' +
-              '<div class="giocatore-info">' +
-                '<div class="giocatore-nome">' + esc(p.name) + yearEl + '</div>' +
-                '<div class="giocatore-ruolo">' + esc(p.role) + '</div>' +
-              '</div>' +
-            '</div>';
-          }).join('') +
-          '</div>';
+      if (hasPlayers) {
+        var groups = {};
+        players.forEach(function (p) {
+          var r = p.role || 'Altro';
+          (groups[r] = groups[r] || []).push(p);
+        });
+        var roleKeys = ROLE_ORDER.filter(function (r) { return groups[r]; });
+        Object.keys(groups).forEach(function (r) { if (roleKeys.indexOf(r) === -1) roleKeys.push(r); });
+
+        var chipsHtml = '<button type="button" class="sq-chip is-active" data-role="all">Tutte</button>' +
+          roleKeys.map(function (r) {
+            var label = roleLabel(r, groups[r][0].gender);
+            return '<button type="button" class="sq-chip" data-role="' + slugify(r) + '">' + esc(label) + '</button>';
+          }).join('');
+
+        var shelvesHtml = roleKeys.map(function (r) {
+          var warm  = !!WARM_ROLES[r];
+          var label = roleLabel(r, groups[r][0].gender);
+          var list  = groups[r].slice().sort(function (a, b) { return (a.number || 99) - (b.number || 99); });
+          return '<section class="sq-shelf" data-role="' + slugify(r) + '">' +
+            '<div class="sq-shelf-head">' +
+              '<div class="sq-shelf-title"><h3>' + esc(label) + '</h3></div>' +
+            '</div>' +
+            '<div class="sq-shelf-grid">' + list.map(function (p) { return rosterCardHtml(p, warm); }).join('') + '</div>' +
+          '</section>';
+        }).join('');
+
+        rosterHtml = '<nav class="sq-filter-zone" aria-label="Filtro per ruolo"><div class="container"><div class="sq-filter-row">' + chipsHtml + '</div></div></nav>' +
+          '<div class="sq-shelves"><div class="container">' + shelvesHtml + '</div></div>';
       }
 
-      /* Empty state */
-      if (!staff.length && !players.length) {
-        rosterHtml = '<p style="color:#888;font-size:14px">Informazioni in aggiornamento.</p>';
-      }
+      var emptyHtml = (!hasStaff && !hasPlayers)
+        ? '<div class="container"><p class="sq-empty">Informazioni in aggiornamento.</p></div>'
+        : '';
 
-      return '<section class="section" id="cat-' + cat.id + '" aria-labelledby="cat-h-' + cat.id + '" style="display:none">' +
-        '<div class="container">' +
-          staffHtml + rosterHtml +
-        '</div>' +
+      return '<section class="sq-cat-section" id="cat-' + cat.id + '" aria-labelledby="cat-h-' + cat.id + '" style="display:none">' +
+        staffHtml + rosterHtml + emptyHtml +
       '</section>';
-    }).join('');
+    }
 
-    /* Tab switching */
-    function showCat(id) {
-      document.querySelectorAll('#squadreMain > section').forEach(function (s) {
-        s.style.display = 'none';
+    function initSquadreSection(section) {
+      var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      /* Filtro per ruolo -> scroll allo scaffale */
+      var chips   = section.querySelectorAll('.sq-chip');
+      var shelves = section.querySelectorAll('.sq-shelf');
+
+      chips.forEach(function (chip) {
+        chip.addEventListener('click', function () {
+          chips.forEach(function (c) { c.classList.remove('is-active'); });
+          chip.classList.add('is-active');
+          var role = chip.dataset.role;
+          var target = (role === 'all')
+            ? section.querySelector('.sq-filter-zone')
+            : section.querySelector('.sq-shelf[data-role="' + role + '"]');
+          if (target) target.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
+        });
       });
+
+      if ('IntersectionObserver' in window && shelves.length) {
+        var shelfObs = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              var role = entry.target.dataset.role;
+              chips.forEach(function (c) { c.classList.toggle('is-active', c.dataset.role === role); });
+            }
+          });
+        }, { rootMargin: '-45% 0px -45% 0px' });
+        shelves.forEach(function (s) { shelfObs.observe(s); });
+      }
+
+    }
+
+    DB.init(function () {
+    var categories   = VV.getCategories(true).filter(function (c) { return c.showInSquadre !== false; });
+    var seasons      = VV.getSeasons();
+    var activeSeason = VV.getCurrentSeason() || seasons[0];
+
+    var main       = document.getElementById('squadreMain');
+    var catSelect  = document.getElementById('sqCatSelect');
+    var catTitle   = document.getElementById('sqCatTitle');
+    var seasonLbl  = document.getElementById('sqSeasonLabel');
+    var stagionNav = document.getElementById('stagionNav');
+
+    var _activeCatId = categories.length ? categories[0].id : null;
+
+    /* ---- Stagione switch ---- */
+    if (seasons.length > 1) {
+      stagionNav.innerHTML = seasons.map(function (s) {
+        return '<button type="button" data-season="' + esc(s.id) + '"' + (s.id === activeSeason.id ? ' class="is-active"' : '') + '>' + esc(s.name || s.id) + '</button>';
+      }).join('');
+      stagionNav.querySelectorAll('[data-season]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          stagionNav.querySelectorAll('[data-season]').forEach(function (b) { b.classList.remove('is-active'); });
+          btn.classList.add('is-active');
+          activeSeason = seasons.find(function (s) { return s.id === btn.dataset.season; }) || activeSeason;
+          renderAll();
+        });
+      });
+    } else {
+      stagionNav.style.display = 'none';
+    }
+
+    /* ---- Categoria switch ---- */
+    catSelect.innerHTML = categories.map(function (c) { return '<option value="' + c.id + '">' + esc(c.name) + '</option>'; }).join('');
+    catSelect.addEventListener('change', function () { showCat(this.value); });
+
+    function showCat(id) {
+      _activeCatId = id;
+      main.querySelectorAll('.sq-cat-section').forEach(function (s) { s.style.display = 'none'; });
       var target = document.getElementById('cat-' + id);
       if (target) target.style.display = '';
-      nav.querySelectorAll('.cat-tab-link').forEach(function (btn) {
-        btn.classList.toggle('is-active', String(btn.dataset.cat) === String(id));
-      });
+      catSelect.value = String(id);
+      var cat = categories.find(function (c) { return String(c.id) === String(id); });
+      catTitle.textContent = cat ? cat.name : 'Le nostre squadre';
     }
 
-    nav.querySelectorAll('.cat-tab-link').forEach(function (btn) {
-      btn.addEventListener('click', function () { showCat(this.dataset.cat); });
-    });
+    function renderAll() {
+      seasonLbl.textContent = 'Stagione ' + (activeSeason.name || activeSeason.id);
 
-    if (categories.length) showCat(categories[0].id);
+      if (!categories.length) {
+        main.innerHTML = '<div class="container"><p class="sq-empty">Nessuna categoria disponibile al momento.</p></div>';
+        return;
+      }
+
+      main.innerHTML = categories.map(function (cat) {
+        var players = VV.getPlayers(cat.id)
+          .filter(function (p) { return inSeason(p, activeSeason.id); })
+          .sort(function (a, b) { return (a.number || 99) - (b.number || 99); });
+        var staff = VV.getStaff(cat.id)
+          .filter(function (s) { return inSeason(s, activeSeason.id); });
+        return renderCategorySection(cat, players, staff);
+      }).join('');
+
+      main.querySelectorAll('.sq-cat-section').forEach(initSquadreSection);
+      if (_activeCatId) showCat(_activeCatId);
+    }
+
+    renderAll();
 
     }); // DB.init
   })();

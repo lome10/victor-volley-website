@@ -33,7 +33,14 @@
       <div class="container">
         <p class="breadcrumb"><a href="/">Home</a> / Calendario</p>
         <h1>Calendario e risultati</h1>
-        <p style="color:rgba(255,255,255,0.65);margin-top:8px">Stagione 2025/2026</p>
+        <p id="calStagioneLabel" style="color:rgba(255,255,255,0.65);margin-top:8px">Stagione 2025/2026</p>
+      </div>
+    </div>
+
+    <!-- Selettore stagione (visibile solo se ci sono più stagioni) -->
+    <div id="calStagionBar" style="display:none;background:#fff;border-bottom:1px solid #e8e8ee;position:sticky;top:56px;z-index:50">
+      <div class="container" style="padding-top:0;padding-bottom:0">
+        <nav id="calStagionNav" style="display:flex;gap:0;overflow-x:auto;-webkit-overflow-scrolling:touch" aria-label="Stagione"></nav>
       </div>
     </div>
 
@@ -146,45 +153,38 @@
     function slug(s) { return s.toLowerCase().replace(/\s+/g, '-').replace(/[àáâ]/g,'a').replace(/[èéê]/g,'e').replace(/[ìí]/g,'i').replace(/[òó]/g,'o').replace(/[ùú]/g,'u'); }
     function esc(s)  { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
+    function inSeason(m, seasonId) { return !m.stagione || m.stagione === seasonId; }
+
     DB.init(function () {
-    var today    = new Date().toISOString().slice(0, 10);
-    var matches  = VV.getMatches(); /* già ordinato per data asc */
-    var upcoming = matches.filter(function (m) { return !m.result && m.date >= today; });
-    var past     = matches.filter(function (m) { return m.result || m.date < today; }).reverse();
+    var seasons      = VV.getSeasons();
+    var activeSeason = VV.getCurrentSeason() || seasons[0];
 
-    /* ---- FILTRO ---- */
-    var filterBar = document.getElementById('calFilterBar');
-    var cats = [];
-    upcoming.forEach(function (m) { if (cats.indexOf(m.category) < 0) cats.push(m.category); });
+    /* ---- SELETTORE STAGIONE ---- */
+    var stagionBar = document.getElementById('calStagionBar');
+    var stagionNav = document.getElementById('calStagionNav');
+    var label      = document.getElementById('calStagioneLabel');
 
-    filterBar.innerHTML =
-      '<button class="filter-btn is-active" data-filter="all">Tutte</button>' +
-      cats.map(function (c) {
-        return '<button class="filter-btn" data-filter="' + slug(c) + '">' + esc(c) + '</button>';
+    if (seasons.length > 1) {
+      stagionBar.style.display = '';
+      stagionNav.innerHTML = seasons.map(function (s) {
+        return '<button type="button" class="cat-tab-link' + (s.id === activeSeason.id ? ' is-active' : '') + '" data-season="' + esc(s.id) + '">' + esc(s.name || s.id) + '</button>';
       }).join('');
+      stagionNav.querySelectorAll('[data-season]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          stagionNav.querySelectorAll('[data-season]').forEach(function (b) { b.classList.remove('is-active'); });
+          btn.classList.add('is-active');
+          activeSeason = seasons.find(function (s) { return s.id === btn.dataset.season; }) || activeSeason;
+          label.textContent = 'Stagione ' + activeSeason.id;
+          renderMatches();
+        });
+      });
+    }
 
-    /* ---- PROSSIME PARTITE ---- */
-    var upcomingBody = document.getElementById('upcomingBody');
-    upcomingBody.innerHTML = upcoming.length
-      ? upcoming.map(function (m) {
-          var homeStrong = m.isHome;
-          var homeName   = homeStrong ? '<strong>' + esc(m.homeTeam) + '</strong>' : esc(m.homeTeam);
-          var awayName   = !homeStrong ? '<strong>' + esc(m.awayTeam) + '</strong>' : esc(m.awayTeam);
-          var homeLogo   = m.homeLogo ? '<img src="' + esc(m.homeLogo) + '" style="height:18px;vertical-align:middle;margin-right:4px">' : '';
-          var awayLogo   = m.awayLogo ? '<img src="' + esc(m.awayLogo) + '" style="height:18px;vertical-align:middle;margin-right:4px">' : '';
-          return '<tr data-cat="' + slug(m.category) + '">' +
-            '<td><strong>' + VV.formatDateShort(m.date) + '</strong></td>' +
-            '<td>' + esc(m.time || '—') + '</td>' +
-            '<td><span class="badge badge--azzurro">' + esc(m.category) + '</span></td>' +
-            '<td>' + homeLogo + homeName + ' vs ' + awayLogo + awayName + '</td>' +
-            '<td>' + esc(m.venue || '—') + '</td>' +
-            '<td><span class="badge ' + (m.isHome ? 'badge--magenta' : 'badge--azzurro') + '">' + (m.isHome ? 'Casa' : 'Trasferta') + '</span></td>' +
-          '</tr>';
-        }).join('')
-      : '<tr><td colspan="6" style="text-align:center;color:#888;padding:32px">Nessuna partita in programma</td></tr>';
+    label.textContent = 'Stagione ' + activeSeason.id;
 
-    /* ---- RISULTATI ---- */
-    var pastBody = document.getElementById('pastBody');
+    var today     = new Date().toISOString().slice(0, 10);
+    var allMatch  = VV.getMatches();
+    var filterBar = document.getElementById('calFilterBar');
 
     function resultClass(res) {
       if (!res) return '';
@@ -194,36 +194,73 @@
       return isNaN(a) || isNaN(b) ? '' : (a > b ? 'risultato--vittoria' : 'risultato--sconfitta');
     }
 
-    pastBody.innerHTML = past.length
-      ? past.map(function (m) {
-          var homeStrong = m.isHome;
-          var homeName   = homeStrong ? '<strong>' + esc(m.homeTeam) + '</strong>' : esc(m.homeTeam);
-          var awayName   = !homeStrong ? '<strong>' + esc(m.awayTeam) + '</strong>' : esc(m.awayTeam);
-          var rCls       = m.result ? resultClass(m.result) : '';
-          var resHtml    = m.result
-            ? '<span class="risultato ' + rCls + '">' + esc(m.result) + (rCls === 'risultato--vittoria' ? ' &#10003;' : rCls === 'risultato--sconfitta' ? ' &#10007;' : '') + '</span>'
-            : '<span style="color:#aaa">—</span>';
-          return '<tr>' +
-            '<td>' + VV.formatDateShort(m.date) + '</td>' +
-            '<td><span class="badge badge--azzurro">' + esc(m.category) + '</span></td>' +
-            '<td>' + homeName + ' vs ' + awayName + '</td>' +
-            '<td>' + resHtml + '</td>' +
-            '<td><span class="badge ' + (m.isHome ? 'badge--magenta' : 'badge--azzurro') + '">' + (m.isHome ? 'Casa' : 'Trasferta') + '</span></td>' +
-          '</tr>';
-        }).join('')
-      : '<tr><td colspan="5" style="text-align:center;color:#888;padding:32px">Nessun risultato ancora</td></tr>';
+    function renderMatches() {
+      var matches  = allMatch.filter(function (m) { return inSeason(m, activeSeason.id); });
+      var upcoming = matches.filter(function (m) { return !m.result && m.date >= today; });
+      var past     = matches.filter(function (m) { return m.result || m.date < today; }).reverse();
 
-    /* ---- LOGICA FILTRO ---- */
-    filterBar.querySelectorAll('.filter-btn').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        filterBar.querySelectorAll('.filter-btn').forEach(function (b) { b.classList.remove('is-active'); });
-        btn.classList.add('is-active');
-        var f = btn.getAttribute('data-filter');
-        document.querySelectorAll('#upcomingBody tr[data-cat]').forEach(function (row) {
-          row.style.display = (f === 'all' || row.getAttribute('data-cat') === f) ? '' : 'none';
+      /* Filtro categoria */
+      var cats = [];
+      upcoming.forEach(function (m) { if (cats.indexOf(m.category) < 0) cats.push(m.category); });
+      filterBar.innerHTML =
+        '<button class="filter-btn is-active" data-filter="all">Tutte</button>' +
+        cats.map(function (c) {
+          return '<button class="filter-btn" data-filter="' + slug(c) + '">' + esc(c) + '</button>';
+        }).join('');
+
+      /* Prossime partite */
+      document.getElementById('upcomingBody').innerHTML = upcoming.length
+        ? upcoming.map(function (m) {
+            var homeStrong = m.isHome;
+            var homeName   = homeStrong ? '<strong>' + esc(m.homeTeam) + '</strong>' : esc(m.homeTeam);
+            var awayName   = !homeStrong ? '<strong>' + esc(m.awayTeam) + '</strong>' : esc(m.awayTeam);
+            var homeLogo   = m.homeLogo ? '<img src="' + esc(m.homeLogo) + '" style="height:18px;vertical-align:middle;margin-right:4px">' : '';
+            var awayLogo   = m.awayLogo ? '<img src="' + esc(m.awayLogo) + '" style="height:18px;vertical-align:middle;margin-right:4px">' : '';
+            return '<tr data-cat="' + slug(m.category) + '">' +
+              '<td><strong>' + VV.formatDateShort(m.date) + '</strong></td>' +
+              '<td>' + esc(m.time || '—') + '</td>' +
+              '<td><span class="badge badge--azzurro">' + esc(m.category) + '</span></td>' +
+              '<td>' + homeLogo + homeName + ' vs ' + awayLogo + awayName + '</td>' +
+              '<td>' + esc(m.venue || '—') + '</td>' +
+              '<td><span class="badge ' + (m.isHome ? 'badge--magenta' : 'badge--azzurro') + '">' + (m.isHome ? 'Casa' : 'Trasferta') + '</span></td>' +
+            '</tr>';
+          }).join('')
+        : '<tr><td colspan="6" style="text-align:center;color:#888;padding:32px">Nessuna partita in programma</td></tr>';
+
+      /* Risultati */
+      document.getElementById('pastBody').innerHTML = past.length
+        ? past.map(function (m) {
+            var homeStrong = m.isHome;
+            var homeName   = homeStrong ? '<strong>' + esc(m.homeTeam) + '</strong>' : esc(m.homeTeam);
+            var awayName   = !homeStrong ? '<strong>' + esc(m.awayTeam) + '</strong>' : esc(m.awayTeam);
+            var rCls    = m.result ? resultClass(m.result) : '';
+            var resHtml = m.result
+              ? '<span class="risultato ' + rCls + '">' + esc(m.result) + (rCls === 'risultato--vittoria' ? ' &#10003;' : rCls === 'risultato--sconfitta' ? ' &#10007;' : '') + '</span>'
+              : '<span style="color:#aaa">—</span>';
+            return '<tr>' +
+              '<td>' + VV.formatDateShort(m.date) + '</td>' +
+              '<td><span class="badge badge--azzurro">' + esc(m.category) + '</span></td>' +
+              '<td>' + homeName + ' vs ' + awayName + '</td>' +
+              '<td>' + resHtml + '</td>' +
+              '<td><span class="badge ' + (m.isHome ? 'badge--magenta' : 'badge--azzurro') + '">' + (m.isHome ? 'Casa' : 'Trasferta') + '</span></td>' +
+            '</tr>';
+          }).join('')
+        : '<tr><td colspan="5" style="text-align:center;color:#888;padding:32px">Nessun risultato ancora</td></tr>';
+
+      /* Logica filtro categoria */
+      filterBar.querySelectorAll('.filter-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          filterBar.querySelectorAll('.filter-btn').forEach(function (b) { b.classList.remove('is-active'); });
+          btn.classList.add('is-active');
+          var f = btn.getAttribute('data-filter');
+          document.querySelectorAll('#upcomingBody tr[data-cat]').forEach(function (row) {
+            row.style.display = (f === 'all' || row.getAttribute('data-cat') === f) ? '' : 'none';
+          });
         });
       });
-    });
+    }
+
+    renderMatches();
     }); // DB.init
   })();
   </script>

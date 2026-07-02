@@ -3,5 +3,8 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "npx serve ."
+  },
+  "devDependencies": {
+    "firebase": "^10.14.1"
   }
 }

@@ -23,6 +23,7 @@
 
   var _stats    = null;
   var _sponsors = [];
+  var _seasons  = [];
 
   var DEFAULTS = {
     articles: [
@@ -129,7 +130,10 @@
 
     /* ---- PLAYERS ---- */
     getPlayers: function (categoryId) {
-      var arr = _read(KEYS.players) || [];
+      var arr = (_read(KEYS.players) || []).map(function (p) {
+        if (p.role === 'Schiacciatore') p = Object.assign({}, p, { role: 'Laterale' });
+        return p;
+      });
       return categoryId !== undefined
         ? arr.filter(function(p){ return p.categoryId === +categoryId; })
         : arr;
@@ -194,6 +198,26 @@
     /* ---- SPONSORS ---- */
     getSponsors: function () { return _sponsors.slice(); },
     setSponsors: function (items) { _sponsors = Array.isArray(items) ? items : []; },
+
+    /* ---- SEASONS ---- */
+    getSeasons: function () {
+      return _seasons.length ? _seasons.slice() : [{ id: '2025/2026', name: '2025/2026', current: true }];
+    },
+    getCurrentSeason: function () {
+      var ss = this.getSeasons();
+      return ss.find(function (s) { return s.current; }) || ss[0] || null;
+    },
+    setSeasons: function (items) { _seasons = Array.isArray(items) ? items : []; },
+    saveSeason: function (season) {
+      var idx = _seasons.findIndex(function (s) { return s.id === season.id; });
+      if (idx >= 0) { _seasons[idx] = season; } else { _seasons.unshift(season); }
+    },
+    deleteSeason: function (id) {
+      _seasons = _seasons.filter(function (s) { return s.id !== id; });
+    },
+    setCurrentSeason: function (id) {
+      _seasons.forEach(function (s) { s.current = (s.id === id); });
+    },
 
     /* Chiamato da db.js per popolare la cache da Firestore */
     _load: function (col, items) {
