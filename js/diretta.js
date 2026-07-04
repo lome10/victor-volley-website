@@ -59,7 +59,7 @@
     if (isLive && hasChannel) {
       if (msgEl) msgEl.hidden = true;
       el.innerHTML =
-        '<iframe src="https://www.youtube.com/embed/live_stream?channel=' + encodeURIComponent(channelId) + '" ' +
+        '<iframe src="https://www.youtube.com/embed/live_stream?channel=' + encodeURIComponent(channelId) + '&autoplay=1&mute=1" ' +
           'title="Diretta YouTube Victor Volley" ' +
           'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" ' +
           'allowfullscreen></iframe>' +
@@ -75,9 +75,9 @@
         msgEl.innerHTML = 'Nessuna partita &egrave; al momento in diretta.<br>Nel frattempo, dai un&rsquo;occhiata alla nostra ultima partita.';
       }
       el.innerHTML =
-        '<iframe src="https://www.youtube.com/embed/videoseries?list=' + encodeURIComponent(playlistId) + '" ' +
+        '<iframe src="https://www.youtube.com/embed/videoseries?list=' + encodeURIComponent(playlistId) + '&autoplay=1&mute=1" ' +
           'title="Ultimo video Victor Volley" ' +
-          'allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" ' +
+          'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" ' +
           'allowfullscreen></iframe>';
       return;
     }
