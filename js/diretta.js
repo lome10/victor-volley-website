@@ -35,28 +35,38 @@
   }
 
   /* -------------------------------------------------------
-     Video streaming — embed persistente del canale YouTube
+     Video streaming — embed del canale YouTube.
+     L'embed persistente /embed/live_stream?channel= mostra "Video non
+     disponibile" quando il canale non sta trasmettendo in questo
+     momento (cosa vera quasi sempre): per evitarlo, carichiamo
+     l'iframe solo quando il tabellone segnala una partita live,
+     altrimenti mostriamo un rimando statico al canale.
   ------------------------------------------------------- */
-  function initVideo() {
+  var CHANNEL_URL = 'https://www.youtube.com/@VictorVolleyVita';
+
+  function renderVideo(isLive) {
     var el = document.getElementById('direttaVideo');
     if (!el) return;
     var channelId = window.YOUTUBE_CHANNEL_ID;
+    var hasChannel = channelId && channelId !== 'INSERISCI_CHANNEL_ID_YOUTUBE';
 
-    if (!channelId || channelId === 'INSERISCI_CHANNEL_ID_YOUTUBE') {
+    if (isLive && hasChannel) {
       el.innerHTML =
-        '<div class="dt-video-placeholder">' +
-          '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>' +
-          '<span>Streaming non ancora configurato.<br>Segui la diretta su ' +
-            '<a href="https://www.youtube.com/@VictorVolleyVita/live" target="_blank" rel="noopener">YouTube</a>.</span>' +
-        '</div>';
+        '<iframe src="https://www.youtube.com/embed/live_stream?channel=' + encodeURIComponent(channelId) + '" ' +
+          'title="Diretta YouTube Victor Volley" ' +
+          'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" ' +
+          'allowfullscreen></iframe>' +
+        '<a class="dt-video-fallback" href="' + CHANNEL_URL + '/live" target="_blank" rel="noopener">Guarda su YouTube &#8599;</a>';
       return;
     }
 
     el.innerHTML =
-      '<iframe src="https://www.youtube.com/embed/live_stream?channel=' + encodeURIComponent(channelId) + '" ' +
-        'title="Diretta YouTube Victor Volley" ' +
-        'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" ' +
-        'allowfullscreen></iframe>';
+      '<div class="dt-video-placeholder">' +
+        '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>' +
+        (hasChannel
+          ? '<span>Nessuna diretta in corso al momento.<br>Segui il canale su <a href="' + CHANNEL_URL + '" target="_blank" rel="noopener">YouTube</a>.</span>'
+          : '<span>Streaming non ancora configurato.<br>Segui la diretta su <a href="' + CHANNEL_URL + '/live" target="_blank" rel="noopener">YouTube</a>.</span>') +
+      '</div>';
   }
 
   /* -------------------------------------------------------
@@ -249,9 +259,11 @@
 
         if (live) {
           el.innerHTML = renderLive(live, live.liveState);
+          renderVideo(true);
           subscribeToSession(live.sessionId, function (newState) {
             if (newState && newState.matchOver === true) {
               removeChannel();
+              renderVideo(false);
               el.innerHTML = renderConcluded(Object.assign({}, live, resolveState(live, { state: newState })), 'Partita conclusa');
             } else {
               el.innerHTML = renderLive(live, newState);
@@ -259,6 +271,8 @@
           });
           return;
         }
+
+        renderVideo(false);
 
         var oggi = new Date().toISOString().slice(0, 10);
         var upcoming = enriched
@@ -276,9 +290,11 @@
                   clearInterval(_pollTimer);
                   var live2 = Object.assign({}, upcoming, info);
                   el.innerHTML = renderLive(live2, info.liveState);
+                  renderVideo(true);
                   subscribeToSession(info.sessionId, function (newState) {
                     if (newState && newState.matchOver === true) {
                       removeChannel();
+                      renderVideo(false);
                       el.innerHTML = renderConcluded(Object.assign({}, live2, resolveState(live2, { state: newState })), 'Partita conclusa');
                     } else {
                       el.innerHTML = renderLive(live2, newState);
@@ -301,10 +317,12 @@
         el.innerHTML = ultimaConclusa ? renderConcluded(ultimaConclusa, 'Ultimo risultato') : renderEmpty();
       }).catch(function (e) {
         console.warn('[diretta] errore sessioni Supabase:', e);
+        renderVideo(false);
         el.innerHTML = renderEmpty();
       });
     }).catch(function (e) {
       console.warn('[diretta] errore caricamento partite:', e);
+      renderVideo(false);
       el.innerHTML = renderEmpty();
     });
   }
@@ -315,7 +333,7 @@
   });
 
   document.addEventListener('DOMContentLoaded', function () {
-    initVideo();
+    renderVideo(false);
     init();
   });
 })();

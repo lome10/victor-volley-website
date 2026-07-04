@@ -2637,6 +2637,21 @@ main, footer.site-footer {
 }
 .dt-video-placeholder a { color: var(--c-azzurro); font-weight: 600; }
 
+.dt-video-fallback {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 20px;
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+.dt-video-fallback:hover { background: rgba(0,0,0,0.8); }
+
 .dt-tabellone {
   background: var(--c-navy);
   border-radius: 16px;
