@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="assets/logo.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diretta — Victor Volley</title>
+  <meta name="description" content="Segui la diretta streaming su YouTube e il tabellone live delle partite della Victor Volley di Melissano.">
+  <script>if(sessionStorage.getItem('vv_splash_shown')){document.documentElement.classList.add('no-splash');}</script>
+  <noscript><style>#splash-screen{display:none!important}</style></noscript>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div id="splash-screen" role="status" aria-label="Caricamento Victor Volley">
+    <div class="splash-top">
+      <img src="assets/logo.png" alt="Victor Volley" class="splash-logo">
+    </div>
+    <div class="splash-line" aria-hidden="true"></div>
+    <div class="splash-bottom" aria-hidden="true">
+      <div class="splash-percent" id="splashPercent">0%</div>
+    </div>
+  </div>
+
+  <header class="site-header" role="banner"></header>
+
+  <main id="main-content">
+
+    <div class="sponsor-ticker" id="sponsorTicker" aria-label="I nostri sponsor" style="display:none">
+      <div class="sponsor-ticker-track" id="sponsorTickerTrack"></div>
+    </div>
+
+    <section class="section dt-live-section" aria-label="Diretta live">
+      <div class="container">
+        <div class="dt-live-grid">
+          <div class="dt-video-wrap" id="direttaVideo"></div>
+          <div class="dt-tabellone" id="direttaTabellone">
+            <p class="dt-loading">Caricamento tabellone&hellip;</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer" role="contentinfo"></footer>
+
+  <!-- Firebase SDK (compat) -->
+  <script src="js/vendor/firebase-app-compat.js"></script>
+  <script src="js/vendor/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/splash.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/animations.js"></script>
+  <script src="js/main.js"></script>
+
+  <!-- Supabase (tabellone live) -->
+  <script src="js/vendor/supabase-js.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/diretta.js"></script>
+
+  <!-- Sponsor ticker -->
+  <script>
+  (function () {
+    DB.init(function () {
+      var ticker  = document.getElementById('sponsorTicker');
+      var track   = document.getElementById('sponsorTickerTrack');
+      if (!ticker || !track) return;
+      var sponsors = VV.getSponsors().sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
+      if (!sponsors.length) return;
+
+      function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+      function makeItem(s) {
+        var inner = s.logo
+          ? '<img src="' + esc(s.logo) + '" alt="' + esc(s.nome) + '" class="spt-logo">'
+          : '<span class="spt-name">' + esc(s.nome) + '</span>';
+        return s.url
+          ? '<a href="' + esc(s.url) + '" class="spt-item" target="_blank" rel="noopener">' + inner + '</a>'
+          : '<div class="spt-item">' + inner + '</div>';
+      }
+
+      var html = sponsors.map(makeItem).join('');
+      track.innerHTML = html + html; /* duplica per loop seamless */
+      track.style.animationDuration = Math.max(15, sponsors.length * 4) + 's';
+      ticker.style.display = 'block';
+    });
+  })();
+  </script>
+
+</body>
+</html>

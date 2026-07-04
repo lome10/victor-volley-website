@@ -218,6 +218,8 @@
   <script src="js/components.js"></script>
   <script src="js/animations.js"></script>
   <script src="js/main.js"></script>
+  <script src="js/vendor/supabase-js.min.js"></script>
+  <script src="js/config.js"></script>
   <script src="js/partite-live.js"></script>
   <script src="js/girone.js"></script>
 
@@ -244,7 +246,7 @@
       var html = sponsors.map(makeItem).join('');
       track.innerHTML = html + html; /* duplica per loop seamless */
       track.style.animationDuration = Math.max(15, sponsors.length * 4) + 's';
-      ticker.style.display = '';
+      ticker.style.display = 'block';
     });
   })();
   </script>

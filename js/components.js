@@ -35,6 +35,10 @@
           '</li>' +
 
           '<li>' +
+            '<a href="/diretta" class="sidebar-nav-link' + isActive('diretta') + '">Diretta</a>' +
+          '</li>' +
+
+          '<li>' +
             '<a href="/squadre" class="sidebar-nav-link' + isActive('squadre') + '">Squadre</a>' +
           '</li>' +
 
@@ -263,9 +267,9 @@
           '<img src="assets/logo.png" alt="" class="mtb-logo">' +
           '<span class="mtb-name">Victor Volley</span>' +
         '</a>' +
-        '<button class="mtb-tv-btn" id="mtbTv" aria-label="Guarda streaming live">' +
+        '<a class="mtb-tv-btn" id="mtbTv" href="/diretta" aria-label="Guarda la diretta">' +
           '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>' +
-        '</button>' +
+        '</a>' +
       '</div>' +
       '<div class="mtb-match" id="mtbMatch"></div>';
 
@@ -273,25 +277,9 @@
     var main = document.querySelector('main') || document.body.firstElementChild;
     document.body.insertBefore(nav, main);
 
-    /* Crea il modal YouTube */
-    var modal = document.createElement('div');
-    modal.innerHTML =
-      '<div class="yt-modal" id="ytModal" role="dialog" aria-modal="true" aria-label="Live streaming">' +
-        '<div class="yt-modal-backdrop" id="ytModalBackdrop"></div>' +
-        '<div class="yt-modal-box">' +
-          '<div class="yt-modal-header">' +
-            '<span class="yt-modal-title">Live Streaming</span>' +
-            '<button class="yt-modal-close" id="ytModalClose" aria-label="Chiudi">&#x2715;</button>' +
-          '</div>' +
-          '<div class="yt-modal-embed" id="ytModalEmbed"></div>' +
-        '</div>' +
-      '</div>';
-    document.body.appendChild(modal.firstElementChild);
-
     /* ---- Logica topbar ---- */
     var topbar  = nav;
     var brand   = document.getElementById('mtbBrand');
-    var tvBtn   = document.getElementById('mtbTv');
     var matchEl = document.getElementById('mtbMatch');
     var sidebar = document.querySelector('.site-header');
     if (!brand || !sidebar) return;
@@ -316,43 +304,6 @@
       topbar.classList.toggle('sidebar-is-open', isOpen);
     }).observe(sidebar, { attributes: true, attributeFilter: ['class'] });
 
-    /* YouTube modal */
-    var ytModal    = document.getElementById('ytModal');
-    var ytEmbed    = document.getElementById('ytModalEmbed');
-    var ytClose    = document.getElementById('ytModalClose');
-    var ytBackdrop = document.getElementById('ytModalBackdrop');
-    var streamUrl  = '';
-
-    function toEmbedUrl(url) {
-      if (!url) return null;
-      var m = url.match(/[?&]v=([^&]+)/) || url.match(/youtu\.be\/([^?]+)/);
-      return m ? 'https://www.youtube.com/embed/' + m[1] + '?autoplay=1' : null;
-    }
-    function openYt(embedUrl) {
-      if (embedUrl) {
-        ytEmbed.innerHTML = '<iframe src="' + embedUrl + '" allowfullscreen allow="autoplay; encrypted-media"></iframe>';
-      } else {
-        ytEmbed.innerHTML =
-          '<div class="yt-modal-placeholder">' +
-            '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>' +
-            '<span>Il link dello streaming sarà<br>disponibile il giorno della partita</span>' +
-          '</div>';
-      }
-      ytModal.classList.add('is-open');
-      document.body.style.overflow = 'hidden';
-    }
-    function closeYt() {
-      ytModal.classList.remove('is-open');
-      ytEmbed.innerHTML = '';
-      document.body.style.overflow = '';
-    }
-    if (ytClose)    ytClose.addEventListener('click', closeYt);
-    if (ytBackdrop) ytBackdrop.addEventListener('click', closeYt);
-
-    if (tvBtn) {
-      tvBtn.addEventListener('click', function () { openYt(toEmbedUrl(streamUrl)); });
-    }
-
     /* Match card — solo se Firebase/DB è disponibile */
     if (window.DB && typeof DB.init === 'function') {
       DB.init(function () {
@@ -360,7 +311,6 @@
           .filter(function (m) { return !(m.result || '').trim(); })
           .sort(function (a, b) { return a.date > b.date ? 1 : -1; })[0];
         if (!next || !matchEl) return;
-        streamUrl = next.streamUrl || '';
 
         function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
         var ABBREV = { 'Prima Divisione': 'P.DIV', 'Under 18': 'U18', 'Under 13': 'U13', 'Under 12': 'U12', 'Minivolley': 'MINI' };
