@@ -2608,6 +2608,23 @@ main, footer.site-footer {
   .dt-live-grid { grid-template-columns: 1fr; }
 }
 
+.dt-video-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dt-video-msg {
+  margin: 0;
+  text-align: center;
+  font-size: 14px;
+  color: var(--c-navy);
+  background: var(--c-gray-light);
+  border-radius: 10px;
+  padding: 10px 16px;
+}
+.dt-video-msg[hidden] { display: none; }
+
 .dt-video-wrap {
   position: relative;
   padding-top: 56.25%; /* 16:9, relativo alla larghezza della colonna */

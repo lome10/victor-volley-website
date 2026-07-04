@@ -39,18 +39,25 @@
      L'embed persistente /embed/live_stream?channel= mostra "Video non
      disponibile" quando il canale non sta trasmettendo in questo
      momento (cosa vera quasi sempre): per evitarlo, carichiamo
-     l'iframe solo quando il tabellone segnala una partita live,
-     altrimenti mostriamo un rimando statico al canale.
+     l'iframe live solo quando il tabellone segnala una partita live;
+     altrimenti mostriamo un avviso + l'ultimo video caricato (playlist
+     "uploads" del canale, ricavata da UC... -> UU...).
   ------------------------------------------------------- */
   var CHANNEL_URL = 'https://www.youtube.com/@VictorVolleyVita';
 
+  function uploadsPlaylistId(channelId) {
+    return channelId.indexOf('UC') === 0 ? 'UU' + channelId.slice(2) : null;
+  }
+
   function renderVideo(isLive) {
-    var el = document.getElementById('direttaVideo');
+    var el    = document.getElementById('direttaVideo');
+    var msgEl = document.getElementById('direttaVideoMsg');
     if (!el) return;
     var channelId = window.YOUTUBE_CHANNEL_ID;
     var hasChannel = channelId && channelId !== 'INSERISCI_CHANNEL_ID_YOUTUBE';
 
     if (isLive && hasChannel) {
+      if (msgEl) msgEl.hidden = true;
       el.innerHTML =
         '<iframe src="https://www.youtube.com/embed/live_stream?channel=' + encodeURIComponent(channelId) + '" ' +
           'title="Diretta YouTube Victor Volley" ' +
@@ -60,12 +67,26 @@
       return;
     }
 
+    var playlistId = hasChannel ? uploadsPlaylistId(channelId) : null;
+
+    if (playlistId) {
+      if (msgEl) {
+        msgEl.hidden = false;
+        msgEl.innerHTML = 'Nessuna partita &egrave; al momento in diretta.<br>Nel frattempo, dai un&rsquo;occhiata alla nostra ultima partita.';
+      }
+      el.innerHTML =
+        '<iframe src="https://www.youtube.com/embed/videoseries?list=' + encodeURIComponent(playlistId) + '" ' +
+          'title="Ultimo video Victor Volley" ' +
+          'allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" ' +
+          'allowfullscreen></iframe>';
+      return;
+    }
+
+    if (msgEl) msgEl.hidden = true;
     el.innerHTML =
       '<div class="dt-video-placeholder">' +
         '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>' +
-        (hasChannel
-          ? '<span>Nessuna diretta in corso al momento.<br>Segui il canale su <a href="' + CHANNEL_URL + '" target="_blank" rel="noopener">YouTube</a>.</span>'
-          : '<span>Streaming non ancora configurato.<br>Segui la diretta su <a href="' + CHANNEL_URL + '/live" target="_blank" rel="noopener">YouTube</a>.</span>') +
+        '<span>Streaming non ancora configurato.<br>Segui la diretta su <a href="' + CHANNEL_URL + '/live" target="_blank" rel="noopener">YouTube</a>.</span>' +
       '</div>';
   }
 
