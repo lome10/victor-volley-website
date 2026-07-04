@@ -29,18 +29,16 @@
 
   <main id="main-content">
 
-    <div class="dt-sponsors" id="direttaSponsors" style="display:none">
-      <div class="dt-sponsors-gold" id="direttaSponsorsGold"></div>
-      <div class="sponsor-ticker" id="sponsorTicker" aria-label="I nostri sponsor">
-        <div class="sponsor-ticker-track" id="sponsorTickerTrack"></div>
-      </div>
-    </div>
+    <div class="dt-sponsors-gold" id="direttaSponsorsGold"></div>
 
     <section class="section dt-live-section" aria-label="Diretta live">
       <div class="container">
         <div class="dt-live-grid">
           <div class="dt-video-col">
             <div class="dt-video-wrap" id="direttaVideo"></div>
+            <div class="sponsor-ticker" id="sponsorTicker" aria-label="I nostri sponsor">
+              <div class="sponsor-ticker-track" id="sponsorTickerTrack"></div>
+            </div>
             <p class="dt-video-msg" id="direttaVideoMsg" hidden></p>
           </div>
           <div class="dt-tabellone" id="direttaTabellone">
@@ -70,15 +68,17 @@
   <script src="js/config.js"></script>
   <script src="js/diretta.js"></script>
 
+  <!-- Sponsor di prova, solo in locale (vedi js/dev-sponsor-fixture.js) -->
+  <script src="js/dev-sponsor-fixture.js"></script>
+
   <!-- Sponsor: Gold fissi in alto, Silver/Bronze a scorrimento sotto -->
   <script>
   (function () {
     DB.init(function () {
-      var wrap   = document.getElementById('direttaSponsors');
       var goldEl = document.getElementById('direttaSponsorsGold');
       var ticker = document.getElementById('sponsorTicker');
       var track  = document.getElementById('sponsorTickerTrack');
-      if (!wrap || !goldEl || !ticker || !track) return;
+      if (!goldEl || !ticker || !track) return;
 
       var sponsors = VV.getSponsors().sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
       if (!sponsors.length) return;
@@ -120,8 +120,6 @@
         track.style.animationDuration = Math.max(15, items.length * 4) + 's';
         ticker.style.display = 'block';
       }
-
-      wrap.style.display = 'block';
     });
   })();
   </script>
