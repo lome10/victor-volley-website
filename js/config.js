@@ -5,7 +5,5 @@
 window.SUPABASE_URL = 'INSERISCI_URL_SUPABASE';
 window.SUPABASE_ANON_KEY = 'INSERISCI_ANON_KEY_SUPABASE';
 
-/* Channel ID YouTube (non l'handle @VictorVolleyVita): si trova in
-   YouTube Studio > Impostazioni > Canale > Impostazioni avanzate,
-   oppure nel codice sorgente della pagina del canale (cerca "channelId"). */
-window.YOUTUBE_CHANNEL_ID = 'INSERISCI_CHANNEL_ID_YOUTUBE';
+/* Channel ID YouTube del canale @VictorVolleyVita */
+window.YOUTUBE_CHANNEL_ID = 'UCMz111deWu5j1DFY0Mr-OOA';
