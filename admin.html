@@ -811,7 +811,7 @@
       <!-- ---- SPONSOR ---- -->
       <section id="sectionSponsor" class="admin-section is-hidden">
         <div class="sp-admin-bar">
-          <p class="sp-admin-desc">Gestisci il nastro scorrevole degli sponsor in homepage. Cambia la <strong>posizione</strong> per riordinare.</p>
+          <p class="sp-admin-desc">Gestisci gli sponsor. Il <strong>livello</strong> decide dove e come compaiono (i Gold restano fissi e grandi, Silver e Bronze scorrono); le <strong>ripetizioni</strong> decidono quante volte il logo si ripete nel nastro scorrevole. Cambia la <strong>posizione</strong> per riordinare.</p>
           <button class="btn-primary" id="spAddBtn">+ Aggiungi sponsor</button>
         </div>
 
@@ -841,6 +841,18 @@
             <div class="form-group">
               <label class="form-label">Posizione nel nastro</label>
               <input type="number" id="spOrder" class="form-input" min="1" value="1" style="max-width:100px">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Livello</label>
+              <select id="spLivello" class="form-input">
+                <option value="gold">Gold</option>
+                <option value="silver" selected>Silver</option>
+                <option value="bronze">Bronze</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Ripetizioni nel ticker</label>
+              <input type="number" id="spRipetizioni" class="form-input" min="1" value="1" style="max-width:100px" title="Quante volte il logo compare nel nastro scorrevole Silver/Bronze — non si applica ai Gold">
             </div>
           </div>
           <div class="form-actions">

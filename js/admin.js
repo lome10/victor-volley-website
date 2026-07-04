@@ -1138,6 +1138,8 @@
       document.getElementById('spNome').value      = '';
       document.getElementById('spUrl').value       = '';
       document.getElementById('spOrder').value     = String(VV.getSponsors().length + 1);
+      document.getElementById('spLivello').value   = 'silver';
+      document.getElementById('spRipetizioni').value = '1';
       document.getElementById('spLogoPreview').style.display = 'none';
       document.getElementById('spForm').classList.remove('is-hidden');
       document.getElementById('spNome').focus();
@@ -1163,11 +1165,13 @@
       var nome = document.getElementById('spNome').value.trim();
       if (!nome) { alert('Il nome è obbligatorio.'); return; }
       var item = {
-        id:    _spEditing ? _spEditing.id : Date.now(),
-        nome:  nome,
-        logo:  document.getElementById('spLogoUrl').value.trim(),
-        url:   document.getElementById('spUrl').value.trim(),
-        order: parseInt(document.getElementById('spOrder').value, 10) || 1
+        id:          _spEditing ? _spEditing.id : Date.now(),
+        nome:        nome,
+        logo:        document.getElementById('spLogoUrl').value.trim(),
+        url:         document.getElementById('spUrl').value.trim(),
+        order:       parseInt(document.getElementById('spOrder').value, 10) || 1,
+        livello:     document.getElementById('spLivello').value || 'silver',
+        ripetizioni: Math.max(1, parseInt(document.getElementById('spRipetizioni').value, 10) || 1)
       };
       var list = VV.getSponsors().filter(function (s) { return s.id !== item.id; });
       list.push(item);
@@ -1192,10 +1196,12 @@
       list.innerHTML = '<p style="color:var(--a-muted);padding:24px 0">Nessuno sponsor aggiunto.</p>';
       return;
     }
+    var TIER_LABEL = { gold: 'Gold', silver: 'Silver', bronze: 'Bronze' };
     list.innerHTML = sponsors.map(function (s) {
       var logoHtml = s.logo
         ? '<img src="' + esc(s.logo) + '" class="sp-item-logo" alt="">'
         : '<div class="sp-item-no-logo">' + esc((s.nome||'?').charAt(0)) + '</div>';
+      var livello = s.livello || 'silver';
       return '<div class="sp-item">' +
         '<div class="sp-item-pos">' + (s.order||'—') + '</div>' +
         '<div class="sp-item-thumb">' + logoHtml + '</div>' +
@@ -1203,6 +1209,8 @@
           '<div class="sp-item-nome">' + esc(s.nome) + '</div>' +
           (s.url ? '<div class="sp-item-url">' + esc(s.url) + '</div>' : '') +
         '</div>' +
+        '<span class="sp-item-tier sp-item-tier--' + livello + '">' + TIER_LABEL[livello] + '</span>' +
+        (livello !== 'gold' ? '<span class="sp-item-reps" title="Ripetizioni nel ticker">&times;' + (s.ripetizioni || 1) + '</span>' : '') +
         '<input type="number" class="form-input sp-item-order" value="' + (s.order||1) + '" min="1" ' +
           'onchange="AdminActions.setSponsorOrder(' + s.id + ',+this.value)" title="Posizione">' +
         '<button class="btn-icon" onclick="AdminActions.editSponsor(' + s.id + ')" title="Modifica">' + EDIT_ICON + '</button>' +
@@ -1835,6 +1843,8 @@
     document.getElementById('spNome').value      = s.nome  || '';
     document.getElementById('spUrl').value       = s.url   || '';
     document.getElementById('spOrder').value     = String(s.order || 1);
+    document.getElementById('spLivello').value   = s.livello || 'silver';
+    document.getElementById('spRipetizioni').value = String(s.ripetizioni || 1);
     _syncSpPreview();
     document.getElementById('spForm').classList.remove('is-hidden');
     document.getElementById('spNome').focus();

@@ -243,9 +243,15 @@
           : '<div class="spt-item">' + inner + '</div>';
       }
 
-      var html = sponsors.map(makeItem).join('');
+      var items = [];
+      sponsors.forEach(function (s) {
+        var reps = Math.max(1, s.ripetizioni || 1);
+        for (var i = 0; i < reps; i++) items.push(s);
+      });
+
+      var html = items.map(makeItem).join('');
       track.innerHTML = html + html; /* duplica per loop seamless */
-      track.style.animationDuration = Math.max(15, sponsors.length * 4) + 's';
+      track.style.animationDuration = Math.max(15, items.length * 4) + 's';
       ticker.style.display = 'block';
     });
   })();

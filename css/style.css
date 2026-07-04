@@ -2595,6 +2595,40 @@ main, footer.site-footer {
 /* ================================================
    Pagina Diretta — video streaming + tabellone live
 ================================================ */
+.dt-sponsors-gold {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 36px;
+  padding: 20px 24px;
+  background: #fffaf0;
+  border-bottom: 1px solid #f3e0b8;
+}
+.dt-sponsors-gold:empty { display: none; }
+
+.dt-sponsors-gold-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+.dt-sponsors-gold-item:hover { opacity: 0.8; }
+
+.dt-sponsors-gold-logo {
+  height: 64px;
+  width: auto;
+  max-width: 220px;
+  object-fit: contain;
+  display: block;
+}
+.dt-sponsors-gold-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: #92400e;
+}
+
 .dt-live-section { padding-top: 32px; }
 
 .dt-live-grid {

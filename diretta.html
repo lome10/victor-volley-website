@@ -29,8 +29,11 @@
 
   <main id="main-content">
 
-    <div class="sponsor-ticker" id="sponsorTicker" aria-label="I nostri sponsor" style="display:none">
-      <div class="sponsor-ticker-track" id="sponsorTickerTrack"></div>
+    <div class="dt-sponsors" id="direttaSponsors" style="display:none">
+      <div class="dt-sponsors-gold" id="direttaSponsorsGold"></div>
+      <div class="sponsor-ticker" id="sponsorTicker" aria-label="I nostri sponsor">
+        <div class="sponsor-ticker-track" id="sponsorTickerTrack"></div>
+      </div>
     </div>
 
     <section class="section dt-live-section" aria-label="Diretta live">
@@ -67,30 +70,58 @@
   <script src="js/config.js"></script>
   <script src="js/diretta.js"></script>
 
-  <!-- Sponsor ticker -->
+  <!-- Sponsor: Gold fissi in alto, Silver/Bronze a scorrimento sotto -->
   <script>
   (function () {
     DB.init(function () {
-      var ticker  = document.getElementById('sponsorTicker');
-      var track   = document.getElementById('sponsorTickerTrack');
-      if (!ticker || !track) return;
+      var wrap   = document.getElementById('direttaSponsors');
+      var goldEl = document.getElementById('direttaSponsorsGold');
+      var ticker = document.getElementById('sponsorTicker');
+      var track  = document.getElementById('sponsorTickerTrack');
+      if (!wrap || !goldEl || !ticker || !track) return;
+
       var sponsors = VV.getSponsors().sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
       if (!sponsors.length) return;
 
       function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-      function makeItem(s) {
-        var inner = s.logo
-          ? '<img src="' + esc(s.logo) + '" alt="' + esc(s.nome) + '" class="spt-logo">'
-          : '<span class="spt-name">' + esc(s.nome) + '</span>';
-        return s.url
-          ? '<a href="' + esc(s.url) + '" class="spt-item" target="_blank" rel="noopener">' + inner + '</a>'
-          : '<div class="spt-item">' + inner + '</div>';
+
+      var gold = sponsors.filter(function (s) { return (s.livello || 'silver') === 'gold'; });
+      var rest = sponsors.filter(function (s) { return (s.livello || 'silver') !== 'gold'; });
+
+      if (gold.length) {
+        goldEl.innerHTML = gold.map(function (s) {
+          var inner = s.logo
+            ? '<img src="' + esc(s.logo) + '" alt="' + esc(s.nome) + '" class="dt-sponsors-gold-logo">'
+            : '<span class="dt-sponsors-gold-name">' + esc(s.nome) + '</span>';
+          return s.url
+            ? '<a href="' + esc(s.url) + '" class="dt-sponsors-gold-item" target="_blank" rel="noopener">' + inner + '</a>'
+            : '<div class="dt-sponsors-gold-item">' + inner + '</div>';
+        }).join('');
       }
 
-      var html = sponsors.map(makeItem).join('');
-      track.innerHTML = html + html; /* duplica per loop seamless */
-      track.style.animationDuration = Math.max(15, sponsors.length * 4) + 's';
-      ticker.style.display = 'block';
+      if (rest.length) {
+        function makeItem(s) {
+          var inner = s.logo
+            ? '<img src="' + esc(s.logo) + '" alt="' + esc(s.nome) + '" class="spt-logo">'
+            : '<span class="spt-name">' + esc(s.nome) + '</span>';
+          return s.url
+            ? '<a href="' + esc(s.url) + '" class="spt-item" target="_blank" rel="noopener">' + inner + '</a>'
+            : '<div class="spt-item">' + inner + '</div>';
+        }
+
+        var items = [];
+        rest.forEach(function (s) {
+          var reps = Math.max(1, s.ripetizioni || 1);
+          for (var i = 0; i < reps; i++) items.push(s);
+        });
+
+        var html = items.map(makeItem).join('');
+        track.innerHTML = html + html; /* duplica per loop seamless */
+        track.style.animationDuration = Math.max(15, items.length * 4) + 's';
+        ticker.style.display = 'block';
+      }
+
+      wrap.style.display = 'block';
     });
   })();
   </script>
