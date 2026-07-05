@@ -782,12 +782,20 @@
     var EDIT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
     var DEL_ICON  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>';
 
+    var DRAG_ICON = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><circle cx="8" cy="6" r="1.6"/><circle cx="8" cy="12" r="1.6"/><circle cx="8" cy="18" r="1.6"/><circle cx="16" cy="6" r="1.6"/><circle cx="16" cy="12" r="1.6"/><circle cx="16" cy="18" r="1.6"/></svg>';
+
+    function rosterOrderKey(p, isPlayer) {
+      if (p.order != null) return p.order;
+      return isPlayer && p.number != null ? p.number : 999;
+    }
+
     accordion.innerHTML = categories.map(function (cat) {
       var players = VV.getPlayers(cat.id)
         .filter(function (p) { return !p.stagione || p.stagione === _currentAdminSeason; })
-        .sort(function (a, b) { return (a.number || 99) - (b.number || 99); });
+        .sort(function (a, b) { return rosterOrderKey(a, true) - rosterOrderKey(b, true); });
       var staff = VV.getStaff(cat.id)
-        .filter(function (s) { return !s.stagione || s.stagione === _currentAdminSeason; });
+        .filter(function (s) { return !s.stagione || s.stagione === _currentAdminSeason; })
+        .sort(function (a, b) { return rosterOrderKey(a, false) - rosterOrderKey(b, false); });
 
       function personRow(p, isPlayer) {
         var avatar = p.photo
@@ -802,7 +810,8 @@
         var delCb = isPlayer
           ? 'AdminActions.deletePlayer(' + p.id + ')'
           : 'AdminActions.deleteStaff(' + p.id + ')';
-        return '<div class="roster-person">' +
+        return '<div class="roster-person" draggable="true" data-id="' + p.id + '">' +
+          '<span class="roster-drag" title="Trascina per riordinare">' + DRAG_ICON + '</span>' +
           avatar + numBadge +
           '<div class="roster-info"><div class="roster-name">' + esc(p.name) + '</div><div class="roster-role">' + esc(p.role) + '</div></div>' +
           '<div class="table-actions">' +
@@ -830,14 +839,58 @@
         '</div>' +
         '<div class="squad-subsection">' +
           '<div class="squad-subsection-hd"><span>Staff tecnico</span><button class="btn-sm" onclick="AdminActions.addStaff(' + cat.id + ')">+ Aggiungi</button></div>' +
-          '<div>' + staffRows + '</div>' +
+          '<div class="roster-list" id="rosterStaff-' + cat.id + '" data-type="staff">' + staffRows + '</div>' +
         '</div>' +
         '<div class="squad-subsection">' +
           '<div class="squad-subsection-hd"><span>Roster</span><button class="btn-sm" onclick="AdminActions.addPlayer(' + cat.id + ')">+ Aggiungi</button></div>' +
-          '<div>' + playerRows + '</div>' +
+          '<div class="roster-list" id="rosterPlayers-' + cat.id + '" data-type="player">' + playerRows + '</div>' +
         '</div>' +
       '</div>';
     }).join('');
+
+    accordion.querySelectorAll('.roster-list').forEach(function (list) {
+      _initRosterDnD(list, list.getAttribute('data-type'));
+    });
+  }
+
+  /* ---- Drag & drop riordino roster (staff/giocatori) ---- */
+  var _rosterDragEl = null;
+
+  function _initRosterDnD(container, listType) {
+    container.querySelectorAll('.roster-person').forEach(function (row) {
+      row.addEventListener('dragstart', function () {
+        _rosterDragEl = row;
+        row.classList.add('is-dragging');
+      });
+      row.addEventListener('dragend', function () {
+        row.classList.remove('is-dragging');
+        _rosterDragEl = null;
+      });
+      row.addEventListener('dragover', function (e) {
+        e.preventDefault();
+        if (!_rosterDragEl || _rosterDragEl === row || _rosterDragEl.parentElement !== container) return;
+        var rect  = row.getBoundingClientRect();
+        var after = (e.clientY - rect.top) > rect.height / 2;
+        container.insertBefore(_rosterDragEl, after ? row.nextSibling : row);
+      });
+      row.addEventListener('drop', function (e) {
+        e.preventDefault();
+        _persistRosterOrder(container, listType);
+      });
+    });
+  }
+
+  function _persistRosterOrder(container, listType) {
+    var isPlayer = listType === 'player';
+    var all = isPlayer ? VV.getPlayers() : VV.getStaff();
+    Array.prototype.forEach.call(container.querySelectorAll('.roster-person'), function (row, idx) {
+      var id   = +row.getAttribute('data-id');
+      var item = all.find(function (x) { return x.id === id; });
+      if (item && item.order !== idx + 1) {
+        item.order = idx + 1;
+        if (isPlayer) DB.savePlayer(item); else DB.saveStaffMember(item);
+      }
+    });
   }
 
   /* ---- Category form ---- */

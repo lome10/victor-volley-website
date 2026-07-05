@@ -716,8 +716,18 @@ button { font-family: var(--font-body); cursor: pointer; }
   gap: 10px;
   padding: 8px 0;
   border-bottom: 1px solid var(--a-border);
+  cursor: grab;
 }
 .roster-person:last-child { border-bottom: none; }
+.roster-person.is-dragging { opacity: 0.4; }
+
+.roster-drag {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--a-muted);
+  flex-shrink: 0;
+}
 
 .roster-avatar {
   width: 36px;

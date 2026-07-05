@@ -279,12 +279,18 @@
         return;
       }
 
+      function orderKey(p, isPlayer) {
+        if (p.order != null) return p.order;
+        return isPlayer && p.number != null ? p.number : 999;
+      }
+
       main.innerHTML = categories.map(function (cat) {
         var players = VV.getPlayers(cat.id)
           .filter(function (p) { return inSeason(p, activeSeason.id); })
-          .sort(function (a, b) { return (a.number || 99) - (b.number || 99); });
+          .sort(function (a, b) { return orderKey(a, true) - orderKey(b, true); });
         var staff = VV.getStaff(cat.id)
-          .filter(function (s) { return inSeason(s, activeSeason.id); });
+          .filter(function (s) { return inSeason(s, activeSeason.id); })
+          .sort(function (a, b) { return orderKey(a, false) - orderKey(b, false); });
         return renderCategorySection(cat, players, staff);
       }).join('');
 
