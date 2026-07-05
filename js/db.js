@@ -224,6 +224,18 @@
         .catch(function (e) { console.error('[DB] saveSponsors', e); });
     },
 
+    /* Caricamento mirato: legge solo lo sponsor doc, senza aspettare le
+       altre 8 collezioni/documenti caricati da DB.init (usato dalle pagine
+       che mostrano solo gli sponsor, es. diretta.html). */
+    loadSponsors: function (cb) {
+      global.db.collection('settings').doc('sponsor').get()
+        .then(function (doc) {
+          if (doc.exists && Array.isArray(doc.data().items)) VV.setSponsors(doc.data().items);
+        })
+        .catch(function (e) { console.error('[DB] loadSponsors', e); })
+        .then(function () { if (cb) cb(); });
+    },
+
     /* ---- SEASONS -------------------------------------------- */
     saveSeason: function (season, cb) {
       VV.saveSeason(season);
