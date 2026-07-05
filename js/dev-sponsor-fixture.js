@@ -7,9 +7,9 @@
 (function () {
   'use strict';
   if (!/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return;
-  if (!window.DB || typeof DB.loadSponsors !== 'function') return;
+  if (!window.DB || typeof DB.load !== 'function') return;
 
-  DB.loadSponsors(function () {
+  DB.load(['sponsors'], function () {
     if (VV.getSponsors().length) return; /* non sovrascrivere sponsor reali già presenti */
     VV.setSponsors([
       { id: 9001, nome: 'Comune di Melissano',  logo: '', url: '',                    order: 1, livello: 'gold',   ripetizioni: 1 },

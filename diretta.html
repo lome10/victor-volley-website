@@ -94,7 +94,7 @@
   <!-- Sponsor: Gold fissi in alto, Silver/Bronze a scorrimento sotto -->
   <script>
   (function () {
-    DB.loadSponsors(function () {
+    DB.load(['sponsors'], function () {
       var goldEl = document.getElementById('direttaSponsorsGold');
       var ticker = document.getElementById('sponsorTicker');
       var track  = document.getElementById('sponsorTickerTrack');

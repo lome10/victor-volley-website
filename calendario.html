@@ -155,7 +155,7 @@
 
     function inSeason(m, seasonId) { return !m.stagione || m.stagione === seasonId; }
 
-    DB.init(function () {
+    DB.load(['seasons', 'matches'], function () {
     var seasons      = VV.getSeasons();
     var activeSeason = VV.getCurrentSeason() || seasons[0];
 
@@ -261,7 +261,7 @@
     }
 
     renderMatches();
-    }); // DB.init
+    }); // DB.load
   })();
   </script>
 </body>

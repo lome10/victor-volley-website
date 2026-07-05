@@ -82,7 +82,7 @@
     function esc(s)  { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
     function badgeCls(cat) { return cat === 'Prima Divisione' ? 'hero-card-cat--magenta' : 'hero-card-cat--azzurro'; }
 
-    DB.init(function () {
+    DB.load(['articles'], function () {
       var articles = VV.getArticles(true)
         .filter(function (a) { return a.id && !isNaN(+a.id); })
         .sort(function (a, b) { return a.date < b.date ? 1 : -1; });
@@ -177,7 +177,7 @@
           render();
         });
       });
-    }); // DB.init
+    }); // DB.load
   })();
   </script>
 </body>

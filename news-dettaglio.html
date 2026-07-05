@@ -90,7 +90,7 @@
     sessionStorage.removeItem('vv_nav_id');
     if (isNaN(id) || id <= 0) { window.location.href = '/news'; return; }
 
-    DB.init(function () {
+    DB.load(['articles'], function () {
     var content = document.getElementById('articleContent');
     var article = VV.getArticle(id);
 
@@ -144,7 +144,7 @@
         '</article>';
       }).join('');
     }
-    }); // DB.init
+    }); // DB.load
   })();
   </script>
 </body>

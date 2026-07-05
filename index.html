@@ -229,7 +229,7 @@
   <!-- Sponsor ticker -->
   <script>
   (function () {
-    DB.init(function () {
+    DB.load(['sponsors'], function () {
       var ticker  = document.getElementById('sponsorTicker');
       var track   = document.getElementById('sponsorTickerTrack');
       if (!ticker || !track) return;
@@ -383,7 +383,7 @@
     function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
     function badgeCls(cat) { return cat === 'Prima Divisione' ? 'hero-card-cat--magenta' : 'hero-card-cat--azzurro'; }
 
-    DB.init(function () {
+    DB.load(['articles'], function () {
       var articles = VV.getArticles(true)
         .sort(function (a, b) { return a.date < b.date ? 1 : -1; })
         .slice(0, 6);
@@ -487,7 +487,7 @@
     function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
     function badgeCls(cat) { return cat === 'Prima Divisione' ? 'hero-card-cat--magenta' : 'hero-card-cat--azzurro'; }
 
-    DB.init(function () {
+    DB.load(['articles'], function () {
     var all      = VV.getArticles(true).sort(function (a, b) { return a.date < b.date ? 1 : -1; });
     var ordered  = all.filter(function (a) { return a.heroOrder > 0; })
                       .sort(function (a, b) { return a.heroOrder - b.heroOrder; });
@@ -554,7 +554,7 @@
       dotEls.forEach(function (d, i) { d.classList.toggle('is-active', i === closest); });
     }, { passive: true });
 
-    }); // DB.init
+    }); // DB.load
   })();
   </script>
 

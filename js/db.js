@@ -24,11 +24,6 @@
     staff:      {}
   };
 
-  /* ---- Stato init ---- */
-  var _initialized = false;
-  var _loading     = false;
-  var _pending     = [];
-
   /* ---- Helpers interni ---- */
   function _col(name) { return global.db.collection(name); }
 
@@ -68,60 +63,78 @@
   }
 
   /* ============================================================
+     Caricamento a parti: ogni "parte" ha il proprio stato di
+     caricamento (loaded/loading/pending), così ogni pagina può
+     chiedere con DB.load([...]) solo i dati che le servono invece
+     di aspettare sempre tutte le collezioni/documenti del sito.
+     DB.init() resta disponibile e carica semplicemente tutte le parti
+     (usato dall'admin, che ha bisogno di tutto).
+
+     Per aggiungere una parte nuova in futuro: aggiungerla a PART_NAMES
+     e insegnare a _fetchPart come caricarla.
+  ============================================================ */
+  var PART_NAMES = ['articles', 'matches', 'albums', 'categories', 'players', 'staff', 'sponsors', 'seasons', 'stats'];
+
+  var _parts = {};
+  PART_NAMES.forEach(function (name) { _parts[name] = { loaded: false, loading: false, pending: [] }; });
+
+  function _settingsDoc(id, applyFn) {
+    return global.db.collection('settings').doc(id).get().then(function (doc) {
+      if (doc.exists && Array.isArray(doc.data().items)) applyFn(doc.data().items);
+    });
+  }
+
+  function _fetchPart(name) {
+    switch (name) {
+      case 'articles':   return _loadOne('articles');
+      case 'matches':    return _loadOne('matches');
+      case 'albums':     return _loadOne('albums');
+      case 'categories': return _loadOne('categories');
+      case 'players':    return _loadOne('players');
+      case 'staff':      return _loadOne('staff');
+      case 'sponsors':   return _settingsDoc('sponsor', VV.setSponsors);
+      case 'seasons':    return _settingsDoc('seasons', VV.setSeasons);
+      case 'stats':      return _settingsDoc('stats',   VV.setStats);
+      default:           return Promise.resolve();
+    }
+  }
+
+  function _ensurePart(name) {
+    var state = _parts[name];
+    if (!state) return Promise.resolve(); /* parte sconosciuta: ignorata */
+    if (!state.loading) {
+      state.loading = true;
+      _fetchPart(name)
+        .catch(function (err) { console.error('[DB] load ' + name, err); })
+        .then(function () {
+          state.loaded = true;
+          var cbs = state.pending.slice(); state.pending = [];
+          cbs.forEach(function (resolve) { resolve(); });
+        });
+    }
+    if (state.loaded) return Promise.resolve();
+    return new Promise(function (resolve) { state.pending.push(resolve); });
+  }
+
+  /* ============================================================
      DB pubblico
   ============================================================ */
   var DB = {
 
+    /* ---- LOAD MIRATO ------------------------------------------ */
+    /* Carica solo le parti richieste, es: DB.load(['sponsors'], cb).
+       Parti disponibili: vedi PART_NAMES sopra. Sicuro da chiamare più
+       volte con parti diverse da script diversi sulla stessa pagina:
+       ogni parte viene scaricata una sola volta e messa in cache. */
+    load: function (parts, cb) {
+      Promise.all((parts || []).map(_ensurePart)).then(function () { if (cb) cb(); });
+    },
+
     /* ---- INIT ------------------------------------------------ */
+    /* Carica tutto (usato dall'admin, che gestisce ogni sezione). Per le
+       pagine pubbliche preferire DB.load([...]) con solo ciò che serve. */
     init: function (cb) {
-      if (_initialized) { if (cb) cb(); return; }
-      _pending.push(cb);
-      if (_loading) return;
-      _loading = true;
-
-      var loadStats = global.db.collection('settings').doc('stats').get()
-        .then(function (doc) {
-          if (doc.exists && Array.isArray(doc.data().items)) {
-            VV.setStats(doc.data().items);
-          }
-        });
-
-      var loadSponsors = global.db.collection('settings').doc('sponsor').get()
-        .then(function (doc) {
-          if (doc.exists && Array.isArray(doc.data().items)) {
-            VV.setSponsors(doc.data().items);
-          }
-        });
-
-      var loadSeasons = global.db.collection('settings').doc('seasons').get()
-        .then(function (doc) {
-          if (doc.exists && Array.isArray(doc.data().items)) {
-            VV.setSeasons(doc.data().items);
-          }
-        });
-
-      Promise.all([
-        _loadOne('articles'),
-        _loadOne('matches'),
-        _loadOne('albums'),
-        _loadOne('categories'),
-        _loadOne('players'),
-        _loadOne('staff'),
-        loadSponsors,
-        loadSeasons,
-        loadStats
-      ]).then(function () {
-        _initialized = true;
-        _loading     = false;
-        var cbs = _pending.slice(); _pending = [];
-        cbs.forEach(function (fn) { if (fn) fn(); });
-      }).catch(function (err) {
-        console.error('[DB] init error:', err);
-        _initialized = true;
-        _loading     = false;
-        var cbs = _pending.slice(); _pending = [];
-        cbs.forEach(function (fn) { if (fn) fn(); });
-      });
+      DB.load(PART_NAMES, cb);
     },
 
     /* ---- ARTICLES -------------------------------------------- */
@@ -222,18 +235,6 @@
       if (cb) cb();
       global.db.collection('settings').doc('sponsor').set({ items: items })
         .catch(function (e) { console.error('[DB] saveSponsors', e); });
-    },
-
-    /* Caricamento mirato: legge solo lo sponsor doc, senza aspettare le
-       altre 8 collezioni/documenti caricati da DB.init (usato dalle pagine
-       che mostrano solo gli sponsor, es. diretta.html). */
-    loadSponsors: function (cb) {
-      global.db.collection('settings').doc('sponsor').get()
-        .then(function (doc) {
-          if (doc.exists && Array.isArray(doc.data().items)) VV.setSponsors(doc.data().items);
-        })
-        .catch(function (e) { console.error('[DB] loadSponsors', e); })
-        .then(function () { if (cb) cb(); });
     },
 
     /* ---- SEASONS -------------------------------------------- */

@@ -227,7 +227,7 @@
 
     }
 
-    DB.init(function () {
+    DB.load(['categories', 'seasons', 'players', 'staff'], function () {
     var categories   = VV.getCategories(true).filter(function (c) { return c.showInSquadre !== false; });
     var seasons      = VV.getSeasons();
     var activeSeason = VV.getCurrentSeason() || seasons[0];
@@ -300,7 +300,7 @@
 
     renderAll();
 
-    }); // DB.init
+    }); // DB.load
   })();
   </script>
 </body>

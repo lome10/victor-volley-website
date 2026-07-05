@@ -153,8 +153,8 @@
     });
 
     /* ---- Carica dati ---- */
-    /* DB.init carica i metadati album da Firestore; PhotoDB carica le foto binarie da IndexedDB */
-    DB.init(function () {
+    /* DB.load carica i metadati album da Firestore; PhotoDB carica le foto binarie da IndexedDB */
+    DB.load(['albums'], function () {
       PhotoDB.init(function () {
         var albums = VV.getAlbums();
 

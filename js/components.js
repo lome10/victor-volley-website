@@ -305,8 +305,8 @@
     }).observe(sidebar, { attributes: true, attributeFilter: ['class'] });
 
     /* Match card — solo in homepage, solo se Firebase/DB è disponibile */
-    if (page === 'index' && window.DB && typeof DB.init === 'function') {
-      DB.init(function () {
+    if (page === 'index' && window.DB && typeof DB.load === 'function') {
+      DB.load(['matches'], function () {
         var next = VV.getMatches()
           .filter(function (m) { return !(m.result || '').trim(); })
           .sort(function (a, b) { return a.date > b.date ? 1 : -1; })[0];
