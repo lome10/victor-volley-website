@@ -2602,6 +2602,10 @@ main, footer.site-footer {
   gap: 36px;
 }
 
+@media (min-width: 641px) {
+  .dt-sponsors-gold-track { gap: 100px; }
+}
+
 .dt-sponsors-gold-item {
   display: flex;
   align-items: center;
@@ -2658,7 +2662,7 @@ main, footer.site-footer {
   }
   .dt-sponsors-gold-logo { transform: scale(1.8); }
 }
-.dt-live-section { padding-top: 32px; padding-bottom: 13px; }
+.dt-live-section { padding-top: 32px; padding-bottom: 20px; }
 
 .dt-live-grid {
   display: grid;
