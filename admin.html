@@ -820,14 +820,32 @@
           <h3 class="sp-form-title" id="spFormTitle">Nuovo sponsor</h3>
           <div class="sp-form-grid">
             <div class="form-group">
-              <label class="form-label">Logo</label>
+              <label class="form-label">Logo *</label>
               <div style="display:flex;gap:8px;align-items:center">
                 <input type="text" id="spLogoUrl" class="form-input" placeholder="URL immagine (o carica file →)">
-                <label class="btn-ghost" style="cursor:pointer;padding:6px 14px;white-space:nowrap;flex-shrink:0" title="Carica PNG/SVG — ridimensionato a 160 px">
+                <label class="btn-ghost" style="cursor:pointer;padding:6px 14px;white-space:nowrap;flex-shrink:0" title="Carica PNG/JPG/SVG — poi potrai ritagliare e zoomare">
                   Carica
                   <input type="file" id="spLogoFile" accept="image/*" style="display:none">
                 </label>
                 <img id="spLogoPreview" src="" alt="" style="height:40px;width:80px;object-fit:contain;border-radius:4px;border:1px solid #e2e8f0;background:#f8fafc;padding:4px;display:none">
+              </div>
+
+              <!-- Editor logo: rimozione sfondo automatica + ritaglio/zoom manuale -->
+              <div id="spLogoEditor" style="display:none;margin-top:12px;padding:14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px">
+                <p style="font-size:12px;color:var(--a-muted);margin-bottom:10px">Lo sfondo quasi bianco è già stato rimosso in automatico. Trascina per posizionare e usa lo slider per zoomare, così ritagli esattamente la parte che ti serve:</p>
+                <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+                  <div id="spLogoEditorViewport" style="position:relative;width:180px;height:180px;border-radius:8px;overflow:hidden;border:2px solid var(--a-accent);cursor:grab;flex-shrink:0;background-image:linear-gradient(45deg,#e2e8f0 25%,transparent 25%),linear-gradient(-45deg,#e2e8f0 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#e2e8f0 75%),linear-gradient(-45deg,transparent 75%,#e2e8f0 75%);background-size:16px 16px;background-position:0 0,0 8px,8px -8px,-8px 0px">
+                    <img id="spLogoEditorImg" src="" alt="" draggable="false" style="position:absolute;left:50%;top:50%;user-select:none;pointer-events:none">
+                  </div>
+                  <div style="flex:1;min-width:160px">
+                    <label style="font-size:11px;color:var(--a-muted);display:block;margin-bottom:4px">Zoom</label>
+                    <input type="range" id="spLogoEditorZoom" min="50" max="300" value="100" style="width:100%">
+                    <div class="form-actions" style="margin-top:12px">
+                      <button type="button" id="spLogoEditorCancel" class="btn-ghost">Annulla</button>
+                      <button type="button" id="spLogoEditorApply" class="btn-primary">Usa questa immagine</button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
             <div class="form-group">
@@ -852,7 +870,8 @@
             </div>
             <div class="form-group">
               <label class="form-label">Ripetizioni nel ticker</label>
-              <input type="number" id="spRipetizioni" class="form-input" min="1" value="1" style="max-width:100px" title="Quante volte il logo compare nel nastro scorrevole Silver/Bronze — non si applica ai Gold">
+              <input type="number" id="spRipetizioni" class="form-input" min="1" value="3" style="max-width:100px" title="Quante volte il logo compare nel nastro scorrevole Silver/Bronze — non si applica ai Gold">
+              <p style="font-size:12px;color:var(--a-muted);margin-top:4px">Più ripetizioni = più visibilità nel nastro. Di norma i Silver dovrebbero averne più dei Bronze: è qui che si vede il vantaggio di un contributo maggiore.</p>
             </div>
           </div>
           <div class="form-actions">

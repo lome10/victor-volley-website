@@ -233,24 +233,29 @@
       var ticker  = document.getElementById('sponsorTicker');
       var track   = document.getElementById('sponsorTickerTrack');
       if (!ticker || !track) return;
-      var sponsors = VV.getSponsors().sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
+      var sponsors = VV.getSponsors().filter(function (s) { return !!s.logo; })
+        .sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
       if (!sponsors.length) return;
 
       function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
       function makeItem(s) {
-        var inner = s.logo
-          ? '<img src="' + esc(s.logo) + '" alt="' + esc(s.nome) + '" class="spt-logo">'
-          : '<span class="spt-name">' + esc(s.nome) + '</span>';
+        var inner = '<img src="' + esc(s.logo) + '" alt="' + esc(s.nome) + '" class="spt-logo">';
         return s.url
           ? '<a href="' + esc(s.url) + '" class="spt-item" target="_blank" rel="noopener">' + inner + '</a>'
           : '<div class="spt-item">' + inner + '</div>';
       }
 
+      /* Ripetizioni intervallate: un round per volta, non tutte di fila,
+         così un logo ripetuto ricompare solo dopo il turno degli altri. */
+      var remaining = sponsors.map(function (s) { return { s: s, left: Math.max(1, s.ripetizioni || 1) }; });
       var items = [];
-      sponsors.forEach(function (s) {
-        var reps = Math.max(1, s.ripetizioni || 1);
-        for (var i = 0; i < reps; i++) items.push(s);
-      });
+      var any = true;
+      while (any) {
+        any = false;
+        remaining.forEach(function (r) {
+          if (r.left > 0) { items.push(r.s); r.left--; any = true; }
+        });
+      }
 
       var html = items.map(makeItem).join('');
       track.innerHTML = html + html; /* duplica per loop seamless */

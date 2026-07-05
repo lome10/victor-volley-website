@@ -1251,13 +1251,13 @@ main, footer.site-footer {
   background: #fff;
   border-top: 1px solid #eaecf0;
   border-bottom: 1px solid #eaecf0;
-  padding: 20px 0;
+  padding: 16px 0;
   display: none; /* mostrato via JS solo se ci sono sponsor */
 }
 
 .sponsor-ticker-track {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 0;
   width: max-content;
   animation: spt-scroll 30s linear infinite;
@@ -1274,33 +1274,24 @@ main, footer.site-footer {
 .spt-item {
   display: flex;
   align-items: center;
-  padding: 0 48px;
+  justify-content: center;
+  width: 180px;
+  height: 100px;
+  padding: 0 16px;
+  box-sizing: border-box;
   text-decoration: none;
   flex-shrink: 0;
   border-right: 1px solid #eaecf0;
-  transition: opacity 0.2s;
 }
 .spt-item:last-child { border-right: none; }
-.spt-item:hover { opacity: 0.7; }
 
 .spt-logo {
-  height: 44px;
-  width: auto;
-  max-width: 140px;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
-  filter: grayscale(1);
-  opacity: 0.55;
-  transition: filter 0.3s, opacity 0.3s;
   display: block;
 }
 .spt-item:hover .spt-logo { filter: none; opacity: 1; }
-
-.spt-name {
-  font-size: 15px;
-  font-weight: 600;
-  color: #555;
-  white-space: nowrap;
-}
 
 /* ================================================
    Sezione con titolo standard
@@ -2596,40 +2587,78 @@ main, footer.site-footer {
    Pagina Diretta — video streaming + tabellone live
 ================================================ */
 .dt-sponsors-gold {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 36px;
+  overflow: hidden;
   padding: 20px 24px;
   background: #fffaf0;
   border-bottom: 1px solid #f3e0b8;
 }
 .dt-sponsors-gold:empty { display: none; }
 
+.dt-sponsors-gold-track {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 36px;
+}
+
 .dt-sponsors-gold-item {
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 190px;
+  height: 110px;
+  overflow: hidden;
   text-decoration: none;
-  transition: opacity 0.2s;
 }
-.dt-sponsors-gold-item:hover { opacity: 0.8; }
 
 .dt-sponsors-gold-logo {
-  height: 64px;
-  width: auto;
-  max-width: 220px;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
   display: block;
 }
-.dt-sponsors-gold-name {
-  font-size: 20px;
-  font-weight: 700;
-  color: #92400e;
+
+/* Desktop: zoom leggero sui loghi gold per dargli più peso visivo,
+   mantenendo invariata la fascia (stessa larghezza/altezza dello slot). */
+@media (min-width: 641px) {
+  .dt-sponsors-gold-logo { transform: scale(1.8); }
 }
 
-.dt-live-section { padding-top: 32px; }
+/* Mobile: i loghi si allargano per riempire la riga; se non ci stanno,
+   si passa allo scorrimento automatico invece di andare a capo. */
+@media (max-width: 640px) {
+  .dt-sponsors-gold { padding: 14px 12px; }
+  .dt-sponsors-gold-track {
+    flex-wrap: nowrap;
+    justify-content: center;
+    gap: 12px;
+  }
+  .dt-sponsors-gold-item {
+    width: auto;
+    flex: 1 1 110px;
+    min-width: 110px;
+    max-width: 190px;
+    height: 100px;
+  }
+  .dt-sponsors-gold-track.is-scrolling {
+    justify-content: flex-start;
+    gap: 0;
+    width: max-content;
+    animation-name: spt-scroll;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+  }
+  .dt-sponsors-gold-track.is-scrolling .dt-sponsors-gold-item {
+    flex: 0 0 auto;
+    width: 150px;
+    max-width: none;
+    min-width: 0;
+    padding: 0 14px;
+  }
+  .dt-sponsors-gold-logo { transform: scale(1.8); }
+}
+.dt-live-section { padding-top: 32px; padding-bottom: 8px; }
 
 .dt-live-grid {
   display: grid;
@@ -2649,10 +2678,11 @@ main, footer.site-footer {
   min-width: 0;
 }
 
-.dt-video-col .sponsor-ticker {
-  border: 1px solid #eaecf0;
-  border-radius: 10px;
-  padding: 14px 0;
+.dt-side-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
 }
 
 .dt-video-msg {

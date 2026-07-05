@@ -304,8 +304,8 @@
       topbar.classList.toggle('sidebar-is-open', isOpen);
     }).observe(sidebar, { attributes: true, attributeFilter: ['class'] });
 
-    /* Match card — solo se Firebase/DB è disponibile */
-    if (window.DB && typeof DB.init === 'function') {
+    /* Match card — solo in homepage, solo se Firebase/DB è disponibile */
+    if (page === 'index' && window.DB && typeof DB.init === 'function') {
       DB.init(function () {
         var next = VV.getMatches()
           .filter(function (m) { return !(m.result || '').trim(); })

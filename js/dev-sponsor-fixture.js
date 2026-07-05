@@ -1,8 +1,8 @@
 /**
  * Victor Volley — Fixture sponsor per test in locale
- * Attivo SOLO su localhost/127.0.0.1: inietta sponsor di prova nella
- * cache in-memory senza mai scrivere su Firestore. Sul sito pubblico
- * questo script non fa nulla.
+ * Attivo SOLO su localhost/127.0.0.1 e SOLO se non ci sono ancora sponsor
+ * reali su Firestore: inietta sponsor di prova nella cache in-memory senza
+ * mai scrivere su Firestore. Sul sito pubblico questo script non fa nulla.
  */
 (function () {
   'use strict';
@@ -10,6 +10,7 @@
   if (!window.DB || typeof DB.init !== 'function') return;
 
   DB.init(function () {
+    if (VV.getSponsors().length) return; /* non sovrascrivere sponsor reali già presenti */
     VV.setSponsors([
       { id: 9001, nome: 'Comune di Melissano',  logo: '', url: '',                    order: 1, livello: 'gold',   ripetizioni: 1 },
       { id: 9002, nome: 'ARKÈ Costruzioni', logo: '', url: '',                   order: 2, livello: 'gold',   ripetizioni: 1 },

@@ -579,7 +579,8 @@
     var px      = data.data;
     var visited = new Uint8Array(w * h);
     var queue   = [];
-    var THR     = 240;
+    var THR     = 225; /* luminosità minima */
+    var MAXDIFF = 20;  /* differenza massima tra canali: cattura anche bianchi "sporchi"/leggermente colorati */
 
     for (var x = 0; x < w; x++) { queue.push(x, 0); queue.push(x, h - 1); }
     for (var y = 1; y < h - 1; y++) { queue.push(0, y); queue.push(w - 1, y); }
@@ -592,7 +593,9 @@
       if (visited[idx]) continue;
       visited[idx] = 1;
       var pi = idx * 4;
-      var isWhitish = px[pi] >= THR && px[pi + 1] >= THR && px[pi + 2] >= THR;
+      var r = px[pi], g = px[pi + 1], b = px[pi + 2];
+      var minC = Math.min(r, g, b), maxC = Math.max(r, g, b);
+      var isWhitish = minC >= THR && (maxC - minC) <= MAXDIFF;
       var isTransparent = px[pi + 3] < 10;
       if (isWhitish || isTransparent) {
         px[pi + 3] = 0;
@@ -1127,6 +1130,7 @@
      SPONSOR
   ================================================ */
   var _spEditing = null;
+  var SP_REPS_DEFAULT = { gold: 1, silver: 3, bronze: 1 };
 
   function renderSponsor() {
     refreshSpList();
@@ -1139,14 +1143,20 @@
       document.getElementById('spUrl').value       = '';
       document.getElementById('spOrder').value     = String(VV.getSponsors().length + 1);
       document.getElementById('spLivello').value   = 'silver';
-      document.getElementById('spRipetizioni').value = '1';
+      document.getElementById('spRipetizioni').value = String(SP_REPS_DEFAULT.silver);
       document.getElementById('spLogoPreview').style.display = 'none';
+      document.getElementById('spLogoEditor').style.display = 'none';
       document.getElementById('spForm').classList.remove('is-hidden');
       document.getElementById('spNome').focus();
     };
 
     document.getElementById('spFormCancel').onclick = function () {
       document.getElementById('spForm').classList.add('is-hidden');
+      document.getElementById('spLogoEditor').style.display = 'none';
+    };
+
+    document.getElementById('spLivello').onchange = function () {
+      document.getElementById('spRipetizioni').value = String(SP_REPS_DEFAULT[this.value] || 1);
     };
 
     document.getElementById('spLogoUrl').addEventListener('input', _syncSpPreview);
@@ -1154,20 +1164,22 @@
     document.getElementById('spLogoFile').onchange = function (e) {
       var file = e.target.files[0];
       if (!file) return;
-      convertLogoToPng(file, 160, function (dataUrl) {
-        document.getElementById('spLogoUrl').value = dataUrl;
-        _syncSpPreview();
+      _prepareSpLogoSource(file, function (dataUrl, w, h) {
+        _initSpLogoEditor();
+        _openSpLogoEditor(dataUrl, w, h);
       });
       e.target.value = '';
     };
 
     document.getElementById('spFormSave').onclick = function () {
       var nome = document.getElementById('spNome').value.trim();
+      var logo = document.getElementById('spLogoUrl').value.trim();
       if (!nome) { alert('Il nome è obbligatorio.'); return; }
+      if (!logo) { alert('Il logo è obbligatorio: carica un\'immagine per questo sponsor.'); return; }
       var item = {
         id:          _spEditing ? _spEditing.id : Date.now(),
         nome:        nome,
-        logo:        document.getElementById('spLogoUrl').value.trim(),
+        logo:        logo,
         url:         document.getElementById('spUrl').value.trim(),
         order:       parseInt(document.getElementById('spOrder').value, 10) || 1,
         livello:     document.getElementById('spLivello').value || 'silver',
@@ -1189,13 +1201,164 @@
     else      { prev.style.display = 'none'; }
   }
 
+  /* ---- Editor logo sponsor: rimozione sfondo automatica + ritaglio/zoom manuale ---- */
+  var SP_LOGO_OUT_SIZE   = 320; /* lato del PNG quadrato finale */
+  var SP_LOGO_MAX_SRC    = 800; /* lato massimo dell'immagine sorgente caricata nell'editor */
+  var _spLogoEditorReady = false;
+  var _spLogoEditor = {
+    naturalW: 0, naturalH: 0, baseScale: 1, zoom: 1, offX: 0, offY: 0,
+    dragging: false, startX: 0, startY: 0, startOffX: 0, startOffY: 0
+  };
+
+  /* Carica il file, rimuove lo sfondo quasi-bianco ma NON ritaglia/centra:
+     l'inquadratura finale la sceglie l'admin nell'editor. */
+  function _prepareSpLogoSource(file, cb) {
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      var dataUrl = e.target.result;
+      var img = new Image();
+      img.onload = function () {
+        var w = img.naturalWidth  || 0;
+        var h = img.naturalHeight || 0;
+
+        if ((w === 0 || h === 0) && file.type === 'image/svg+xml') {
+          try {
+            var str = dataUrl.indexOf('base64,') > -1
+              ? atob(dataUrl.split('base64,')[1])
+              : decodeURIComponent(dataUrl.split(',')[1]);
+            var vb = str.match(/viewBox\s*=\s*["']?\s*[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)/i);
+            if (vb) { w = Math.round(+vb[1]); h = Math.round(+vb[2]); }
+          } catch (_) {}
+        }
+        if (w === 0) w = 128;
+        if (h === 0) h = 128;
+
+        var scale = Math.min(1, SP_LOGO_MAX_SRC / w, SP_LOGO_MAX_SRC / h);
+        var outW  = Math.max(1, Math.round(w * scale));
+        var outH  = Math.max(1, Math.round(h * scale));
+
+        var canvas = document.createElement('canvas');
+        canvas.width  = outW;
+        canvas.height = outH;
+        var ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, outW, outH);
+        _removeWhiteBg(ctx, outW, outH);
+        cb(canvas.toDataURL('image/png'), outW, outH);
+      };
+      img.src = dataUrl;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function _spLogoEditorApplyTransform() {
+    var img   = document.getElementById('spLogoEditorImg');
+    var scale = _spLogoEditor.baseScale * _spLogoEditor.zoom;
+    var w = _spLogoEditor.naturalW * scale;
+    var h = _spLogoEditor.naturalH * scale;
+    img.style.width       = w + 'px';
+    img.style.height      = h + 'px';
+    img.style.marginLeft  = (-w / 2 + _spLogoEditor.offX) + 'px';
+    img.style.marginTop   = (-h / 2 + _spLogoEditor.offY) + 'px';
+  }
+
+  function _openSpLogoEditor(dataUrl, naturalW, naturalH) {
+    document.getElementById('spLogoEditor').style.display = '';
+    var viewport = document.getElementById('spLogoEditorViewport');
+    var size = viewport.clientWidth || 180;
+    _spLogoEditor.naturalW  = naturalW;
+    _spLogoEditor.naturalH  = naturalH;
+    _spLogoEditor.baseScale = Math.min(size / naturalW, size / naturalH); /* contain: si vede tutta l'immagine */
+    _spLogoEditor.zoom = 1;
+    _spLogoEditor.offX = 0;
+    _spLogoEditor.offY = 0;
+    document.getElementById('spLogoEditorZoom').value = 100;
+    document.getElementById('spLogoEditorImg').src = dataUrl;
+    _spLogoEditorApplyTransform();
+  }
+
+  function _initSpLogoEditor() {
+    if (_spLogoEditorReady) return;
+    _spLogoEditorReady = true;
+
+    var viewport = document.getElementById('spLogoEditorViewport');
+
+    function dragStart(x, y) {
+      _spLogoEditor.dragging  = true;
+      _spLogoEditor.startX    = x;
+      _spLogoEditor.startY    = y;
+      _spLogoEditor.startOffX = _spLogoEditor.offX;
+      _spLogoEditor.startOffY = _spLogoEditor.offY;
+      viewport.style.cursor = 'grabbing';
+    }
+    function dragMove(x, y) {
+      if (!_spLogoEditor.dragging) return;
+      _spLogoEditor.offX = _spLogoEditor.startOffX + (x - _spLogoEditor.startX);
+      _spLogoEditor.offY = _spLogoEditor.startOffY + (y - _spLogoEditor.startY);
+      _spLogoEditorApplyTransform();
+    }
+    function dragEnd() {
+      _spLogoEditor.dragging = false;
+      viewport.style.cursor = 'grab';
+    }
+
+    viewport.addEventListener('mousedown', function (e) { dragStart(e.clientX, e.clientY); });
+    window.addEventListener('mousemove', function (e) { dragMove(e.clientX, e.clientY); });
+    window.addEventListener('mouseup', dragEnd);
+
+    viewport.addEventListener('touchstart', function (e) { var t = e.touches[0]; dragStart(t.clientX, t.clientY); }, { passive: true });
+    viewport.addEventListener('touchmove',  function (e) { var t = e.touches[0]; dragMove(t.clientX, t.clientY); },  { passive: true });
+    viewport.addEventListener('touchend', dragEnd);
+
+    document.getElementById('spLogoEditorZoom').addEventListener('input', function () {
+      _spLogoEditor.zoom = +this.value / 100;
+      _spLogoEditorApplyTransform();
+    });
+
+    document.getElementById('spLogoEditorCancel').addEventListener('click', function () {
+      document.getElementById('spLogoEditor').style.display = 'none';
+    });
+
+    document.getElementById('spLogoEditorApply').addEventListener('click', function () {
+      var OUT  = SP_LOGO_OUT_SIZE;
+      var size = viewport.clientWidth || 180;
+      var k     = OUT / size;
+      var scale = _spLogoEditor.baseScale * _spLogoEditor.zoom * k;
+      var w = _spLogoEditor.naturalW * scale;
+      var h = _spLogoEditor.naturalH * scale;
+      var dx = OUT / 2 - w / 2 + _spLogoEditor.offX * k;
+      var dy = OUT / 2 - h / 2 + _spLogoEditor.offY * k;
+
+      var canvas = document.createElement('canvas');
+      canvas.width = canvas.height = OUT;
+      var ctx = canvas.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(document.getElementById('spLogoEditorImg'), dx, dy, w, h);
+
+      document.getElementById('spLogoUrl').value = canvas.toDataURL('image/png');
+      _syncSpPreview();
+      document.getElementById('spLogoEditor').style.display = 'none';
+    });
+  }
+
+  var SP_TIER_RANK = { gold: 0, silver: 1, bronze: 2 };
+
   function refreshSpList() {
     var list     = document.getElementById('spList');
-    var sponsors = VV.getSponsors().sort(function (a, b) { return (a.order||0) - (b.order||0); });
+    var sponsors = VV.getSponsors().sort(function (a, b) {
+      var ta = SP_TIER_RANK[a.livello || 'silver'];
+      var tb = SP_TIER_RANK[b.livello || 'silver'];
+      if (ta !== tb) return ta - tb;
+      return (a.order||0) - (b.order||0);
+    });
     if (!sponsors.length) {
       list.innerHTML = '<p style="color:var(--a-muted);padding:24px 0">Nessuno sponsor aggiunto.</p>';
       return;
     }
+    var EDIT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+    var DEL_ICON  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>';
     var TIER_LABEL = { gold: 'Gold', silver: 'Silver', bronze: 'Bronze' };
     list.innerHTML = sponsors.map(function (s) {
       var logoHtml = s.logo
@@ -1846,6 +2009,7 @@
     document.getElementById('spLivello').value   = s.livello || 'silver';
     document.getElementById('spRipetizioni').value = String(s.ripetizioni || 1);
     _syncSpPreview();
+    document.getElementById('spLogoEditor').style.display = 'none';
     document.getElementById('spForm').classList.remove('is-hidden');
     document.getElementById('spNome').focus();
   };
