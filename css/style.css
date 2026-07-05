@@ -2658,7 +2658,7 @@ main, footer.site-footer {
   }
   .dt-sponsors-gold-logo { transform: scale(1.8); }
 }
-.dt-live-section { padding-top: 32px; padding-bottom: 8px; }
+.dt-live-section { padding-top: 32px; padding-bottom: 13px; }
 
 .dt-live-grid {
   display: grid;
