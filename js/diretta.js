@@ -253,16 +253,8 @@
     var el = document.getElementById('direttaTabellone');
     if (!el) return;
 
-    var loadPartite = (window.firebase && firebase.apps && firebase.apps.length)
-      ? firebase.firestore().collection('siteData').doc('partite').get()
-          .then(function (doc) {
-            if (doc.exists && doc.data() && doc.data().json) return JSON.parse(doc.data().json);
-            return fetch('data/partite.json').then(function (r) { return r.json(); });
-          })
-          .catch(function () { return fetch('data/partite.json').then(function (r) { return r.json(); }); })
-      : fetch('data/partite.json').then(function (r) { return r.json(); });
-
-    loadPartite.then(function (partite) {
+    new Promise(function (resolve) { DB.load(['partite'], resolve); }).then(function () {
+      var partite = VV.getPartite();
       var withCode = partite.filter(function (p) { return p.codice_tabellone; });
 
       Promise.all(withCode.map(function (p) {

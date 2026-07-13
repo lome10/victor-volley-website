@@ -3,13 +3,14 @@
    Staff a nastro, roster raggruppato per ruolo
 ================================================ */
 :root {
-  --sq-navy-deep:   #050e1f;
-  --sq-ink:         #0b1b33;
-  --sq-azzurro-dim: #3aa6ff;
-  --sq-magenta-dim: #e05c92;
-  --sq-grad-cool:   linear-gradient(158deg, #0a2c57 0%, #0d1830 55%, #051022 100%);
-  --sq-grad-warm:   linear-gradient(158deg, #5a1638 0%, #33112c 55%, #150a1c 100%);
-  --sq-font-display: 'Arial Narrow', 'Helvetica Neue Condensed', var(--font-heading), sans-serif;
+  /* Alias locali sui token condivisi "dark sport theme" (css/style.css) */
+  --sq-navy-deep:    var(--sport-navy-deep);
+  --sq-ink:          var(--sport-ink);
+  --sq-azzurro-dim:  var(--sport-azzurro-dim);
+  --sq-magenta-dim:  var(--sport-magenta-dim);
+  --sq-grad-cool:    var(--sport-grad-cool);
+  --sq-grad-warm:    var(--sport-grad-warm);
+  --sq-font-display: var(--sport-font-display);
 }
 
 /* ---- Header: breadcrumb + titolo + switcher stagione/categoria ---- */

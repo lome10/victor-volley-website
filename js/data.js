@@ -7,7 +7,6 @@
 
   var KEYS = {
     articles:   'vv_articles',
-    matches:    'vv_matches',
     albums:     'vv_albums',
     categories: 'vv_categories',
     players:    'vv_players',
@@ -24,17 +23,13 @@
   var _stats    = null;
   var _sponsors = [];
   var _seasons  = [];
+  var _partite  = [];
 
   var DEFAULTS = {
     articles: [
       { id: 1, title: 'Inizia la nuova stagione: presentate tutte le squadre', category: 'Società', date: '2025-10-01', excerpt: 'La Victor Volley è pronta per la nuova stagione sportiva. Presentate ufficialmente le cinque categorie.', content: '<p>La Victor Volley è pronta per la nuova stagione sportiva. Presentate ufficialmente le cinque categorie.</p>', image: '', published: true },
       { id: 2, title: "Vittoria convincente della Prima Divisione all'esordio", category: 'Prima Divisione', date: '2025-10-12', excerpt: 'Prima giornata di campionato positiva: la Prima Divisione conquista i tre punti in casa.', content: '<p>Prima giornata di campionato positiva: la Prima Divisione conquista i tre punti in casa.</p>', image: '', published: true },
       { id: 3, title: 'Aperte le iscrizioni al Minivolley 2025/2026', category: 'Minivolley', date: '2025-09-15', excerpt: 'Sono aperte le iscrizioni al Minivolley per bambini dai 6 ai 10 anni. Venite a provare gratuitamente.', content: '<p>Sono aperte le iscrizioni al Minivolley per bambini dai 6 ai 10 anni.</p>', image: '', published: true }
-    ],
-    matches: [
-      { id: 1, date: '2025-11-08', time: '18:30', category: 'Prima Divisione', homeTeam: 'Victor Volley', awayTeam: 'Squadra Avversaria 1', isHome: true,  venue: 'Palazzetto ARKÉ — Melissano', homeLogo: '', awayLogo: '', result: '' },
-      { id: 2, date: '2025-11-15', time: '20:00', category: 'Prima Divisione', homeTeam: 'Squadra Avversaria 2', awayTeam: 'Victor Volley', isHome: false, venue: 'Palazzetto avversario', homeLogo: '', awayLogo: '', result: '' },
-      { id: 3, date: '2025-11-10', time: '10:00', category: 'Under 13', homeTeam: 'Victor Volley', awayTeam: 'Squadra U13', isHome: true,  venue: 'Palazzetto ARKÉ — Melissano', homeLogo: '', awayLogo: '', result: '' }
     ],
     albums: [],
     categories: [
@@ -74,25 +69,6 @@
     },
     deleteArticle: function (id) {
       _write(KEYS.articles, this.getArticles().filter(function(a){ return a.id !== +id; }));
-    },
-
-    /* ---- MATCHES ---- */
-    getMatches: function () {
-      var arr = _read(KEYS.matches) || DEFAULTS.matches.slice();
-      return arr.sort(function(a, b){ return a.date < b.date ? -1 : 1; });
-    },
-    getMatch: function (id) {
-      return this.getMatches().find(function(m){ return m.id === +id; }) || null;
-    },
-    saveMatch: function (match) {
-      var arr = _read(KEYS.matches) || DEFAULTS.matches.slice();
-      var idx = arr.findIndex(function(m){ return m.id === match.id; });
-      if (idx >= 0) { arr[idx] = match; } else { match.id = _nextId(arr); arr.push(match); }
-      _write(KEYS.matches, arr);
-      return match;
-    },
-    deleteMatch: function (id) {
-      _write(KEYS.matches, (_read(KEYS.matches) || DEFAULTS.matches.slice()).filter(function(m){ return m.id !== +id; }));
     },
 
     /* ---- ALBUMS ---- */
@@ -198,6 +174,10 @@
     /* ---- SPONSORS ---- */
     getSponsors: function () { return _sponsors.slice(); },
     setSponsors: function (items) { _sponsors = Array.isArray(items) ? items : []; },
+
+    /* ---- PARTITE (calendario) — fonte unica: siteData/partite ---- */
+    getPartite: function () { return _partite.slice(); },
+    setPartite: function (items) { _partite = Array.isArray(items) ? items : []; },
 
     /* ---- SEASONS ---- */
     getSeasons: function () {

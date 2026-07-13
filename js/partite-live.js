@@ -30,12 +30,6 @@
     return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
-  var CAT_ABBREV = {
-    'prima divisione': 'P.DIV',
-    'under 18': 'U18', 'under 13': 'U13', 'under 12': 'U12',
-    'minivolley': 'MINI'
-  };
-  function abbrevCat(cat) { return CAT_ABBREV[(cat || '').toLowerCase()] || cat; }
   function catCls(cat) { return cat === 'Prima Divisione' ? 'partite-card-cat--magenta' : ''; }
 
   var LOGO_MAP = { 'victor volley': 'assets/logo.png' };
@@ -67,7 +61,7 @@
   function cardProssima(p) {
     return '<div class="partite-card" data-partita-id="' + esc(p.id) + '">' +
       '<div class="partite-card-top">' +
-        '<span class="partite-card-cat ' + catCls(p.categoria) + '">' + esc(abbrevCat(p.categoria)) + '</span>' +
+        '<span class="partite-card-cat ' + catCls(p.categoria) + '">' + esc(p.categoria) + '</span>' +
         '<span class="partite-card-date">' + esc(formatData(p.data, p.ora)) + '</span>' +
       '</div>' +
       '<div class="partite-card-body">' +
@@ -85,7 +79,7 @@
     var so = (setOspite !== null && setOspite !== undefined) ? setOspite : (p.set_ospite || 0);
     return '<div class="partite-card" data-partita-id="' + esc(p.id) + '">' +
       '<div class="partite-card-top">' +
-        '<span class="partite-card-cat ' + catCls(p.categoria) + '">' + esc(abbrevCat(p.categoria)) + '</span>' +
+        '<span class="partite-card-cat ' + catCls(p.categoria) + '">' + esc(p.categoria) + '</span>' +
         '<span class="partite-card-date">' + esc(formatData(p.data, null)) + '</span>' +
       '</div>' +
       '<div class="partite-card-body">' +
@@ -129,7 +123,7 @@
 
     return '<div class="partite-card partite-card--live" data-partita-id="' + esc(p.id) + '" tabindex="0">' +
       '<div class="partite-card-top">' +
-        '<span class="partite-card-cat ' + catCls(p.categoria) + '">' + esc(abbrevCat(p.categoria)) + '</span>' +
+        '<span class="partite-card-cat ' + catCls(p.categoria) + '">' + esc(p.categoria) + '</span>' +
         '<span class="partite-card-live-badge" aria-label="Partita in corso">' +
           '<span class="partite-card-live-dot" aria-hidden="true"></span>LIVE' +
         '</span>' +
@@ -279,17 +273,9 @@
     var elC = document.getElementById('partiteConcluse');
     if (!elP && !elC) return;
 
-    var loadPartite = (window.firebase && firebase.apps && firebase.apps.length)
-      ? firebase.firestore().collection('siteData').doc('partite').get()
-          .then(function (doc) {
-            if (doc.exists && doc.data() && doc.data().json) return JSON.parse(doc.data().json);
-            return fetch('data/partite.json').then(function (r) { return r.json(); });
-          })
-          .catch(function () { return fetch('data/partite.json').then(function (r) { return r.json(); }); })
-      : fetch('data/partite.json').then(function (r) { return r.json(); });
-
-    loadPartite
-      .then(function (partite) {
+    new Promise(function (resolve) { DB.load(['partite'], resolve); })
+      .then(function () {
+        var partite = VV.getPartite();
 
         /* Fetch sessioni Supabase per le partite con codice_tabellone */
         var withCode = partite.filter(function (p) { return p.codice_tabellone; });

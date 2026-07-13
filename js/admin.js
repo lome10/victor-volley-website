@@ -81,15 +81,15 @@
   ================================================ */
   function renderDashboard() {
     var articles = VV.getArticles();
-    var matches  = VV.getMatches();
+    var partite  = VV.getPartite();
     var albums   = VV.getAlbums();
     var today    = new Date().toISOString().slice(0, 10);
 
-    var future = matches.filter(function (m) { return m.date >= today; });
+    var future = partite.filter(function (p) { return p.data >= today; });
 
     document.getElementById('dashStats').innerHTML =
       _statCard('📰', articles.length, 'Articoli', '--blue') +
-      _statCard('📅', matches.length, 'Partite', '--green') +
+      _statCard('📅', partite.length, 'Partite', '--green') +
       _statCard('🖼️', albums.length, 'Album galleria', '--yellow') +
       _statCard('⚽', future.length, 'Prossime partite', '--red');
 
@@ -212,51 +212,23 @@
   document.getElementById('artCancel').addEventListener('click', renderArticoli);
 
   /* ================================================
-     CALENDARIO — fonte unica: siteData/partite
+     CALENDARIO — fonte unica: siteData/partite (via DB/VV)
   ================================================ */
-  var _matchEditing  = null;
-  var _partiteCache  = [];
+  var _matchEditing = null;
 
   function _isVV(nome) { return (nome || '').toLowerCase().indexOf('victor') !== -1; }
-
-  function _loadPartiteCache(cb) {
-    db.collection('siteData').doc('partite').get()
-      .then(function (doc) {
-        if (doc.exists && doc.data() && doc.data().json) {
-          _partiteCache = JSON.parse(doc.data().json);
-        } else {
-          return fetch('data/partite.json')
-            .then(function (r) { return r.json(); })
-            .then(function (data) { _partiteCache = data; if (cb) cb(); });
-        }
-        if (cb) cb();
-      })
-      .catch(function () {
-        fetch('data/partite.json')
-          .then(function (r) { return r.json(); })
-          .then(function (data) { _partiteCache = data; if (cb) cb(); });
-      });
-  }
-
-  function _savePartiteCache(cb) {
-    db.collection('siteData').doc('partite').set({
-      json:      JSON.stringify(_partiteCache),
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    }).then(function () { if (cb) cb(); })
-      .catch(function (e) { alert('Errore salvataggio partite: ' + e.message); });
-  }
 
   function renderCalendario() {
     showSubview('calendario', 'list');
     setTopbarBtn('Aggiungi partita', function () { openMatchForm(null); });
-    _loadPartiteCache(refreshMatchTable);
+    refreshMatchTable();
   }
 
   var EDIT_ICON_SM  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
   var DEL_ICON_SM   = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>';
 
   function refreshMatchTable() {
-    var sorted = _partiteCache.slice().sort(function (a, b) { return a.data > b.data ? 1 : -1; });
+    var sorted = VV.getPartite().sort(function (a, b) { return a.data > b.data ? 1 : -1; });
     var rows = sorted.map(function (p) {
       var isHome  = _isVV(p.squadra_casa);
       var result  = (p.stato === 'conclusa' && p.set_casa != null)
@@ -368,9 +340,10 @@
       });
     }
 
-    var idx = _partiteCache.findIndex(function (p) { return p.id === partita.id; });
-    if (idx >= 0) { _partiteCache[idx] = partita; } else { _partiteCache.push(partita); }
-    _savePartiteCache(renderCalendario);
+    var partite = VV.getPartite();
+    var idx = partite.findIndex(function (p) { return p.id === partita.id; });
+    if (idx >= 0) { partite[idx] = partita; } else { partite.push(partita); }
+    DB.savePartite(partite, renderCalendario);
   });
 
   document.getElementById('matchCancel').addEventListener('click', renderCalendario);
@@ -1464,13 +1437,13 @@
       });
     },
     editMatch: function (id) {
-      var p = _partiteCache.find(function (x) { return x.id === id; });
+      var p = VV.getPartite().find(function (x) { return x.id === id; });
       if (p) openMatchForm(p);
     },
     deleteMatch: function (id) {
       confirm('Eliminare questa partita?', function () {
-        _partiteCache = _partiteCache.filter(function (x) { return x.id !== id; });
-        _savePartiteCache(refreshMatchTable);
+        var partite = VV.getPartite().filter(function (x) { return x.id !== id; });
+        DB.savePartite(partite, refreshMatchTable);
       });
     },
     deleteAlbum: function (id) {

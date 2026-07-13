@@ -46,6 +46,19 @@
      Percorso relativo a css/style.css (es. ../assets/foto.webp)
   ------------------------------------------------------- */
   --hero-bg: url('../assets/team-bg.webp');
+
+  /* -------------------------------------------------------
+     DARK SPORT THEME — usato dalle pagine "immersive" (Squadre,
+     Calendario/Classifica): canvas scuro, font condensato,
+     gradienti cool/warm. Condiviso tra i CSS di pagina dedicati.
+  ------------------------------------------------------- */
+  --sport-navy-deep:    #050e1f;
+  --sport-ink:          #0b1b33;
+  --sport-azzurro-dim:  #3aa6ff;
+  --sport-magenta-dim:  #e05c92;
+  --sport-grad-cool:    linear-gradient(158deg, #0a2c57 0%, #0d1830 55%, #051022 100%);
+  --sport-grad-warm:    linear-gradient(158deg, #5a1638 0%, #33112c 55%, #150a1c 100%);
+  --sport-font-display: 'Arial Narrow', 'Helvetica Neue Condensed', var(--font-heading), sans-serif;
 }
 
 /* --- Reset --- */
@@ -179,6 +192,16 @@ a:hover {
     box-shadow: var(--card-shadow-hover);
     cursor: pointer;
   }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* --- Badge --- */
@@ -354,7 +377,8 @@ main, footer.site-footer {
   border-left-color: var(--c-azzurro);
 }
 
-.sidebar-nav-link.is-active {
+.sidebar-nav-link.is-active,
+.sidebar-nav-trigger.is-active {
   color: var(--c-azzurro);
   border-left-color: var(--c-azzurro);
 }
@@ -698,7 +722,7 @@ main, footer.site-footer {
   scrollbar-width: none;
   -ms-overflow-style: none;
   display: flex;
-  justify-content: center;
+  justify-content: safe center; /* centra solo se il contenuto entra, altrimenti parte da sinistra: con "center" puro il primo elemento veniva tagliato quando le card non ci stavano tutte */
 }
 .partite-scroll-wrap::-webkit-scrollbar { display: none; }
 
@@ -2187,6 +2211,169 @@ main, footer.site-footer {
 .partite-table tr:hover td { background-color: rgba(0, 140, 253, 0.04); }
 
 /* ================================================
+   Calendario — tab + card partita/risultato
+================================================ */
+.cal-tabs-wrap {
+  background: var(--c-white);
+  border-bottom: 1px solid #e8e8ee;
+  position: sticky;
+  top: 56px;
+  z-index: 40;
+}
+
+.cal-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 12px 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.cal-tab {
+  padding: 10px 22px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 14px;
+  color: #777;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.cal-tab:hover { color: var(--c-navy); background-color: rgba(0, 140, 253, 0.06); }
+.cal-tab.is-active { background-color: var(--c-navy); color: var(--c-white); }
+
+.cal-panel.is-hidden { display: none; }
+
+.match-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.match-card {
+  background: var(--c-white);
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: var(--card-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: box-shadow var(--t), transform var(--t);
+}
+@media (hover: hover) {
+  .match-card:hover { transform: translateY(-3px); box-shadow: var(--card-shadow-hover); }
+}
+
+.match-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.match-card-cat {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 4px 11px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.match-card-date {
+  font-size: 12px;
+  color: #888;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.match-card-teams {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.match-card-team {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.match-card-team-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  object-fit: contain;
+  flex-shrink: 0;
+  background: var(--c-gray-light);
+  padding: 3px;
+  box-sizing: border-box;
+}
+
+.match-card-team span {
+  font-size: 14px;
+  font-weight: 500;
+  color: #444;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.match-card-team--vv span { font-weight: 700; color: var(--c-navy); }
+
+.match-card-vs {
+  font-size: 11px;
+  font-weight: 700;
+  color: #bbb;
+  flex-shrink: 0;
+}
+
+.match-card-score {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--c-navy);
+  flex-shrink: 0;
+}
+.match-card-score--vittoria { color: #1a8a2e; }
+.match-card-score--sconfitta { color: var(--c-magenta); }
+
+.match-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f3;
+}
+
+.match-card-venue {
+  font-size: 12px;
+  color: #999;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.match-card-venue svg { flex-shrink: 0; }
+
+.match-grid-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: #888;
+  padding: 48px 24px;
+}
+
+/* ================================================
    News dettaglio
 ================================================ */
 .article-content {
@@ -2420,6 +2607,76 @@ main, footer.site-footer {
 }
 
 .sponsor-card-name { font-size: 13px; color: #aaa; font-weight: 500; }
+
+/* I loghi sponsor sono sempre file quadrati (normalizzati dall'editor in admin),
+   quindi il box del logo è quadrato: niente più margini laterali morti. */
+.sponsor-card-logo { aspect-ratio: 1 / 1; object-fit: contain; display: block; }
+
+/* ---- Livelli Gold / Silver / Bronze ---- */
+.sponsor-tier { margin-bottom: 64px; }
+.sponsor-tier:last-child { margin-bottom: 0; }
+
+.sponsor-tier-head {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.sponsor-tier-badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 5px 16px;
+  border-radius: 999px;
+}
+.sponsor-tier-badge--gold   { background: #f5e3ab; color: #7a5c00; }
+.sponsor-tier-badge--silver { background: #e4e7ec; color: #4a5568; }
+.sponsor-tier-badge--bronze { background: #eccba5; color: #7a4620; }
+
+.sponsor-tier-sub { font-size: 14px; color: #888; }
+
+.sponsor-grid--gold {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  max-width: 900px;
+  margin: 0 auto;
+}
+.sponsor-card--gold {
+  padding: 32px;
+  border: 1px solid #e8d38c;
+  box-shadow: 0 4px 18px rgba(212, 175, 55, 0.15);
+}
+.sponsor-card--gold .sponsor-card-logo { width: 180px; }
+
+.sponsor-grid--silver { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.sponsor-card--silver { padding: 24px; }
+.sponsor-card--silver .sponsor-card-logo { width: 140px; }
+
+.sponsor-grid--bronze { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+.sponsor-card--bronze { padding: 20px; }
+.sponsor-card--bronze .sponsor-card-logo { width: 110px; }
+
+@media (hover: hover) {
+  .sponsor-card--gold:hover   { box-shadow: 0 10px 28px rgba(212, 175, 55, 0.25); }
+  .sponsor-card--silver:hover { box-shadow: 0 10px 28px rgba(148, 163, 184, 0.3); }
+  .sponsor-card--bronze:hover { box-shadow: 0 10px 28px rgba(205, 127, 50, 0.3); }
+}
+
+.sponsor-tier-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 28px;
+  color: #999;
+  font-size: 14px;
+  border: 1px dashed #ddd;
+  border-radius: 12px;
+}
+.sponsor-tier-empty a { color: var(--c-azzurro); font-weight: 600; }
 
 /* ================================================
    Filtro categorie (calendario / news)

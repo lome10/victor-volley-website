@@ -91,12 +91,15 @@
   }
 
   function _sidebarItem(id, label, flyoutTitle, links, active) {
-    return '<li class="sidebar-nav-item' + (active ? ' is-open' : '') + '" id="' + id + '">' +
-      '<button class="sidebar-nav-trigger' + (active ? ' is-active' : '') + '" aria-expanded="' + (active ? 'true' : 'false') + '">' +
+    /* "active" evidenzia solo il trigger come sezione corrente — il pannello
+       flyout resta chiuso di default e si apre solo su hover/click, altrimenti
+       coprirebbe il contenuto della pagina ad ogni caricamento. */
+    return '<li class="sidebar-nav-item" id="' + id + '">' +
+      '<button class="sidebar-nav-trigger' + (active ? ' is-active' : '') + '" aria-expanded="false">' +
         label +
         ' <span class="sidebar-nav-arrow" aria-hidden="true">' + SVG.chevron + '</span>' +
       '</button>' +
-      '<div class="sidebar-flyout' + (active ? ' is-open' : '') + '">' +
+      '<div class="sidebar-flyout">' +
         '<div class="sidebar-flyout-title">' + flyoutTitle + '</div>' +
         links.map(function(l) {
           return '<a href="' + l[0] + '" class="sidebar-flyout-link">' + l[1] + '</a>';
@@ -306,15 +309,13 @@
 
     /* Match card — solo in homepage, solo se Firebase/DB è disponibile */
     if (page === 'index' && window.DB && typeof DB.load === 'function') {
-      DB.load(['matches'], function () {
-        var next = VV.getMatches()
-          .filter(function (m) { return !(m.result || '').trim(); })
-          .sort(function (a, b) { return a.date > b.date ? 1 : -1; })[0];
+      DB.load(['partite'], function () {
+        var next = VV.getPartite()
+          .filter(function (p) { return p.stato !== 'conclusa'; })
+          .sort(function (a, b) { return a.data > b.data ? 1 : -1; })[0];
         if (!next || !matchEl) return;
 
         function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-        var ABBREV = { 'Prima Divisione': 'P.DIV', 'Under 18': 'U18', 'Under 13': 'U13', 'Under 12': 'U12', 'Minivolley': 'MINI' };
-        function abbrevCat(c) { return ABBREV[c] || c; }
         function catCls(c) { return c === 'Prima Divisione' ? 'partite-card-cat--magenta' : ''; }
         function formatData(dateStr, ora) {
           var d = new Date(dateStr);
@@ -339,13 +340,13 @@
           '<p class="partite-col-title">Prossima partita</p>' +
           '<div class="partite-card">' +
             '<div class="partite-card-top">' +
-              '<span class="partite-card-cat ' + catCls(next.category) + '">' + esc(abbrevCat(next.category)) + '</span>' +
-              '<span class="partite-card-date">' + esc(formatData(next.date, next.time)) + '</span>' +
+              '<span class="partite-card-cat ' + catCls(next.categoria) + '">' + esc(next.categoria) + '</span>' +
+              '<span class="partite-card-date">' + esc(formatData(next.data, next.ora)) + '</span>' +
             '</div>' +
             '<div class="partite-card-body">' +
               '<div class="partite-card-teams">' +
-                teamEl(next.homeTeam, next.homeLogo) +
-                teamEl(next.awayTeam, next.awayLogo) +
+                teamEl(next.squadra_casa, next.logo_casa) +
+                teamEl(next.squadra_ospite, next.logo_ospite) +
               '</div>' +
               '<div class="partite-card-vs-col"><span class="partite-card-vs">VS</span></div>' +
             '</div>' +

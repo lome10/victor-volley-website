@@ -4,7 +4,7 @@
  *   - homepage: featured card + pannello classifica
  *   - admin:    tabella classifica + lista partite
  */
-(function () {
+(function (global) {
   'use strict';
 
   function esc(s) {
@@ -280,4 +280,14 @@
     init();
   }
 
-})();
+  /* Esposto per riuso in altre pagine (es. calendario.html), così la logica
+     di calcolo classifica e i renderer restano in un solo posto. */
+  global.Girone = {
+    loadGirone:        loadGirone,
+    calcolaClassifica: calcolaClassifica,
+    squadraById:       squadraById,
+    renderClassifica:  renderClassifica,
+    formatData:        formatData
+  };
+
+})(window);

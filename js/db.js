@@ -17,7 +17,6 @@
   /* ---- Mappa: colName → { numericId: firestoreDocId } ---- */
   var _ids = {
     articles:   {},
-    matches:    {},
     albums:     {},
     categories: {},
     players:    {},
@@ -73,7 +72,7 @@
      Per aggiungere una parte nuova in futuro: aggiungerla a PART_NAMES
      e insegnare a _fetchPart come caricarla.
   ============================================================ */
-  var PART_NAMES = ['articles', 'matches', 'albums', 'categories', 'players', 'staff', 'sponsors', 'seasons', 'stats'];
+  var PART_NAMES = ['articles', 'partite', 'albums', 'categories', 'players', 'staff', 'sponsors', 'seasons', 'stats'];
 
   var _parts = {};
   PART_NAMES.forEach(function (name) { _parts[name] = { loaded: false, loading: false, pending: [] }; });
@@ -84,10 +83,35 @@
     });
   }
 
+  /* siteData/partite: un unico doc con un JSON stringify dentro (non una
+     collection con un doc per partita), con fallback su data/partite.json
+     se il doc non esiste ancora o Firestore non è raggiungibile. */
+  function _fetchPartiteStatic() {
+    return fetch('data/partite.json').then(function (r) { return r.json(); }).then(function (data) {
+      VV.setPartite(data);
+    });
+  }
+
+  function _fetchPartite() {
+    try {
+      return global.db.collection('siteData').doc('partite').get()
+        .then(function (doc) {
+          if (doc.exists && doc.data() && doc.data().json) {
+            VV.setPartite(JSON.parse(doc.data().json));
+            return;
+          }
+          return _fetchPartiteStatic();
+        })
+        .catch(function () { return _fetchPartiteStatic(); });
+    } catch (e) {
+      return _fetchPartiteStatic();
+    }
+  }
+
   function _fetchPart(name) {
     switch (name) {
       case 'articles':   return _loadOne('articles');
-      case 'matches':    return _loadOne('matches');
+      case 'partite':    return _fetchPartite();
       case 'albums':     return _loadOne('albums');
       case 'categories': return _loadOne('categories');
       case 'players':    return _loadOne('players');
@@ -150,17 +174,16 @@
       _remove('articles', id).catch(function (e) { console.error('[DB] deleteArticle', e); });
     },
 
-    /* ---- MATCHES --------------------------------------------- */
-    saveMatch: function (match, cb) {
-      var saved = VV.saveMatch(match);
+    /* ---- PARTITE (calendario) ---------------------------------- */
+    /* siteData/partite è un doc unico con l'intero array in JSON, quindi
+       il salvataggio riscrive sempre l'array completo (non un upsert per id). */
+    savePartite: function (items, cb) {
+      VV.setPartite(items);
       if (cb) cb();
-      _upsert('matches', saved).catch(function (e) { console.error('[DB] saveMatch', e); });
-      return saved;
-    },
-    deleteMatch: function (id, cb) {
-      VV.deleteMatch(id);
-      if (cb) cb();
-      _remove('matches', id).catch(function (e) { console.error('[DB] deleteMatch', e); });
+      global.db.collection('siteData').doc('partite').set({
+        json:      JSON.stringify(items),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(function (e) { console.error('[DB] savePartite', e); });
     },
 
     /* ---- ALBUMS ---------------------------------------------- */
@@ -267,7 +290,6 @@
     migrateFromLocalStorage: function (done) {
       var LS_KEYS = {
         articles:   'vv_articles',
-        matches:    'vv_matches',
         albums:     'vv_albums',
         categories: 'vv_categories',
         players:    'vv_players',

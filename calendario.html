@@ -1,17 +1,18 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
   <meta charset="UTF-8">
   <link rel="icon" type="image/png" href="assets/logo.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Calendario e risultati — Victor Volley</title>
-  <meta name="description" content="Calendario partite e risultati di Victor Volley Melissano. Prima Divisione, Under 19, Under 13, Under 12 e Minivolley.">
+  <meta name="description" content="Calendario partite, risultati e classifica di Victor Volley Melissano. Prima Divisione, Under 19, Under 13, Under 12 e Minivolley.">
   <script>if(sessionStorage.getItem('vv_splash_shown')){document.documentElement.classList.add('no-splash');}</script>
   <noscript><style>#splash-screen{display:none!important}</style></noscript>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/calendario.css">
 </head>
 <body>
 
@@ -29,109 +30,63 @@
 
   <main id="main-content">
 
-    <div class="page-header">
+    <div class="page-header page-header--calendario">
       <div class="container">
         <p class="breadcrumb"><a href="/">Home</a> / Calendario</p>
-        <h1>Calendario e risultati</h1>
-        <p id="calStagioneLabel" style="color:rgba(255,255,255,0.65);margin-top:8px">Stagione 2025/2026</p>
+        <div class="cal-head-row">
+          <div>
+            <p class="cal-eyebrow" id="calStagioneLabel">Stagione</p>
+            <h1>Calendario e risultati</h1>
+          </div>
+          <div class="cal-switch-group" id="calStagionNav" style="display:none"></div>
+        </div>
       </div>
     </div>
 
-    <!-- Selettore stagione (visibile solo se ci sono più stagioni) -->
-    <div id="calStagionBar" style="display:none;background:#fff;border-bottom:1px solid #e8e8ee;position:sticky;top:56px;z-index:50">
-      <div class="container" style="padding-top:0;padding-bottom:0">
-        <nav id="calStagionNav" style="display:flex;gap:0;overflow-x:auto;-webkit-overflow-scrolling:touch" aria-label="Stagione"></nav>
+    <div class="cal-dark-zone">
+
+      <!-- Tab: Calendario / Risultati / Classifica -->
+      <div class="container cal-tabs-row">
+        <div class="cal-switch-group" role="tablist" aria-label="Sezioni calendario">
+          <button type="button" class="is-active" role="tab" aria-selected="true" data-tab="calendario">Calendario</button>
+          <button type="button" role="tab" aria-selected="false" data-tab="risultati">Risultati</button>
+          <button type="button" role="tab" aria-selected="false" data-tab="classifica">Classifica</button>
+        </div>
       </div>
+
+      <!-- ===== CALENDARIO ===== -->
+      <section class="cal-panel" id="panel-calendario" data-panel="calendario" aria-labelledby="prox-title">
+        <h2 id="prox-title" class="sr-only">Prossime partite</h2>
+        <nav class="cal-filter-zone" aria-label="Filtra per categoria">
+          <div class="container"><div class="cal-filter-row" id="calFilterBar"></div></div>
+        </nav>
+        <div class="container">
+          <div class="fixture-grid" id="upcomingGrid"></div>
+        </div>
+      </section>
+
+      <!-- ===== RISULTATI ===== -->
+      <section class="cal-panel is-hidden" id="panel-risultati" data-panel="risultati" aria-labelledby="ris-title">
+        <h2 id="ris-title" class="sr-only">Risultati recenti</h2>
+        <nav class="cal-filter-zone" aria-label="Filtra per categoria">
+          <div class="container"><div class="cal-filter-row" id="risFilterBar"></div></div>
+        </nav>
+        <div class="container">
+          <div class="fixture-grid" id="pastGrid"></div>
+        </div>
+      </section>
+
+      <!-- ===== CLASSIFICA ===== -->
+      <section class="cal-panel is-hidden" id="panel-classifica" data-panel="classifica" aria-labelledby="class-title">
+        <h2 id="class-title" class="sr-only">Classifica Prima Divisione</h2>
+        <div class="container" style="padding:28px 24px 56px;max-width:640px;margin:0 auto">
+          <div class="stand-panel" id="classificaWrap">
+            <p class="stand-empty">Caricamento classifica&hellip;</p>
+          </div>
+        </div>
+      </section>
+
     </div>
-
-    <!-- ===== PROSSIME PARTITE ===== -->
-    <section class="section" id="prossime" aria-labelledby="prox-title">
-      <div class="container">
-        <div class="section-heading">
-          <h2 id="prox-title">Prossime partite</h2>
-        </div>
-
-        <div class="filter-bar" id="calFilterBar" role="group" aria-label="Filtra per categoria"></div>
-
-        <div class="table-responsive">
-          <table class="partite-table" id="tabellaPartite">
-            <thead>
-              <tr>
-                <th>Data</th>
-                <th>Ora</th>
-                <th>Categoria</th>
-                <th>Partita</th>
-                <th>Luogo</th>
-                <th>Tipo</th>
-              </tr>
-            </thead>
-            <tbody id="upcomingBody"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===== RISULTATI ===== -->
-    <section class="section section--alt" id="risultati" aria-labelledby="ris-title">
-      <div class="container">
-        <div class="section-heading">
-          <h2 id="ris-title">Risultati recenti</h2>
-        </div>
-
-        <div class="table-responsive">
-          <table class="partite-table">
-            <thead>
-              <tr>
-                <th>Data</th>
-                <th>Categoria</th>
-                <th>Partita</th>
-                <th>Risultato</th>
-                <th>Tipo</th>
-              </tr>
-            </thead>
-            <tbody id="pastBody"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===== CLASSIFICHE ===== -->
-    <section class="section" id="classifiche" aria-labelledby="class-title">
-      <div class="container">
-        <div class="section-heading">
-          <h2 id="class-title">Classifiche</h2>
-          <p>Prima Divisione &mdash; Girone placeholder</p>
-        </div>
-
-        <div class="table-responsive">
-          <table class="partite-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Squadra</th>
-                <th>G</th>
-                <th>V</th>
-                <th>P</th>
-                <th>Punti</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr style="background:rgba(0,140,253,0.05)">
-                <td><strong>1</strong></td>
-                <td><strong style="color:var(--c-navy)">Victor Volley</strong> <span class="badge badge--magenta" style="font-size:10px">noi</span></td>
-                <td>4</td><td>3</td><td>1</td>
-                <td><strong style="color:var(--c-azzurro)">9</strong></td>
-              </tr>
-              <tr><td>2</td><td>Squadra B &mdash; placeholder</td><td>4</td><td>3</td><td>1</td><td>8</td></tr>
-              <tr><td>3</td><td>Squadra C &mdash; placeholder</td><td>4</td><td>2</td><td>2</td><td>6</td></tr>
-              <tr><td>4</td><td>Squadra D &mdash; placeholder</td><td>4</td><td>1</td><td>3</td><td>3</td></tr>
-              <tr><td>5</td><td>Squadra E &mdash; placeholder</td><td>4</td><td>0</td><td>4</td><td>0</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <p style="font-size:12px;color:#aaa;margin-top:12px">&#9888; Classifica di esempio &mdash; dati reali da inserire a stagione in corso</p>
-      </div>
-    </section>
 
   </main>
 
@@ -147,27 +102,123 @@
   <script src="js/components.js"></script>
   <script src="js/animations.js"></script>
   <script src="js/main.js"></script>
+  <script src="js/girone.js"></script>
 
   <script>
   (function () {
     function slug(s) { return s.toLowerCase().replace(/\s+/g, '-').replace(/[àáâ]/g,'a').replace(/[èéê]/g,'e').replace(/[ìí]/g,'i').replace(/[òó]/g,'o').replace(/[ùú]/g,'u'); }
     function esc(s)  { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function isVV(nome) { return (nome || '').toLowerCase().indexOf('victor') !== -1; }
 
-    function inSeason(m, seasonId) { return !m.stagione || m.stagione === seasonId; }
+    var PIN_ICON = '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>';
 
-    DB.load(['seasons', 'matches'], function () {
+    var MESI_SHORT = ['GEN','FEB','MAR','APR','MAG','GIU','LUG','AGO','SET','OTT','NOV','DIC'];
+    function formatDataCard(dateStr, ora) {
+      var d = new Date(dateStr + 'T00:00:00');
+      return d.getDate() + ' ' + MESI_SHORT[d.getMonth()] + (ora ? ' · ' + ora : '');
+    }
+    function dayOfMonth(dateStr) {
+      return new Date(dateStr + 'T00:00:00').getDate();
+    }
+
+    function inSeason(p, seasonId) { return !p.stagione || p.stagione === seasonId; }
+
+    /* ================================================
+       TAB SWITCHING
+    ================================================ */
+    var TABS = ['calendario', 'risultati', 'classifica'];
+    var _classificaLoaded = false;
+
+    function activateTab(tab) {
+      if (TABS.indexOf(tab) < 0) tab = 'calendario';
+      document.querySelectorAll('.cal-tabs-row .cal-switch-group button').forEach(function (b) {
+        var active = b.dataset.tab === tab;
+        b.classList.toggle('is-active', active);
+        b.setAttribute('aria-selected', String(active));
+      });
+      document.querySelectorAll('.cal-panel').forEach(function (p) {
+        p.classList.toggle('is-hidden', p.dataset.panel !== tab);
+      });
+      if (tab === 'classifica' && !_classificaLoaded) {
+        _classificaLoaded = true;
+        renderClassificaTab();
+      }
+      if (history.replaceState) history.replaceState(null, '', '#' + tab);
+    }
+
+    document.querySelectorAll('.cal-tabs-row .cal-switch-group button').forEach(function (btn) {
+      btn.addEventListener('click', function () { activateTab(btn.dataset.tab); });
+    });
+
+    /* ================================================
+       CLASSIFICA (Prima Divisione — dati girone.json)
+    ================================================ */
+    function standRow(r, squadre, homeId) {
+      var s = Girone.squadraById(squadre, r.id);
+      var isHome = r.id === homeId;
+      var logo = s.logo
+        ? '<img src="' + esc(s.logo) + '" class="stand-logo" alt="">'
+        : '<span class="stand-logo-init">' + esc((s.nome || '?').charAt(0)) + '</span>';
+      return '<tr' + (isHome ? ' class="stand-row--vv"' : '') + '>' +
+        '<td class="stand-pos">' + (r._pos) + '</td>' +
+        '<td><div class="stand-name">' + logo + esc(s.nome) + '</div></td>' +
+        '<td class="stand-stat">' + r.v + '</td>' +
+        '<td class="stand-stat">' + r.p + '</td>' +
+        '<td class="stand-pts">' + r.pts + '</td>' +
+      '</tr>';
+    }
+
+    function renderClassificaTab() {
+      var wrap = document.getElementById('classificaWrap');
+      if (!window.Girone) { wrap.innerHTML = '<p class="stand-empty">Classifica non disponibile.</p>'; return; }
+
+      Girone.loadGirone().then(function (girone) {
+        if (!girone || !girone.squadre || !girone.partite) {
+          wrap.innerHTML = '<p class="stand-empty">Classifica non ancora disponibile.</p>';
+          return;
+        }
+        var classifica  = Girone.calcolaClassifica(girone);
+        classifica.forEach(function (r, i) { r._pos = i + 1; });
+        var homeSquadra = girone.squadre.filter(function (s) { return s.home; })[0];
+        var homeId      = homeSquadra ? homeSquadra.id : null;
+        var sub = (girone.categoria || 'Prima Divisione') +
+          (girone.girone ? ' — Girone ' + girone.girone : '') +
+          (girone.stagione ? ' · Stagione ' + girone.stagione : '');
+
+        wrap.innerHTML =
+          '<div class="stand-head">' +
+            '<div class="stand-title">Classifica</div>' +
+            '<div class="stand-sub">' + esc(sub) + '</div>' +
+          '</div>' +
+          '<table class="stand-table">' +
+            '<thead><tr>' +
+              '<th class="stand-pos">#</th><th>Squadra</th>' +
+              '<th class="stand-stat" title="Vittorie">V</th>' +
+              '<th class="stand-stat" title="Sconfitte">P</th>' +
+              '<th class="stand-pts">Pt</th>' +
+            '</tr></thead>' +
+            '<tbody>' + classifica.map(function (r) { return standRow(r, girone.squadre, homeId); }).join('') + '</tbody>' +
+          '</table>' +
+          '<div class="stand-footer">' + esc(girone.stagione || '') + '</div>';
+      }).catch(function () {
+        wrap.innerHTML = '<p class="stand-empty">Classifica non disponibile al momento.</p>';
+      });
+    }
+
+    /* ================================================
+       CALENDARIO / RISULTATI (dati partite — tutte le categorie)
+    ================================================ */
+    DB.load(['seasons', 'partite'], function () {
     var seasons      = VV.getSeasons();
     var activeSeason = VV.getCurrentSeason() || seasons[0];
 
-    /* ---- SELETTORE STAGIONE ---- */
-    var stagionBar = document.getElementById('calStagionBar');
     var stagionNav = document.getElementById('calStagionNav');
     var label      = document.getElementById('calStagioneLabel');
 
     if (seasons.length > 1) {
-      stagionBar.style.display = '';
+      stagionNav.style.display = '';
       stagionNav.innerHTML = seasons.map(function (s) {
-        return '<button type="button" class="cat-tab-link' + (s.id === activeSeason.id ? ' is-active' : '') + '" data-season="' + esc(s.id) + '">' + esc(s.name || s.id) + '</button>';
+        return '<button type="button"' + (s.id === activeSeason.id ? ' class="is-active"' : '') + ' data-season="' + esc(s.id) + '">' + esc(s.name || s.id) + '</button>';
       }).join('');
       stagionNav.querySelectorAll('[data-season]').forEach(function (btn) {
         btn.addEventListener('click', function () {
@@ -182,86 +233,98 @@
 
     label.textContent = 'Stagione ' + activeSeason.id;
 
-    var today     = new Date().toISOString().slice(0, 10);
-    var allMatch  = VV.getMatches();
-    var filterBar = document.getElementById('calFilterBar');
+    var today      = new Date().toISOString().slice(0, 10);
+    var allPartite = VV.getPartite();
 
-    function resultClass(res) {
-      if (!res) return '';
-      var parts = res.split('-');
-      if (parts.length !== 2) return '';
-      var a = parseInt(parts[0]), b = parseInt(parts[1]);
-      return isNaN(a) || isNaN(b) ? '' : (a > b ? 'risultato--vittoria' : 'risultato--sconfitta');
+    function resultClass(p) {
+      if (p.set_casa == null || p.set_ospite == null) return '';
+      var vvSets  = isVV(p.squadra_casa) ? p.set_casa   : p.set_ospite;
+      var oppSets = isVV(p.squadra_casa) ? p.set_ospite : p.set_casa;
+      return vvSets > oppSets ? 'vittoria' : 'sconfitta';
     }
 
-    function renderMatches() {
-      var matches  = allMatch.filter(function (m) { return inSeason(m, activeSeason.id); });
-      var upcoming = matches.filter(function (m) { return !m.result && m.date >= today; });
-      var past     = matches.filter(function (m) { return m.result || m.date < today; }).reverse();
+    function teamLogo(src, nome) {
+      return src
+        ? '<img src="' + esc(src) + '" alt="" class="fixture-team-logo">'
+        : '<span class="fixture-team-logo-init">' + esc((nome || '?').charAt(0).toUpperCase()) + '</span>';
+    }
 
-      /* Filtro categoria */
-      var cats = [];
-      upcoming.forEach(function (m) { if (cats.indexOf(m.category) < 0) cats.push(m.category); });
-      filterBar.innerHTML =
-        '<button class="filter-btn is-active" data-filter="all">Tutte</button>' +
+    function fixtureCard(p, isResult) {
+      var isHome   = isVV(p.squadra_casa);
+      var hasScore = p.set_casa != null && p.set_ospite != null;
+      var rCls     = hasScore ? resultClass(p) : '';
+
+      var ghost = isResult && hasScore
+        ? '<div class="fixture-ghost fixture-ghost--score">' + p.set_casa + '&ndash;' + p.set_ospite + '</div>'
+        : '<div class="fixture-ghost">' + dayOfMonth(p.data) + '</div>';
+
+      var middle = (isResult && hasScore)
+        ? '<div class="fixture-score-row"><span class="fixture-score fixture-score--' + rCls + '">' + p.set_casa + '&ndash;' + p.set_ospite + '</span></div>'
+        : '<div class="fixture-vs">vs</div>';
+
+      return '<div class="fixture-card ' + (isHome ? 'cool' : 'warm') + ' reveal" data-cat="' + slug(p.categoria) + '">' +
+        ghost +
+        '<span class="fixture-cat-badge">' + esc(p.categoria) + '</span>' +
+        '<div class="fixture-body">' +
+          '<div class="fixture-date">' + formatDataCard(p.data, p.ora) + '</div>' +
+          '<div class="fixture-teams">' +
+            '<div class="fixture-team' + (isHome ? ' fixture-team--vv' : '') + '">' + teamLogo(p.logo_casa, p.squadra_casa) + '<span class="fixture-team-name">' + esc(p.squadra_casa) + '</span></div>' +
+            '<div class="fixture-team' + (!isHome ? ' fixture-team--vv' : '') + '">' + teamLogo(p.logo_ospite, p.squadra_ospite) + '<span class="fixture-team-name">' + esc(p.squadra_ospite) + '</span></div>' +
+          '</div>' +
+          middle +
+          '<div class="fixture-meta">' +
+            '<span class="fixture-meta-venue">' + PIN_ICON + esc(p.palazzetto || '—') + '</span>' +
+            '<span class="fixture-tag fixture-tag--' + (isHome ? 'casa' : 'trasferta') + '">' + (isHome ? 'Casa' : 'Trasferta') + '</span>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }
+
+    function renderFilterBar(el, cats, gridId) {
+      el.innerHTML = '<button class="cal-chip is-active" data-filter="all">Tutte</button>' +
         cats.map(function (c) {
-          return '<button class="filter-btn" data-filter="' + slug(c) + '">' + esc(c) + '</button>';
+          return '<button class="cal-chip" data-filter="' + slug(c) + '">' + esc(c) + '</button>';
         }).join('');
-
-      /* Prossime partite */
-      document.getElementById('upcomingBody').innerHTML = upcoming.length
-        ? upcoming.map(function (m) {
-            var homeStrong = m.isHome;
-            var homeName   = homeStrong ? '<strong>' + esc(m.homeTeam) + '</strong>' : esc(m.homeTeam);
-            var awayName   = !homeStrong ? '<strong>' + esc(m.awayTeam) + '</strong>' : esc(m.awayTeam);
-            var homeLogo   = m.homeLogo ? '<img src="' + esc(m.homeLogo) + '" style="height:18px;vertical-align:middle;margin-right:4px">' : '';
-            var awayLogo   = m.awayLogo ? '<img src="' + esc(m.awayLogo) + '" style="height:18px;vertical-align:middle;margin-right:4px">' : '';
-            return '<tr data-cat="' + slug(m.category) + '">' +
-              '<td><strong>' + VV.formatDateShort(m.date) + '</strong></td>' +
-              '<td>' + esc(m.time || '—') + '</td>' +
-              '<td><span class="badge badge--azzurro">' + esc(m.category) + '</span></td>' +
-              '<td>' + homeLogo + homeName + ' vs ' + awayLogo + awayName + '</td>' +
-              '<td>' + esc(m.venue || '—') + '</td>' +
-              '<td><span class="badge ' + (m.isHome ? 'badge--magenta' : 'badge--azzurro') + '">' + (m.isHome ? 'Casa' : 'Trasferta') + '</span></td>' +
-            '</tr>';
-          }).join('')
-        : '<tr><td colspan="6" style="text-align:center;color:#888;padding:32px">Nessuna partita in programma</td></tr>';
-
-      /* Risultati */
-      document.getElementById('pastBody').innerHTML = past.length
-        ? past.map(function (m) {
-            var homeStrong = m.isHome;
-            var homeName   = homeStrong ? '<strong>' + esc(m.homeTeam) + '</strong>' : esc(m.homeTeam);
-            var awayName   = !homeStrong ? '<strong>' + esc(m.awayTeam) + '</strong>' : esc(m.awayTeam);
-            var rCls    = m.result ? resultClass(m.result) : '';
-            var resHtml = m.result
-              ? '<span class="risultato ' + rCls + '">' + esc(m.result) + (rCls === 'risultato--vittoria' ? ' &#10003;' : rCls === 'risultato--sconfitta' ? ' &#10007;' : '') + '</span>'
-              : '<span style="color:#aaa">—</span>';
-            return '<tr>' +
-              '<td>' + VV.formatDateShort(m.date) + '</td>' +
-              '<td><span class="badge badge--azzurro">' + esc(m.category) + '</span></td>' +
-              '<td>' + homeName + ' vs ' + awayName + '</td>' +
-              '<td>' + resHtml + '</td>' +
-              '<td><span class="badge ' + (m.isHome ? 'badge--magenta' : 'badge--azzurro') + '">' + (m.isHome ? 'Casa' : 'Trasferta') + '</span></td>' +
-            '</tr>';
-          }).join('')
-        : '<tr><td colspan="5" style="text-align:center;color:#888;padding:32px">Nessun risultato ancora</td></tr>';
-
-      /* Logica filtro categoria */
-      filterBar.querySelectorAll('.filter-btn').forEach(function (btn) {
+      el.querySelectorAll('.cal-chip').forEach(function (btn) {
         btn.addEventListener('click', function () {
-          filterBar.querySelectorAll('.filter-btn').forEach(function (b) { b.classList.remove('is-active'); });
+          el.querySelectorAll('.cal-chip').forEach(function (b) { b.classList.remove('is-active'); });
           btn.classList.add('is-active');
           var f = btn.getAttribute('data-filter');
-          document.querySelectorAll('#upcomingBody tr[data-cat]').forEach(function (row) {
-            row.style.display = (f === 'all' || row.getAttribute('data-cat') === f) ? '' : 'none';
+          document.querySelectorAll('#' + gridId + ' [data-cat]').forEach(function (card) {
+            card.style.display = (f === 'all' || card.getAttribute('data-cat') === f) ? '' : 'none';
           });
         });
       });
     }
 
+    function uniqueCats(list) {
+      var cats = [];
+      list.forEach(function (p) { if (cats.indexOf(p.categoria) < 0) cats.push(p.categoria); });
+      return cats;
+    }
+
+    function renderMatches() {
+      var partite  = allPartite.filter(function (p) { return inSeason(p, activeSeason.id); });
+      var upcoming = partite.filter(function (p) { return p.stato !== 'conclusa' && p.data >= today; });
+      var past     = partite.filter(function (p) { return p.stato === 'conclusa' || p.data < today; }).reverse();
+
+      renderFilterBar(document.getElementById('calFilterBar'), uniqueCats(upcoming), 'upcomingGrid');
+      renderFilterBar(document.getElementById('risFilterBar'), uniqueCats(past), 'pastGrid');
+
+      document.getElementById('upcomingGrid').innerHTML = upcoming.length
+        ? upcoming.map(function (p) { return fixtureCard(p, false); }).join('')
+        : '<div class="fixture-grid-empty">Nessuna partita in programma.</div>';
+
+      document.getElementById('pastGrid').innerHTML = past.length
+        ? past.map(function (p) { return fixtureCard(p, true); }).join('')
+        : '<div class="fixture-grid-empty">Nessun risultato ancora.</div>';
+    }
+
     renderMatches();
     }); // DB.load
+
+    /* Tab iniziale: da hash URL, altrimenti Calendario */
+    activateTab(location.hash.slice(1) || 'calendario');
   })();
   </script>
 </body>
