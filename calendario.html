@@ -45,46 +45,13 @@
 
     <div class="cal-dark-zone">
 
-      <!-- Tab: Calendario / Risultati / Classifica -->
+      <!-- Tab: categoria -->
       <div class="container cal-tabs-row">
-        <div class="cal-switch-group" role="tablist" aria-label="Sezioni calendario">
-          <button type="button" class="is-active" role="tab" aria-selected="true" data-tab="calendario">Calendario</button>
-          <button type="button" role="tab" aria-selected="false" data-tab="risultati">Risultati</button>
-          <button type="button" role="tab" aria-selected="false" data-tab="classifica">Classifica</button>
-        </div>
+        <div class="cal-switch-group cal-switch-group--cat" role="tablist" aria-label="Categoria" id="calCatNav"></div>
       </div>
 
-      <!-- ===== CALENDARIO ===== -->
-      <section class="cal-panel" id="panel-calendario" data-panel="calendario" aria-labelledby="prox-title">
-        <h2 id="prox-title" class="sr-only">Prossime partite</h2>
-        <nav class="cal-filter-zone" aria-label="Filtra per categoria">
-          <div class="container"><div class="cal-filter-row" id="calFilterBar"></div></div>
-        </nav>
-        <div class="container">
-          <div class="fixture-grid" id="upcomingGrid"></div>
-        </div>
-      </section>
-
-      <!-- ===== RISULTATI ===== -->
-      <section class="cal-panel is-hidden" id="panel-risultati" data-panel="risultati" aria-labelledby="ris-title">
-        <h2 id="ris-title" class="sr-only">Risultati recenti</h2>
-        <nav class="cal-filter-zone" aria-label="Filtra per categoria">
-          <div class="container"><div class="cal-filter-row" id="risFilterBar"></div></div>
-        </nav>
-        <div class="container">
-          <div class="fixture-grid" id="pastGrid"></div>
-        </div>
-      </section>
-
-      <!-- ===== CLASSIFICA ===== -->
-      <section class="cal-panel is-hidden" id="panel-classifica" data-panel="classifica" aria-labelledby="class-title">
-        <h2 id="class-title" class="sr-only">Classifica Prima Divisione</h2>
-        <div class="container" style="padding:28px 24px 56px;max-width:640px;margin:0 auto">
-          <div class="stand-panel" id="classificaWrap">
-            <p class="stand-empty">Caricamento classifica&hellip;</p>
-          </div>
-        </div>
-      </section>
+      <!-- Un pannello per categoria: Calendario + Risultati + Classifica insieme -->
+      <div id="calCatPanels"></div>
 
     </div>
 
@@ -124,34 +91,63 @@
     function inSeason(p, seasonId) { return !p.stagione || p.stagione === seasonId; }
 
     /* ================================================
-       TAB SWITCHING
+       TAB CATEGORIA
     ================================================ */
-    var TABS = ['calendario', 'risultati', 'classifica'];
-    var _classificaLoaded = false;
+    var categories = [];
+    var activeCat  = null;
 
-    function activateTab(tab) {
-      if (TABS.indexOf(tab) < 0) tab = 'calendario';
-      document.querySelectorAll('.cal-tabs-row .cal-switch-group button').forEach(function (b) {
-        var active = b.dataset.tab === tab;
+    function buildCatNav() {
+      var nav = document.getElementById('calCatNav');
+      nav.innerHTML = categories.map(function (c) {
+        var s = slug(c);
+        return '<button type="button" role="tab" aria-selected="' + (s === activeCat ? 'true' : 'false') + '"' +
+          (s === activeCat ? ' class="is-active"' : '') + ' data-cat="' + s + '">' + esc(c) + '</button>';
+      }).join('');
+      nav.querySelectorAll('button').forEach(function (btn) {
+        btn.addEventListener('click', function () { activateCat(btn.dataset.cat); });
+      });
+    }
+
+    function buildCatPanels() {
+      var wrap = document.getElementById('calCatPanels');
+      wrap.innerHTML = categories.map(function (c) {
+        var s = slug(c);
+        return '<section class="cal-cat-panel' + (s === activeCat ? '' : ' is-hidden') + '" data-cat="' + s + '" aria-label="' + esc(c) + '">' +
+          '<div class="container cal-section-block">' +
+            '<h2 class="cal-section-title">Calendario</h2>' +
+            '<div class="fixture-grid" data-role="upcoming"></div>' +
+          '</div>' +
+          '<div class="container cal-section-block">' +
+            '<h2 class="cal-section-title">Risultati</h2>' +
+            '<div class="fixture-grid" data-role="past"></div>' +
+          '</div>' +
+          '<div class="container cal-section-block cal-classifica-block is-hidden" data-role="classifica-wrap">' +
+            '<h2 class="cal-section-title">Classifica</h2>' +
+            '<div class="stand-panel" data-role="classifica"></div>' +
+          '</div>' +
+        '</section>';
+      }).join('');
+    }
+
+    function activateCat(cat) {
+      if (categories.map(slug).indexOf(cat) < 0) cat = slug(categories[0]);
+      activeCat = cat;
+      document.querySelectorAll('#calCatNav button').forEach(function (b) {
+        var active = b.dataset.cat === cat;
         b.classList.toggle('is-active', active);
         b.setAttribute('aria-selected', String(active));
       });
-      document.querySelectorAll('.cal-panel').forEach(function (p) {
-        p.classList.toggle('is-hidden', p.dataset.panel !== tab);
+      document.querySelectorAll('.cal-cat-panel').forEach(function (p) {
+        p.classList.toggle('is-hidden', p.dataset.cat !== cat);
       });
-      if (tab === 'classifica' && !_classificaLoaded) {
-        _classificaLoaded = true;
-        renderClassificaTab();
-      }
-      if (history.replaceState) history.replaceState(null, '', '#' + tab);
+      if (history.replaceState) history.replaceState(null, '', '#' + cat);
     }
-
-    document.querySelectorAll('.cal-tabs-row .cal-switch-group button').forEach(function (btn) {
-      btn.addEventListener('click', function () { activateTab(btn.dataset.tab); });
-    });
 
     /* ================================================
        CLASSIFICA (Prima Divisione — dati girone.json)
+       Mostrata solo nel pannello della categoria a cui
+       il girone appartiene; per le altre resta nascosta
+       finché non esisteranno dati.
     ================================================ */
     function standRow(r, squadre, homeId) {
       var s = Girone.squadraById(squadre, r.id);
@@ -168,24 +164,26 @@
       '</tr>';
     }
 
-    function renderClassificaTab() {
-      var wrap = document.getElementById('classificaWrap');
-      if (!window.Girone) { wrap.innerHTML = '<p class="stand-empty">Classifica non disponibile.</p>'; return; }
+    function renderClassifica() {
+      if (!window.Girone) return;
 
       Girone.loadGirone().then(function (girone) {
-        if (!girone || !girone.squadre || !girone.partite) {
-          wrap.innerHTML = '<p class="stand-empty">Classifica non ancora disponibile.</p>';
-          return;
-        }
-        var classifica  = Girone.calcolaClassifica(girone);
+        if (!girone || !girone.categoria || !girone.squadre || !girone.partite) return;
+
+        var panel = document.querySelector('.cal-cat-panel[data-cat="' + slug(girone.categoria) + '"]');
+        if (!panel) return;
+        var block = panel.querySelector('[data-role="classifica-wrap"]');
+        var target = panel.querySelector('[data-role="classifica"]');
+        if (!block || !target) return;
+
+        var classifica = Girone.calcolaClassifica(girone);
         classifica.forEach(function (r, i) { r._pos = i + 1; });
         var homeSquadra = girone.squadre.filter(function (s) { return s.home; })[0];
         var homeId      = homeSquadra ? homeSquadra.id : null;
-        var sub = (girone.categoria || 'Prima Divisione') +
-          (girone.girone ? ' — Girone ' + girone.girone : '') +
+        var sub = (girone.girone ? 'Girone ' + girone.girone : '') +
           (girone.stagione ? ' · Stagione ' + girone.stagione : '');
 
-        wrap.innerHTML =
+        target.innerHTML =
           '<div class="stand-head">' +
             '<div class="stand-title">Classifica</div>' +
             '<div class="stand-sub">' + esc(sub) + '</div>' +
@@ -200,17 +198,42 @@
             '<tbody>' + classifica.map(function (r) { return standRow(r, girone.squadre, homeId); }).join('') + '</tbody>' +
           '</table>' +
           '<div class="stand-footer">' + esc(girone.stagione || '') + '</div>';
-      }).catch(function () {
-        wrap.innerHTML = '<p class="stand-empty">Classifica non disponibile al momento.</p>';
-      });
+
+        block.classList.remove('is-hidden');
+      }).catch(function (e) { console.warn('[calendario] classifica non disponibile:', e); });
     }
 
     /* ================================================
-       CALENDARIO / RISULTATI (dati partite — tutte le categorie)
+       CALENDARIO / RISULTATI (dati partite)
+       Le categorie mostrate come tab derivano dai valori
+       "categoria" effettivamente presenti nelle partite,
+       non dall'elenco categorie di Squadre: quest'ultimo può
+       non coincidere (es. una categoria non ancora configurata
+       lì può già avere partite, o viceversa).
     ================================================ */
+    function uniqueCats(list) {
+      var cats = [];
+      list.forEach(function (p) { if (cats.indexOf(p.categoria) < 0) cats.push(p.categoria); });
+      cats.sort(function (a, b) {
+        if (a === 'Prima Divisione') return -1;
+        if (b === 'Prima Divisione') return 1;
+        return 0;
+      });
+      return cats;
+    }
+
     DB.load(['seasons', 'partite'], function () {
     var seasons      = VV.getSeasons();
     var activeSeason = VV.getCurrentSeason() || seasons[0];
+    var allPartite   = VV.getPartite();
+
+    categories = uniqueCats(allPartite);
+    var catSlugs  = categories.map(slug);
+    var hashSlug  = location.hash.slice(1);
+    activeCat = catSlugs.indexOf(hashSlug) >= 0 ? hashSlug : catSlugs[0];
+    buildCatNav();
+    buildCatPanels();
+    renderClassifica();
 
     var stagionNav = document.getElementById('calStagionNav');
     var label      = document.getElementById('calStagioneLabel');
@@ -233,8 +256,7 @@
 
     label.textContent = 'Stagione ' + activeSeason.id;
 
-    var today      = new Date().toISOString().slice(0, 10);
-    var allPartite = VV.getPartite();
+    var today = new Date().toISOString().slice(0, 10);
 
     function resultClass(p) {
       if (p.set_casa == null || p.set_ospite == null) return '';
@@ -262,9 +284,8 @@
         ? '<div class="fixture-score-row"><span class="fixture-score fixture-score--' + rCls + '">' + p.set_casa + '&ndash;' + p.set_ospite + '</span></div>'
         : '<div class="fixture-vs">vs</div>';
 
-      return '<div class="fixture-card ' + (isHome ? 'cool' : 'warm') + ' reveal" data-cat="' + slug(p.categoria) + '">' +
+      return '<div class="fixture-card ' + (isHome ? 'cool' : 'warm') + ' reveal">' +
         ghost +
-        '<span class="fixture-cat-badge">' + esc(p.categoria) + '</span>' +
         '<div class="fixture-body">' +
           '<div class="fixture-date">' + formatDataCard(p.data, p.ora) + '</div>' +
           '<div class="fixture-teams">' +
@@ -280,51 +301,30 @@
       '</div>';
     }
 
-    function renderFilterBar(el, cats, gridId) {
-      el.innerHTML = '<button class="cal-chip is-active" data-filter="all">Tutte</button>' +
-        cats.map(function (c) {
-          return '<button class="cal-chip" data-filter="' + slug(c) + '">' + esc(c) + '</button>';
-        }).join('');
-      el.querySelectorAll('.cal-chip').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-          el.querySelectorAll('.cal-chip').forEach(function (b) { b.classList.remove('is-active'); });
-          btn.classList.add('is-active');
-          var f = btn.getAttribute('data-filter');
-          document.querySelectorAll('#' + gridId + ' [data-cat]').forEach(function (card) {
-            card.style.display = (f === 'all' || card.getAttribute('data-cat') === f) ? '' : 'none';
-          });
-        });
-      });
-    }
-
-    function uniqueCats(list) {
-      var cats = [];
-      list.forEach(function (p) { if (cats.indexOf(p.categoria) < 0) cats.push(p.categoria); });
-      return cats;
-    }
-
     function renderMatches() {
-      var partite  = allPartite.filter(function (p) { return inSeason(p, activeSeason.id); });
-      var upcoming = partite.filter(function (p) { return p.stato !== 'conclusa' && p.data >= today; });
-      var past     = partite.filter(function (p) { return p.stato === 'conclusa' || p.data < today; }).reverse();
+      var partite = allPartite.filter(function (p) { return inSeason(p, activeSeason.id); });
 
-      renderFilterBar(document.getElementById('calFilterBar'), uniqueCats(upcoming), 'upcomingGrid');
-      renderFilterBar(document.getElementById('risFilterBar'), uniqueCats(past), 'pastGrid');
+      categories.forEach(function (c) {
+        var s     = slug(c);
+        var panel = document.querySelector('.cal-cat-panel[data-cat="' + s + '"]');
+        if (!panel) return;
 
-      document.getElementById('upcomingGrid').innerHTML = upcoming.length
-        ? upcoming.map(function (p) { return fixtureCard(p, false); }).join('')
-        : '<div class="fixture-grid-empty">Nessuna partita in programma.</div>';
+        var catPartite = partite.filter(function (p) { return slug(p.categoria) === s; });
+        var upcoming   = catPartite.filter(function (p) { return p.stato !== 'conclusa' && p.data >= today; });
+        var past       = catPartite.filter(function (p) { return p.stato === 'conclusa' || p.data < today; }).reverse();
 
-      document.getElementById('pastGrid').innerHTML = past.length
-        ? past.map(function (p) { return fixtureCard(p, true); }).join('')
-        : '<div class="fixture-grid-empty">Nessun risultato ancora.</div>';
+        panel.querySelector('[data-role="upcoming"]').innerHTML = upcoming.length
+          ? upcoming.map(function (p) { return fixtureCard(p, false); }).join('')
+          : '<div class="fixture-grid-empty">Nessuna partita in programma.</div>';
+
+        panel.querySelector('[data-role="past"]').innerHTML = past.length
+          ? past.map(function (p) { return fixtureCard(p, true); }).join('')
+          : '<div class="fixture-grid-empty">Nessun risultato ancora.</div>';
+      });
     }
 
     renderMatches();
     }); // DB.load
-
-    /* Tab iniziale: da hash URL, altrimenti Calendario */
-    activateTab(location.hash.slice(1) || 'calendario');
   })();
   </script>
 </body>
