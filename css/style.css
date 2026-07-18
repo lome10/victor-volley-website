@@ -2107,39 +2107,11 @@ main, footer.site-footer {
 }
 
 /* ================================================
-   Sponsor strip
+   Sponsor — homepage (Gold in evidenza + ticker Silver/Bronze,
+   stessi componenti di /sponsor, solo un po' di respiro in più
+   per stare vicino alle card gold invece che come divider di pagina)
 ================================================ */
-.sponsor-strip {
-  background-color: var(--c-gray-light);
-  padding: 40px 0;
-}
-
-.sponsor-logos {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 40px;
-  flex-wrap: wrap;
-}
-
-.sponsor-item {
-  height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 20px;
-  background-color: var(--c-white);
-  border-radius: 8px;
-  box-shadow: var(--card-shadow);
-  min-width: 120px;
-}
-
-.sponsor-placeholder {
-  font-size: 13px;
-  font-weight: 500;
-  color: #bbb;
-  letter-spacing: 0.04em;
-}
+#sponsorSection .sponsor-ticker { margin-top: 32px; }
 
 /* ================================================
    CTA Banner ("Vieni a giocare con noi")
