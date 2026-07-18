@@ -63,7 +63,7 @@
           '</li>' +
 
           '<li style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.08)">' +
-            '<a href="/dirigenti" class="sidebar-nav-link sidebar-nav-link--atleti' + isActive('dirigenti') + '">' +
+            '<a href="/admin" class="sidebar-nav-link sidebar-nav-link--atleti' + isActive('admin') + '">' +
               '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="margin-right:5px;vertical-align:middle;opacity:.7"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>' +
               'Area Dirigenti' +
             '</a>' +
@@ -202,7 +202,7 @@
             '<li><a href="/galleria">Galleria</a></li>' +
             '<li><a href="/unisciti-a-noi">Gioca con noi</a></li>' +
             '<li><a href="/contatti">Contatti</a></li>' +
-            '<li><a href="/dirigenti">Area Dirigenti</a></li>' +
+            '<li><a href="/admin">Area Dirigenti</a></li>' +
             '<li><a href="/atleta">Area Atleti</a></li>' +
           '</ul>' +
           '<div class="footer-side">' +

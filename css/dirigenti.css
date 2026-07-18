@@ -603,3 +603,25 @@ input, select, textarea { font-family: inherit; }
   .dg-form-grid { grid-template-columns: 1fr; }
   .dg-drawer { width: 100%; }
 }
+
+/* ================================================
+   Integrazione nel pannello /admin unificato
+   (topbar chiara, non l'header navy della vecchia
+   pagina standalone — stessi token colore di admin.css)
+================================================ */
+.admin-season-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  margin-right: 16px;
+}
+.admin-season-select {
+  padding: 7px 10px;
+  border: 1px solid var(--dg-border);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dg-text);
+  background: #fff;
+}

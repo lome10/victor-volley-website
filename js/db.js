@@ -8,6 +8,10 @@
    - Il callback UI viene chiamato dopo l'aggiornamento in-memory, non dopo Firestore
    Questo rende l'interfaccia admin sempre reattiva.
 
+   Audit log: ogni scrittura passa da _audit(), che inoltra a un hook impostato
+   da chi ha fatto login (vedi DB.setAuditHook — usato da admin.js) invece di
+   duplicare la logica di log in ogni singolo metodo.
+
    Migrazione da localStorage (da console, dopo il primo login):
      DB.migrateFromLocalStorage(function(){ location.reload(); });
 */
@@ -59,6 +63,32 @@
     return _col(col).doc(fid).delete().then(function () {
       delete _ids[col][+numId];
     });
+  }
+
+  function _findById(arr, id) {
+    return arr.find(function (x) { return x.id === +id; }) || null;
+  }
+
+  /* ---- AUDIT LOG — hook centralizzato ---- */
+  var _auditHook = null;
+
+  function _truncate(v) {
+    return typeof v === 'string' && v.length > 200 ? v.slice(0, 200) + '…' : v;
+  }
+
+  function _diffRecord(oldObj, newObj, fields) {
+    var out = [];
+    (fields || Object.keys(newObj)).forEach(function (f) {
+      var a = oldObj ? oldObj[f] : undefined;
+      var b = newObj[f];
+      var an = a === undefined ? null : a, bn = b === undefined ? null : b;
+      if (JSON.stringify(an) !== JSON.stringify(bn)) out.push({ campo: f, prima: _truncate(an), dopo: _truncate(bn) });
+    });
+    return out;
+  }
+
+  function _audit(entita, entitaId, entitaLabel, azione, changes) {
+    if (_auditHook && changes && changes.length) _auditHook(entita, entitaId, entitaLabel, azione, changes);
   }
 
   /* ============================================================
@@ -145,6 +175,12 @@
   ============================================================ */
   var DB = {
 
+    /* ---- AUDIT ------------------------------------------------- */
+    /* Chi ha fatto login (admin.js) registra qui il proprio logger,
+       così ogni scrittura di questo file produce anche una riga di log
+       senza doverla ripetere in ogni metodo. */
+    setAuditHook: function (fn) { _auditHook = fn; },
+
     /* ---- LOAD MIRATO ------------------------------------------ */
     /* Carica solo le parti richieste, es: DB.load(['sponsors'], cb).
        Parti disponibili: vedi PART_NAMES sopra. Sicuro da chiamare più
@@ -163,50 +199,69 @@
 
     /* ---- ARTICLES -------------------------------------------- */
     saveArticle: function (article, cb) {
-      var saved = VV.saveArticle(article);
+      var before = article.id ? VV.getArticle(article.id) : null;
+      var saved  = VV.saveArticle(article);
       if (cb) cb();
-      _upsert('articles', saved).catch(function (e) { console.error('[DB] saveArticle', e); });
+      _upsert('articles', saved).then(function () {
+        _audit('articolo', String(saved.id), 'Articolo — ' + saved.title, before ? 'update' : 'create', _diffRecord(before, saved, Object.keys(saved)));
+      }).catch(function (e) { console.error('[DB] saveArticle', e); });
       return saved;
     },
     deleteArticle: function (id, cb) {
+      var before = VV.getArticle(id);
       VV.deleteArticle(id);
       if (cb) cb();
-      _remove('articles', id).catch(function (e) { console.error('[DB] deleteArticle', e); });
+      _remove('articles', id).then(function () {
+        _audit('articolo', String(id), 'Articolo — ' + (before ? before.title : id), 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]);
+      }).catch(function (e) { console.error('[DB] deleteArticle', e); });
     },
 
     /* ---- PARTITE (calendario) ---------------------------------- */
     /* siteData/partite è un doc unico con l'intero array in JSON, quindi
        il salvataggio riscrive sempre l'array completo (non un upsert per id). */
     savePartite: function (items, cb) {
+      var before = VV.getPartite();
       VV.setPartite(items);
       if (cb) cb();
       global.db.collection('siteData').doc('partite').set({
         json:      JSON.stringify(items),
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(function () {
+        _audit('calendario', 'partite', 'Calendario partite', 'update', [{ campo: '(elenco)', prima: before.length + ' partite', dopo: items.length + ' partite' }]);
       }).catch(function (e) { console.error('[DB] savePartite', e); });
     },
 
     /* ---- ALBUMS ---------------------------------------------- */
     saveAlbum: function (album, cb) {
-      var saved = VV.saveAlbum(album);
+      var before = album.id ? VV.getAlbum(album.id) : null;
+      var saved  = VV.saveAlbum(album);
       if (cb) cb(saved);
-      _upsert('albums', saved).catch(function (e) { console.error('[DB] saveAlbum', e); });
+      _upsert('albums', saved).then(function () {
+        _audit('album', String(saved.id), 'Album — ' + saved.title, before ? 'update' : 'create', _diffRecord(before, saved, Object.keys(saved)));
+      }).catch(function (e) { console.error('[DB] saveAlbum', e); });
       return saved;
     },
     deleteAlbum: function (id, cb) {
+      var before = VV.getAlbum(id);
       VV.deleteAlbum(id);
       if (cb) cb();
-      _remove('albums', id).catch(function (e) { console.error('[DB] deleteAlbum', e); });
+      _remove('albums', id).then(function () {
+        _audit('album', String(id), 'Album — ' + (before ? before.title : id), 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]);
+      }).catch(function (e) { console.error('[DB] deleteAlbum', e); });
     },
 
     /* ---- CATEGORIES ------------------------------------------ */
     saveCategory: function (cat, cb) {
-      var saved = VV.saveCategory(cat);
+      var before = cat.id ? VV.getCategory(cat.id) : null;
+      var saved  = VV.saveCategory(cat);
       if (cb) cb(saved);
-      _upsert('categories', saved).catch(function (e) { console.error('[DB] saveCategory', e); });
+      _upsert('categories', saved).then(function () {
+        _audit('categoria', String(saved.id), 'Categoria — ' + saved.name, before ? 'update' : 'create', _diffRecord(before, saved, Object.keys(saved)));
+      }).catch(function (e) { console.error('[DB] saveCategory', e); });
       return saved;
     },
     deleteCategory: function (id, cb) {
+      var before  = VV.getCategory(id);
       var players = VV.getPlayers(id);
       var staff   = VV.getStaff(id);
       VV.deleteCategory(id);          /* aggiorna cache in-memory (cascade) */
@@ -215,68 +270,101 @@
       var ops = [_remove('categories', id)];
       players.forEach(function (p) { ops.push(_remove('players', p.id)); });
       staff.forEach(function (s)   { ops.push(_remove('staff',   s.id)); });
-      Promise.all(ops).catch(function (e) { console.error('[DB] deleteCategory cascade', e); });
+      Promise.all(ops).then(function () {
+        _audit('categoria', String(id), 'Categoria — ' + (before ? before.name : id), 'delete', [{ campo: '(record, con giocatori/staff collegati)', prima: 'presente', dopo: null }]);
+      }).catch(function (e) { console.error('[DB] deleteCategory cascade', e); });
     },
 
     /* ---- PLAYERS --------------------------------------------- */
     savePlayer: function (player, cb) {
-      var saved = VV.savePlayer(player);
+      var before = player.id ? _findById(VV.getPlayers(), player.id) : null;
+      var saved  = VV.savePlayer(player);
       if (cb) cb(saved);
-      _upsert('players', saved).catch(function (e) { console.error('[DB] savePlayer', e); });
+      _upsert('players', saved).then(function () {
+        _audit('giocatore', String(saved.id), 'Giocatore — ' + saved.name, before ? 'update' : 'create', _diffRecord(before, saved, Object.keys(saved)));
+      }).catch(function (e) { console.error('[DB] savePlayer', e); });
       return saved;
     },
     deletePlayer: function (id, cb) {
+      var before = _findById(VV.getPlayers(), id);
       VV.deletePlayer(id);
       if (cb) cb();
-      _remove('players', id).catch(function (e) { console.error('[DB] deletePlayer', e); });
+      _remove('players', id).then(function () {
+        _audit('giocatore', String(id), 'Giocatore — ' + (before ? before.name : id), 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]);
+      }).catch(function (e) { console.error('[DB] deletePlayer', e); });
     },
 
     /* ---- STAFF ----------------------------------------------- */
     saveStaffMember: function (person, cb) {
-      var saved = VV.saveStaffMember(person);
+      var before = person.id ? _findById(VV.getStaff(), person.id) : null;
+      var saved  = VV.saveStaffMember(person);
       if (cb) cb(saved);
-      _upsert('staff', saved).catch(function (e) { console.error('[DB] saveStaff', e); });
+      _upsert('staff', saved).then(function () {
+        _audit('staff', String(saved.id), 'Staff — ' + saved.name, before ? 'update' : 'create', _diffRecord(before, saved, Object.keys(saved)));
+      }).catch(function (e) { console.error('[DB] saveStaff', e); });
       return saved;
     },
     deleteStaffMember: function (id, cb) {
+      var before = _findById(VV.getStaff(), id);
       VV.deleteStaffMember(id);
       if (cb) cb();
-      _remove('staff', id).catch(function (e) { console.error('[DB] deleteStaff', e); });
+      _remove('staff', id).then(function () {
+        _audit('staff', String(id), 'Staff — ' + (before ? before.name : id), 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]);
+      }).catch(function (e) { console.error('[DB] deleteStaff', e); });
     },
 
     /* ---- STATS ---------------------------------------------- */
     saveStats: function (items, cb) {
+      var before = VV.getStats();
       VV.setStats(items);
       if (cb) cb();
       global.db.collection('settings').doc('stats').set({ items: items })
+        .then(function () {
+          _audit('statistiche', 'stats', 'Statistiche homepage', 'update', [{ campo: '(elenco)', prima: before.length + ' voci', dopo: items.length + ' voci' }]);
+        })
         .catch(function (e) { console.error('[DB] saveStats', e); });
     },
 
     /* ---- SPONSORS ------------------------------------------- */
     saveSponsors: function (items, cb) {
+      var before = VV.getSponsors();
       VV.setSponsors(items);
       if (cb) cb();
       global.db.collection('settings').doc('sponsor').set({ items: items })
+        .then(function () {
+          _audit('sponsorSito', 'sponsor', 'Sponsor (vetrina sito)', 'update', [{ campo: '(elenco)', prima: before.length + ' sponsor', dopo: items.length + ' sponsor' }]);
+        })
         .catch(function (e) { console.error('[DB] saveSponsors', e); });
     },
 
     /* ---- SEASONS -------------------------------------------- */
     saveSeason: function (season, cb) {
+      var before = _findById(VV.getSeasons(), season.id);
       VV.saveSeason(season);
       if (cb) cb();
       global.db.collection('settings').doc('seasons').set({ items: VV.getSeasons() })
+        .then(function () {
+          _audit('stagioneSito', String(season.id), 'Stagione sito — ' + (season.name || season.id), before ? 'update' : 'create', _diffRecord(before, season, Object.keys(season)));
+        })
         .catch(function (e) { console.error('[DB] saveSeason', e); });
     },
     deleteSeason: function (id, cb) {
+      var before = _findById(VV.getSeasons(), id);
       VV.deleteSeason(id);
       if (cb) cb();
       global.db.collection('settings').doc('seasons').set({ items: VV.getSeasons() })
+        .then(function () {
+          _audit('stagioneSito', String(id), 'Stagione sito — ' + (before ? before.name : id), 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]);
+        })
         .catch(function (e) { console.error('[DB] deleteSeason', e); });
     },
     setCurrentSeason: function (id, cb) {
       VV.setCurrentSeason(id);
       if (cb) cb();
       global.db.collection('settings').doc('seasons').set({ items: VV.getSeasons() })
+        .then(function () {
+          _audit('stagioneSito', String(id), 'Stagione sito attiva', 'update', [{ campo: 'current', prima: null, dopo: id }]);
+        })
         .catch(function (e) { console.error('[DB] setCurrentSeason', e); });
     },
 
