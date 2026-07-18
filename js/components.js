@@ -42,10 +42,9 @@
             '<a href="/squadre" class="sidebar-nav-link' + isActive('squadre') + '">Squadre</a>' +
           '</li>' +
 
-          _sidebarItem('snav-stagione', 'Stagione', 'Stagione 2025/26', [
-            ['/calendario',           'Calendario'],
-            ['/calendario#risultati', 'Risultati']
-          ], page === 'calendario') +
+          '<li>' +
+            '<a href="/calendario" class="sidebar-nav-link' + isActive('calendario') + '">Stagione</a>' +
+          '</li>' +
 
           '<li>' +
             '<a href="/news" class="sidebar-nav-link' + isActive('news') + '">News</a>' +
@@ -87,24 +86,6 @@
 
     _initFlyouts(el);
     _initMobileToggle(el);
-  }
-
-  function _sidebarItem(id, label, flyoutTitle, links, active) {
-    /* "active" evidenzia solo il trigger come sezione corrente — il pannello
-       flyout resta chiuso di default e si apre solo su hover/click, altrimenti
-       coprirebbe il contenuto della pagina ad ogni caricamento. */
-    return '<li class="sidebar-nav-item" id="' + id + '">' +
-      '<button class="sidebar-nav-trigger' + (active ? ' is-active' : '') + '" aria-expanded="false">' +
-        label +
-        ' <span class="sidebar-nav-arrow" aria-hidden="true">' + SVG.chevron + '</span>' +
-      '</button>' +
-      '<div class="sidebar-flyout">' +
-        '<div class="sidebar-flyout-title">' + flyoutTitle + '</div>' +
-        links.map(function(l) {
-          return '<a href="' + l[0] + '" class="sidebar-flyout-link">' + l[1] + '</a>';
-        }).join('') +
-      '</div>' +
-    '</li>';
   }
 
   function _initFlyouts(sidebar) {
