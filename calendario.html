@@ -113,12 +113,11 @@
           '<div class="container cal-cols" data-role="cols">' +
             '<div class="cal-col-left">' +
               '<div class="cal-section-block">' +
-                '<h2 class="cal-section-title">Calendario</h2>' +
-                '<div class="fixture-list" data-role="upcoming"></div>' +
-              '</div>' +
-              '<div class="cal-section-block">' +
-                '<h2 class="cal-section-title">Risultati</h2>' +
-                '<div class="fixture-list" data-role="past"></div>' +
+                '<div class="cal-section-head">' +
+                  '<h2 class="cal-section-title">Calendario</h2>' +
+                  '<button type="button" class="cal-jump-btn" data-role="jump-next">Vai alla prossima partita &darr;</button>' +
+                '</div>' +
+                '<div class="fixture-list" data-role="fixtures"></div>' +
               '</div>' +
             '</div>' +
             '<div class="cal-col-right is-hidden" data-role="classifica-wrap">' +
@@ -277,7 +276,7 @@
       return '<span class="fixture-row-score fixture-row-score--' + rCls + '">' + n + '</span>';
     }
 
-    function fixtureRow(p, isResult, isNext) {
+    function fixtureRow(p, isNext) {
       var isHome   = isVV(p.squadra_casa);
       var hasScore = p.set_casa != null && p.set_ospite != null;
       var rCls     = hasScore ? resultClass(p) : '';
@@ -296,6 +295,8 @@
       '</div>';
     }
 
+    function isPast(p) { return p.stato === 'conclusa' || p.data < today; }
+
     function renderMatches() {
       var partite = allPartite.filter(function (p) { return inSeason(p, activeSeason.id); });
 
@@ -304,19 +305,21 @@
         var panel = document.querySelector('.cal-cat-panel[data-cat="' + s + '"]');
         if (!panel) return;
 
-        var catPartite = partite.filter(function (p) { return slug(p.categoria) === s; });
-        var upcoming   = catPartite.filter(function (p) { return p.stato !== 'conclusa' && p.data >= today; })
+        var catPartite = partite.filter(function (p) { return slug(p.categoria) === s; })
           .sort(function (a, b) { return a.data === b.data ? (a.ora || '').localeCompare(b.ora || '') : a.data.localeCompare(b.data); });
-        var past       = catPartite.filter(function (p) { return p.stato === 'conclusa' || p.data < today; })
-          .sort(function (a, b) { return b.data.localeCompare(a.data); });
+        var nextIdx = catPartite.findIndex(function (p) { return !isPast(p); });
 
-        panel.querySelector('[data-role="upcoming"]').innerHTML = upcoming.length
-          ? upcoming.map(function (p, i) { return fixtureRow(p, false, i === 0); }).join('')
-          : '<div class="fixture-list-empty">Nessuna partita in programma.</div>';
+        var list = panel.querySelector('[data-role="fixtures"]');
+        list.innerHTML = catPartite.length
+          ? catPartite.map(function (p, i) { return fixtureRow(p, i === nextIdx); }).join('')
+          : '<div class="fixture-list-empty">Nessuna partita disponibile.</div>';
 
-        panel.querySelector('[data-role="past"]').innerHTML = past.length
-          ? past.map(function (p) { return fixtureRow(p, true, false); }).join('')
-          : '<div class="fixture-list-empty">Nessun risultato ancora.</div>';
+        var jumpBtn = panel.querySelector('[data-role="jump-next"]');
+        var nextRow = list.querySelector('.fixture-row--next');
+        jumpBtn.style.display = nextRow ? '' : 'none';
+        jumpBtn.onclick = function () {
+          nextRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
       });
     }
 
