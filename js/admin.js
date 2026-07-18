@@ -142,6 +142,8 @@
 
     document.getElementById('dashArticles').innerHTML = artHtml;
     document.getElementById('dashMatches').innerHTML = matchHtml;
+
+    _renderDashBudgetWidget();
   }
 
   function _statCard(icon, val, label, mod) {
@@ -2432,16 +2434,17 @@
       .catch(function (e) { alert('Errore: ' + e.message); });
   }
 
-  function _renderPromemoriaWidget() {
+  function _renderPromemoriaList(widgetId, listId, limit) {
     var curIds = _sponsorizzazioni.filter(function (s) { return s.seasonId === _currentSeasonId; }).map(function (s) { return s.id; });
     var upcoming = _promemoria.filter(function (p) {
       return !p.completato && curIds.indexOf(p.sponsorizzazioneId) !== -1 && _daysDiff(p.dataScadenza) <= 7;
     }).sort(function (a, b) { return a.dataScadenza < b.dataScadenza ? -1 : 1; });
+    if (limit) upcoming = upcoming.slice(0, limit);
 
-    var widget = document.getElementById('promemoriaWidget');
+    var widget = document.getElementById(widgetId);
     if (!upcoming.length) { widget.classList.add('is-hidden'); return; }
     widget.classList.remove('is-hidden');
-    document.getElementById('promemoriaWidgetList').innerHTML = upcoming.map(function (p) {
+    document.getElementById(listId).innerHTML = upcoming.map(function (p) {
       var s = _sponsorizzazioni.find(function (x) { return x.id === p.sponsorizzazioneId; });
       var az = s ? _aziendaById(s.aziendaId) : null;
       var days = _daysDiff(p.dataScadenza);
@@ -2452,6 +2455,27 @@
         '<div class="dg-reminder-info"><div class="dg-reminder-azienda">' + esc(az ? az.ragioneSociale : '—') + '</div>' +
         '<div class="dg-reminder-desc">' + esc(p.descrizione || '') + '</div></div>' + badge + '</div>';
     }).join('');
+  }
+
+  function _renderPromemoriaWidget() {
+    _renderPromemoriaList('promemoriaWidget', 'promemoriaWidgetList');
+  }
+
+  /* ---- Widget "Budget stagione" sulla Dashboard principale ---- */
+  function _renderDashBudgetWidget() {
+    var r = _calcRiepilogo();
+    var season = _seasons.find(function (s) { return s.id === _currentSeasonId; }) || {};
+    var pct = Math.max(0, Math.min(100, r.pct));
+
+    document.getElementById('dashBudgetSeasonName').textContent = season.nome ? '· ' + season.nome : '';
+    var saldoEl = document.getElementById('dashBudgetSaldo');
+    saldoEl.textContent = (r.saldo < 0 ? '-' : '') + '€' + Math.abs(Math.round(r.saldo)).toLocaleString('it-IT');
+    saldoEl.className = 'dash-budget-saldo ' + (r.saldo >= 0 ? 'dash-budget-saldo--pos' : 'dash-budget-saldo--neg');
+    document.getElementById('dashBudgetPct').textContent = r.pct + '%';
+    document.getElementById('dashBudgetBarFill').style.width = pct + '%';
+    document.getElementById('dashBudgetObiettivo').textContent = 'Obiettivo €' + Math.round(r.obiettivo).toLocaleString('it-IT');
+
+    _renderPromemoriaList('dashPromemoriaWidget', 'dashPromemoriaList', 4);
   }
 
   DG.openFromReminder = function (sponsorId) {
@@ -3154,6 +3178,13 @@
   document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.budget-subtab').forEach(function (btn) {
       btn.addEventListener('click', function () { _switchBudgetTab(btn.dataset.btab); });
+    });
+
+    var dashBudgetCard = document.getElementById('dashBudgetCard');
+    var _goToBudgetRiepilogo = function () { goTo('budget'); _switchBudgetTab('riepilogo'); };
+    dashBudgetCard.addEventListener('click', _goToBudgetRiepilogo);
+    dashBudgetCard.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); _goToBudgetRiepilogo(); }
     });
 
     document.getElementById('filterMieiSponsor').addEventListener('change', _renderKanban);

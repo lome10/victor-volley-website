@@ -138,6 +138,27 @@
             <div id="dashMatches"></div>
           </div>
         </div>
+
+        <div class="dash-recent" style="margin-top:16px">
+          <div class="dash-card dash-card--clickable" id="dashBudgetCard" role="button" tabindex="0" aria-label="Vai a Budget &amp; Forecast">
+            <div class="dash-card-title">Budget stagione<span id="dashBudgetSeasonName" class="dash-card-title-sub"></span></div>
+            <div class="dash-budget-body">
+              <div class="dash-budget-row">
+                <div>
+                  <div class="dash-budget-label">Saldo attuale</div>
+                  <div class="dash-budget-saldo" id="dashBudgetSaldo">€0</div>
+                </div>
+                <div class="dash-budget-pct" id="dashBudgetPct">0%</div>
+              </div>
+              <div class="dg-obiettivo-bar"><div id="dashBudgetBarFill" class="dg-obiettivo-bar-fill"></div></div>
+              <div class="dash-budget-obiettivo" id="dashBudgetObiettivo">Obiettivo €0</div>
+            </div>
+          </div>
+          <div class="dash-card is-hidden" id="dashPromemoriaWidget">
+            <div class="dash-card-title">Promemoria sponsor in scadenza</div>
+            <div id="dashPromemoriaList" class="dg-reminder-list" style="padding:14px 18px"></div>
+          </div>
+        </div>
       </section>
 
       <!-- ---- ARTICOLI ---- -->

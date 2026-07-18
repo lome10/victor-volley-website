@@ -650,3 +650,19 @@ input, select, textarea { font-family: inherit; }
 }
 .budget-subtab:hover { color: var(--dg-text); }
 .budget-subtab.is-active { color: var(--dg-blue); border-bottom-color: var(--dg-blue); }
+
+/* Widget budget sulla Dashboard principale */
+.dash-card--clickable { cursor: pointer; transition: box-shadow var(--dg-t), transform var(--dg-t); }
+.dash-card--clickable:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+.dash-card--clickable:focus-visible { outline: 2px solid var(--dg-blue); outline-offset: 2px; }
+
+.dash-card-title-sub { font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--dg-muted); font-size: 11px; margin-left: 6px; }
+
+.dash-budget-body { padding: 16px 18px; }
+.dash-budget-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.dash-budget-label { font-size: 11px; color: var(--dg-muted); text-transform: uppercase; letter-spacing: .03em; }
+.dash-budget-saldo { font-family: 'Barlow', sans-serif; font-size: 26px; font-weight: 700; margin-top: 2px; color: var(--dg-text); }
+.dash-budget-saldo--pos { color: var(--dg-green); }
+.dash-budget-saldo--neg { color: var(--dg-red); }
+.dash-budget-pct { font-family: 'Barlow', sans-serif; font-size: 15px; font-weight: 700; color: var(--dg-text); flex-shrink: 0; }
+.dash-budget-obiettivo { font-size: 11px; color: var(--dg-muted); margin-top: 8px; }
