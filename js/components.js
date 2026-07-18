@@ -206,45 +206,28 @@
     el.innerHTML =
       '<div class="container">' +
         '<div class="footer-main">' +
-          '<div>' +
-            '<img src="assets/logo.png" alt="Victor Volley" class="footer-logo-img">' +
-            '<p class="footer-tagline">Societ&agrave; sportiva dilettantistica<br>Melissano (LE) &mdash; dal 2019</p>' +
+          '<img src="assets/logo.png" alt="Victor Volley" class="footer-logo-img">' +
+          '<ul class="footer-links">' +
+            '<li><a href="/">Home</a></li>' +
+            '<li><a href="/squadre">Le squadre</a></li>' +
+            '<li><a href="/calendario">Calendario</a></li>' +
+            '<li><a href="/news">News</a></li>' +
+            '<li><a href="/galleria">Galleria</a></li>' +
+            '<li><a href="/unisciti-a-noi">Vieni a giocare con noi</a></li>' +
+            '<li><a href="/contatti">Contatti</a></li>' +
+            '<li><a href="/atleta">Area Atleti</a></li>' +
+          '</ul>' +
+          '<div class="footer-side">' +
+            '<a href="mailto:info@victorvolley.it" class="footer-email">info@victorvolley.it</a>' +
             '<div class="footer-social">' +
               '<a href="https://www.facebook.com/share/1EVp57f8nJ/?mibextid=wwXIfr" aria-label="Facebook" target="_blank" rel="noopener noreferrer">' + SVG.fb + '</a>' +
               '<a href="https://www.instagram.com/victorvolleyvita?igsh=MWwyYW94MnV4d2h3Nw==" aria-label="Instagram" target="_blank" rel="noopener noreferrer">' + SVG.ig + '</a>' +
               '<a href="https://www.tiktok.com/@victor.volley?_r=1&_t=ZN-97Yb5Cn2O5j" aria-label="TikTok" target="_blank" rel="noopener noreferrer">' + SVG.tt + '</a>' +
             '</div>' +
           '</div>' +
-          '<div>' +
-            '<div class="footer-col-title">Link rapidi</div>' +
-            '<ul class="footer-links">' +
-              '<li><a href="/">Home</a></li>' +
-              '<li><a href="/squadre">Le squadre</a></li>' +
-              '<li><a href="/calendario">Calendario</a></li>' +
-              '<li><a href="/news">News</a></li>' +
-              '<li><a href="/galleria">Galleria</a></li>' +
-              '<li><a href="/unisciti-a-noi">Vieni a giocare con noi</a></li>' +
-              '<li><a href="/contatti">Contatti</a></li>' +
-              '<li><a href="/atleta">Area Atleti</a></li>' +
-            '</ul>' +
-          '</div>' +
-          '<div>' +
-            '<div class="footer-col-title">Dove siamo</div>' +
-            '<div class="footer-contact-item">' + SVG.pin +
-              '<span>Palazzetto ARK&Eacute; &mdash; Melissano (LE)<br>' +
-              '<small style="color:rgba(255,255,255,0.3);font-size:11px">&#9888; Indirizzo da confermare</small></span>' +
-            '</div>' +
-            '<div class="footer-contact-item">' + SVG.mail +
-              '<span><a href="mailto:info@victorvolley.it" style="color:rgba(255,255,255,0.65)">info@victorvolley.it</a>' +
-              ' <small style="color:rgba(255,255,255,0.3);font-size:11px">(placeholder)</small></span>' +
-            '</div>' +
-            '<div class="footer-contact-item">' + SVG.phone +
-              '<span style="color:rgba(255,255,255,0.4)">Telefono &mdash; da confermare</span>' +
-            '</div>' +
-          '</div>' +
         '</div>' +
         '<div class="footer-bottom">' +
-          '<p>&copy; ' + year + ' Victor Volley &mdash; Melissano (LE). Tutti i diritti riservati.</p>' +
+          '<p>&copy; ' + year + ' Victor Volley &mdash; Palazzetto ARK&Eacute;. Tutti i diritti riservati.</p>' +
           '<a href="#">Privacy policy</a>' +
         '</div>' +
       '</div>';

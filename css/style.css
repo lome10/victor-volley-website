@@ -552,23 +552,17 @@ main, footer.site-footer {
    Footer
 ================================================ */
 .footer-main {
-  padding: 64px 0 48px;
-  display: grid;
-  grid-template-columns: 1.2fr 1fr 1.2fr;
-  gap: 48px;
+  padding: 28px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px 40px;
+  flex-wrap: wrap;
 }
 
 .footer-logo-img {
-  height: 72px;
+  height: 40px;
   width: auto;
-  margin-bottom: 12px;
-}
-
-.footer-tagline {
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.45);
-  line-height: 1.5;
-  margin-bottom: 16px;
 }
 
 .footer-social {
@@ -594,42 +588,41 @@ main, footer.site-footer {
   color: var(--c-white);
 }
 
-.footer-col-title {
-  font-family: var(--font-heading);
-  font-size: 12px;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.45);
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  margin-bottom: 16px;
-}
-
 .footer-links {
   display: flex;
-  flex-direction: column;
-  gap: 9px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 22px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
 .footer-links a {
   font-size: 14px;
   color: rgba(255, 255, 255, 0.65);
   text-decoration: none;
+  white-space: nowrap;
   transition: color var(--t);
 }
 
 .footer-links a:hover { color: var(--c-azzurro); }
 
-.footer-contact-item {
+.footer-side {
   display: flex;
-  gap: 10px;
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.65);
-  margin-bottom: 12px;
-  align-items: flex-start;
-  line-height: 1.5;
+  align-items: center;
+  gap: 20px;
 }
 
-.footer-contact-item svg { flex-shrink: 0; margin-top: 2px; color: var(--c-azzurro); }
+.footer-email {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.65);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color var(--t);
+}
+
+.footer-email:hover { color: var(--c-azzurro); }
 
 .footer-bottom {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -3244,7 +3237,8 @@ main, footer.site-footer {
 }
 
 @media (max-width: 768px) {
-  .footer-main { grid-template-columns: 1fr; gap: 32px; padding: 40px 0 28px; }
+  .footer-main { flex-direction: column; align-items: flex-start; padding: 28px 0; }
+  .footer-side { width: 100%; justify-content: space-between; }
 }
 
 /* ================================================
