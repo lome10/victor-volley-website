@@ -74,9 +74,8 @@
   var SECTIONS = {
     dashboard: 'Dashboard', articoli: 'Articoli', calendario: 'Calendario', galleria: 'Galleria', squadre: 'Squadre',
     sponsor: 'Sponsor', atleti: 'Atleti', dirigenti: 'Dirigenti', girone: 'Girone Prima Divisione', stagioni: 'Stagioni', datiJson: 'File JSON',
-    budgetRiepilogo: 'Riepilogo Budget', budgetSponsor: 'Pipeline Sponsor', budgetRette: 'Rette (Budget)', budgetSpese: 'Spese', budgetLog: 'Log'
+    budget: 'Budget & Forecast'
   };
-  var BUDGET_SECTIONS = ['budgetRiepilogo', 'budgetSponsor', 'budgetRette', 'budgetSpese', 'budgetLog'];
 
   function initNav() {
     document.querySelectorAll('.admin-nav-item').forEach(function (el) {
@@ -97,7 +96,7 @@
     document.getElementById('section' + cap(section)).classList.remove('is-hidden');
     document.getElementById('topbarTitle').textContent = SECTIONS[section] || section;
     document.getElementById('topbarActions').innerHTML = '';
-    document.getElementById('seasonBar').classList.toggle('is-hidden', BUDGET_SECTIONS.indexOf(section) === -1);
+    document.getElementById('seasonBar').classList.toggle('is-hidden', section !== 'budget');
 
     if (section === 'dashboard')  renderDashboard();
     if (section === 'articoli')   renderArticoli();
@@ -109,11 +108,7 @@
     if (section === 'dirigenti')  renderDirigenti();
     if (section === 'stagioni')   renderStagioni();
     if (section === 'datiJson')   renderDatiJson();
-    if (section === 'budgetRiepilogo') { _renderObiettivo(); _renderPromemoriaWidget(); _renderStatCards(); _renderCharts(); }
-    if (section === 'budgetSponsor')   _renderKanban();
-    if (section === 'budgetRette')     _renderRette();
-    if (section === 'budgetSpese')     _renderSpese();
-    if (section === 'budgetLog')       _renderLog();
+    if (section === 'budget')     _renderActiveBudgetTab();
   }
 
   function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
@@ -2265,7 +2260,25 @@
   var _dirigentiList = [];
   var _curSponsorId = null, _curAziendaId = null;
   var _openModalId = null;
+  var _activeBudgetTab = 'riepilogo';
   var STATI = ['prospect', 'contattato', 'in_trattativa', 'chiuso', 'rifiutato'];
+
+  /* ---- Sotto-tab interne alla sezione "Budget & Forecast" ---- */
+  function _switchBudgetTab(tab) {
+    _activeBudgetTab = tab;
+    document.querySelectorAll('.budget-subtab').forEach(function (btn) { btn.classList.toggle('is-active', btn.dataset.btab === tab); });
+    document.querySelectorAll('#sectionBudget > .dg-section').forEach(function (pane) { pane.classList.add('is-hidden'); });
+    document.getElementById('budgetPane' + cap(tab)).classList.remove('is-hidden');
+    _renderActiveBudgetTab();
+  }
+
+  function _renderActiveBudgetTab() {
+    if (_activeBudgetTab === 'riepilogo') { _renderObiettivo(); _renderPromemoriaWidget(); _renderStatCards(); _renderCharts(); }
+    if (_activeBudgetTab === 'sponsor')   _renderKanban();
+    if (_activeBudgetTab === 'rette')     _renderRette();
+    if (_activeBudgetTab === 'spese')     _renderSpese();
+    if (_activeBudgetTab === 'log')       _renderLog();
+  }
 
   function _mapDoc(d) { return Object.assign({ id: d.id }, d.data()); }
 
@@ -2442,7 +2455,8 @@
   }
 
   DG.openFromReminder = function (sponsorId) {
-    goTo('budgetSponsor');
+    goTo('budget');
+    _switchBudgetTab('sponsor');
     _openDrawer(sponsorId);
   };
 
@@ -3143,6 +3157,10 @@
 
   /* ---- WIRING UI (una tantum, DOM già presente a fine body) ---- */
   document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.budget-subtab').forEach(function (btn) {
+      btn.addEventListener('click', function () { _switchBudgetTab(btn.dataset.btab); });
+    });
+
     document.getElementById('filterMieiSponsor').addEventListener('change', _renderKanban);
 
     document.getElementById('seasonSelect').addEventListener('change', function () {

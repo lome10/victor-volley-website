@@ -94,25 +94,9 @@
           File JSON
         </a>
 
-        <a href="#" class="admin-nav-item" data-section="budgetRiepilogo" style="margin-top:8px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.08)">
+        <a href="#" class="admin-nav-item" data-section="budget" style="margin-top:8px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.08)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-          Riepilogo Budget
-        </a>
-        <a href="#" class="admin-nav-item" data-section="budgetSponsor">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-          Pipeline Sponsor
-        </a>
-        <a href="#" class="admin-nav-item" data-section="budgetRette">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          Rette (Budget)
-        </a>
-        <a href="#" class="admin-nav-item" data-section="budgetSpese">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-          Spese
-        </a>
-        <a href="#" class="admin-nav-item" data-section="budgetLog">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
-          Log
+          Budget &amp; Forecast
         </a>
       </nav>
 
@@ -978,7 +962,17 @@
       </section>
 
       <!-- ================= BUDGET — RIEPILOGO ================= -->
-      <section id="sectionBudgetRiepilogo" class="admin-section is-hidden">
+      <section id="sectionBudget" class="admin-section is-hidden">
+
+        <nav class="budget-subtabs" aria-label="Sezioni Budget &amp; Forecast">
+          <button class="budget-subtab is-active" data-btab="riepilogo">Riepilogo</button>
+          <button class="budget-subtab" data-btab="sponsor">Pipeline Sponsor</button>
+          <button class="budget-subtab" data-btab="rette">Rette Atleti</button>
+          <button class="budget-subtab" data-btab="spese">Spese</button>
+          <button class="budget-subtab" data-btab="log">Log</button>
+        </nav>
+
+        <div id="budgetPaneRiepilogo" class="dg-section">
 
         <div class="dg-card dg-obiettivo-card">
           <div class="dg-obiettivo-row">
@@ -1016,145 +1010,147 @@
           </div>
         </div>
 
-      </section>
+        </div>
 
-      <!-- ================= BUDGET — PIPELINE SPONSOR (CRM) ================= -->
-      <section id="sectionBudgetSponsor" class="admin-section is-hidden">
-        <div class="dg-toolbar">
-          <label class="dg-check">
-            <input type="checkbox" id="filterMieiSponsor">
-            Solo i miei
-          </label>
-          <button id="newSponsorBtn" class="dg-btn-primary dg-btn-sm">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Nuovo sponsor
-          </button>
+        <!-- ---- Pipeline Sponsor (CRM) ---- -->
+        <div id="budgetPaneSponsor" class="dg-section is-hidden">
+          <div class="dg-toolbar">
+            <label class="dg-check">
+              <input type="checkbox" id="filterMieiSponsor">
+              Solo i miei
+            </label>
+            <button id="newSponsorBtn" class="dg-btn-primary dg-btn-sm">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Nuovo sponsor
+            </button>
+          </div>
+          <div class="dg-kanban" id="kanbanBoard">
+            <div class="dg-kanban-col" data-stato="prospect">
+              <div class="dg-kanban-col-head"><span>Prospect</span><span class="dg-kanban-count" id="countProspect">0</span></div>
+              <div class="dg-kanban-col-body" id="colProspect"></div>
+            </div>
+            <div class="dg-kanban-col" data-stato="contattato">
+              <div class="dg-kanban-col-head"><span>Contattato</span><span class="dg-kanban-count" id="countContattato">0</span></div>
+              <div class="dg-kanban-col-body" id="colContattato"></div>
+            </div>
+            <div class="dg-kanban-col" data-stato="in_trattativa">
+              <div class="dg-kanban-col-head"><span>In Trattativa</span><span class="dg-kanban-count" id="countIn_trattativa">0</span></div>
+              <div class="dg-kanban-col-body" id="colIn_trattativa"></div>
+            </div>
+            <div class="dg-kanban-col" data-stato="chiuso">
+              <div class="dg-kanban-col-head"><span>Chiuso</span><span class="dg-kanban-count" id="countChiuso">0</span></div>
+              <div class="dg-kanban-col-body" id="colChiuso"></div>
+            </div>
+            <div class="dg-kanban-col" data-stato="rifiutato">
+              <div class="dg-kanban-col-head"><span>Rifiutato</span><span class="dg-kanban-count" id="countRifiutato">0</span></div>
+              <div class="dg-kanban-col-body" id="colRifiutato"></div>
+            </div>
+          </div>
         </div>
-        <div class="dg-kanban" id="kanbanBoard">
-          <div class="dg-kanban-col" data-stato="prospect">
-            <div class="dg-kanban-col-head"><span>Prospect</span><span class="dg-kanban-count" id="countProspect">0</span></div>
-            <div class="dg-kanban-col-body" id="colProspect"></div>
-          </div>
-          <div class="dg-kanban-col" data-stato="contattato">
-            <div class="dg-kanban-col-head"><span>Contattato</span><span class="dg-kanban-count" id="countContattato">0</span></div>
-            <div class="dg-kanban-col-body" id="colContattato"></div>
-          </div>
-          <div class="dg-kanban-col" data-stato="in_trattativa">
-            <div class="dg-kanban-col-head"><span>In Trattativa</span><span class="dg-kanban-count" id="countIn_trattativa">0</span></div>
-            <div class="dg-kanban-col-body" id="colIn_trattativa"></div>
-          </div>
-          <div class="dg-kanban-col" data-stato="chiuso">
-            <div class="dg-kanban-col-head"><span>Chiuso</span><span class="dg-kanban-count" id="countChiuso">0</span></div>
-            <div class="dg-kanban-col-body" id="colChiuso"></div>
-          </div>
-          <div class="dg-kanban-col" data-stato="rifiutato">
-            <div class="dg-kanban-col-head"><span>Rifiutato</span><span class="dg-kanban-count" id="countRifiutato">0</span></div>
-            <div class="dg-kanban-col-body" id="colRifiutato"></div>
-          </div>
-        </div>
-      </section>
 
-      <!-- ================= BUDGET — RETTE ATLETI ================= -->
-      <section id="sectionBudgetRette" class="admin-section is-hidden">
-        <div class="dg-toolbar">
-          <button id="newCategoriaBtn" class="dg-btn-primary dg-btn-sm">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Nuova categoria
-          </button>
-        </div>
-        <div class="dg-card">
-          <div class="dg-table-wrap">
-            <table class="dg-table">
-              <thead>
-                <tr>
-                  <th>Categoria</th>
-                  <th>N. atleti previsti</th>
-                  <th>Retta unitaria</th>
-                  <th>Previsto</th>
-                  <th>Incassato</th>
-                  <th>Differenza</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody id="retteBody"><tr><td colspan="7" class="dg-empty">—</td></tr></tbody>
-            </table>
+        <!-- ---- Rette Atleti ---- -->
+        <div id="budgetPaneRette" class="dg-section is-hidden">
+          <div class="dg-toolbar">
+            <button id="newCategoriaBtn" class="dg-btn-primary dg-btn-sm">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Nuova categoria
+            </button>
+          </div>
+          <div class="dg-card">
+            <div class="dg-table-wrap">
+              <table class="dg-table">
+                <thead>
+                  <tr>
+                    <th>Categoria</th>
+                    <th>N. atleti previsti</th>
+                    <th>Retta unitaria</th>
+                    <th>Previsto</th>
+                    <th>Incassato</th>
+                    <th>Differenza</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="retteBody"><tr><td colspan="7" class="dg-empty">—</td></tr></tbody>
+              </table>
+            </div>
           </div>
         </div>
-      </section>
 
-      <!-- ================= BUDGET — SPESE ================= -->
-      <section id="sectionBudgetSpese" class="admin-section is-hidden">
-        <div class="dg-toolbar">
-          <button id="newSpesaBtn" class="dg-btn-primary dg-btn-sm">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Nuova voce
-          </button>
-        </div>
-        <div class="dg-card">
-          <div class="dg-table-wrap">
-            <table class="dg-table">
-              <thead>
-                <tr>
-                  <th>Voce di spesa</th>
-                  <th>Preventivato</th>
-                  <th>Sostenuto</th>
-                  <th>Note</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody id="speseBody"><tr><td colspan="5" class="dg-empty">—</td></tr></tbody>
-            </table>
+        <!-- ---- Spese ---- -->
+        <div id="budgetPaneSpese" class="dg-section is-hidden">
+          <div class="dg-toolbar">
+            <button id="newSpesaBtn" class="dg-btn-primary dg-btn-sm">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Nuova voce
+            </button>
+          </div>
+          <div class="dg-card">
+            <div class="dg-table-wrap">
+              <table class="dg-table">
+                <thead>
+                  <tr>
+                    <th>Voce di spesa</th>
+                    <th>Preventivato</th>
+                    <th>Sostenuto</th>
+                    <th>Note</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="speseBody"><tr><td colspan="5" class="dg-empty">—</td></tr></tbody>
+              </table>
+            </div>
           </div>
         </div>
-      </section>
 
-      <!-- ================= BUDGET — LOG (sola lettura, tutta l'area) ================= -->
-      <section id="sectionBudgetLog" class="admin-section is-hidden">
-        <div class="dg-toolbar dg-log-filters">
-          <select id="logFilterEntita" class="dg-select-sm">
-            <option value="">Tutte le entità</option>
-            <option value="articolo">Articolo</option>
-            <option value="album">Album</option>
-            <option value="categoria">Categoria squadre</option>
-            <option value="giocatore">Giocatore</option>
-            <option value="staff">Staff</option>
-            <option value="calendario">Calendario</option>
-            <option value="statistiche">Statistiche homepage</option>
-            <option value="sponsorSito">Sponsor (vetrina sito)</option>
-            <option value="stagioneSito">Stagione sito</option>
-            <option value="atleta">Atleta</option>
-            <option value="dirigente">Dirigente</option>
-            <option value="azienda">Azienda (CRM)</option>
-            <option value="sponsorizzazione">Sponsorizzazione</option>
-            <option value="attivita">Attività</option>
-            <option value="promemoria">Promemoria</option>
-            <option value="categoriaAtleti">Categoria Atleti (budget)</option>
-            <option value="voceSpesa">Voce di Spesa</option>
-            <option value="obiettivo">Obiettivo / Stagione</option>
-          </select>
-          <select id="logFilterDirigente" class="dg-select-sm">
-            <option value="">Tutti i dirigenti</option>
-          </select>
-          <input type="date" id="logFilterDal" class="dg-select-sm" aria-label="Dal">
-          <input type="date" id="logFilterAl" class="dg-select-sm" aria-label="Al">
-        </div>
-        <div class="dg-card">
-          <div class="dg-table-wrap">
-            <table class="dg-table dg-table--log">
-              <thead>
-                <tr>
-                  <th>Data/ora</th>
-                  <th>Dirigente</th>
-                  <th>Entità</th>
-                  <th>Campo</th>
-                  <th>Prima</th>
-                  <th>Dopo</th>
-                </tr>
-              </thead>
-              <tbody id="logBody"><tr><td colspan="6" class="dg-empty">Caricamento…</td></tr></tbody>
-            </table>
+        <!-- ---- Log (sola lettura, tutta l'area) ---- -->
+        <div id="budgetPaneLog" class="dg-section is-hidden">
+          <div class="dg-toolbar dg-log-filters">
+            <select id="logFilterEntita" class="dg-select-sm">
+              <option value="">Tutte le entità</option>
+              <option value="articolo">Articolo</option>
+              <option value="album">Album</option>
+              <option value="categoria">Categoria squadre</option>
+              <option value="giocatore">Giocatore</option>
+              <option value="staff">Staff</option>
+              <option value="calendario">Calendario</option>
+              <option value="statistiche">Statistiche homepage</option>
+              <option value="sponsorSito">Sponsor (vetrina sito)</option>
+              <option value="stagioneSito">Stagione sito</option>
+              <option value="atleta">Atleta</option>
+              <option value="dirigente">Dirigente</option>
+              <option value="azienda">Azienda (CRM)</option>
+              <option value="sponsorizzazione">Sponsorizzazione</option>
+              <option value="attivita">Attività</option>
+              <option value="promemoria">Promemoria</option>
+              <option value="categoriaAtleti">Categoria Atleti (budget)</option>
+              <option value="voceSpesa">Voce di Spesa</option>
+              <option value="obiettivo">Obiettivo / Stagione</option>
+            </select>
+            <select id="logFilterDirigente" class="dg-select-sm">
+              <option value="">Tutti i dirigenti</option>
+            </select>
+            <input type="date" id="logFilterDal" class="dg-select-sm" aria-label="Dal">
+            <input type="date" id="logFilterAl" class="dg-select-sm" aria-label="Al">
+          </div>
+          <div class="dg-card">
+            <div class="dg-table-wrap">
+              <table class="dg-table dg-table--log">
+                <thead>
+                  <tr>
+                    <th>Data/ora</th>
+                    <th>Dirigente</th>
+                    <th>Entità</th>
+                    <th>Campo</th>
+                    <th>Prima</th>
+                    <th>Dopo</th>
+                  </tr>
+                </thead>
+                <tbody id="logBody"><tr><td colspan="6" class="dg-empty">Caricamento…</td></tr></tbody>
+              </table>
+            </div>
           </div>
         </div>
+
       </section>
 
     </main>
