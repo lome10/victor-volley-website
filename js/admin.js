@@ -2460,7 +2460,7 @@
     _openDrawer(sponsorId);
   };
 
-  function _statCard(label, val2, cls) {
+  function _budgetStatCard(label, val2, cls) {
     var sign = val2 < 0 ? '-' : '';
     return '<div class="dg-stat-card ' + (cls || '') + '"><div class="dg-stat-label">' + label + '</div>' +
       '<div class="dg-stat-value">' + sign + '€' + Math.abs(Math.round(val2)).toLocaleString('it-IT') + '</div></div>';
@@ -2469,10 +2469,10 @@
   function _renderStatCards() {
     var r = _calcRiepilogo();
     document.getElementById('dgStatRow').innerHTML =
-      _statCard('Entrate confermate', r.entrateConfermate, '') +
-      _statCard('Uscite', r.uscite, '--red') +
-      _statCard('Saldo', r.saldo, r.saldo >= 0 ? '--green' : '--red') +
-      _statCard('Differenza da obiettivo', r.differenza, r.differenza >= 0 ? '--green' : '--orange');
+      _budgetStatCard('Entrate confermate', r.entrateConfermate, '') +
+      _budgetStatCard('Uscite', r.uscite, '--red') +
+      _budgetStatCard('Saldo', r.saldo, r.saldo >= 0 ? '--green' : '--red') +
+      _budgetStatCard('Differenza da obiettivo', r.differenza, r.differenza >= 0 ? '--green' : '--orange');
   }
 
   /* ---- CHARTS — SVG inline, nessuna libreria esterna ---- */
@@ -3137,12 +3137,7 @@
   function val(id) { return document.getElementById(id).value; }
   function _aziendaById(id) { return _aziende.find(function (a) { return a.id === id; }); }
   function _isStorico(aziendaId) { return _sponsorizzazioni.some(function (s) { return s.aziendaId === aziendaId && s.seasonId !== _currentSeasonId; }); }
-  function _daysDiff(dateStr) {
-    var t = new Date(); t.setHours(0, 0, 0, 0);
-    var d = new Date(dateStr); d.setHours(0, 0, 0, 0);
-    return Math.round((d - t) / 86400000);
-  }
-  function _fmtDate(str) { if (!str) return '—'; var p = str.split('-'); return p.length === 3 ? (p[2] + '/' + p[1] + '/' + p[0]) : str; }
+  /* _daysDiff e _fmtDate: già definite più sopra (sezione Atleti), riusate qui */
   function _todayISO() { return new Date().toISOString().slice(0, 10); }
   function _initials(nome, cognome) { return ((nome || '?').charAt(0) + (cognome || '').charAt(0)).toUpperCase(); }
   function _nextPromemoria(sponsorId) {
