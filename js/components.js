@@ -187,6 +187,16 @@
       '<div class="container">' +
         '<div class="footer-main">' +
           '<img src="assets/logo.png" alt="Victor Volley" class="footer-logo-img">' +
+          '<ul class="footer-links">' +
+            '<li><a href="/">Home</a></li>' +
+            '<li><a href="/squadre">Le squadre</a></li>' +
+            '<li><a href="/calendario">Calendario</a></li>' +
+            '<li><a href="/news">News</a></li>' +
+            '<li><a href="/galleria">Galleria</a></li>' +
+            '<li><a href="/unisciti-a-noi">Gioca con noi</a></li>' +
+            '<li><a href="/contatti">Contatti</a></li>' +
+            '<li><a href="/atleta">Area Atleti</a></li>' +
+          '</ul>' +
           '<div class="footer-side">' +
             '<a href="mailto:info@victorvolley.it" class="footer-email">info@victorvolley.it</a>' +
             '<div class="footer-social">' +
