@@ -40,23 +40,26 @@
 
         <article class="article-content" id="articleContent">
 
-          <!-- Copertina — 9:16 -->
-          <div id="articleCover" class="article-cover"></div>
-
-          <div class="article-header">
-            <div class="article-meta" style="margin-bottom:16px">
-              <span class="badge badge--azzurro" id="articleCategory"></span>
-              <span class="article-date" id="articleDate"></span>
+          <!-- Header: copertina 9:16 come poster verticale accanto al titolo -->
+          <div class="article-hero">
+            <div id="articleCover" class="article-hero-media"></div>
+            <div class="article-hero-info">
+              <div class="article-meta">
+                <span class="badge badge--azzurro" id="articleCategory"></span>
+                <span class="article-date" id="articleDate"></span>
+              </div>
+              <h1 id="articleTitle"></h1>
             </div>
-            <h1 id="articleTitle"></h1>
           </div>
 
-          <div class="article-body" id="articleBody"></div>
+          <div class="article-body-wrap">
+            <div class="article-body" id="articleBody"></div>
+          </div>
 
         </article>
 
         <!-- Articoli correlati -->
-        <div id="relatedSection" style="margin-top:64px;padding-top:48px;border-top:1px solid var(--c-gray-light);display:none">
+        <div id="relatedSection" class="related-section" style="margin-top:64px;padding-top:48px;border-top:1px solid var(--c-gray-light);display:none">
           <h3 style="margin-bottom:24px">Altri articoli</h3>
           <div class="related-cards" id="relatedGrid"></div>
         </div>

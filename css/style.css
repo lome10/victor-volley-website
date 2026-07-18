@@ -2366,17 +2366,47 @@ main, footer.site-footer {
 }
 
 /* ================================================
-   News dettaglio
+   News dettaglio — header a due colonne: la copertina 9:16 fa da
+   poster verticale accanto al titolo invece di un piccolo riquadro
+   centrato sopra il testo. Il corpo dell'articolo resta stretto
+   (760px) per la leggibilità, l'header respira su tutta la larghezza
+   disponibile del container.
 ================================================ */
 .article-content {
-  max-width: 760px;
+  max-width: 1040px;
   margin: 0 auto;
 }
 
-.article-header { margin-bottom: 32px; }
-.article-header h1 { margin-bottom: 12px; }
-.article-meta { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.article-hero {
+  display: grid;
+  grid-template-columns: minmax(240px, 360px) 1fr;
+  gap: 48px;
+  align-items: center;
+  margin-bottom: 56px;
+}
+
+.article-hero-media {
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  border-radius: var(--card-radius);
+  overflow: hidden;
+  box-shadow: var(--card-shadow-hover);
+  background: var(--c-gray-light);
+}
+.article-hero-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.article-cover-placeholder {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, var(--c-navy) 0%, #0a4a8c 100%);
+  font-size: 56px;
+}
+
+.article-hero-info { display: flex; flex-direction: column; justify-content: center; }
+.article-hero-info h1 { margin-bottom: 16px; }
+.article-meta { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 20px; }
 .article-date { font-size: 13px; color: #888; }
+
+.article-body-wrap { max-width: 760px; margin: 0 auto; }
 
 .article-body {
   font-size: 16px;
@@ -2388,29 +2418,16 @@ main, footer.site-footer {
 .article-body h2 { margin: 32px 0 16px; }
 .article-body h3 { margin: 24px 0 12px; }
 
-/* Copertina — le immagini articolo sono 9:16 (stessa proporzione di
-   hero/news card), quindi il layout la mette in verticale invece di
-   ritagliarla in una banner orizzontale */
-.article-cover {
-  width: 100%;
-  max-width: 320px;
-  aspect-ratio: 9 / 16;
-  margin: 0 auto 32px;
-  border-radius: var(--card-radius);
-  overflow: hidden;
-  box-shadow: var(--card-shadow);
-  background: var(--c-gray-light);
-}
-.article-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.article-cover-placeholder {
-  width: 100%; height: 100%;
-  display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(135deg, var(--c-navy) 0%, #0a4a8c 100%);
-  font-size: 56px;
+@media (max-width: 860px) {
+  .article-hero { grid-template-columns: 1fr; gap: 24px; text-align: center; margin-bottom: 40px; }
+  .article-hero-media { max-width: 260px; margin: 0 auto; }
+  .article-hero-info { align-items: center; }
+  .article-meta { justify-content: center; }
 }
 
 /* Articoli correlati — stessa card 9:16 usata in hero/news, non più
    il vecchio thumb orizzontale */
+.related-section { max-width: 1040px; margin: 0 auto; }
 .related-cards {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
