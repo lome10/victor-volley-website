@@ -84,9 +84,6 @@
       var d = new Date(dateStr + 'T00:00:00');
       return d.getDate() + ' ' + MESI_SHORT[d.getMonth()] + (ora ? ' · ' + ora : '');
     }
-    function dayOfMonth(dateStr) {
-      return new Date(dateStr + 'T00:00:00').getDate();
-    }
 
     function inSeason(p, seasonId) { return !p.stagione || p.stagione === seasonId; }
 
@@ -113,17 +110,21 @@
       wrap.innerHTML = categories.map(function (c) {
         var s = slug(c);
         return '<section class="cal-cat-panel' + (s === activeCat ? '' : ' is-hidden') + '" data-cat="' + s + '" aria-label="' + esc(c) + '">' +
-          '<div class="container cal-section-block">' +
-            '<h2 class="cal-section-title">Calendario</h2>' +
-            '<div class="fixture-grid" data-role="upcoming"></div>' +
-          '</div>' +
-          '<div class="container cal-section-block">' +
-            '<h2 class="cal-section-title">Risultati</h2>' +
-            '<div class="fixture-grid" data-role="past"></div>' +
-          '</div>' +
-          '<div class="container cal-section-block cal-classifica-block is-hidden" data-role="classifica-wrap">' +
-            '<h2 class="cal-section-title">Classifica</h2>' +
-            '<div class="stand-panel" data-role="classifica"></div>' +
+          '<div class="container cal-cols" data-role="cols">' +
+            '<div class="cal-col-left">' +
+              '<div class="cal-section-block">' +
+                '<h2 class="cal-section-title">Calendario</h2>' +
+                '<div class="fixture-list" data-role="upcoming"></div>' +
+              '</div>' +
+              '<div class="cal-section-block">' +
+                '<h2 class="cal-section-title">Risultati</h2>' +
+                '<div class="fixture-list" data-role="past"></div>' +
+              '</div>' +
+            '</div>' +
+            '<div class="cal-col-right is-hidden" data-role="classifica-wrap">' +
+              '<h2 class="cal-section-title">Classifica</h2>' +
+              '<div class="stand-panel" data-role="classifica"></div>' +
+            '</div>' +
           '</div>' +
         '</section>';
       }).join('');
@@ -200,6 +201,7 @@
           '<div class="stand-footer">' + esc(girone.stagione || '') + '</div>';
 
         block.classList.remove('is-hidden');
+        panel.querySelector('[data-role="cols"]').classList.add('cal-cols--split');
       }).catch(function (e) { console.warn('[calendario] classifica non disponibile:', e); });
     }
 
@@ -271,33 +273,26 @@
         : '<span class="fixture-team-logo-init">' + esc((nome || '?').charAt(0).toUpperCase()) + '</span>';
     }
 
-    function fixtureCard(p, isResult) {
+    function teamScore(n, rCls) {
+      return '<span class="fixture-row-score fixture-row-score--' + rCls + '">' + n + '</span>';
+    }
+
+    function fixtureRow(p, isResult, isNext) {
       var isHome   = isVV(p.squadra_casa);
       var hasScore = p.set_casa != null && p.set_ospite != null;
       var rCls     = hasScore ? resultClass(p) : '';
 
-      var ghost = isResult && hasScore
-        ? '<div class="fixture-ghost fixture-ghost--score">' + p.set_casa + '&ndash;' + p.set_ospite + '</div>'
-        : '<div class="fixture-ghost">' + dayOfMonth(p.data) + '</div>';
-
-      var middle = (isResult && hasScore)
-        ? '<div class="fixture-score-row"><span class="fixture-score fixture-score--' + rCls + '">' + p.set_casa + '&ndash;' + p.set_ospite + '</span></div>'
-        : '<div class="fixture-vs">vs</div>';
-
-      return '<div class="fixture-card ' + (isHome ? 'cool' : 'warm') + ' reveal">' +
-        ghost +
-        '<div class="fixture-body">' +
-          '<div class="fixture-date">' + formatDataCard(p.data, p.ora) + '</div>' +
-          '<div class="fixture-teams">' +
-            '<div class="fixture-team' + (isHome ? ' fixture-team--vv' : '') + '">' + teamLogo(p.logo_casa, p.squadra_casa) + '<span class="fixture-team-name">' + esc(p.squadra_casa) + '</span></div>' +
-            '<div class="fixture-team' + (!isHome ? ' fixture-team--vv' : '') + '">' + teamLogo(p.logo_ospite, p.squadra_ospite) + '<span class="fixture-team-name">' + esc(p.squadra_ospite) + '</span></div>' +
-          '</div>' +
-          middle +
-          '<div class="fixture-meta">' +
-            '<span class="fixture-meta-venue">' + PIN_ICON + esc(p.palazzetto || '—') + '</span>' +
-            '<span class="fixture-tag fixture-tag--' + (isHome ? 'casa' : 'trasferta') + '">' + (isHome ? 'Casa' : 'Trasferta') + '</span>' +
-          '</div>' +
+      return '<div class="fixture-row ' + (isHome ? 'cool' : 'warm') + (isNext ? ' fixture-row--next' : '') + ' reveal">' +
+        (isNext ? '<span class="fixture-row-next-badge">Prossima partita</span>' : '') +
+        '<div class="fixture-row-top">' +
+          '<span class="fixture-row-date">' + formatDataCard(p.data, p.ora) + '</span>' +
+          '<span class="fixture-tag fixture-tag--' + (isHome ? 'casa' : 'trasferta') + '">' + (isHome ? 'Casa' : 'Trasferta') + '</span>' +
         '</div>' +
+        '<div class="fixture-teams">' +
+          '<div class="fixture-team' + (isHome ? ' fixture-team--vv' : '') + '">' + teamLogo(p.logo_casa, p.squadra_casa) + '<span class="fixture-team-name">' + esc(p.squadra_casa) + '</span>' + (hasScore ? teamScore(p.set_casa, rCls) : '') + '</div>' +
+          '<div class="fixture-team' + (!isHome ? ' fixture-team--vv' : '') + '">' + teamLogo(p.logo_ospite, p.squadra_ospite) + '<span class="fixture-team-name">' + esc(p.squadra_ospite) + '</span>' + (hasScore ? teamScore(p.set_ospite, rCls) : '') + '</div>' +
+        '</div>' +
+        '<div class="fixture-row-venue">' + PIN_ICON + esc(p.palazzetto || '—') + '</div>' +
       '</div>';
     }
 
@@ -310,16 +305,18 @@
         if (!panel) return;
 
         var catPartite = partite.filter(function (p) { return slug(p.categoria) === s; });
-        var upcoming   = catPartite.filter(function (p) { return p.stato !== 'conclusa' && p.data >= today; });
-        var past       = catPartite.filter(function (p) { return p.stato === 'conclusa' || p.data < today; }).reverse();
+        var upcoming   = catPartite.filter(function (p) { return p.stato !== 'conclusa' && p.data >= today; })
+          .sort(function (a, b) { return a.data === b.data ? (a.ora || '').localeCompare(b.ora || '') : a.data.localeCompare(b.data); });
+        var past       = catPartite.filter(function (p) { return p.stato === 'conclusa' || p.data < today; })
+          .sort(function (a, b) { return b.data.localeCompare(a.data); });
 
         panel.querySelector('[data-role="upcoming"]').innerHTML = upcoming.length
-          ? upcoming.map(function (p) { return fixtureCard(p, false); }).join('')
-          : '<div class="fixture-grid-empty">Nessuna partita in programma.</div>';
+          ? upcoming.map(function (p, i) { return fixtureRow(p, false, i === 0); }).join('')
+          : '<div class="fixture-list-empty">Nessuna partita in programma.</div>';
 
         panel.querySelector('[data-role="past"]').innerHTML = past.length
-          ? past.map(function (p) { return fixtureCard(p, true); }).join('')
-          : '<div class="fixture-grid-empty">Nessun risultato ancora.</div>';
+          ? past.map(function (p) { return fixtureRow(p, true, false); }).join('')
+          : '<div class="fixture-list-empty">Nessun risultato ancora.</div>';
       });
     }
 

@@ -65,77 +65,97 @@
 .cal-switch-group--cat { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
 .cal-switch-group--cat::-webkit-scrollbar { display: none; }
 
-/* ---- Pannello categoria (Calendario + Risultati + Classifica impilati) ---- */
+/* ---- Pannello categoria: calendario+risultati a sinistra, classifica a destra ---- */
 .cal-cat-panel.is-hidden { display: none; }
 
 .cal-section-block { padding: 32px 0 8px; }
-.cal-section-block + .cal-section-block { border-top: 1px solid rgba(255,255,255,0.08); margin-top: 8px; }
+.cal-col-left .cal-section-block + .cal-section-block { border-top: 1px solid rgba(255,255,255,0.08); margin-top: 8px; }
 
 .cal-section-title { font-family: var(--font-heading); font-weight: 800; font-size: 22px; margin: 0 0 4px; color: #fff; }
 
-.cal-classifica-block { max-width: 640px; }
-.cal-classifica-block.is-hidden { display: none; }
+/* Senza classifica (categoria non ancora censita nel girone): una sola colonna */
+.cal-col-right.is-hidden { display: none; }
 
-/* ---- Griglia fixture card ---- */
-.fixture-grid {
+/* Con classifica: due colonne, calendario/risultati scorrono a sinistra
+   mentre la classifica resta visibile a destra (sticky). */
+.cal-cols--split {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 22px;
-  padding: 28px 2px 8px;
+  grid-template-columns: 1fr 360px;
+  gap: 8px 32px;
+  align-items: start;
+}
+.cal-cols--split .cal-col-right {
+  position: sticky;
+  top: 20px;
+  padding-top: 32px;
 }
 
-.fixture-grid-empty {
-  grid-column: 1 / -1;
-  text-align: center;
-  color: rgba(255,255,255,0.45);
-  padding: 56px 24px;
+@media (max-width: 900px) {
+  .cal-cols--split { grid-template-columns: 1fr; }
+  .cal-cols--split .cal-col-right { position: static; top: auto; }
 }
 
-/* ---- Fixture card (partita) ---- */
-.fixture-card {
-  position: relative;
-  min-height: 208px;
-  border-radius: 16px;
-  overflow: hidden;
-  isolation: isolate;
-  padding: 16px;
+/* ---- Lista fixture (partita) — righe compatte, stile "prossime partite" ---- */
+.fixture-list {
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
-  transition: transform 0.4s cubic-bezier(.2,.8,.2,1), opacity 0.4s ease-out;
+  gap: 10px;
+  padding: 22px 2px 8px;
 }
-.fixture-card.cool { background: var(--sport-grad-cool); }
-.fixture-card.warm { background: var(--sport-grad-warm); }
 
-.fixture-card::before {
-  content: ''; position: absolute; inset: -14px; z-index: -1; border-radius: 20px;
-  background: var(--c-magenta); filter: blur(22px); opacity: 0; transform: scale(0.75);
-  transition: opacity 0.4s ease, transform 0.4s ease;
+.fixture-list-empty {
+  text-align: center;
+  color: rgba(255,255,255,0.45);
+  padding: 40px 24px;
 }
+
+.fixture-row {
+  position: relative;
+  border-radius: 12px;
+  padding: 13px 16px;
+  background: rgba(255,255,255,0.035);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-left: 3px solid var(--sport-azzurro-dim);
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+.fixture-row.warm { border-left-color: var(--sport-magenta-dim); }
+
 @media (hover: hover) {
-  .fixture-card:hover { transform: translateY(-8px); }
-  .fixture-card:hover::before { opacity: 0.6; transform: scale(1); }
+  .fixture-row:hover {
+    background: rgba(255,255,255,0.06);
+    transform: translateX(3px);
+  }
 }
 
-.fixture-ghost {
-  position: absolute; right: -0.06em; top: -0.16em; z-index: 0;
-  font-family: var(--sport-font-display); font-weight: 800; line-height: 1;
-  font-size: 5.2rem; color: rgba(255,255,255,0.14); letter-spacing: -0.04em;
-  pointer-events: none; mix-blend-mode: overlay;
+/* La prossima partita in calendario si distingue dal resto della lista */
+.fixture-row--next {
+  border-left-width: 3px;
+  background: linear-gradient(120deg, rgba(0,140,253,0.14), rgba(255,255,255,0.03) 55%);
+  border-color: rgba(0,140,253,0.35);
+  padding-top: 30px;
 }
-.fixture-ghost--score { font-size: 3.8rem; }
 
-.fixture-body { position: relative; z-index: 1; }
+.fixture-row-next-badge {
+  position: absolute; top: 10px; left: 16px;
+  font-family: var(--sport-font-display); font-weight: 800; font-size: 9.5px;
+  letter-spacing: 0.09em; text-transform: uppercase; color: var(--c-azzurro);
+}
 
-.fixture-date {
+.fixture-row-top {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+
+.fixture-row-date {
   font-family: var(--sport-font-display); font-size: 12px; font-weight: 700;
-  letter-spacing: 0.04em; text-transform: uppercase; color: rgba(255,255,255,0.5);
-  margin-bottom: 12px;
+  letter-spacing: 0.03em; text-transform: uppercase; color: rgba(255,255,255,0.5);
 }
 
-.fixture-teams { display: flex; flex-direction: column; gap: 3px; margin-bottom: 10px; }
+.fixture-teams { display: flex; flex-direction: column; gap: 6px; }
 
-.fixture-team { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.fixture-team { display: flex; align-items: center; gap: 9px; min-width: 0; }
 
 .fixture-team-logo {
   width: 22px; height: 22px; border-radius: 5px; object-fit: contain;
@@ -148,32 +168,26 @@
 }
 
 .fixture-team-name {
+  flex: 1;
   font-family: var(--font-body); font-weight: 600; font-size: 14px; color: rgba(255,255,255,0.55);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
 }
 .fixture-team--vv .fixture-team-name { font-weight: 800; color: #fff; }
 
-.fixture-vs {
-  font-family: var(--sport-font-display); font-size: 10.5px; font-weight: 700;
-  color: rgba(255,255,255,0.28); margin-left: 30px; letter-spacing: 0.04em; text-transform: uppercase;
+.fixture-row-score {
+  flex-shrink: 0; width: 24px; text-align: center;
+  font-family: var(--sport-font-display); font-weight: 800; font-size: 16px; color: #fff;
 }
+.fixture-row-score--vittoria { color: #5fd97a; }
+.fixture-row-score--sconfitta { color: var(--sport-magenta-dim); }
 
-.fixture-score-row { display: flex; align-items: baseline; gap: 4px; margin: -2px 0 6px 30px; }
-.fixture-score { font-family: var(--sport-font-display); font-weight: 800; font-size: 22px; color: #fff; }
-.fixture-score--vittoria { color: #5fd97a; }
-.fixture-score--sconfitta { color: var(--sport-magenta-dim); }
-
-.fixture-meta {
-  position: relative; z-index: 1;
-  display: flex; align-items: center; justify-content: space-between; gap: 8px;
-  padding-top: 10px; margin-top: 4px; border-top: 1px solid rgba(255,255,255,0.12);
-  font-size: 11px; color: rgba(255,255,255,0.45);
-}
-.fixture-meta-venue {
-  display: flex; align-items: center; gap: 4px; min-width: 0;
+.fixture-row-venue {
+  display: flex; align-items: center; gap: 5px; min-width: 0;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 11.5px; color: rgba(255,255,255,0.4);
+  padding-top: 8px; margin-top: 1px; border-top: 1px solid rgba(255,255,255,0.07);
 }
-.fixture-meta-venue svg { flex-shrink: 0; }
+.fixture-row-venue svg { flex-shrink: 0; }
 
 .fixture-tag {
   flex-shrink: 0; font-family: var(--sport-font-display); font-weight: 800; font-size: 9.5px;
@@ -183,8 +197,7 @@
 .fixture-tag--trasferta { background: rgba(224,92,146,0.22); color: #f2a8c4; }
 
 @media (prefers-reduced-motion: reduce) {
-  .fixture-card { transition: none !important; }
-  .fixture-card::before { display: none !important; }
+  .fixture-row { transition: none !important; }
 }
 
 /* ---- Classifica (pannello scuro) ---- */
