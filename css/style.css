@@ -2189,6 +2189,16 @@ main, footer.site-footer {
   margin-bottom: 14px;
 }
 
+.maglia-teaser-subtitle {
+  position: relative;
+  z-index: 1;
+  max-width: 480px;
+  margin: 0 0 24px;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
 .maglia-teaser-badge {
   position: relative;
   z-index: 1;
@@ -2200,6 +2210,7 @@ main, footer.site-footer {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--c-azzurro);
+  margin-bottom: 32px;
 }
 .maglia-dot {
   width: 8px;
@@ -2213,9 +2224,63 @@ main, footer.site-footer {
   50%      { opacity: 0.4; box-shadow: 0 0 0 6px rgba(0, 140, 253, 0); }
 }
 
+.maglia-countdown {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.maglia-countdown-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 56px;
+  padding: 10px 6px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 0 0 0 rgba(0, 140, 253, 0.35);
+  animation: maglia-countdown-glow 3.2s ease-in-out infinite;
+}
+@keyframes maglia-countdown-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 140, 253, 0); }
+  50%      { box-shadow: 0 0 18px 0 rgba(0, 140, 253, 0.35); }
+}
+.maglia-countdown-num {
+  font-family: var(--font-heading);
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+.maglia-countdown-label {
+  margin-top: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+.maglia-countdown-sep {
+  color: var(--c-magenta);
+  font-size: 22px;
+  font-weight: 800;
+  transform: translateY(-8px);
+}
+.maglia-countdown.is-done .maglia-countdown-item {
+  animation: none;
+  box-shadow: 0 0 18px 0 rgba(203, 33, 104, 0.5);
+  border-color: var(--c-magenta);
+}
+
 @media (max-width: 640px) {
   .maglia-glow { width: 240px; height: 240px; }
   .maglia-silhouette { width: 100px; height: 100px; }
+  .maglia-countdown { gap: 8px; }
+  .maglia-countdown-item { min-width: 46px; padding: 8px 4px; }
+  .maglia-countdown-num { font-size: 22px; }
 }
 
 /* ================================================

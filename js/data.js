@@ -24,6 +24,14 @@
   var _sponsors = [];
   var _seasons  = [];
   var _partite  = [];
+  var _maglia   = null;
+
+  var DEFAULT_MAGLIA = {
+    enabled: true,
+    title: 'Nuova maglia 2026/27',
+    subtitle: 'Il reveal si avvicina: presto potrai ruotarla, ingrandirla ed esplorarla in un render 3D interattivo.',
+    revealDate: '2026-08-18T00:00:00'
+  };
 
   var DEFAULTS = {
     articles: [
@@ -174,6 +182,10 @@
     /* ---- SPONSORS ---- */
     getSponsors: function () { return _sponsors.slice(); },
     setSponsors: function (items) { _sponsors = Array.isArray(items) ? items : []; },
+
+    /* ---- MAGLIA TEASER (homepage) ---- */
+    getMaglia: function () { return _maglia || Object.assign({}, DEFAULT_MAGLIA); },
+    setMaglia: function (obj) { _maglia = obj && typeof obj === 'object' ? obj : null; },
 
     /* ---- PARTITE (calendario) — fonte unica: siteData/partite ---- */
     getPartite: function () { return _partite.slice(); },

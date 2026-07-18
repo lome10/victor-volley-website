@@ -73,7 +73,7 @@
   ================================================ */
   var SECTIONS = {
     dashboard: 'Dashboard', articoli: 'Articoli', calendario: 'Calendario', galleria: 'Galleria', squadre: 'Squadre',
-    sponsor: 'Sponsor', atleti: 'Atleti', dirigenti: 'Dirigenti', girone: 'Girone Prima Divisione', stagioni: 'Stagioni', datiJson: 'File JSON',
+    sponsor: 'Sponsor', atleti: 'Atleti', dirigenti: 'Dirigenti', girone: 'Girone Prima Divisione', stagioni: 'Stagioni', maglia: 'Maglia', datiJson: 'File JSON',
     budget: 'Budget & Forecast'
   };
 
@@ -107,6 +107,7 @@
     if (section === 'atleti')     renderAtleti();
     if (section === 'dirigenti')  renderDirigenti();
     if (section === 'stagioni')   renderStagioni();
+    if (section === 'maglia')     renderMaglia();
     if (section === 'datiJson')   renderDatiJson();
     if (section === 'budget')     _renderActiveBudgetTab();
   }
@@ -1166,6 +1167,30 @@
 
   document.getElementById('stagioneCancel').addEventListener('click', function () {
     document.getElementById('stagionForm').classList.add('is-hidden');
+  });
+
+  /* ================================================
+     MAGLIA (teaser homepage)
+  ================================================ */
+  function renderMaglia() {
+    var m = VV.getMaglia();
+    document.getElementById('magliaEnabled').checked = m.enabled !== false;
+    document.getElementById('magliaTitle').value = m.title || '';
+    document.getElementById('magliaSubtitle').value = m.subtitle || '';
+    document.getElementById('magliaRevealDate').value = (m.revealDate || '').slice(0, 16);
+  }
+
+  document.getElementById('magliaSave').addEventListener('click', function () {
+    var revealRaw = document.getElementById('magliaRevealDate').value;
+    var title = document.getElementById('magliaTitle').value.trim();
+    if (!title) { alert('Il titolo è obbligatorio.'); return; }
+    var obj = {
+      enabled:    document.getElementById('magliaEnabled').checked,
+      title:      title,
+      subtitle:   document.getElementById('magliaSubtitle').value.trim(),
+      revealDate: revealRaw ? revealRaw + ':00' : ''
+    };
+    DB.saveMaglia(obj, function () { renderMaglia(); });
   });
 
   /* ================================================

@@ -102,7 +102,7 @@
      Per aggiungere una parte nuova in futuro: aggiungerla a PART_NAMES
      e insegnare a _fetchPart come caricarla.
   ============================================================ */
-  var PART_NAMES = ['articles', 'partite', 'albums', 'categories', 'players', 'staff', 'sponsors', 'seasons', 'stats'];
+  var PART_NAMES = ['articles', 'partite', 'albums', 'categories', 'players', 'staff', 'sponsors', 'seasons', 'stats', 'maglia'];
 
   var _parts = {};
   PART_NAMES.forEach(function (name) { _parts[name] = { loaded: false, loading: false, pending: [] }; });
@@ -138,6 +138,14 @@
     }
   }
 
+  /* settings/maglia: un unico oggetto (non {items:[...]}), gestisce da sé
+     l'assenza del doc lasciando VV.getMaglia() sui valori di default. */
+  function _fetchMaglia() {
+    return global.db.collection('settings').doc('maglia').get().then(function (doc) {
+      if (doc.exists) VV.setMaglia(doc.data());
+    });
+  }
+
   function _fetchPart(name) {
     switch (name) {
       case 'articles':   return _loadOne('articles');
@@ -149,6 +157,7 @@
       case 'sponsors':   return _settingsDoc('sponsor', VV.setSponsors);
       case 'seasons':    return _settingsDoc('seasons', VV.setSeasons);
       case 'stats':      return _settingsDoc('stats',   VV.setStats);
+      case 'maglia':     return _fetchMaglia();
       default:           return Promise.resolve();
     }
   }
@@ -335,6 +344,18 @@
           _audit('sponsorSito', 'sponsor', 'Sponsor (vetrina sito)', 'update', [{ campo: '(elenco)', prima: before.length + ' sponsor', dopo: items.length + ' sponsor' }]);
         })
         .catch(function (e) { console.error('[DB] saveSponsors', e); });
+    },
+
+    /* ---- MAGLIA TEASER (homepage) ----------------------------- */
+    saveMaglia: function (obj, cb) {
+      var before = VV.getMaglia();
+      VV.setMaglia(obj);
+      if (cb) cb();
+      global.db.collection('settings').doc('maglia').set(obj)
+        .then(function () {
+          _audit('magliaTeaser', 'maglia', 'Teaser nuova maglia (homepage)', 'update', _diffRecord(before, obj, Object.keys(obj)));
+        })
+        .catch(function (e) { console.error('[DB] saveMaglia', e); });
     },
 
     /* ---- SEASONS -------------------------------------------- */
