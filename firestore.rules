@@ -2,6 +2,11 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    function isDirigente() {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/dirigenti/$(request.auth.uid));
+    }
+
     // Atleti — solo utenti autenticati (né public read né scrittura libera)
     match /atleti/{document=**} {
       allow read, write: if request.auth != null;
@@ -16,5 +21,29 @@ service cloud.firestore {
     match /staff/{document=**}      { allow read: if true; allow write: if request.auth != null; }
     match /settings/{document=**}   { allow read: if true; allow write: if request.auth != null; }
     match /siteData/{document=**}   { allow read: if true; allow write: if request.auth != null; }
+
+    // Area Dirigenti — registro ruoli: esistenza del doc {uid} = ruolo dirigente.
+    // Scrittura affidata a chi ha già accesso all'admin (stesso livello di
+    // fiducia già usato per creare account atleti), lettura autenticata per
+    // permettere il controllo ruolo lato client.
+    match /dirigenti/{uid} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Area Dirigenti — dati di budget/CRM: solo dirigenti/admin, mai pubblico.
+    match /budgetSeasons/{document=**}    { allow read, write: if isDirigente(); }
+    match /aziende/{document=**}          { allow read, write: if isDirigente(); }
+    match /sponsorizzazioni/{document=**} { allow read, write: if isDirigente(); }
+    match /attivita/{document=**}         { allow read, write: if isDirigente(); }
+    match /promemoria/{document=**}       { allow read, write: if isDirigente(); }
+    match /categorieAtleti/{document=**}  { allow read, write: if isDirigente(); }
+    match /vociSpesa/{document=**}        { allow read, write: if isDirigente(); }
+
+    // Audit log — append-only: nessun update/delete concesso a nessuno, admin incluso.
+    match /auditLog/{document=**} {
+      allow read: if isDirigente();
+      allow create: if isDirigente();
+      allow update, delete: if false;
+    }
   }
 }

@@ -66,6 +66,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           Atleti
         </a>
+        <a href="#" class="admin-nav-item" data-section="dirigenti">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+          Dirigenti
+        </a>
         <a href="#" class="admin-nav-item" data-section="girone">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="9.5"/><path d="M6.5 3.8c1.5 3.5 1 8-1.5 11.5"/><path d="M17.5 20.2c-1.5-3.5-1-8 1.5-11.5"/><path d="M3 14c4-2 9-1.5 16.5 1"/></svg>
           Girone
@@ -705,6 +709,57 @@
             </div>
           </div>
 
+        </div>
+      </section>
+
+      <!-- ---- DIRIGENTI ---- -->
+      <section id="sectionDirigenti" class="admin-section is-hidden">
+
+        <div class="ga-info" style="margin-bottom:24px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Chi è in questa lista può accedere a <strong>/dirigenti</strong> (Budget &amp; Forecast, pipeline sponsor, log modifiche). Concedere l'accesso solo a chi fa parte del direttivo.
+        </div>
+
+        <!-- List -->
+        <div id="dirigentiList">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Email</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="dirigentiBody">
+              <tr><td colspan="3" style="text-align:center;color:var(--a-muted);padding:20px">—</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Nuovo dirigente form -->
+        <div id="dirigentiForm" class="is-hidden">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Nome *</label>
+              <input type="text" id="dirigenteNome" class="form-input" placeholder="Nome">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Cognome *</label>
+              <input type="text" id="dirigenteCognome" class="form-input" placeholder="Cognome">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email *</label>
+              <input type="email" id="dirigenteEmail" class="form-input" placeholder="Email per il login">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Password iniziale *</label>
+              <input type="text" id="dirigentePassword" class="form-input" placeholder="Minimo 6 caratteri">
+            </div>
+          </div>
+          <div class="form-actions">
+            <button id="dirigenteFormCancel" class="btn-ghost">Annulla</button>
+            <button id="dirigenteFormSave" class="btn-primary">Crea dirigente</button>
+          </div>
         </div>
       </section>
 

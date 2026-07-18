@@ -41,7 +41,7 @@
   /* ================================================
      NAVIGATION
   ================================================ */
-  var SECTIONS = { dashboard: 'Dashboard', articoli: 'Articoli', calendario: 'Calendario', galleria: 'Galleria', squadre: 'Squadre', sponsor: 'Sponsor', atleti: 'Atleti', girone: 'Girone Prima Divisione', stagioni: 'Stagioni', datiJson: 'File JSON' };
+  var SECTIONS = { dashboard: 'Dashboard', articoli: 'Articoli', calendario: 'Calendario', galleria: 'Galleria', squadre: 'Squadre', sponsor: 'Sponsor', atleti: 'Atleti', dirigenti: 'Dirigenti', girone: 'Girone Prima Divisione', stagioni: 'Stagioni', datiJson: 'File JSON' };
 
   function initNav() {
     document.querySelectorAll('.admin-nav-item').forEach(function (el) {
@@ -70,6 +70,7 @@
     if (section === 'squadre')    renderSquadre();
     if (section === 'sponsor')    renderSponsor();
     if (section === 'atleti')     renderAtleti();
+    if (section === 'dirigenti')  renderDirigenti();
     if (section === 'stagioni')   renderStagioni();
     if (section === 'datiJson')   renderDatiJson();
   }
@@ -1929,6 +1930,123 @@
     db.collection('atleti').doc(_editingAtleta.uid).update({ rate: _editingAtleta.rate })
       .then(_renderRateAdmin)
       .catch(function (e) { alert('Errore: ' + e.message); });
+  };
+
+  /* ================================================
+     DIRIGENTI (accesso Area Dirigenti)
+  ================================================ */
+  var _dirigentiCache = [];
+
+  function renderDirigenti() {
+    _showDirigentiView('list');
+    setTopbarBtn('Nuovo dirigente', function () { _openDirigenteForm(); });
+    _loadDirigenti();
+  }
+
+  function _showDirigentiView(view) {
+    document.getElementById('dirigentiList').classList.toggle('is-hidden', view !== 'list');
+    document.getElementById('dirigentiForm').classList.toggle('is-hidden', view !== 'form');
+  }
+
+  function _loadDirigenti() {
+    document.getElementById('dirigentiBody').innerHTML =
+      '<tr><td colspan="3" style="text-align:center;color:var(--a-muted);padding:20px">Caricamento…</td></tr>';
+
+    db.collection('dirigenti').get().then(function (snap) {
+      _dirigentiCache = [];
+      snap.forEach(function (doc) {
+        _dirigentiCache.push(Object.assign({ uid: doc.id }, doc.data()));
+      });
+      _dirigentiCache.sort(function (a, b) {
+        return (a.nome || '') < (b.nome || '') ? -1 : 1;
+      });
+      _renderDirigentiRows();
+    }).catch(function (err) {
+      console.error('[Dirigenti]', err);
+      document.getElementById('dirigentiBody').innerHTML =
+        '<tr><td colspan="3" style="text-align:center;color:var(--a-red)">Errore nel caricamento.</td></tr>';
+    });
+  }
+
+  function _renderDirigentiRows() {
+    if (!_dirigentiCache.length) {
+      document.getElementById('dirigentiBody').innerHTML =
+        '<tr><td colspan="3"><div class="empty-state"><p>Nessun dirigente con accesso.</p></div></td></tr>';
+      return;
+    }
+    var EDIT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+    var DEL_ICON  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>';
+    document.getElementById('dirigentiBody').innerHTML = _dirigentiCache.map(function (d) {
+      return '<tr>' +
+        '<td>' + esc((d.nome || '') + ' ' + (d.cognome || '')) + '</td>' +
+        '<td>' + esc(d.email || '') + '</td>' +
+        '<td style="text-align:right">' +
+          '<button class="btn-icon btn-icon--danger" onclick="AdminActions.deleteDirigente(\'' + d.uid + '\')" title="Revoca accesso">' + DEL_ICON + '</button>' +
+        '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  function _openDirigenteForm() {
+    _showDirigentiView('form');
+    document.getElementById('topbarActions').innerHTML = '';
+    ['dirigenteNome', 'dirigenteCognome', 'dirigenteEmail', 'dirigentePassword'].forEach(function (id) {
+      document.getElementById(id).value = '';
+    });
+  }
+
+  document.getElementById('dirigenteFormCancel').addEventListener('click', renderDirigenti);
+
+  document.getElementById('dirigenteFormSave').addEventListener('click', function () {
+    var nome    = document.getElementById('dirigenteNome').value.trim();
+    var cognome = document.getElementById('dirigenteCognome').value.trim();
+    var email   = document.getElementById('dirigenteEmail').value.trim();
+    var pwd     = document.getElementById('dirigentePassword').value;
+
+    if (!nome || !cognome || !email || !pwd) {
+      alert('Nome, cognome, email e password sono obbligatori.'); return;
+    }
+    if (pwd.length < 6) { alert('La password deve avere almeno 6 caratteri.'); return; }
+
+    var btn = document.getElementById('dirigenteFormSave');
+    btn.textContent = 'Creazione…'; btn.disabled = true;
+
+    /* secondary app per non disconnettere l'admin */
+    var existing  = firebase.apps.find(function (a) { return a.name === 'dirigente-creator'; });
+    var secondary = existing || firebase.initializeApp(firebase.app().options, 'dirigente-creator');
+    var secAuth   = secondary.auth();
+
+    secAuth.createUserWithEmailAndPassword(email, pwd)
+      .then(function (cred) {
+        var uid = cred.user.uid;
+        return secAuth.signOut().then(function () {
+          return db.collection('dirigenti').doc(uid).set({
+            uid: uid, nome: nome, cognome: cognome, email: email,
+            createdAt: new Date().toISOString()
+          });
+        });
+      })
+      .then(renderDirigenti)
+      .catch(function (err) {
+        var msg = err.code === 'auth/email-already-in-use'
+          ? 'Email già registrata.' : err.message;
+        alert('Errore: ' + msg);
+        btn.textContent = 'Crea dirigente'; btn.disabled = false;
+      });
+  });
+
+  window.AdminActions.deleteDirigente = function (uid) {
+    confirm(
+      'Revocare l\'accesso all\'Area Dirigenti? Le credenziali Firebase resteranno attive.',
+      function () {
+        db.collection('dirigenti').doc(uid).delete()
+          .then(function () {
+            _dirigentiCache = _dirigentiCache.filter(function (d) { return d.uid !== uid; });
+            _renderDirigentiRows();
+          })
+          .catch(function (e) { alert('Errore: ' + e.message); });
+      }
+    );
   };
 
   /* ================================================

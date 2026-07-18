@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="assets/logo.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Area Dirigenti — Victor Volley</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/dirigenti.css">
+</head>
+<body>
+
+  <!-- LOGIN -->
+  <div id="loginScreen" class="dg-login-screen">
+    <div class="dg-login-box">
+      <img src="assets/logo.png" alt="Victor Volley" class="dg-login-logo">
+      <h1 class="dg-login-title">Area Dirigenti</h1>
+      <p class="dg-login-sub">Victor Volley &mdash; Melissano</p>
+      <form id="loginForm" autocomplete="off">
+        <input type="email" id="emailInput" class="dg-login-input" placeholder="Email" required autocomplete="username">
+        <input type="password" id="passwordInput" class="dg-login-input" placeholder="Password" required autocomplete="current-password">
+        <button type="submit" class="dg-btn-primary">Accedi</button>
+        <p id="loginError" class="dg-login-error"></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- ACCESSO NEGATO -->
+  <div id="deniedScreen" class="dg-login-screen is-hidden">
+    <div class="dg-login-box">
+      <img src="assets/logo.png" alt="Victor Volley" class="dg-login-logo">
+      <h1 class="dg-login-title">Accesso non autorizzato</h1>
+      <p class="dg-login-sub">Questo account non ha i permessi per l'Area Dirigenti.<br>Contatta un dirigente per richiedere l'accesso.</p>
+      <button id="deniedLogoutBtn" class="dg-btn-primary">Torna al login</button>
+    </div>
+  </div>
+
+  <!-- APP -->
+  <div id="dgApp" class="dg-app is-hidden">
+
+    <header class="dg-header">
+      <div class="dg-header-inner">
+        <div class="dg-header-left">
+          <a href="/" class="dg-header-logo"><img src="assets/logo.png" alt="Victor Volley"></a>
+          <span class="dg-header-title">Area Dirigenti</span>
+        </div>
+        <div class="dg-header-right">
+          <select id="seasonSelect" class="dg-season-select" aria-label="Stagione"></select>
+          <button id="newSeasonBtn" class="dg-btn-icon-only" title="Nuova stagione">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
+          <span id="dgNome" class="dg-header-nome"></span>
+          <button id="logoutBtn" class="dg-btn-logout">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Esci
+          </button>
+        </div>
+      </div>
+
+      <nav class="dg-tabs" aria-label="Sezioni Area Dirigenti">
+        <button class="dg-tab is-active" data-tab="riepilogo">Riepilogo</button>
+        <button class="dg-tab" data-tab="sponsor">Sponsor</button>
+        <button class="dg-tab" data-tab="rette">Rette Atleti</button>
+        <button class="dg-tab" data-tab="spese">Spese</button>
+        <button class="dg-tab" data-tab="log">Log</button>
+      </nav>
+    </header>
+
+    <main class="dg-main">
+
+      <!-- ================= RIEPILOGO ================= -->
+      <section id="tabRiepilogo" class="dg-section">
+
+        <div class="dg-card dg-obiettivo-card">
+          <div class="dg-obiettivo-row">
+            <div>
+              <div class="dg-card-title">Obiettivo stagione</div>
+              <div class="dg-card-sub" id="obiettivoSeasonNome">—</div>
+            </div>
+            <div class="dg-obiettivo-input-wrap">
+              <span>€</span>
+              <input type="number" id="obiettivoInput" class="dg-obiettivo-input" min="0" step="100">
+              <button id="obiettivoSave" class="dg-btn-ghost dg-btn-sm">Salva</button>
+            </div>
+          </div>
+          <div class="dg-obiettivo-progress">
+            <div class="dg-obiettivo-bar"><div id="obiettivoBarFill" class="dg-obiettivo-bar-fill"></div></div>
+            <span id="obiettivoPct" class="dg-obiettivo-pct">0%</span>
+          </div>
+        </div>
+
+        <div id="promemoriaWidget" class="dg-card is-hidden">
+          <div class="dg-card-title">Promemoria in scadenza</div>
+          <div id="promemoriaWidgetList" class="dg-reminder-list"></div>
+        </div>
+
+        <div class="dg-stat-row" id="dgStatRow"></div>
+
+        <div class="dg-chart-row">
+          <div class="dg-card dg-chart-card">
+            <div class="dg-card-title">Entrate vs Uscite vs Obiettivo</div>
+            <div id="chartBar" class="dg-chart-box"></div>
+          </div>
+          <div class="dg-card dg-chart-card">
+            <div class="dg-card-title">Composizione entrate</div>
+            <div id="chartDonut" class="dg-chart-box"></div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ================= SPONSOR (CRM) ================= -->
+      <section id="tabSponsor" class="dg-section is-hidden">
+        <div class="dg-toolbar">
+          <label class="dg-check">
+            <input type="checkbox" id="filterMieiSponsor">
+            Solo i miei
+          </label>
+          <button id="newSponsorBtn" class="dg-btn-primary dg-btn-sm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nuovo sponsor
+          </button>
+        </div>
+        <div class="dg-kanban" id="kanbanBoard">
+          <div class="dg-kanban-col" data-stato="prospect">
+            <div class="dg-kanban-col-head"><span>Prospect</span><span class="dg-kanban-count" id="countProspect">0</span></div>
+            <div class="dg-kanban-col-body" id="colProspect"></div>
+          </div>
+          <div class="dg-kanban-col" data-stato="contattato">
+            <div class="dg-kanban-col-head"><span>Contattato</span><span class="dg-kanban-count" id="countContattato">0</span></div>
+            <div class="dg-kanban-col-body" id="colContattato"></div>
+          </div>
+          <div class="dg-kanban-col" data-stato="in_trattativa">
+            <div class="dg-kanban-col-head"><span>In Trattativa</span><span class="dg-kanban-count" id="countIn_trattativa">0</span></div>
+            <div class="dg-kanban-col-body" id="colIn_trattativa"></div>
+          </div>
+          <div class="dg-kanban-col" data-stato="chiuso">
+            <div class="dg-kanban-col-head"><span>Chiuso</span><span class="dg-kanban-count" id="countChiuso">0</span></div>
+            <div class="dg-kanban-col-body" id="colChiuso"></div>
+          </div>
+          <div class="dg-kanban-col" data-stato="rifiutato">
+            <div class="dg-kanban-col-head"><span>Rifiutato</span><span class="dg-kanban-count" id="countRifiutato">0</span></div>
+            <div class="dg-kanban-col-body" id="colRifiutato"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= RETTE ATLETI ================= -->
+      <section id="tabRette" class="dg-section is-hidden">
+        <div class="dg-toolbar">
+          <button id="newCategoriaBtn" class="dg-btn-primary dg-btn-sm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nuova categoria
+          </button>
+        </div>
+        <div class="dg-card">
+          <div class="dg-table-wrap">
+            <table class="dg-table">
+              <thead>
+                <tr>
+                  <th>Categoria</th>
+                  <th>N. atleti previsti</th>
+                  <th>Retta unitaria</th>
+                  <th>Previsto</th>
+                  <th>Incassato</th>
+                  <th>Differenza</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="retteBody"><tr><td colspan="7" class="dg-empty">—</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= SPESE ================= -->
+      <section id="tabSpese" class="dg-section is-hidden">
+        <div class="dg-toolbar">
+          <button id="newSpesaBtn" class="dg-btn-primary dg-btn-sm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nuova voce
+          </button>
+        </div>
+        <div class="dg-card">
+          <div class="dg-table-wrap">
+            <table class="dg-table">
+              <thead>
+                <tr>
+                  <th>Voce di spesa</th>
+                  <th>Preventivato</th>
+                  <th>Sostenuto</th>
+                  <th>Note</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="speseBody"><tr><td colspan="5" class="dg-empty">—</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= LOG ================= -->
+      <section id="tabLog" class="dg-section is-hidden">
+        <div class="dg-toolbar dg-log-filters">
+          <select id="logFilterEntita" class="dg-select-sm">
+            <option value="">Tutte le entità</option>
+            <option value="azienda">Azienda</option>
+            <option value="sponsorizzazione">Sponsorizzazione</option>
+            <option value="attivita">Attività</option>
+            <option value="promemoria">Promemoria</option>
+            <option value="categoriaAtleti">Categoria Atleti</option>
+            <option value="voceSpesa">Voce di Spesa</option>
+            <option value="obiettivo">Obiettivo</option>
+          </select>
+          <select id="logFilterDirigente" class="dg-select-sm">
+            <option value="">Tutti i dirigenti</option>
+          </select>
+          <input type="date" id="logFilterDal" class="dg-select-sm" aria-label="Dal">
+          <input type="date" id="logFilterAl" class="dg-select-sm" aria-label="Al">
+        </div>
+        <div class="dg-card">
+          <div class="dg-table-wrap">
+            <table class="dg-table dg-table--log">
+              <thead>
+                <tr>
+                  <th>Data/ora</th>
+                  <th>Dirigente</th>
+                  <th>Entità</th>
+                  <th>Campo</th>
+                  <th>Prima</th>
+                  <th>Dopo</th>
+                </tr>
+              </thead>
+              <tbody id="logBody"><tr><td colspan="6" class="dg-empty">Caricamento…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- DRAWER: scheda azienda -->
+  <div id="drawerOverlay" class="dg-drawer-overlay is-hidden"></div>
+  <aside id="aziendaDrawer" class="dg-drawer is-hidden">
+    <div class="dg-drawer-head">
+      <div>
+        <h3 id="drawerAziendaNome" class="dg-drawer-title"></h3>
+        <span id="drawerStoricoBadge" class="dg-badge dg-badge--storico is-hidden">Sponsor storico</span>
+      </div>
+      <button id="drawerCloseBtn" class="dg-btn-icon-only" aria-label="Chiudi">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="dg-drawer-tabs">
+      <button class="dg-drawer-tab is-active" data-dtab="anagrafica">Anagrafica</button>
+      <button class="dg-drawer-tab" data-dtab="deal">Sponsorizzazione</button>
+      <button class="dg-drawer-tab" data-dtab="timeline">Timeline</button>
+      <button class="dg-drawer-tab" data-dtab="promemoria">Promemoria</button>
+      <button class="dg-drawer-tab" data-dtab="storico">Storico</button>
+    </div>
+    <div class="dg-drawer-body" id="drawerBody"></div>
+  </aside>
+
+  <!-- MODAL: nuovo sponsor -->
+  <div id="modalOverlay" class="dg-modal-overlay is-hidden"></div>
+  <div id="newSponsorModal" class="dg-modal is-hidden">
+    <div class="dg-modal-head">
+      <h3>Nuovo sponsor</h3>
+      <button id="newSponsorClose" class="dg-btn-icon-only" aria-label="Chiudi">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="dg-modal-body">
+      <div class="dg-form-group">
+        <label class="dg-form-label">Azienda esistente</label>
+        <select id="newSponsorAziendaSelect" class="dg-form-input">
+          <option value="">— Crea nuova azienda —</option>
+        </select>
+      </div>
+      <div id="newAziendaFields">
+        <div class="dg-form-group">
+          <label class="dg-form-label">Ragione sociale *</label>
+          <input type="text" id="newAziendaNome" class="dg-form-input" placeholder="Nome azienda">
+        </div>
+        <div class="dg-form-grid">
+          <div class="dg-form-group">
+            <label class="dg-form-label">Settore</label>
+            <input type="text" id="newAziendaSettore" class="dg-form-input">
+          </div>
+          <div class="dg-form-group">
+            <label class="dg-form-label">Referente</label>
+            <input type="text" id="newAziendaReferente" class="dg-form-input">
+          </div>
+          <div class="dg-form-group">
+            <label class="dg-form-label">Telefono</label>
+            <input type="text" id="newAziendaTelefono" class="dg-form-input">
+          </div>
+          <div class="dg-form-group">
+            <label class="dg-form-label">Email</label>
+            <input type="email" id="newAziendaEmail" class="dg-form-input">
+          </div>
+        </div>
+      </div>
+      <div class="dg-form-grid">
+        <div class="dg-form-group">
+          <label class="dg-form-label">Importo stimato (€)</label>
+          <input type="number" id="newSponsorImporto" class="dg-form-input" min="0" step="50">
+        </div>
+        <div class="dg-form-group">
+          <label class="dg-form-label">Probabilità chiusura</label>
+          <select id="newSponsorProbabilita" class="dg-form-input">
+            <option value="0.2">20%</option>
+            <option value="0.5" selected>50%</option>
+            <option value="0.8">80%</option>
+          </select>
+        </div>
+        <div class="dg-form-group">
+          <label class="dg-form-label">Responsabile</label>
+          <select id="newSponsorResponsabile" class="dg-form-input"></select>
+        </div>
+        <div class="dg-form-group">
+          <label class="dg-form-label">Tipologia</label>
+          <select id="newSponsorTipologia" class="dg-form-input">
+            <option value="denaro">Denaro</option>
+            <option value="servizi">Servizi</option>
+            <option value="materiale">Materiale</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="dg-modal-actions">
+      <button id="newSponsorCancel" class="dg-btn-ghost">Annulla</button>
+      <button id="newSponsorSave" class="dg-btn-primary">Crea</button>
+    </div>
+  </div>
+
+  <!-- MODAL: nuova stagione -->
+  <div id="newSeasonModal" class="dg-modal is-hidden">
+    <div class="dg-modal-head">
+      <h3>Nuova stagione</h3>
+      <button id="newSeasonClose" class="dg-btn-icon-only" aria-label="Chiudi">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="dg-modal-body">
+      <div class="dg-form-group">
+        <label class="dg-form-label">Nome stagione *</label>
+        <input type="text" id="seasonNomeInput" class="dg-form-input" placeholder="es. 2026/2027">
+      </div>
+      <div class="dg-form-grid">
+        <div class="dg-form-group">
+          <label class="dg-form-label">Data inizio</label>
+          <input type="date" id="seasonInizioInput" class="dg-form-input">
+        </div>
+        <div class="dg-form-group">
+          <label class="dg-form-label">Data fine</label>
+          <input type="date" id="seasonFineInput" class="dg-form-input">
+        </div>
+        <div class="dg-form-group">
+          <label class="dg-form-label">Obiettivo saldo (€)</label>
+          <input type="number" id="seasonObiettivoInput" class="dg-form-input" min="0" step="100">
+        </div>
+      </div>
+    </div>
+    <div class="dg-modal-actions">
+      <button id="newSeasonCancel" class="dg-btn-ghost">Annulla</button>
+      <button id="newSeasonSave" class="dg-btn-primary">Crea e attiva</button>
+    </div>
+  </div>
+
+  <!-- MODAL: nuova categoria atleti -->
+  <div id="newCategoriaModal" class="dg-modal is-hidden">
+    <div class="dg-modal-head">
+      <h3>Nuova categoria atleti</h3>
+      <button id="newCategoriaClose" class="dg-btn-icon-only" aria-label="Chiudi">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="dg-modal-body">
+      <div class="dg-form-group">
+        <label class="dg-form-label">Nome categoria *</label>
+        <input type="text" id="categoriaNomeInput" class="dg-form-input" placeholder="es. Under 13 Maschile">
+      </div>
+      <div class="dg-form-grid">
+        <div class="dg-form-group">
+          <label class="dg-form-label">N. atleti previsti</label>
+          <input type="number" id="categoriaNInput" class="dg-form-input" min="0" step="1" value="0">
+        </div>
+        <div class="dg-form-group">
+          <label class="dg-form-label">Retta unitaria (€)</label>
+          <input type="number" id="categoriaRettaInput" class="dg-form-input" min="0" step="10" value="0">
+        </div>
+      </div>
+    </div>
+    <div class="dg-modal-actions">
+      <button id="newCategoriaCancel" class="dg-btn-ghost">Annulla</button>
+      <button id="newCategoriaSave" class="dg-btn-primary">Crea</button>
+    </div>
+  </div>
+
+  <!-- MODAL: nuova voce di spesa -->
+  <div id="newSpesaModal" class="dg-modal is-hidden">
+    <div class="dg-modal-head">
+      <h3>Nuova voce di spesa</h3>
+      <button id="newSpesaClose" class="dg-btn-icon-only" aria-label="Chiudi">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="dg-modal-body">
+      <div class="dg-form-group">
+        <label class="dg-form-label">Voce *</label>
+        <input type="text" id="spesaCategoriaInput" class="dg-form-input" placeholder="es. Palestra/Impianti">
+      </div>
+      <div class="dg-form-grid">
+        <div class="dg-form-group">
+          <label class="dg-form-label">Preventivato (€)</label>
+          <input type="number" id="spesaPreventivatoInput" class="dg-form-input" min="0" step="10" value="0">
+        </div>
+        <div class="dg-form-group">
+          <label class="dg-form-label">Sostenuto (€)</label>
+          <input type="number" id="spesaSostenutoInput" class="dg-form-input" min="0" step="10" value="0">
+        </div>
+      </div>
+      <div class="dg-form-group">
+        <label class="dg-form-label">Note</label>
+        <input type="text" id="spesaNoteInput" class="dg-form-input">
+      </div>
+    </div>
+    <div class="dg-modal-actions">
+      <button id="newSpesaCancel" class="dg-btn-ghost">Annulla</button>
+      <button id="newSpesaSave" class="dg-btn-primary">Crea</button>
+    </div>
+  </div>
+
+  <!-- Firebase SDK (compat) -->
+  <script src="js/vendor/firebase-app-compat.js"></script>
+  <script src="js/vendor/firebase-firestore-compat.js"></script>
+  <script src="js/vendor/firebase-auth-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/dirigenti.js"></script>
+</body>
+</html>
