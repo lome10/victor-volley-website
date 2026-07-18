@@ -1076,7 +1076,8 @@ main, footer.site-footer {
     opacity: 0.45;
     transform: scale(0.97);
   }
-  .news-page-cards.has-hover .hero-card:not(.is-hovered) {
+  .news-page-cards.has-hover .hero-card:not(.is-hovered),
+  .related-cards.has-hover .hero-card:not(.is-hovered) {
     opacity: 0.45;
     transform: scale(0.97);
   }
@@ -1972,12 +1973,6 @@ main, footer.site-footer {
   gap: 16px;
   padding: 8px 0 0;
 }
-.news-page-cards .hero-card {
-  width: 100%;
-  height: auto;
-  aspect-ratio: 9 / 16;
-  flex-shrink: unset;
-}
 
 .news-pagination {
   display: flex;
@@ -2393,12 +2388,43 @@ main, footer.site-footer {
 .article-body h2 { margin: 32px 0 16px; }
 .article-body h3 { margin: 24px 0 12px; }
 
-.article-img {
+/* Copertina — le immagini articolo sono 9:16 (stessa proporzione di
+   hero/news card), quindi il layout la mette in verticale invece di
+   ritagliarla in una banner orizzontale */
+.article-cover {
   width: 100%;
-  height: 360px;
-  object-fit: cover;
+  max-width: 320px;
+  aspect-ratio: 9 / 16;
+  margin: 0 auto 32px;
   border-radius: var(--card-radius);
-  margin-bottom: 32px;
+  overflow: hidden;
+  box-shadow: var(--card-shadow);
+  background: var(--c-gray-light);
+}
+.article-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.article-cover-placeholder {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, var(--c-navy) 0%, #0a4a8c 100%);
+  font-size: 56px;
+}
+
+/* Articoli correlati — stessa card 9:16 usata in hero/news, non più
+   il vecchio thumb orizzontale */
+.related-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.news-page-cards .hero-card,
+.related-cards .hero-card {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 9 / 16;
+  flex-shrink: unset;
+}
+@media (max-width: 640px) {
+  .related-cards { grid-template-columns: repeat(2, 1fr); gap: 10px; }
 }
 
 /* ================================================

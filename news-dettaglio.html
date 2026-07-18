@@ -40,8 +40,8 @@
 
         <article class="article-content" id="articleContent">
 
-          <!-- Copertina -->
-          <div id="articleCover" style="margin-bottom:32px"></div>
+          <!-- Copertina — 9:16 -->
+          <div id="articleCover" class="article-cover"></div>
 
           <div class="article-header">
             <div class="article-meta" style="margin-bottom:16px">
@@ -58,7 +58,7 @@
         <!-- Articoli correlati -->
         <div id="relatedSection" style="margin-top:64px;padding-top:48px;border-top:1px solid var(--c-gray-light);display:none">
           <h3 style="margin-bottom:24px">Altri articoli</h3>
-          <div class="news-grid" id="relatedGrid"></div>
+          <div class="related-cards" id="relatedGrid"></div>
         </div>
 
       </div>
@@ -83,6 +83,7 @@
   (function () {
     function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
     function badgeCls(cat) { return cat === 'Prima Divisione' ? 'badge--magenta' : 'badge--azzurro'; }
+    function heroCatCls(cat) { return cat === 'Prima Divisione' ? 'hero-card-cat--magenta' : 'hero-card-cat--azzurro'; }
 
     var _qs  = (window.location.search.match(/[?&]id=([^&#]+)/) || [])[1];
     var _ss  = sessionStorage.getItem('vv_nav_id');
@@ -101,13 +102,11 @@
       return;
     }
 
-    /* Cover */
+    /* Cover — 9:16, coerente con hero/news card */
     var cover = document.getElementById('articleCover');
-    if (article.image) {
-      cover.innerHTML = '<img src="' + esc(article.image) + '" alt="' + esc(article.title) + '" class="article-img" style="width:100%;height:360px;object-fit:cover;border-radius:var(--card-radius)">';
-    } else {
-      cover.innerHTML = '<div style="height:220px;border-radius:var(--card-radius);background:linear-gradient(135deg,#053063,#008CFD);display:flex;align-items:center;justify-content:center;font-size:64px">&#127944;</div>';
-    }
+    cover.innerHTML = article.image
+      ? '<img src="' + esc(article.image) + '" alt="' + esc(article.title) + '">'
+      : '<div class="article-cover-placeholder">&#127944;</div>';
 
     /* Metadati */
     var catEl  = document.getElementById('articleCategory');
@@ -123,26 +122,45 @@
       ? article.content
       : '<p style="color:#aaa;font-style:italic">Contenuto non disponibile.</p>';
 
-    /* Articoli correlati */
+    /* Articoli correlati — stessa card 9:16 e stessa animazione hover di hero/news */
     var others = VV.getArticles(true).filter(function (a) { return a.id !== article.id; }).slice(0, 3);
     if (others.length) {
+      var relatedGrid = document.getElementById('relatedGrid');
       document.getElementById('relatedSection').style.display = '';
-      document.getElementById('relatedGrid').innerHTML = others.map(function (a) {
-        var imgHtml = a.image
-          ? '<img src="' + esc(a.image) + '" alt="' + esc(a.title) + '" style="width:100%;height:100%;object-fit:cover">'
-          : '<div class="news-card-img-placeholder" style="background:linear-gradient(135deg,#053063,#008CFD)">&#127944;</div>';
-        return '<article class="news-card reveal">' +
-          '<div class="news-card-img">' + imgHtml + '</div>' +
-          '<div class="news-card-body">' +
-            '<div class="news-card-meta">' +
-              '<span class="badge ' + badgeCls(a.category) + '">' + esc(a.category) + '</span>' +
-              '<span class="news-card-date">' + VV.formatDateShort(a.date) + '</span>' +
-            '</div>' +
-            '<h3 class="news-card-title">' + esc(a.title) + '</h3>' +
-            '<a href="/news-dettaglio?id=' + a.id + '" class="news-card-link" onclick="sessionStorage.setItem(\'vv_nav_id\',\'' + a.id + '\')">Leggi di pi&ugrave; &rarr;</a>' +
+      relatedGrid.innerHTML = others.map(function (a) {
+        var bgStyle = a.image
+          ? 'background-image:url(' + esc(a.image) + ')'
+          : 'background:linear-gradient(135deg,#053063,#008CFD)';
+        return '<article class="hero-card" data-id="' + a.id + '">' +
+          '<div class="hero-card-bg" style="' + bgStyle + '"></div>' +
+          '<div class="hero-card-overlay"></div>' +
+          '<div class="hero-card-content">' +
+            '<span class="hero-card-cat ' + heroCatCls(a.category) + '">' + esc(a.category) + '</span>' +
+            '<h2 class="hero-card-title">' + esc(a.title) + '</h2>' +
+            '<a href="/news-dettaglio?id=' + a.id + '" class="hero-card-cta" ' +
+               'onclick="sessionStorage.setItem(\'vv_nav_id\',\'' + a.id + '\')">Leggi &rarr;</a>' +
           '</div>' +
         '</article>';
       }).join('');
+
+      var relatedCards = relatedGrid.querySelectorAll('.hero-card');
+      relatedCards.forEach(function (card) {
+        card.addEventListener('mouseenter', function () {
+          relatedGrid.classList.add('has-hover');
+          relatedCards.forEach(function (c) { c.classList.remove('is-hovered'); });
+          card.classList.add('is-hovered');
+        });
+        card.addEventListener('mouseleave', function () {
+          card.classList.remove('is-hovered');
+          relatedGrid.classList.remove('has-hover');
+        });
+        card.addEventListener('click', function (e) {
+          if (e.target.tagName === 'A') return;
+          var relId = card.getAttribute('data-id');
+          sessionStorage.setItem('vv_nav_id', relId);
+          window.location.href = '/news-dettaglio?id=' + relId;
+        });
+      });
     }
     }); // DB.load
   })();
