@@ -227,7 +227,7 @@
           '</div>' +
         '</div>' +
         '<div class="footer-bottom">' +
-          '<p>&copy; ' + year + ' Victor Volley &mdash; Palazzetto ARK&Eacute;. Tutti i diritti riservati.</p>' +
+          '<p>&copy; ' + year + ' Victor Volley. Tutti i diritti riservati.</p>' +
           '<a href="#">Privacy policy</a>' +
         '</div>' +
       '</div>';
