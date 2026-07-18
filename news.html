@@ -132,10 +132,24 @@
             '</article>';
           }).join('');
 
-          /* Hover lift senza dim (grid, non carosello) */
-          grid.querySelectorAll('.hero-card').forEach(function (card) {
-            card.addEventListener('mouseenter', function () { card.classList.add('is-hovered'); });
-            card.addEventListener('mouseleave', function () { card.classList.remove('is-hovered'); });
+          /* Stessa animazione hover della hero (zoom bg + lift + dim sui vicini) e card interamente cliccabile */
+          var cards = grid.querySelectorAll('.hero-card');
+          cards.forEach(function (card) {
+            card.addEventListener('mouseenter', function () {
+              grid.classList.add('has-hover');
+              cards.forEach(function (c) { c.classList.remove('is-hovered'); });
+              card.classList.add('is-hovered');
+            });
+            card.addEventListener('mouseleave', function () {
+              card.classList.remove('is-hovered');
+              grid.classList.remove('has-hover');
+            });
+            card.addEventListener('click', function (e) {
+              if (e.target.tagName === 'A') return;
+              var id = card.getAttribute('data-id');
+              sessionStorage.setItem('vv_nav_id', id);
+              window.location.href = '/news-dettaglio?id=' + id;
+            });
           });
         }
 

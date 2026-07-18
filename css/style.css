@@ -1076,6 +1076,10 @@ main, footer.site-footer {
     opacity: 0.45;
     transform: scale(0.97);
   }
+  .news-page-cards.has-hover .hero-card:not(.is-hovered) {
+    opacity: 0.45;
+    transform: scale(0.97);
+  }
 }
 
 /* ---- Dots carosello mobile ---- */
