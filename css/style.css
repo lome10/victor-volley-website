@@ -2107,6 +2107,118 @@ main, footer.site-footer {
 }
 
 /* ================================================
+   Maglia teaser — "in arrivo", dinamico ma senza immagine reale.
+   #magliaTeaserContent è pensato per essere sostituito 1:1 con
+   l'iframe quando sarà pronto (vedi commento in index.html).
+================================================ */
+.maglia-teaser {
+  background: linear-gradient(160deg, #0F172A 0%, var(--c-navy) 100%);
+  padding-bottom: 56px;
+  overflow: hidden;
+  position: relative;
+}
+
+.maglia-ticker {
+  overflow: hidden;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 14px 0;
+  margin-bottom: 48px;
+}
+.maglia-ticker-track {
+  display: flex;
+  width: max-content;
+  gap: 10px;
+  animation: maglia-scroll 22s linear infinite;
+  white-space: nowrap;
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+.maglia-ticker-track span { color: var(--c-magenta); margin: 0 10px; }
+@keyframes maglia-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+.maglia-teaser-body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.maglia-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 340px;
+  height: 340px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(0, 140, 253, 0.35) 0%, rgba(203, 33, 104, 0.18) 45%, transparent 72%);
+  filter: blur(6px);
+  animation: maglia-pulse 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes maglia-pulse {
+  0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(0.92); }
+  50%      { opacity: 1;   transform: translate(-50%, -50%) scale(1.05); }
+}
+
+.maglia-silhouette {
+  position: relative;
+  z-index: 1;
+  width: 140px;
+  height: 140px;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 24px;
+  animation: maglia-float 4.5s ease-in-out infinite;
+}
+@keyframes maglia-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+
+.maglia-teaser-title {
+  position: relative;
+  z-index: 1;
+  color: #fff;
+  margin-bottom: 14px;
+}
+
+.maglia-teaser-badge {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-azzurro);
+}
+.maglia-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--c-azzurro);
+  animation: maglia-blink 1.6s ease-in-out infinite;
+}
+@keyframes maglia-blink {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0, 140, 253, 0.5); }
+  50%      { opacity: 0.4; box-shadow: 0 0 0 6px rgba(0, 140, 253, 0); }
+}
+
+@media (max-width: 640px) {
+  .maglia-glow { width: 240px; height: 240px; }
+  .maglia-silhouette { width: 100px; height: 100px; }
+}
+
+/* ================================================
    Sponsor — homepage (Gold in evidenza + ticker Silver/Bronze,
    stessi componenti di /sponsor, solo un po' di respiro in più
    per stare vicino alle card gold invece che come divider di pagina)
