@@ -40,20 +40,19 @@
 
         <article class="article-content" id="articleContent">
 
-          <!-- Header: copertina 9:16 come poster verticale accanto al titolo -->
-          <div class="article-hero">
-            <div id="articleCover" class="article-hero-media"></div>
-            <div class="article-hero-info">
+          <!-- Copertina 9:16 sticky a sinistra, articolo a destra: solo il testo scorre -->
+          <div class="article-split">
+            <aside class="article-media-col">
+              <div id="articleCover" class="article-hero-media"></div>
+            </aside>
+            <div class="article-text-col">
               <div class="article-meta">
                 <span class="badge badge--azzurro" id="articleCategory"></span>
                 <span class="article-date" id="articleDate"></span>
               </div>
               <h1 id="articleTitle"></h1>
+              <div class="article-body" id="articleBody"></div>
             </div>
-          </div>
-
-          <div class="article-body-wrap">
-            <div class="article-body" id="articleBody"></div>
           </div>
 
         </article>
