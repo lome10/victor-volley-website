@@ -136,8 +136,8 @@
     }).join('') || '<div class="dash-item"><span class="dash-item-meta">Nessun articolo</span></div>';
 
     var matchHtml = future.slice(0, 5).map(function (m) {
-      return '<div class="dash-item"><span class="dash-item-title">' + esc(m.homeTeam) + ' vs ' + esc(m.awayTeam) + '</span>' +
-        '<span class="dash-item-meta">' + VV.formatDateShort(m.date) + '</span></div>';
+      return '<div class="dash-item"><span class="dash-item-title">' + esc(m.squadra_casa) + ' vs ' + esc(m.squadra_ospite) + '</span>' +
+        '<span class="dash-item-meta">' + VV.formatDateShort(m.data) + '</span></div>';
     }).join('') || '<div class="dash-item"><span class="dash-item-meta">Nessuna partita</span></div>';
 
     document.getElementById('dashArticles').innerHTML = artHtml;
