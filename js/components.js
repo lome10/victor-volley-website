@@ -44,8 +44,7 @@
 
           _sidebarItem('snav-stagione', 'Stagione', 'Stagione 2025/26', [
             ['/calendario',           'Calendario'],
-            ['/calendario#risultati', 'Risultati'],
-            ['/contatti#palazzetto',  'Palazzetto ARKÉ']
+            ['/calendario#risultati', 'Risultati']
           ], page === 'calendario') +
 
           '<li>' +
