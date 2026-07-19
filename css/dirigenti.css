@@ -293,7 +293,7 @@ input, select, textarea { font-family: inherit; }
 /* ================================================
    STAT CARDS
 ================================================ */
-.dg-stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.dg-stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; }
 
 .dg-stat-card {
   background: var(--dg-card);

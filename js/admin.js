@@ -2306,6 +2306,7 @@
   var _sponsorizzazioni = [];
   var _attivita = [];
   var _promemoria = [];
+  var _tranche = [];
   var _categorieAtleti = [];
   var _vociSpesa = [];
   var _auditLog = [];
@@ -2376,7 +2377,8 @@
       db.collection('aziende').get(),
       db.collection('sponsorizzazioni').get(),
       db.collection('attivita').get(),
-      db.collection('promemoria').get()
+      db.collection('promemoria').get(),
+      db.collection('tranchePagamento').get()
     ]).then(function (res) {
       _dirigentiList    = res[0].docs.map(_mapDoc);
       _seasons          = res[1].docs.map(_mapDoc).sort(function (a, b) { return (a.nome || '') < (b.nome || '') ? 1 : -1; });
@@ -2384,6 +2386,7 @@
       _sponsorizzazioni = res[3].docs.map(_mapDoc);
       _attivita         = res[4].docs.map(_mapDoc);
       _promemoria       = res[5].docs.map(_mapDoc);
+      _tranche          = res[6].docs.map(_mapDoc);
 
       var chain = _seasons.length ? Promise.resolve() : _createDefaultSeason();
 
@@ -2432,11 +2435,29 @@
     });
   }
 
+  /* ---- TRANCHE DI PAGAMENTO — incasso reale vs contrattuale ---- */
+  function _trancheOf(sponsorId) {
+    return _tranche.filter(function (t) { return t.sponsorizzazioneId === sponsorId; });
+  }
+  /* Se non sono state definite tranche, l'importo confermato conta per intero
+     (comportamento storico, per non "azzerare" gli sponsor già chiusi in passato). */
+  function _sponsorIncassato(s) {
+    var t = _trancheOf(s.id);
+    if (!t.length) return +s.importoConfermato || 0;
+    return t.reduce(function (sum, x) { return sum + (x.pagato ? (+x.importo || 0) : 0); }, 0);
+  }
+  function _sponsorDaIncassare(s) {
+    var t = _trancheOf(s.id);
+    if (!t.length) return 0;
+    return t.reduce(function (sum, x) { return sum + (x.pagato ? 0 : (+x.importo || 0)); }, 0);
+  }
+
   /* ---- OBIETTIVO / RIEPILOGO ---- */
   function _calcRiepilogo() {
     var cur = _sponsorizzazioni.filter(function (s) { return s.seasonId === _currentSeasonId; });
-    var sponsorChiusi = cur.filter(function (s) { return s.stato === 'chiuso'; })
-      .reduce(function (s, x) { return s + (+x.importoConfermato || 0); }, 0);
+    var chiusi = cur.filter(function (s) { return s.stato === 'chiuso'; });
+    var sponsorChiusi = chiusi.reduce(function (s, x) { return s + _sponsorIncassato(x); }, 0);
+    var sponsorDaIncassare = chiusi.reduce(function (s, x) { return s + _sponsorDaIncassare(x); }, 0);
     var sponsorPotenziali = cur.filter(function (s) { return s.stato !== 'chiuso' && s.stato !== 'rifiutato'; })
       .reduce(function (s, x) { return s + (+x.importoStimato || 0) * (+x.probabilitaChiusura || 0); }, 0);
     var rette = _categorieAtleti.reduce(function (s, c) { return s + (+c.incassato || 0); }, 0);
@@ -2448,7 +2469,7 @@
     var differenza = saldo - obiettivo;
     var pct = obiettivo > 0 ? Math.round(saldo / obiettivo * 100) : 0;
     return {
-      sponsorChiusi: sponsorChiusi, sponsorPotenziali: sponsorPotenziali, rette: rette, uscite: uscite,
+      sponsorChiusi: sponsorChiusi, sponsorDaIncassare: sponsorDaIncassare, sponsorPotenziali: sponsorPotenziali, rette: rette, uscite: uscite,
       entrateConfermate: entrateConfermate, saldo: saldo, obiettivo: obiettivo, differenza: differenza, pct: pct
     };
   }
@@ -2535,6 +2556,7 @@
     var r = _calcRiepilogo();
     document.getElementById('dgStatRow').innerHTML =
       _budgetStatCard('Entrate confermate', r.entrateConfermate, '') +
+      _budgetStatCard('Da incassare (sponsor)', r.sponsorDaIncassare, '--orange') +
       _budgetStatCard('Uscite', r.uscite, '--red') +
       _budgetStatCard('Saldo', r.saldo, r.saldo >= 0 ? '--green' : '--red') +
       _budgetStatCard('Differenza da obiettivo', r.differenza, r.differenza >= 0 ? '--green' : '--orange');
@@ -2705,7 +2727,7 @@
 
   function _switchDrawerTab(tab) {
     document.querySelectorAll('.dg-drawer-tab').forEach(function (btn) { btn.classList.toggle('is-active', btn.dataset.dtab === tab); });
-    var fn = { anagrafica: _tabAnagrafica, deal: _tabDeal, timeline: _tabTimeline, promemoria: _tabPromemoria, storico: _tabStorico }[tab];
+    var fn = { anagrafica: _tabAnagrafica, deal: _tabDeal, pagamenti: _tabPagamenti, timeline: _tabTimeline, promemoria: _tabPromemoria, storico: _tabStorico }[tab];
     document.getElementById('drawerBody').innerHTML = fn ? fn() : '';
   }
 
@@ -2798,6 +2820,95 @@
       .then(function () { return _logWrite('sponsorizzazione', s.id, label, 'update', _diff(old, patch, Object.keys(patch))); })
       .then(function () { _renderKanban(); _renderStatCards(); _renderCharts(); _switchDrawerTab('deal'); })
       .catch(function (e) { alert('Errore: ' + e.message); });
+  };
+
+  /* ---- TRANCHE DI PAGAMENTO — tracciamento incassi reali di uno sponsor chiuso ---- */
+  function _tabPagamenti() {
+    var s = _sponsorizzazioni.find(function (x) { return x.id === _curSponsorId; });
+    if (!s) return '';
+    var items = _trancheOf(_curSponsorId).sort(function (a, b) { return a.scadenza < b.scadenza ? -1 : 1; });
+
+    var totale = +s.importoConfermato || 0;
+    var pianificato = items.reduce(function (sum, t) { return sum + (+t.importo || 0); }, 0);
+    var incassato = items.reduce(function (sum, t) { return sum + (t.pagato ? (+t.importo || 0) : 0); }, 0);
+    var residuo = totale - pianificato;
+
+    var intro = s.stato !== 'chiuso'
+      ? '<p class="dg-muted" style="margin-bottom:14px">Lo sponsor non è ancora "Chiuso": le tranche restano comunque salvate, ma contano nel Saldo/Entrate confermate solo quando lo stato passa a Chiuso.</p>'
+      : '';
+
+    var summary = '<div class="dg-card" style="margin-bottom:14px;padding:14px 16px">' +
+      '<div class="dg-toolbar" style="gap:16px">' +
+      '<div><div class="dg-stat-label">Importo confermato</div><div class="dg-card-title">€' + totale.toLocaleString('it-IT') + '</div></div>' +
+      '<div><div class="dg-stat-label">Incassato</div><div class="dg-card-title" style="color:var(--dg-green)">€' + incassato.toLocaleString('it-IT') + '</div></div>' +
+      '<div><div class="dg-stat-label">Da incassare</div><div class="dg-card-title" style="color:var(--dg-orange)">€' + (pianificato - incassato).toLocaleString('it-IT') + '</div></div>' +
+      '</div>' +
+      (items.length && residuo !== 0
+        ? '<p class="dg-muted" style="margin-top:8px">' + (residuo > 0
+            ? 'Mancano €' + residuo.toLocaleString('it-IT') + ' di tranche per coprire l\'intero importo confermato.'
+            : 'Le tranche superano l\'importo confermato di €' + Math.abs(residuo).toLocaleString('it-IT') + '.') + '</p>'
+        : '') +
+      '</div>';
+
+    var list = items.length ? items.map(function (t) {
+      return '<div class="dg-reminder-item" style="cursor:default">' +
+        '<label class="dg-check"><input type="checkbox" ' + (t.pagato ? 'checked' : '') + ' onchange="DG.toggleTranchePagata(\'' + t.id + '\', this.checked)">' +
+        '<span><div class="dg-reminder-azienda">€' + Number(t.importo || 0).toLocaleString('it-IT') + (t.pagato ? ' — pagata' : ' — da pagare') + '</div>' +
+        '<div class="dg-reminder-desc">Scadenza: ' + _fmtDate(t.scadenza) + (t.note ? ' · ' + esc(t.note) : '') + '</div></span></label>' +
+        '<button class="dg-btn-icon-only" title="Elimina" onclick="DG.deleteTranche(\'' + t.id + '\')">' + _delIconSm() + '</button></div>';
+    }).join('') : '<p class="dg-muted">Nessuna tranche pianificata: l\'importo confermato conta per intero nel saldo.</p>';
+
+    return intro + summary +
+      '<div style="display:flex;flex-direction:column;gap:8px">' + list + '</div>' +
+      '<div class="dg-form-grid" style="margin-top:18px">' +
+      '<div class="dg-form-group"><label class="dg-form-label">Importo (€)</label><input type="number" id="dgTrancheImporto" class="dg-form-input" min="0" step="50"></div>' +
+      '<div class="dg-form-group"><label class="dg-form-label">Scadenza</label><input type="date" id="dgTrancheScadenza" class="dg-form-input" value="' + _todayISO() + '"></div>' +
+      '</div>' +
+      '<div class="dg-form-group"><label class="dg-form-label">Note</label><input type="text" id="dgTrancheNote" class="dg-form-input" placeholder="es. Acconto alla firma"></div>' +
+      '<div class="dg-form-actions"><button class="dg-btn-primary dg-btn-sm" onclick="DG.addTranche()">Aggiungi tranche</button></div>';
+  }
+
+  DG.addTranche = function () {
+    var importo = +val('dgTrancheImporto') || 0;
+    var scadenza = val('dgTrancheScadenza');
+    if (!importo || !scadenza) { alert('Importo e scadenza sono obbligatori.'); return; }
+    var data = {
+      sponsorizzazioneId: _curSponsorId, importo: importo, scadenza: scadenza,
+      note: val('dgTrancheNote').trim(), pagato: false, createdAt: new Date().toISOString()
+    };
+    var ref = db.collection('tranchePagamento').doc();
+    var az = _aziendaById(_curAziendaId);
+    ref.set(data).then(function () {
+      data.id = ref.id;
+      _tranche.push(data);
+      return _logWrite('tranchePagamento', ref.id, 'Tranche — ' + (az ? az.ragioneSociale : ''), 'create', _diff({}, data, Object.keys(data)));
+    }).then(function () { _switchDrawerTab('pagamenti'); _renderStatCards(); _renderCharts(); })
+      .catch(function (e) { alert('Errore: ' + e.message); });
+  };
+
+  DG.toggleTranchePagata = function (id, checked) {
+    var t = _tranche.find(function (x) { return x.id === id; });
+    if (!t) return;
+    var old = { pagato: !!t.pagato };
+    t.pagato = checked;
+    var az = _aziendaById(_curAziendaId);
+    db.collection('tranchePagamento').doc(id).update({ pagato: checked })
+      .then(function () { return _logWrite('tranchePagamento', id, 'Tranche — ' + (az ? az.ragioneSociale : ''), 'update', _diff(old, { pagato: checked }, ['pagato'])); })
+      .then(function () { _switchDrawerTab('pagamenti'); _renderStatCards(); _renderCharts(); })
+      .catch(function (e) { alert('Errore: ' + e.message); });
+  };
+
+  DG.deleteTranche = function (id) {
+    confirm('Eliminare questa tranche?', function () {
+      var az = _aziendaById(_curAziendaId);
+      db.collection('tranchePagamento').doc(id).delete()
+        .then(function () { return _logWrite('tranchePagamento', id, 'Tranche — ' + (az ? az.ragioneSociale : ''), 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]); })
+        .then(function () {
+          _tranche = _tranche.filter(function (x) { return x.id !== id; });
+          _switchDrawerTab('pagamenti'); _renderStatCards(); _renderCharts();
+        })
+        .catch(function (e) { alert('Errore: ' + e.message); });
+    });
   };
 
   function _tabTimeline() {
