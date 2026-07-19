@@ -2324,27 +2324,19 @@
 
   function _logWrite(entita, entitaId, entitaLabel, azione, changes) {
     if (!changes || !changes.length) return Promise.resolve();
-    var batch = db.batch();
-    var localEntries = [];
-    changes.forEach(function (ch) {
-      var ref = db.collection('auditLog').doc();
-      var entry = {
-        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-        dirigenteId: _uid,
-        dirigenteNome: _dirigenteNome,
-        entita: entita,
-        entitaId: entitaId,
-        entitaLabel: entitaLabel,
-        azione: azione,
-        campo: ch.campo,
-        valorePrecedente: ch.prima,
-        valoreNuovo: ch.dopo
-      };
-      batch.set(ref, entry);
-      localEntries.push(Object.assign({ id: ref.id }, entry, { timestamp: new Date() }));
-    });
-    return batch.commit().then(function () {
-      Array.prototype.unshift.apply(_auditLog, localEntries);
+    var ref = db.collection('auditLog').doc();
+    var entry = {
+      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+      dirigenteId: _uid,
+      dirigenteNome: _dirigenteNome,
+      entita: entita,
+      entitaId: entitaId,
+      entitaLabel: entitaLabel,
+      azione: azione,
+      campi: changes.map(function (ch) { return ch.campo; })
+    };
+    return ref.set(entry).then(function () {
+      _auditLog.unshift(Object.assign({ id: ref.id }, entry, { timestamp: new Date() }));
       if (document.getElementById('sectionLog') && !document.getElementById('sectionLog').classList.contains('is-hidden')) _renderLog();
     }).catch(function (e) {
       /* il log non deve mai bloccare l'operazione principale, già salvata */
@@ -3001,11 +2993,7 @@
     return d.toLocaleDateString('it-IT') + ' ' + d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
   }
 
-  function _fmtLogVal(v) {
-    if (v === null || v === undefined || v === '') return '—';
-    if (typeof v === 'object') return JSON.stringify(v);
-    return String(v);
-  }
+  function _azioneLabel(a) { return { create: 'Creato', update: 'Modificato', delete: 'Eliminato' }[a] || a; }
 
   function _renderLog() {
     var entita    = document.getElementById('logFilterEntita').value;
@@ -3023,15 +3011,13 @@
     });
 
     var body = document.getElementById('logBody');
-    if (!rows.length) { body.innerHTML = '<tr><td colspan="6" class="dg-empty">Nessuna voce di log.</td></tr>'; return; }
+    if (!rows.length) { body.innerHTML = '<tr><td colspan="4" class="dg-empty">Nessuna voce di log.</td></tr>'; return; }
     body.innerHTML = rows.map(function (l) {
       return '<tr>' +
         '<td>' + _fmtDateTime(l) + '</td>' +
         '<td>' + esc(l.dirigenteNome || '—') + '</td>' +
         '<td>' + esc(l.entitaLabel || l.entita) + '</td>' +
-        '<td>' + esc(l.campo || '') + '</td>' +
-        '<td>' + esc(_fmtLogVal(l.valorePrecedente)) + '</td>' +
-        '<td>' + esc(_fmtLogVal(l.valoreNuovo)) + '</td>' +
+        '<td>' + esc(_azioneLabel(l.azione)) + '</td>' +
         '</tr>';
     }).join('');
   }
