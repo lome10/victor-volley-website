@@ -2840,7 +2840,10 @@
       '</div>' +
       '<div class="dg-form-group"><label class="dg-form-label">Contropartite</label><textarea id="dgDealContropartite" class="dg-form-input dg-form-textarea" rows="2">' + esc(s.contropartite || '') + '</textarea></div>' +
       '<div class="dg-form-group"><label class="dg-form-label">Note</label><textarea id="dgDealNote" class="dg-form-input dg-form-textarea" rows="2">' + esc(s.note || '') + '</textarea></div>' +
-      '<div class="dg-form-actions"><button class="dg-btn-primary dg-btn-sm" onclick="DG.saveDeal()">Salva</button></div>';
+      '<div class="dg-form-actions" style="justify-content:space-between">' +
+        '<button class="dg-btn-ghost dg-btn-ghost--danger dg-btn-sm" onclick="DG.deleteDeal()">Elimina sponsorizzazione</button>' +
+        '<button class="dg-btn-primary dg-btn-sm" onclick="DG.saveDeal()">Salva</button>' +
+      '</div>';
   }
 
   DG.saveDeal = function () {
@@ -2867,6 +2870,23 @@
       .then(function () { return _logWrite('sponsorizzazione', s.id, label, 'update', _diff(old, patch, Object.keys(patch))); })
       .then(function () { _renderKanban(); _renderStatCards(); _renderCharts(); _refreshAccordionSection('deal'); })
       .catch(function (e) { alert('Errore: ' + e.message); });
+  };
+
+  DG.deleteDeal = function () {
+    var s = _sponsorizzazioni.find(function (x) { return x.id === _curSponsorId; });
+    if (!s) return;
+    var az = _aziendaById(s.aziendaId);
+    var label = 'Sponsorizzazione — ' + (az ? az.ragioneSociale : s.id);
+    confirm('Eliminare definitivamente "' + label + '"? L\'operazione non è reversibile.', function () {
+      db.collection('sponsorizzazioni').doc(s.id).delete()
+        .then(function () { return _logWrite('sponsorizzazione', s.id, label, 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]); })
+        .then(function () {
+          _sponsorizzazioni = _sponsorizzazioni.filter(function (x) { return x.id !== s.id; });
+          _closeDrawer();
+          _renderKanban(); _renderStatCards(); _renderCharts();
+        })
+        .catch(function (e) { alert('Errore: ' + e.message); });
+    });
   };
 
   /* ---- TRANCHE DI PAGAMENTO — tracciamento incassi reali di uno sponsor chiuso ---- */

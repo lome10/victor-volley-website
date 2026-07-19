@@ -123,6 +123,9 @@ input, select, textarea { font-family: inherit; }
 }
 .dg-btn-ghost:hover { border-color: var(--dg-text); color: var(--dg-text); }
 
+.dg-btn-ghost--danger { color: var(--dg-red); }
+.dg-btn-ghost--danger:hover { border-color: var(--dg-red); color: var(--dg-red); background: rgba(239,68,68,0.06); }
+
 .dg-btn-icon-only {
   display: inline-flex;
   align-items: center;
