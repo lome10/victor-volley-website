@@ -2794,7 +2794,10 @@
       '</div>' +
       '<div class="dg-form-group"><label class="dg-form-label">Sito web</label><input class="dg-form-input" id="dgAzSito" value="' + esc(a.sitoWeb) + '"></div>' +
       '<div class="dg-form-group"><label class="dg-form-label">Note</label><textarea class="dg-form-input dg-form-textarea" id="dgAzNote" rows="3">' + esc(a.note || '') + '</textarea></div>' +
-      '<div class="dg-form-actions"><button class="dg-btn-primary dg-btn-sm" onclick="DG.saveAzienda()">Salva anagrafica</button></div>';
+      '<div class="dg-form-actions" style="justify-content:space-between">' +
+        '<button class="dg-btn-ghost dg-btn-ghost--danger dg-btn-sm" onclick="DG.deleteAzienda()">Elimina azienda</button>' +
+        '<button class="dg-btn-primary dg-btn-sm" onclick="DG.saveAzienda()">Salva anagrafica</button>' +
+      '</div>';
   }
 
   DG.saveAzienda = function () {
@@ -2813,6 +2816,26 @@
         _renderKanban();
       })
       .catch(function (e) { alert('Errore: ' + e.message); });
+  };
+
+  DG.deleteAzienda = function () {
+    var a = _aziendaById(_curAziendaId);
+    if (!a) return;
+    var hasSponsorizzazioni = _sponsorizzazioni.some(function (x) { return x.aziendaId === a.id; });
+    if (hasSponsorizzazioni) {
+      alert('Questa azienda ha ancora sponsorizzazioni collegate (anche di stagioni passate). Elimina prima quelle dal tab "Sponsorizzazione", poi l\'azienda.');
+      return;
+    }
+    confirm('Eliminare definitivamente l\'azienda "' + a.ragioneSociale + '"? L\'operazione non è reversibile.', function () {
+      db.collection('aziende').doc(a.id).delete()
+        .then(function () { return _logWrite('azienda', a.id, 'Azienda — ' + a.ragioneSociale, 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]); })
+        .then(function () {
+          _aziende = _aziende.filter(function (x) { return x.id !== a.id; });
+          _closeDrawer();
+          _renderKanban();
+        })
+        .catch(function (e) { alert('Errore: ' + e.message); });
+    });
   };
 
   function _tabDeal() {
