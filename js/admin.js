@@ -2378,7 +2378,13 @@
       db.collection('sponsorizzazioni').get(),
       db.collection('attivita').get(),
       db.collection('promemoria').get(),
-      db.collection('tranchePagamento').get()
+      /* Non deve mai far fallire l'intero Promise.all: finché le regole non
+         sono deployate (o per qualsiasi altro errore su questa collezione da
+         sola), il resto del budget/CRM deve continuare a caricarsi normalmente. */
+      db.collection('tranchePagamento').get().catch(function (e) {
+        console.error('[budget] tranchePagamento', e);
+        return { docs: [] };
+      })
     ]).then(function (res) {
       _dirigentiList    = res[0].docs.map(_mapDoc);
       _seasons          = res[1].docs.map(_mapDoc).sort(function (a, b) { return (a.nome || '') < (b.nome || '') ? 1 : -1; });
