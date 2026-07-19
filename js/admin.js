@@ -82,7 +82,31 @@
       el.addEventListener('click', function (e) {
         e.preventDefault();
         goTo(el.dataset.section);
+        _closeSidebar();
       });
+    });
+    _initSidebarToggle();
+  }
+
+  /* ---- Sidebar off-canvas (mobile) ---- */
+  function _openSidebar() {
+    document.getElementById('adminSidebar').classList.add('is-open');
+    document.getElementById('sidebarOverlay').classList.remove('is-hidden');
+    document.getElementById('sidebarToggle').setAttribute('aria-expanded', 'true');
+  }
+  function _closeSidebar() {
+    document.getElementById('adminSidebar').classList.remove('is-open');
+    document.getElementById('sidebarOverlay').classList.add('is-hidden');
+    document.getElementById('sidebarToggle').setAttribute('aria-expanded', 'false');
+  }
+  function _initSidebarToggle() {
+    document.getElementById('sidebarToggle').addEventListener('click', function () {
+      var sidebar = document.getElementById('adminSidebar');
+      if (sidebar.classList.contains('is-open')) _closeSidebar(); else _openSidebar();
+    });
+    document.getElementById('sidebarOverlay').addEventListener('click', _closeSidebar);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') _closeSidebar();
     });
   }
 

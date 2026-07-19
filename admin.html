@@ -41,8 +41,10 @@
   <!-- ========== APP ========== -->
   <div id="adminApp" class="admin-app is-hidden">
 
+    <div id="sidebarOverlay" class="admin-sidebar-overlay is-hidden"></div>
+
     <!-- Sidebar -->
-    <aside class="admin-sidebar">
+    <aside class="admin-sidebar" id="adminSidebar">
       <div class="admin-sidebar-logo">
         <img src="assets/logo.png" alt="Victor Volley">
         <span>Admin</span>
@@ -125,6 +127,9 @@
 
       <!-- Topbar -->
       <header class="admin-topbar">
+        <button id="sidebarToggle" class="admin-menu-toggle" aria-label="Apri il menu" aria-expanded="false" aria-controls="adminSidebar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
         <h2 id="topbarTitle">Dashboard</h2>
         <div id="seasonBar" class="admin-season-bar is-hidden">
           <select id="seasonSelect" class="admin-season-select" aria-label="Stagione"></select>
@@ -172,7 +177,7 @@
       <!-- ---- ARTICOLI ---- -->
       <section id="sectionArticoli" class="admin-section is-hidden">
         <!-- List -->
-        <div id="articoliList">
+        <div id="articoliList" class="admin-table-wrap">
           <table class="admin-table">
             <thead>
               <tr>
@@ -252,7 +257,7 @@
       <!-- ---- CALENDARIO ---- -->
       <section id="sectionCalendario" class="admin-section is-hidden">
         <!-- List -->
-        <div id="calendarioList">
+        <div id="calendarioList" class="admin-table-wrap">
           <table class="admin-table">
             <thead>
               <tr>
@@ -573,7 +578,7 @@
       <section id="sectionAtleti" class="admin-section is-hidden">
 
         <!-- List -->
-        <div id="atletiList">
+        <div id="atletiList" class="admin-table-wrap">
           <table class="admin-table">
             <thead>
               <tr>
@@ -770,7 +775,7 @@
         </div>
 
         <!-- List -->
-        <div id="dirigentiList">
+        <div id="dirigentiList" class="admin-table-wrap">
           <table class="admin-table">
             <thead>
               <tr>

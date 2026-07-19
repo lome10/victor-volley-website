@@ -347,7 +347,11 @@ input, select, textarea { font-family: inherit; }
   gap: 12px;
   overflow-x: auto;
   padding-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
 }
+
+.dg-kanban-col { scroll-snap-align: start; }
 
 .dg-kanban-col {
   background: #E9EEF3;
@@ -602,6 +606,9 @@ input, select, textarea { font-family: inherit; }
   .dg-stat-row { grid-template-columns: 1fr 1fr; gap: 10px; }
   .dg-form-grid { grid-template-columns: 1fr; }
   .dg-drawer { width: 100%; }
+  .dg-modal { width: calc(100% - 24px); }
+  .dg-obiettivo-input-wrap { width: 100%; }
+  .dg-obiettivo-row { flex-direction: column; align-items: stretch; }
 }
 
 /* ================================================
