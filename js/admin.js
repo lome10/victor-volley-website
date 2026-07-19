@@ -2330,7 +2330,7 @@
   }
 
   function _renderActiveBudgetTab() {
-    if (_activeBudgetTab === 'riepilogo') { _renderObiettivo(); _renderPromemoriaWidget(); _renderStatCards(); _renderCharts(); }
+    if (_activeBudgetTab === 'riepilogo') { _renderObiettivo(); _renderPromemoriaWidget(); _renderStatCards(); _renderCharts(); _renderCashflow(); }
     if (_activeBudgetTab === 'sponsor')   _renderKanban();
     if (_activeBudgetTab === 'rette')     _renderRette();
     if (_activeBudgetTab === 'spese')     _renderSpese();
@@ -2642,6 +2642,44 @@
       { label: 'Rette atleti', value: r.rette, color: '#008CFD' },
       { label: 'Sponsor chiusi', value: r.sponsorChiusi, color: '#10B981' },
       { label: 'Sponsor potenziali (pesato)', value: r.sponsorPotenziali, color: '#F59E0B' }
+    ]);
+  }
+
+  /* ---- CASHFLOW — quante tranche, quanto incassato vs promesso ---- */
+  function _countStatCard(label, val2, cls) {
+    return '<div class="dg-stat-card ' + (cls || '') + '"><div class="dg-stat-label">' + label + '</div>' +
+      '<div class="dg-stat-value">' + val2.toLocaleString('it-IT') + '</div></div>';
+  }
+
+  function _cashflowStats() {
+    var curIds = _sponsorizzazioni.filter(function (s) { return s.seasonId === _currentSeasonId; }).map(function (s) { return s.id; });
+    var list = _tranche.filter(function (t) { return curIds.indexOf(t.sponsorizzazioneId) !== -1; });
+    var pagate = list.filter(function (t) { return t.pagato; });
+    var daPagare = list.filter(function (t) { return !t.pagato; });
+    var incassato = pagate.reduce(function (s, t) { return s + (+t.importo || 0); }, 0);
+    var daIncassare = daPagare.reduce(function (s, t) { return s + (+t.importo || 0); }, 0);
+    return {
+      totale: list.length, pagate: pagate.length, daPagare: daPagare.length,
+      incassato: incassato, daIncassare: daIncassare, promesso: incassato + daIncassare
+    };
+  }
+
+  function _renderCashflow() {
+    var c = _cashflowStats();
+    document.getElementById('cashflowStats').innerHTML =
+      _countStatCard('Tranche totali', c.totale, '') +
+      _countStatCard('Tranche pagate', c.pagate, '--green') +
+      _countStatCard('Tranche da pagare', c.daPagare, '--orange') +
+      _budgetStatCard('Promesso (totale tranche)', c.promesso, '');
+
+    var box = document.getElementById('cashflowDonut');
+    if (!c.totale) {
+      box.innerHTML = '<p class="dg-muted">Nessuna tranche pianificata per questa stagione — le tranche si aggiungono dalla scheda azienda, tab "Pagamenti".</p>';
+      return;
+    }
+    box.innerHTML = _svgDonut([
+      { label: 'Incassato', value: c.incassato, color: '#10B981' },
+      { label: 'Da incassare', value: c.daIncassare, color: '#F59E0B' }
     ]);
   }
 
@@ -2983,7 +3021,7 @@
       data.id = ref.id;
       _tranche.push(data);
       return _logWrite('tranchePagamento', ref.id, 'Tranche — ' + (az ? az.ragioneSociale : ''), 'create', _diff({}, data, Object.keys(data)));
-    }).then(function () { _refreshAccordionSection('pagamenti'); _renderStatCards(); _renderCharts(); })
+    }).then(function () { _refreshAccordionSection('pagamenti'); _renderStatCards(); _renderCharts(); _renderCashflow(); })
       .catch(function (e) { alert('Errore: ' + e.message); });
   };
 
@@ -2995,7 +3033,7 @@
     var az = _aziendaById(_curAziendaId);
     db.collection('tranchePagamento').doc(id).update({ pagato: checked })
       .then(function () { return _logWrite('tranchePagamento', id, 'Tranche — ' + (az ? az.ragioneSociale : ''), 'update', _diff(old, { pagato: checked }, ['pagato'])); })
-      .then(function () { _refreshAccordionSection('pagamenti'); _renderStatCards(); _renderCharts(); })
+      .then(function () { _refreshAccordionSection('pagamenti'); _renderStatCards(); _renderCharts(); _renderCashflow(); })
       .catch(function (e) { alert('Errore: ' + e.message); });
   };
 
@@ -3006,7 +3044,7 @@
         .then(function () { return _logWrite('tranchePagamento', id, 'Tranche — ' + (az ? az.ragioneSociale : ''), 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]); })
         .then(function () {
           _tranche = _tranche.filter(function (x) { return x.id !== id; });
-          _refreshAccordionSection('pagamenti'); _renderStatCards(); _renderCharts();
+          _refreshAccordionSection('pagamenti'); _renderStatCards(); _renderCharts(); _renderCashflow();
         })
         .catch(function (e) { alert('Errore: ' + e.message); });
     });
@@ -3369,7 +3407,7 @@
       _populateSeasonSelect();
       return _loadSeasonScoped();
     }).then(function () {
-      _renderObiettivo(); _renderPromemoriaWidget(); _renderStatCards(); _renderCharts(); _renderKanban(); _renderRette(); _renderSpese();
+      _renderObiettivo(); _renderPromemoriaWidget(); _renderStatCards(); _renderCharts(); _renderCashflow(); _renderKanban(); _renderRette(); _renderSpese();
     }).catch(function (e) { alert('Errore: ' + e.message); });
   }
 
@@ -3469,7 +3507,7 @@
       _currentSeasonId = this.value;
       _loadSeasonScoped().then(function () {
         _renderObiettivo(); _renderPromemoriaWidget(); _renderStatCards();
-        _renderCharts(); _renderKanban(); _renderRette(); _renderSpese();
+        _renderCharts(); _renderCashflow(); _renderKanban(); _renderRette(); _renderSpese();
       });
     });
 
