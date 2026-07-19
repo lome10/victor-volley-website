@@ -2351,6 +2351,10 @@
     return out;
   }
 
+  /* Campi di testo libero: nel log si traccia solo CHE sono stati modificati,
+     mai il contenuto (prima/dopo non vengono nemmeno salvati). */
+  var OPEN_FIELDS = ['note', 'contropartite', 'descrizione'];
+
   function _logWrite(entita, entitaId, entitaLabel, azione, changes) {
     if (!changes || !changes.length) return Promise.resolve();
     var ref = db.collection('auditLog').doc();
@@ -2362,7 +2366,10 @@
       entitaId: entitaId,
       entitaLabel: entitaLabel,
       azione: azione,
-      campi: changes.map(function (ch) { return ch.campo; })
+      campi: changes.map(function (ch) {
+        if (OPEN_FIELDS.indexOf(ch.campo) !== -1) return { campo: ch.campo, aperto: true };
+        return { campo: ch.campo, prima: ch.prima, dopo: ch.dopo };
+      })
     };
     return ref.set(entry).then(function () {
       _auditLog.unshift(Object.assign({ id: ref.id }, entry, { timestamp: new Date() }));
@@ -3230,9 +3237,24 @@
     return s.charAt(0).toUpperCase() + s.slice(1);
   }
 
+  function _fmtLogVal(v) {
+    if (v === null || v === undefined || v === '') return '—';
+    var s = (typeof v === 'object') ? JSON.stringify(v) : String(v);
+    return s.length > 60 ? s.slice(0, 60) + '…' : s;
+  }
+
+  /* Voci scritte prima di questa modifica: l.campi era un array di soli nomi
+     campo (stringhe), senza prima/dopo — restano leggibili, solo più scarne. */
+  function _fmtCampoDettaglio(ch) {
+    if (typeof ch === 'string') return _fmtCampoLabel(ch);
+    var label = _fmtCampoLabel(ch.campo);
+    if (ch.aperto) return label;
+    return label + ': ' + _fmtLogVal(ch.prima) + ' → ' + _fmtLogVal(ch.dopo);
+  }
+
   function _fmtDettagli(l) {
     if (!l.campi || !l.campi.length) return '—';
-    return l.campi.map(_fmtCampoLabel).join(', ');
+    return l.campi.map(_fmtCampoDettaglio).join(', ');
   }
 
   function _renderLog() {
