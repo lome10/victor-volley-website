@@ -52,8 +52,7 @@
               <div>
                 <div class="contact-info-title">Palazzetto ARK&Eacute;</div>
                 <div class="contact-info-value">
-                  Melissano (LE)<br>
-                  <span style="color:#bbb;font-size:12px">&#9888; Indirizzo preciso da confermare — placeholder</span>
+                  Melissano (LE)
                 </div>
               </div>
             </div>
@@ -65,8 +64,7 @@
               <div>
                 <div class="contact-info-title">Email</div>
                 <div class="contact-info-value">
-                  <a href="mailto:info@victorvolley.it" style="color:var(--c-azzurro)">info@victorvolley.it</a><br>
-                  <span style="color:#bbb;font-size:12px">(indirizzo placeholder — da confermare)</span>
+                  <a href="mailto:victorvolley@libero.it" style="color:var(--c-azzurro)">victorvolley@libero.it</a>
                 </div>
               </div>
             </div>
@@ -98,16 +96,6 @@
                     <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.75a4.85 4.85 0 01-1.01-.06z"/></svg>
                   </a>
                 </div>
-              </div>
-            </div>
-
-            <div class="contact-item">
-              <div class="contact-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
-              </div>
-              <div>
-                <div class="contact-info-title">Orari allenamenti</div>
-                <div class="contact-info-value" style="color:#bbb">Giorni e orari da confermare &mdash; placeholder</div>
               </div>
             </div>
 
@@ -196,7 +184,7 @@
       if(!nome || !email || !oggetto || !msg){ alert('Compila tutti i campi obbligatori.'); return; }
       var subj = encodeURIComponent(oggetto);
       var body = encodeURIComponent('Da: '+nome+'\nEmail: '+email+'\n\n'+msg);
-      window.location.href = 'mailto:info@victorvolley.it?subject='+subj+'&body='+body;
+      window.location.href = 'mailto:victorvolley@libero.it?subject='+subj+'&body='+body;
       success.style.display = 'block';
       form.reset();
       success.scrollIntoView({behavior:'smooth'});

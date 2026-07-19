@@ -208,7 +208,7 @@
             '<li><a href="/atleta" target="_blank" rel="noopener">Area Atleti</a></li>' +
           '</ul>' +
           '<div class="footer-side">' +
-            '<a href="mailto:info@victorvolley.it" class="footer-email">info@victorvolley.it</a>' +
+            '<a href="mailto:victorvolley@libero.it" class="footer-email">victorvolley@libero.it</a>' +
             '<div class="footer-social">' +
               '<a href="https://www.facebook.com/share/1EVp57f8nJ/?mibextid=wwXIfr" aria-label="Facebook" target="_blank" rel="noopener noreferrer">' + SVG.fb + '</a>' +
               '<a href="https://www.instagram.com/victorvolleyvita?igsh=MWwyYW94MnV4d2h3Nw==" aria-label="Instagram" target="_blank" rel="noopener noreferrer">' + SVG.ig + '</a>' +
