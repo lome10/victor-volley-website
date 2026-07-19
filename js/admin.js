@@ -3071,8 +3071,10 @@
       p = aref.set(aziendaData).then(function () {
         aziendaData.id = aref.id;
         _aziende.push(aziendaData);
-        return _logWrite('azienda', aref.id, 'Azienda — ' + nome, 'create', _diff({}, aziendaData, Object.keys(aziendaData)));
-      }).then(function () { return createSponsorizzazione(aref.id, nome); });
+        /* Niente log qui: l'azienda nasce come parte dell'aggiunta dello sponsor,
+           che è già loggata subito sotto da createSponsorizzazione(). */
+        return createSponsorizzazione(aref.id, nome);
+      });
     }
 
     p.then(function () {
