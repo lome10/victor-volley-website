@@ -2995,6 +2995,17 @@
 
   function _azioneLabel(a) { return { create: 'Creato', update: 'Modificato', delete: 'Eliminato' }[a] || a; }
 
+  function _fmtCampoLabel(f) {
+    if (!f || f.charAt(0) === '(') return f;
+    var s = f.replace(/([A-Z])/g, ' $1');
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  function _fmtDettagli(l) {
+    if (!l.campi || !l.campi.length) return '—';
+    return l.campi.map(_fmtCampoLabel).join(', ');
+  }
+
   function _renderLog() {
     var entita    = document.getElementById('logFilterEntita').value;
     var dirigente = document.getElementById('logFilterDirigente').value;
@@ -3011,13 +3022,14 @@
     });
 
     var body = document.getElementById('logBody');
-    if (!rows.length) { body.innerHTML = '<tr><td colspan="4" class="dg-empty">Nessuna voce di log.</td></tr>'; return; }
+    if (!rows.length) { body.innerHTML = '<tr><td colspan="5" class="dg-empty">Nessuna voce di log.</td></tr>'; return; }
     body.innerHTML = rows.map(function (l) {
       return '<tr>' +
         '<td>' + _fmtDateTime(l) + '</td>' +
         '<td>' + esc(l.dirigenteNome || '—') + '</td>' +
         '<td>' + esc(l.entitaLabel || l.entita) + '</td>' +
         '<td>' + esc(_azioneLabel(l.azione)) + '</td>' +
+        '<td>' + esc(_fmtDettagli(l)) + '</td>' +
         '</tr>';
     }).join('');
   }
