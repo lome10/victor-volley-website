@@ -57,7 +57,7 @@
           */
 
           '<li>' +
-            '<a href="/sponsor" class="sidebar-nav-link' + isActive('sponsor') + '">Sponsor</a>' +
+            '<a href="/sponsor" class="sidebar-nav-link' + isActive('sponsor') + '">Partner</a>' +
           '</li>' +
 
           '<li>' +
