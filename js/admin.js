@@ -2708,7 +2708,17 @@
       .catch(function (e) { alert('Errore: ' + e.message); });
   }
 
-  /* ---- DRAWER — Scheda Azienda ---- */
+  /* ---- DRAWER — Scheda Azienda (accordion: tutto chiuso, una sezione alla volta) ---- */
+  var DRAWER_SECTIONS = [
+    { key: 'anagrafica', label: 'Anagrafica',       fn: function () { return _tabAnagrafica(); } },
+    { key: 'deal',       label: 'Sponsorizzazione', fn: function () { return _tabDeal(); } },
+    { key: 'pagamenti',  label: 'Pagamenti',        fn: function () { return _tabPagamenti(); } },
+    { key: 'timeline',   label: 'Timeline',         fn: function () { return _tabTimeline(); } },
+    { key: 'promemoria', label: 'Promemoria',       fn: function () { return _tabPromemoria(); } },
+    { key: 'storico',    label: 'Storico',          fn: function () { return _tabStorico(); } }
+  ];
+  var _openAccordionSection = null;
+
   function _openDrawer(sponsorId) {
     var s = _sponsorizzazioni.find(function (x) { return x.id === sponsorId; });
     if (!s) return;
@@ -2720,7 +2730,7 @@
     document.getElementById('drawerOverlay').classList.remove('is-hidden');
     document.getElementById('aziendaDrawer').classList.remove('is-hidden');
     requestAnimationFrame(function () { document.getElementById('aziendaDrawer').classList.add('is-open'); });
-    _switchDrawerTab('anagrafica');
+    _renderDrawerAccordion();
   }
 
   function _closeDrawer() {
@@ -2731,10 +2741,41 @@
     }, 250);
   }
 
-  function _switchDrawerTab(tab) {
-    document.querySelectorAll('.dg-drawer-tab').forEach(function (btn) { btn.classList.toggle('is-active', btn.dataset.dtab === tab); });
-    var fn = { anagrafica: _tabAnagrafica, deal: _tabDeal, pagamenti: _tabPagamenti, timeline: _tabTimeline, promemoria: _tabPromemoria, storico: _tabStorico }[tab];
-    document.getElementById('drawerBody').innerHTML = fn ? fn() : '';
+  function _renderDrawerAccordion() {
+    _openAccordionSection = null;
+    document.getElementById('drawerBody').innerHTML = DRAWER_SECTIONS.map(function (sec) {
+      return '<div class="dg-accordion-item">' +
+        '<button type="button" class="dg-accordion-head" data-dsec="' + sec.key + '" aria-expanded="false">' +
+          '<span>' + sec.label + '</span>' +
+          '<svg class="dg-accordion-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="6,9 12,15 18,9"/></svg>' +
+        '</button>' +
+        '<div class="dg-accordion-body is-hidden" id="dgAccBody-' + sec.key + '">' + sec.fn() + '</div>' +
+      '</div>';
+    }).join('');
+    document.querySelectorAll('.dg-accordion-head').forEach(function (btn) {
+      btn.addEventListener('click', function () { _toggleAccordionSection(btn.dataset.dsec); });
+    });
+  }
+
+  function _toggleAccordionSection(key) {
+    _openAccordionSection = (_openAccordionSection === key) ? null : key;
+    document.querySelectorAll('.dg-accordion-head').forEach(function (btn) {
+      var active = btn.dataset.dsec === _openAccordionSection;
+      btn.classList.toggle('is-active', active);
+      btn.setAttribute('aria-expanded', active ? 'true' : 'false');
+    });
+    document.querySelectorAll('.dg-accordion-body').forEach(function (body) {
+      body.classList.toggle('is-hidden', body.id !== 'dgAccBody-' + _openAccordionSection);
+    });
+  }
+
+  /* Rigenera il contenuto di una sezione dopo un salvataggio, senza toccare
+     quale sezione è aperta (l'utente stava già scrivendo lì dentro). */
+  function _refreshAccordionSection(key) {
+    var sec = DRAWER_SECTIONS.find(function (s) { return s.key === key; });
+    var body = document.getElementById('dgAccBody-' + key);
+    if (!sec || !body) return;
+    body.innerHTML = sec.fn();
   }
 
   function _field(id, label, value) {
@@ -2824,7 +2865,7 @@
     var label = 'Sponsorizzazione — ' + (az ? az.ragioneSociale : s.id);
     db.collection('sponsorizzazioni').doc(s.id).update(patch)
       .then(function () { return _logWrite('sponsorizzazione', s.id, label, 'update', _diff(old, patch, Object.keys(patch))); })
-      .then(function () { _renderKanban(); _renderStatCards(); _renderCharts(); _switchDrawerTab('deal'); })
+      .then(function () { _renderKanban(); _renderStatCards(); _renderCharts(); _refreshAccordionSection('deal'); })
       .catch(function (e) { alert('Errore: ' + e.message); });
   };
 
@@ -2888,7 +2929,7 @@
       data.id = ref.id;
       _tranche.push(data);
       return _logWrite('tranchePagamento', ref.id, 'Tranche — ' + (az ? az.ragioneSociale : ''), 'create', _diff({}, data, Object.keys(data)));
-    }).then(function () { _switchDrawerTab('pagamenti'); _renderStatCards(); _renderCharts(); })
+    }).then(function () { _refreshAccordionSection('pagamenti'); _renderStatCards(); _renderCharts(); })
       .catch(function (e) { alert('Errore: ' + e.message); });
   };
 
@@ -2900,7 +2941,7 @@
     var az = _aziendaById(_curAziendaId);
     db.collection('tranchePagamento').doc(id).update({ pagato: checked })
       .then(function () { return _logWrite('tranchePagamento', id, 'Tranche — ' + (az ? az.ragioneSociale : ''), 'update', _diff(old, { pagato: checked }, ['pagato'])); })
-      .then(function () { _switchDrawerTab('pagamenti'); _renderStatCards(); _renderCharts(); })
+      .then(function () { _refreshAccordionSection('pagamenti'); _renderStatCards(); _renderCharts(); })
       .catch(function (e) { alert('Errore: ' + e.message); });
   };
 
@@ -2911,7 +2952,7 @@
         .then(function () { return _logWrite('tranchePagamento', id, 'Tranche — ' + (az ? az.ragioneSociale : ''), 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]); })
         .then(function () {
           _tranche = _tranche.filter(function (x) { return x.id !== id; });
-          _switchDrawerTab('pagamenti'); _renderStatCards(); _renderCharts();
+          _refreshAccordionSection('pagamenti'); _renderStatCards(); _renderCharts();
         })
         .catch(function (e) { alert('Errore: ' + e.message); });
     });
@@ -2948,7 +2989,7 @@
       data.id = ref.id;
       _attivita.unshift(data);
       return _logWrite('attivita', ref.id, 'Attività — ' + (az ? az.ragioneSociale : ''), 'create', _diff({}, data, Object.keys(data)));
-    }).then(function () { _switchDrawerTab('timeline'); })
+    }).then(function () { _refreshAccordionSection('timeline'); })
       .catch(function (e) { alert('Errore: ' + e.message); });
   };
 
@@ -2991,7 +3032,7 @@
       data.id = ref.id;
       _promemoria.unshift(data);
       return _logWrite('promemoria', ref.id, 'Promemoria — ' + (az ? az.ragioneSociale : ''), 'create', _diff({}, data, Object.keys(data)));
-    }).then(function () { _switchDrawerTab('promemoria'); _renderPromemoriaWidget(); })
+    }).then(function () { _refreshAccordionSection('promemoria'); _renderPromemoriaWidget(); })
       .catch(function (e) { alert('Errore: ' + e.message); });
   };
 
@@ -3012,7 +3053,7 @@
         .then(function () { return _logWrite('promemoria', id, 'Promemoria', 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]); })
         .then(function () {
           _promemoria = _promemoria.filter(function (x) { return x.id !== id; });
-          _switchDrawerTab('promemoria'); _renderPromemoriaWidget();
+          _refreshAccordionSection('promemoria'); _renderPromemoriaWidget();
         })
         .catch(function (e) { alert('Errore: ' + e.message); });
     });
@@ -3369,9 +3410,6 @@
       document.getElementById(id).addEventListener('change', _renderLog);
     });
 
-    document.querySelectorAll('.dg-drawer-tab').forEach(function (btn) {
-      btn.addEventListener('click', function () { _switchDrawerTab(btn.dataset.dtab); });
-    });
     document.getElementById('drawerCloseBtn').addEventListener('click', _closeDrawer);
     document.getElementById('drawerOverlay').addEventListener('click', _closeDrawer);
 
