@@ -170,6 +170,7 @@
     document.getElementById('dashMatches').innerHTML = matchHtml;
 
     _renderDashBudgetWidget();
+    _renderDashCashflowWidget();
   }
 
   function _statCard(icon, val, label, mod) {
@@ -2557,6 +2558,20 @@
     _renderPromemoriaList('dashPromemoriaWidget', 'dashPromemoriaList', 4);
   }
 
+  function _renderDashCashflowWidget() {
+    var c = _cashflowStats();
+    var season = _seasons.find(function (s) { return s.id === _currentSeasonId; }) || {};
+    var pct = c.promesso > 0 ? Math.round(c.incassato / c.promesso * 100) : 0;
+
+    document.getElementById('dashCashflowSeasonName').textContent = season.nome ? '· ' + season.nome : '';
+    document.getElementById('dashCashflowIncassato').textContent =
+      '€' + Math.round(c.incassato).toLocaleString('it-IT') + ' / €' + Math.round(c.promesso).toLocaleString('it-IT');
+    document.getElementById('dashCashflowPct').textContent = pct + '%';
+    document.getElementById('dashCashflowBarFill').style.width = Math.max(0, Math.min(100, pct)) + '%';
+    document.getElementById('dashCashflowTranche').textContent =
+      c.totale ? (c.totale + ' tranche pianificate — ' + c.pagate + ' pagate, ' + c.daPagare + ' da pagare') : 'Nessuna tranche pianificata';
+  }
+
   DG.openFromReminder = function (sponsorId) {
     goTo('budget');
     _switchBudgetTab('sponsor');
@@ -3498,6 +3513,12 @@
     var _goToBudgetRiepilogo = function () { goTo('budget'); _switchBudgetTab('riepilogo'); };
     dashBudgetCard.addEventListener('click', _goToBudgetRiepilogo);
     dashBudgetCard.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); _goToBudgetRiepilogo(); }
+    });
+
+    var dashCashflowCard = document.getElementById('dashCashflowCard');
+    dashCashflowCard.addEventListener('click', _goToBudgetRiepilogo);
+    dashCashflowCard.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); _goToBudgetRiepilogo(); }
     });
 
