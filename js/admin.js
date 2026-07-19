@@ -2294,11 +2294,15 @@
 
      Fuso nel pannello unico: stesso login, stesso ruolo "dirigente"
      verificato in _checkRole(), stesso log (auditLog) usato anche da
-     db.js per il resto del CMS. DG è un alias di AdminActions: le
-     stringhe onclick="DG.xxx()" generate qui sotto restano valide
-     perché puntano allo stesso oggetto condiviso.
+     db.js per il resto del CMS. DG è un alias di AdminActions, ma va
+     esposto anche su window: tutto admin.js vive in un'unica IIFE,
+     quindi un "var DG" locale non basta — gli onclick="DG.xxx()"
+     iniettati via innerHTML girano nello scope globale della pagina,
+     non nella closure dello script, e senza window.DG risolvono a
+     "DG is not defined" ad ogni click.
   ================================================================ */
   var DG = window.AdminActions;
+  window.DG = DG;
 
   var _seasons = [];
   var _currentSeasonId = null;
