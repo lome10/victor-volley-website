@@ -74,7 +74,7 @@
   var SECTIONS = {
     dashboard: 'Dashboard', articoli: 'Articoli', calendario: 'Calendario', galleria: 'Galleria', squadre: 'Squadre',
     sponsor: 'Sponsor', atleti: 'Atleti', dirigenti: 'Dirigenti', girone: 'Girone Prima Divisione', stagioni: 'Stagioni', maglia: 'Maglia', datiJson: 'File JSON',
-    budget: 'Budget & Forecast'
+    log: 'Log', budget: 'Budget & Forecast'
   };
 
   function initNav() {
@@ -109,6 +109,7 @@
     if (section === 'stagioni')   renderStagioni();
     if (section === 'maglia')     renderMaglia();
     if (section === 'datiJson')   renderDatiJson();
+    if (section === 'log')        _renderLog();
     if (section === 'budget')     _renderActiveBudgetTab();
   }
 
@@ -2304,7 +2305,6 @@
     if (_activeBudgetTab === 'sponsor')   _renderKanban();
     if (_activeBudgetTab === 'rette')     _renderRette();
     if (_activeBudgetTab === 'spese')     _renderSpese();
-    if (_activeBudgetTab === 'log')       _renderLog();
   }
 
   function _mapDoc(d) { return Object.assign({ id: d.id }, d.data()); }
@@ -2345,7 +2345,7 @@
     });
     return batch.commit().then(function () {
       Array.prototype.unshift.apply(_auditLog, localEntries);
-      if (document.getElementById('sectionBudgetLog') && !document.getElementById('sectionBudgetLog').classList.contains('is-hidden')) _renderLog();
+      if (document.getElementById('sectionLog') && !document.getElementById('sectionLog').classList.contains('is-hidden')) _renderLog();
     }).catch(function (e) {
       /* il log non deve mai bloccare l'operazione principale, già salvata */
       console.error('[audit log]', e);
