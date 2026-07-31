@@ -201,13 +201,6 @@
 }
 .fixture-row-venue svg { flex-shrink: 0; }
 
-.fixture-tag {
-  flex-shrink: 0; font-family: var(--sport-font-display); font-weight: 800; font-size: 9.5px;
-  letter-spacing: 0.06em; text-transform: uppercase; padding: 4px 10px; border-radius: 99px;
-}
-.fixture-tag--casa      { background: rgba(0,140,253,0.22); color: #8fcaff; }
-.fixture-tag--trasferta { background: rgba(224,92,146,0.22); color: #f2a8c4; }
-
 @media (prefers-reduced-motion: reduce) {
   .fixture-row { transition: none !important; }
 }

@@ -286,7 +286,6 @@
         (isNext ? '<span class="fixture-row-next-badge">Prossima partita</span>' : '') +
         '<div class="fixture-row-top">' +
           '<span class="fixture-row-date">' + formatDataCard(p.data, p.ora) + '</span>' +
-          '<span class="fixture-tag fixture-tag--' + (isHome ? 'casa' : 'trasferta') + '">' + (isHome ? 'Casa' : 'Trasferta') + '</span>' +
         '</div>' +
         '<div class="fixture-teams">' +
           '<div class="fixture-team' + (isHome ? ' fixture-team--vv' : '') + '">' + teamLogo(p.logo_casa, p.squadra_casa) + '<span class="fixture-team-name">' + (casaWins ? '<strong>' + esc(p.squadra_casa) + '</strong>' : esc(p.squadra_casa)) + '</span>' + (hasScore ? teamScore(p.set_casa, rCls) : '') + '</div>' +
