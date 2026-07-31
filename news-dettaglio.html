@@ -38,6 +38,8 @@
           </a>
         </div>
 
+        <div class="dt-sponsors-gold" id="articleSponsorsGold"></div>
+
         <article class="article-content" id="articleContent">
 
           <!-- Copertina 9:16 sticky a sinistra, articolo a destra: solo il testo scorre -->
@@ -102,7 +104,7 @@
     sessionStorage.removeItem('vv_nav_id');
     if (isNaN(id) || id <= 0) { window.location.href = '/news'; return; }
 
-    DB.load(['articles'], function () {
+    DB.load(['articles', 'sponsors'], function () {
     var content = document.getElementById('articleContent');
     var article = VV.getArticle(id);
 
@@ -111,6 +113,38 @@
         '<p style="color:#888;text-align:center;padding:64px 0;font-size:16px">Articolo non trovato.<br>' +
         '<a href="/news" style="color:var(--c-azzurro)">Torna alle news</a></p>';
       return;
+    }
+
+    /* Sponsor sopra l'articolo — fino a 3, scelti dall'admin per questo articolo.
+       Stessa logica di visualizzazione dei "Gold" in Diretta. */
+    var sponsorsGoldEl = document.getElementById('articleSponsorsGold');
+    var articleSponsorIds = Array.isArray(article.sponsor_ids) ? article.sponsor_ids : [];
+    if (sponsorsGoldEl && articleSponsorIds.length) {
+      var articleSponsors = VV.getSponsors()
+        .filter(function (s) { return !!s.logo && articleSponsorIds.indexOf(s.id) >= 0; })
+        .sort(function (a, b) { return articleSponsorIds.indexOf(a.id) - articleSponsorIds.indexOf(b.id); })
+        .slice(0, 3);
+
+      if (articleSponsors.length) {
+        var goldHtml = articleSponsors.map(function (s) {
+          var inner = '<img src="' + esc(s.logo) + '" alt="' + esc(s.nome) + '" class="dt-sponsors-gold-logo">';
+          return s.url
+            ? '<a href="' + esc(s.url) + '" class="dt-sponsors-gold-item" target="_blank" rel="noopener">' + inner + '</a>'
+            : '<div class="dt-sponsors-gold-item">' + inner + '</div>';
+        }).join('');
+
+        sponsorsGoldEl.innerHTML = '<div class="dt-sponsors-gold-track" id="articleGoldTrack">' + goldHtml + '</div>';
+
+        /* Su mobile: se i loghi non ci stanno su una riga, passa allo scorrimento
+           automatico invece di andare a capo su più righe o restare minuscoli. */
+        var goldTrack = document.getElementById('articleGoldTrack');
+        if (window.innerWidth <= 640 && articleSponsors.length > 1 && goldTrack.scrollWidth > sponsorsGoldEl.clientWidth + 4) {
+          var dur = Math.max(12, articleSponsors.length * 5) + 's';
+          goldTrack.className = 'dt-sponsors-gold-track is-scrolling';
+          goldTrack.style.animationDuration = dur;
+          goldTrack.innerHTML = goldHtml + goldHtml; /* duplica per loop seamless */
+        }
+      }
     }
 
     /* Cover — 9:16, coerente con hero/news card */

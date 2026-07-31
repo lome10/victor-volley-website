@@ -257,12 +257,25 @@
     });
   }
 
+  function _renderArtSponsorSelects(selected) {
+    var sponsors = VV.getSponsors().filter(function (s) { return !!s.logo; })
+      .sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
+    var options = '<option value="">— Nessuno —</option>' +
+      sponsors.map(function (s) { return '<option value="' + s.id + '">' + esc(s.nome) + '</option>'; }).join('');
+    ['artSponsor1', 'artSponsor2', 'artSponsor3'].forEach(function (selId, i) {
+      var sel = document.getElementById(selId);
+      sel.innerHTML = options;
+      sel.value = selected[i] != null ? String(selected[i]) : '';
+    });
+  }
+
   function openArtForm(article) {
     _artEditing = article;
     showSubview('articoli', 'form');
     document.getElementById('topbarActions').innerHTML = '';
 
     _renderArtCategoriesCheckboxes(article ? VV.getArticleCategories(article) : []);
+    _renderArtSponsorSelects(article && Array.isArray(article.sponsor_ids) ? article.sponsor_ids : []);
 
     if (article) {
       document.getElementById('artTitle').value      = article.title || '';
@@ -291,10 +304,16 @@
       function (cb) { return cb.value; }
     );
     if (!categories.length) { alert('Seleziona almeno una categoria.'); return; }
+    var sponsorIds = ['artSponsor1', 'artSponsor2', 'artSponsor3']
+      .map(function (selId) { return document.getElementById(selId).value; })
+      .filter(function (v) { return v !== ''; })
+      .map(function (v) { return +v; })
+      .filter(function (id, i, arr) { return arr.indexOf(id) === i; }); /* niente duplicati */
     var article = Object.assign({}, _artEditing || {}, {
-      title:      title,
-      categories: categories,
-      category:   categories[0],
+      title:       title,
+      categories:  categories,
+      category:    categories[0],
+      sponsor_ids: sponsorIds,
       date:       document.getElementById('artDate').value,
       image:      document.getElementById('artImage').value.trim(),
       excerpt:    document.getElementById('artExcerpt').value.trim(),
