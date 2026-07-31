@@ -212,9 +212,9 @@
               <label class="form-label">Titolo *</label>
               <input type="text" id="artTitle" class="form-input" placeholder="Titolo dell'articolo">
             </div>
-            <div class="form-group">
-              <label class="form-label">Categoria</label>
-              <select id="artCategory" class="form-input"></select>
+            <div class="form-group form-full">
+              <label class="form-label">Categorie (massimo 2) *</label>
+              <div id="artCategoriesBox" style="display:flex;flex-wrap:wrap;gap:8px"></div>
             </div>
             <div class="form-group">
               <label class="form-label">Data</label>
@@ -1370,6 +1370,29 @@
   </div>
 
   <!-- MODAL: nuova categoria atleti -->
+  <!-- MODAL: categorie articoli -->
+  <div id="artCategoriesModal" class="dg-modal is-hidden">
+    <div class="dg-modal-head">
+      <h3>Categorie articoli</h3>
+      <button id="artCategoriesModalClose" class="dg-btn-icon-only" aria-label="Chiudi">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="dg-modal-body">
+      <div id="artCategoriesModalList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px"></div>
+      <div class="dg-form-group">
+        <label class="dg-form-label">Nuova categoria</label>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="artCategoriesNewInput" class="dg-form-input" placeholder="es. Eventi">
+          <button id="artCategoriesAddBtn" class="dg-btn-primary" style="flex-shrink:0">Aggiungi</button>
+        </div>
+      </div>
+    </div>
+    <div class="dg-modal-actions">
+      <button id="artCategoriesModalDone" class="dg-btn-ghost">Chiudi</button>
+    </div>
+  </div>
+
   <div id="newCategoriaModal" class="dg-modal is-hidden">
     <div class="dg-modal-head">
       <h3>Nuova categoria atleti</h3>

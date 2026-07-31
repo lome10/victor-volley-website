@@ -47,7 +47,7 @@
             </aside>
             <div class="article-text-col">
               <div class="article-meta">
-                <span class="badge badge--azzurro" id="articleCategory"></span>
+                <span id="articleCategory" style="display:contents"></span>
                 <span class="article-date" id="articleDate"></span>
               </div>
               <h1 id="articleTitle"></h1>
@@ -86,6 +86,15 @@
     function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
     function badgeCls(cat) { return cat === 'Prima Divisione' ? 'badge--magenta' : 'badge--azzurro'; }
     function heroCatCls(cat) { return cat === 'Prima Divisione' ? 'hero-card-cat--magenta' : 'hero-card-cat--azzurro'; }
+    function catBadges(cats) {
+      return cats.map(function (c) { return '<span class="badge ' + badgeCls(c) + '">' + esc(c) + '</span>'; }).join(' ');
+    }
+    function heroCatBadges(cats) {
+      if (!cats.length) return '';
+      return '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">' +
+        cats.map(function (c) { return '<span class="hero-card-cat ' + heroCatCls(c) + '" style="margin-bottom:0">' + esc(c) + '</span>'; }).join('') +
+      '</div>';
+    }
 
     var _qs  = (window.location.search.match(/[?&]id=([^&#]+)/) || [])[1];
     var _ss  = sessionStorage.getItem('vv_nav_id');
@@ -112,8 +121,7 @@
 
     /* Metadati */
     var catEl  = document.getElementById('articleCategory');
-    catEl.className  = 'badge ' + badgeCls(article.category);
-    catEl.textContent = article.category;
+    catEl.innerHTML = catBadges(VV.getArticleCategories(article));
     document.getElementById('articleDate').textContent  = VV.formatDate(article.date);
     document.getElementById('articleTitle').textContent = article.title;
     document.title = article.title + ' — Victor Volley';
@@ -137,7 +145,7 @@
           '<div class="hero-card-bg" style="' + bgStyle + '"></div>' +
           '<div class="hero-card-overlay"></div>' +
           '<div class="hero-card-content">' +
-            '<span class="hero-card-cat ' + heroCatCls(a.category) + '">' + esc(a.category) + '</span>' +
+            heroCatBadges(VV.getArticleCategories(a)) +
             '<h2 class="hero-card-title">' + esc(a.title) + '</h2>' +
             '<a href="/news-dettaglio?id=' + a.id + '" class="hero-card-cta" ' +
                'onclick="sessionStorage.setItem(\'vv_nav_id\',\'' + a.id + '\')">Leggi &rarr;</a>' +

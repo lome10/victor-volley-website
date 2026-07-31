@@ -25,6 +25,9 @@
   var _seasons  = [];
   var _partite  = [];
   var _maglia   = null;
+  var _categorieArticoli = null;
+
+  var DEFAULT_CATEGORIE_ARTICOLI = ['Prima Divisione', 'Under 19', 'Under 13', 'Under 12', 'Minivolley', 'Società'];
 
   var DEFAULT_MAGLIA = {
     enabled: true,
@@ -173,6 +176,15 @@
     },
     get CATEGORIES() {
       return this.getCategoryNames();
+    },
+
+    /* ---- CATEGORIE ARTICOLI (separate dalle categorie squadra) ---- */
+    getCategorieArticoli: function () { return _categorieArticoli || DEFAULT_CATEGORIE_ARTICOLI.slice(); },
+    setCategorieArticoli: function (items) { _categorieArticoli = Array.isArray(items) ? items : null; },
+    getArticleCategories: function (article) {
+      if (!article) return [];
+      if (Array.isArray(article.categories) && article.categories.length) return article.categories;
+      return article.category ? [article.category] : [];
     },
 
     /* ---- STATS ---- */

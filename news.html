@@ -81,6 +81,12 @@
     function slug(s) { return s.toLowerCase().replace(/\s+/g,'-').replace(/[àáâ]/g,'a').replace(/[èéê]/g,'e').replace(/[ìí]/g,'i').replace(/[òó]/g,'o').replace(/[ùú]/g,'u'); }
     function esc(s)  { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
     function badgeCls(cat) { return cat === 'Prima Divisione' ? 'hero-card-cat--magenta' : 'hero-card-cat--azzurro'; }
+    function catBadges(cats) {
+      if (!cats.length) return '';
+      return '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">' +
+        cats.map(function (c) { return '<span class="hero-card-cat ' + badgeCls(c) + '" style="margin-bottom:0">' + esc(c) + '</span>'; }).join('') +
+      '</div>';
+    }
 
     DB.load(['articles'], function () {
       var articles = VV.getArticles(true)
@@ -93,7 +99,9 @@
 
       /* Categorie */
       var cats = [];
-      articles.forEach(function (a) { if (cats.indexOf(a.category) < 0) cats.push(a.category); });
+      articles.forEach(function (a) {
+        VV.getArticleCategories(a).forEach(function (c) { if (cats.indexOf(c) < 0) cats.push(c); });
+      });
 
       filterBar.innerHTML =
         '<button class="filter-btn is-active" data-filter="all">Tutte</button>' +
@@ -103,7 +111,9 @@
 
       function getFiltered() {
         if (currentFilter === 'all') return articles;
-        return articles.filter(function (a) { return slug(a.category) === currentFilter; });
+        return articles.filter(function (a) {
+          return VV.getArticleCategories(a).map(slug).indexOf(currentFilter) >= 0;
+        });
       }
 
       function render() {
@@ -120,11 +130,12 @@
             var bgStyle = a.image
               ? 'background-image:url(' + esc(a.image) + ')'
               : 'background:' + GRADIENTS[(start + i) % GRADIENTS.length];
-            return '<article class="hero-card" data-cat="' + slug(a.category) + '" data-id="' + esc(a.id) + '">' +
+            var aCats = VV.getArticleCategories(a);
+            return '<article class="hero-card" data-cat="' + aCats.map(slug).join(' ') + '" data-id="' + esc(a.id) + '">' +
               '<div class="hero-card-bg" style="' + bgStyle + '"></div>' +
               '<div class="hero-card-overlay"></div>' +
               '<div class="hero-card-content">' +
-                '<span class="hero-card-cat ' + badgeCls(a.category) + '">' + esc(a.category) + '</span>' +
+                catBadges(aCats) +
                 '<h2 class="hero-card-title">' + esc(a.title) + '</h2>' +
                 '<a href="/news-dettaglio?id=' + esc(a.id) + '" class="hero-card-cta" ' +
                    'onclick="sessionStorage.setItem(\'vv_nav_id\',\'' + esc(a.id) + '\')">Leggi &rarr;</a>' +

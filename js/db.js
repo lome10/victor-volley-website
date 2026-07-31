@@ -102,7 +102,7 @@
      Per aggiungere una parte nuova in futuro: aggiungerla a PART_NAMES
      e insegnare a _fetchPart come caricarla.
   ============================================================ */
-  var PART_NAMES = ['articles', 'partite', 'albums', 'categories', 'players', 'staff', 'sponsors', 'seasons', 'stats', 'maglia'];
+  var PART_NAMES = ['articles', 'partite', 'albums', 'categories', 'players', 'staff', 'sponsors', 'seasons', 'stats', 'maglia', 'categorieArticoli'];
 
   var _parts = {};
   PART_NAMES.forEach(function (name) { _parts[name] = { loaded: false, loading: false, pending: [] }; });
@@ -158,6 +158,7 @@
       case 'seasons':    return _settingsDoc('seasons', VV.setSeasons);
       case 'stats':      return _settingsDoc('stats',   VV.setStats);
       case 'maglia':     return _fetchMaglia();
+      case 'categorieArticoli': return _settingsDoc('categorieArticoli', VV.setCategorieArticoli);
       default:           return Promise.resolve();
     }
   }
@@ -320,6 +321,18 @@
       _remove('staff', id).then(function () {
         _audit('staff', String(id), 'Staff — ' + (before ? before.name : id), 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]);
       }).catch(function (e) { console.error('[DB] deleteStaff', e); });
+    },
+
+    /* ---- CATEGORIE ARTICOLI ----------------------------------- */
+    saveCategorieArticoli: function (items, cb) {
+      var before = VV.getCategorieArticoli();
+      VV.setCategorieArticoli(items);
+      if (cb) cb();
+      global.db.collection('settings').doc('categorieArticoli').set({ items: items })
+        .then(function () {
+          _audit('categorieArticoli', 'categorieArticoli', 'Categorie articoli', 'update', [{ campo: '(elenco)', prima: before.length + ' categorie', dopo: items.length + ' categorie' }]);
+        })
+        .catch(function (e) { console.error('[DB] saveCategorieArticoli', e); });
     },
 
     /* ---- STATS ---------------------------------------------- */

@@ -399,6 +399,12 @@
     ];
     function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
     function badgeCls(cat) { return cat === 'Prima Divisione' ? 'hero-card-cat--magenta' : 'hero-card-cat--azzurro'; }
+    function catBadges(cats) {
+      if (!cats.length) return '';
+      return '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">' +
+        cats.map(function (c) { return '<span class="hero-card-cat ' + badgeCls(c) + '" style="margin-bottom:0">' + esc(c) + '</span>'; }).join('') +
+      '</div>';
+    }
 
     DB.load(['articles'], function () {
       var articles = VV.getArticles(true)
@@ -419,7 +425,7 @@
           '<div class="hero-card-bg" style="' + bgStyle + '"></div>' +
           '<div class="hero-card-overlay"></div>' +
           '<div class="hero-card-content">' +
-            '<span class="hero-card-cat ' + badgeCls(a.category) + '">' + esc(a.category) + '</span>' +
+            catBadges(VV.getArticleCategories(a)) +
             '<h2 class="hero-card-title">' + esc(a.title) + '</h2>' +
             '<a href="/news-dettaglio?id=' + a.id + '" class="hero-card-cta" ' +
                'onclick="sessionStorage.setItem(\'vv_nav_id\',\'' + a.id + '\')">Leggi &rarr;</a>' +
@@ -503,6 +509,12 @@
 
     function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
     function badgeCls(cat) { return cat === 'Prima Divisione' ? 'hero-card-cat--magenta' : 'hero-card-cat--azzurro'; }
+    function catBadges(cats) {
+      if (!cats.length) return '';
+      return '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">' +
+        cats.map(function (c) { return '<span class="hero-card-cat ' + badgeCls(c) + '" style="margin-bottom:0">' + esc(c) + '</span>'; }).join('') +
+      '</div>';
+    }
 
     DB.load(['articles'], function () {
     var all      = VV.getArticles(true).sort(function (a, b) { return a.date < b.date ? 1 : -1; });
@@ -522,7 +534,7 @@
         '<div class="hero-card-bg" style="' + bgStyle + '"></div>' +
         '<div class="hero-card-overlay"></div>' +
         '<div class="hero-card-content">' +
-          '<span class="hero-card-cat ' + badgeCls(a.category) + '">' + esc(a.category) + '</span>' +
+          catBadges(VV.getArticleCategories(a)) +
           '<h2 class="hero-card-title">' + esc(a.title) + '</h2>' +
           '<a href="/news-dettaglio?id=' + a.id + '" class="hero-card-cta" ' +
              'onclick="sessionStorage.setItem(\'vv_nav_id\',\'' + a.id + '\')">Leggi &rarr;</a>' +

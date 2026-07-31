@@ -188,6 +188,11 @@
   function renderArticoli() {
     showSubview('articoli', 'list');
     setTopbarBtn('Nuovo articolo', function () { openArtForm(null); });
+    var catsBtn = document.createElement('button');
+    catsBtn.className = 'btn-ghost';
+    catsBtn.textContent = 'Categorie articoli';
+    catsBtn.addEventListener('click', _openArtCategoriesModal);
+    document.getElementById('topbarActions').insertBefore(catsBtn, document.getElementById('topbarActions').firstChild);
     refreshArtTable();
   }
 
@@ -207,9 +212,11 @@
 
     var rows = articles.map(function (a) {
       var starTitle = a.featured ? 'Rimuovi dallo slider' : (featCount >= 3 ? 'Limite raggiunto (max 3)' : 'Aggiungi allo slider');
+      var cats = VV.getArticleCategories(a);
+      var catsChips = cats.map(function (c) { return '<span class="chip chip--blue">' + esc(c) + '</span>'; }).join(' ');
       return '<tr>' +
-        '<td><div class="table-title">' + esc(a.title) + '</div><div class="table-sub">' + esc(a.category) + '</div></td>' +
-        '<td><span class="chip chip--blue">' + esc(a.category) + '</span></td>' +
+        '<td><div class="table-title">' + esc(a.title) + '</div><div class="table-sub">' + esc(cats.join(', ')) + '</div></td>' +
+        '<td>' + catsChips + '</td>' +
         '<td>' + VV.formatDateShort(a.date) + '</td>' +
         '<td>' + (a.published ? '<span class="chip chip--green">Pubblicato</span>' : '<span class="chip chip--gray">Bozza</span>') + '</td>' +
         '<td style="text-align:center">' +
@@ -229,19 +236,36 @@
       '<tr><td colspan="6"><div class="empty-state"><p>Nessun articolo ancora. Crea il primo!</p></div></td></tr>';
   }
 
+  function _renderArtCategoriesCheckboxes(selected) {
+    var box = document.getElementById('artCategoriesBox');
+    var cats = VV.getCategorieArticoli();
+    /* Categorie assegnate all'articolo ma non più nell'elenco gestito: le mostriamo comunque per non perderle al salvataggio */
+    selected.forEach(function (c) { if (cats.indexOf(c) < 0) cats.push(c); });
+    box.innerHTML = cats.map(function (c, i) {
+      var checked = selected.indexOf(c) >= 0;
+      return '<label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:6px 12px;border:1px solid #e2e8f0;border-radius:20px;cursor:pointer;user-select:none">' +
+        '<input type="checkbox" class="artCategoryCheck" value="' + esc(c) + '"' + (checked ? ' checked' : '') + '>' +
+        esc(c) +
+      '</label>';
+    }).join('') || '<p style="font-size:13px;color:#94a3b8">Nessuna categoria disponibile. Creane una da "Categorie articoli".</p>';
+
+    box.querySelectorAll('.artCategoryCheck').forEach(function (cb) {
+      cb.addEventListener('change', function () {
+        var checked = box.querySelectorAll('.artCategoryCheck:checked');
+        if (checked.length > 2) { cb.checked = false; alert('Puoi selezionare al massimo 2 categorie per articolo.'); }
+      });
+    });
+  }
+
   function openArtForm(article) {
     _artEditing = article;
     showSubview('articoli', 'form');
     document.getElementById('topbarActions').innerHTML = '';
 
-    var catSel = document.getElementById('artCategory');
-    catSel.innerHTML = VV.CATEGORIES.map(function (c) {
-      return '<option value="' + c + '">' + c + '</option>';
-    }).join('');
+    _renderArtCategoriesCheckboxes(article ? VV.getArticleCategories(article) : []);
 
     if (article) {
       document.getElementById('artTitle').value      = article.title || '';
-      catSel.value                                    = article.category || VV.CATEGORIES[0];
       document.getElementById('artDate').value        = article.date || '';
       document.getElementById('artImage').value       = article.image || '';
       document.getElementById('artExcerpt').value     = article.excerpt || '';
@@ -250,7 +274,6 @@
       _setArtPreview(article.image || null, article.image ? 'Immagine salvata' : '');
     } else {
       document.getElementById('artTitle').value      = '';
-      catSel.value                                    = VV.CATEGORIES[0];
       document.getElementById('artDate').value        = new Date().toISOString().slice(0, 10);
       document.getElementById('artImage').value       = '';
       document.getElementById('artExcerpt').value     = '';
@@ -263,17 +286,58 @@
   document.getElementById('artSave').addEventListener('click', function () {
     var title = document.getElementById('artTitle').value.trim();
     if (!title) { alert('Il titolo è obbligatorio.'); return; }
+    var categories = Array.prototype.map.call(
+      document.querySelectorAll('#artCategoriesBox .artCategoryCheck:checked'),
+      function (cb) { return cb.value; }
+    );
+    if (!categories.length) { alert('Seleziona almeno una categoria.'); return; }
     var article = Object.assign({}, _artEditing || {}, {
-      title:     title,
-      category:  document.getElementById('artCategory').value,
-      date:      document.getElementById('artDate').value,
-      image:     document.getElementById('artImage').value.trim(),
-      excerpt:   document.getElementById('artExcerpt').value.trim(),
-      content:   document.getElementById('artContent').value.trim(),
-      published: document.getElementById('artPublished').checked
+      title:      title,
+      categories: categories,
+      category:   categories[0],
+      date:       document.getElementById('artDate').value,
+      image:      document.getElementById('artImage').value.trim(),
+      excerpt:    document.getElementById('artExcerpt').value.trim(),
+      content:    document.getElementById('artContent').value.trim(),
+      published:  document.getElementById('artPublished').checked
     });
     DB.saveArticle(article, renderArticoli);
   });
+
+  /* ---- Categorie articoli (gestione) ---- */
+  function _renderArtCategoriesModalList() {
+    var cats = VV.getCategorieArticoli();
+    var list = document.getElementById('artCategoriesModalList');
+    list.innerHTML = cats.length ? cats.map(function (c, i) {
+      return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:#f8fafc;border-radius:8px">' +
+        '<span>' + esc(c) + '</span>' +
+        '<button class="btn-icon btn-icon--danger" onclick="AdminActions.deleteCategoriaArticolo(' + i + ')" title="Elimina">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>' +
+        '</button>' +
+      '</div>';
+    }).join('') : '<p style="font-size:13px;color:#94a3b8">Nessuna categoria ancora.</p>';
+  }
+
+  function _openArtCategoriesModal() {
+    _renderArtCategoriesModalList();
+    document.getElementById('artCategoriesNewInput').value = '';
+    _openBudgetModal('artCategoriesModal');
+  }
+
+  document.getElementById('artCategoriesAddBtn').addEventListener('click', function () {
+    var input = document.getElementById('artCategoriesNewInput');
+    var name  = input.value.trim();
+    if (!name) return;
+    var cats = VV.getCategorieArticoli();
+    if (cats.indexOf(name) >= 0) { alert('Categoria già esistente.'); return; }
+    cats = cats.concat([name]);
+    DB.saveCategorieArticoli(cats, function () {
+      input.value = '';
+      _renderArtCategoriesModalList();
+    });
+  });
+  document.getElementById('artCategoriesModalClose').addEventListener('click', function () { _closeBudgetModal('artCategoriesModal'); });
+  document.getElementById('artCategoriesModalDone').addEventListener('click', function () { _closeBudgetModal('artCategoriesModal'); });
 
   document.getElementById('artCancel').addEventListener('click', renderArticoli);
 
@@ -1524,6 +1588,19 @@
     deleteArt: function (id) {
       confirm('Eliminare questo articolo? L\'azione è irreversibile.', function () {
         DB.deleteArticle(id, refreshArtTable);
+      });
+    },
+    deleteCategoriaArticolo: function (index) {
+      var cats = VV.getCategorieArticoli();
+      var name = cats[index];
+      if (name === undefined) return;
+      confirm('Eliminare la categoria "' + name + '"? Gli articoli che la usano non verranno modificati.', function () {
+        cats = cats.slice();
+        cats.splice(index, 1);
+        DB.saveCategorieArticoli(cats, function () {
+          _renderArtCategoriesModalList();
+          if (!document.getElementById('sectionArticoli').classList.contains('is-hidden')) refreshArtTable();
+        });
       });
     },
     editMatch: function (id) {
