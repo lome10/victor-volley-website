@@ -346,8 +346,6 @@
   ================================================ */
   var _matchEditing = null;
 
-  function _isVV(nome) { return (nome || '').toLowerCase().indexOf('victor') !== -1; }
-
   function renderCalendario() {
     showSubview('calendario', 'list');
     setTopbarBtn('Aggiungi partita', function () { openMatchForm(null); });
@@ -360,7 +358,6 @@
   function refreshMatchTable() {
     var sorted = VV.getPartite().sort(function (a, b) { return a.data > b.data ? 1 : -1; });
     var rows = sorted.map(function (p) {
-      var isHome    = _isVV(p.squadra_casa);
       var hasScore  = p.stato === 'conclusa' && p.set_casa != null && p.set_ospite != null;
       var casaWins  = hasScore && +p.set_casa > +p.set_ospite;
       var result    = hasScore
@@ -377,7 +374,6 @@
           (hasScore && casaWins ? '<strong>' + nomeCasa + '</strong>' : nomeCasa) + ' vs ' +
           (p.logo_ospite ? '<img src="' + esc(p.logo_ospite) + '" style="height:20px;display:inline;vertical-align:middle;margin-right:4px">' : '') +
           (hasScore && !casaWins ? '<strong>' + nomeOspite + '</strong>' : nomeOspite) +
-          ' <span class="chip ' + (isHome ? 'chip--green' : 'chip--gray') + '" style="margin-left:4px">' + (isHome ? 'Casa' : 'Trasferta') + '</span>' +
         '</td>' +
         '<td style="font-size:12px;color:var(--a-muted)">' + esc(p.palazzetto || '—') + '</td>' +
         '<td>' + result + '</td>' +
