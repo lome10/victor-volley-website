@@ -41,10 +41,10 @@
       : '<span class="partite-card-logo-init">' + esc((nome || '?').charAt(0).toUpperCase()) + '</span>';
   }
 
-  function teamEl(nome, logoSrc) {
+  function teamEl(nome, logoSrc, isWinner) {
     return '<div class="partite-card-team">' +
       '<div class="partite-card-logo">' + logoHtml(nome, logoSrc) + '</div>' +
-      '<span class="partite-card-tname">' + esc(nome) + '</span>' +
+      '<span class="partite-card-tname">' + (isWinner ? '<strong>' + esc(nome) + '</strong>' : esc(nome)) + '</span>' +
     '</div>';
   }
 
@@ -77,6 +77,7 @@
   function cardConclusa(p, setCasa, setOspite) {
     var sc = (setCasa  !== null && setCasa  !== undefined) ? setCasa  : (p.set_casa   || 0);
     var so = (setOspite !== null && setOspite !== undefined) ? setOspite : (p.set_ospite || 0);
+    var casaWins = sc > so;
     return '<div class="partite-card" data-partita-id="' + esc(p.id) + '">' +
       '<div class="partite-card-top">' +
         '<span class="partite-card-cat ' + catCls(p.categoria) + '">' + esc(p.categoria) + '</span>' +
@@ -84,8 +85,8 @@
       '</div>' +
       '<div class="partite-card-body">' +
         '<div class="partite-card-teams">' +
-          teamEl(p.squadra_casa, p.logo_casa) +
-          teamEl(p.squadra_ospite, p.logo_ospite) +
+          teamEl(p.squadra_casa, p.logo_casa, casaWins) +
+          teamEl(p.squadra_ospite, p.logo_ospite, !casaWins) +
         '</div>' +
         '<div class="partite-card-scores-col">' +
           '<div class="partite-card-pts">' + sc + '</div>' +

@@ -202,18 +202,19 @@
   function renderConcluded(p, label) {
     var sc = p.set_casa != null ? p.set_casa : 0;
     var so = p.set_ospite != null ? p.set_ospite : 0;
+    var casaWins = sc > so;
     return (
       '<p class="dt-upcoming-label">' + esc(label) + '</p>' +
       '<div class="dt-teams">' +
         '<div class="dt-team">' +
           '<div class="dt-team-logo">' + logoHtml(p.squadra_casa, p.logo_casa) + '</div>' +
-          '<span class="dt-team-name">' + esc(p.squadra_casa) + '</span>' +
+          '<span class="dt-team-name">' + (casaWins ? '<strong>' + esc(p.squadra_casa) + '</strong>' : esc(p.squadra_casa)) + '</span>' +
           '<span class="dt-team-sets">' + sc + '</span>' +
         '</div>' +
         '<div class="dt-vs-col"><span class="dt-vs-label">Finale</span></div>' +
         '<div class="dt-team">' +
           '<div class="dt-team-logo">' + logoHtml(p.squadra_ospite, p.logo_ospite) + '</div>' +
-          '<span class="dt-team-name">' + esc(p.squadra_ospite) + '</span>' +
+          '<span class="dt-team-name">' + (!casaWins ? '<strong>' + esc(p.squadra_ospite) + '</strong>' : esc(p.squadra_ospite)) + '</span>' +
           '<span class="dt-team-sets">' + so + '</span>' +
         '</div>' +
       '</div>' +

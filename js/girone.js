@@ -170,11 +170,12 @@
       function row(p, played) {
         var c = squadraById(girone.squadre, p.squadra_casa);
         var o = squadraById(girone.squadre, p.squadra_ospite);
+        var casaWins = played && +p.set_casa > +p.set_ospite;
         return '<tr>' +
           '<td>' + esc(formatData(p.data, p.ora)) + '</td>' +
-          '<td>' + esc(c.nome) + '</td>' +
+          '<td>' + (casaWins ? '<strong>' + esc(c.nome) + '</strong>' : esc(c.nome)) + '</td>' +
           '<td class="ga-vs">–</td>' +
-          '<td>' + esc(o.nome) + '</td>' +
+          '<td>' + (played && !casaWins ? '<strong>' + esc(o.nome) + '</strong>' : esc(o.nome)) + '</td>' +
           (played
             ? '<td class="ga-result">' + p.set_casa + '&ndash;' + p.set_ospite + '</td>'
             : '<td class="ga-result ga-result--empty">—</td>') +

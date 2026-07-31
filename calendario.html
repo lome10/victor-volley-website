@@ -280,6 +280,7 @@
       var isHome   = isVV(p.squadra_casa);
       var hasScore = p.set_casa != null && p.set_ospite != null;
       var rCls     = hasScore ? resultClass(p) : '';
+      var casaWins = hasScore && +p.set_casa > +p.set_ospite;
 
       return '<div class="fixture-row ' + (isHome ? 'cool' : 'warm') + (isNext ? ' fixture-row--next' : '') + ' reveal">' +
         (isNext ? '<span class="fixture-row-next-badge">Prossima partita</span>' : '') +
@@ -288,8 +289,8 @@
           '<span class="fixture-tag fixture-tag--' + (isHome ? 'casa' : 'trasferta') + '">' + (isHome ? 'Casa' : 'Trasferta') + '</span>' +
         '</div>' +
         '<div class="fixture-teams">' +
-          '<div class="fixture-team' + (isHome ? ' fixture-team--vv' : '') + '">' + teamLogo(p.logo_casa, p.squadra_casa) + '<span class="fixture-team-name">' + esc(p.squadra_casa) + '</span>' + (hasScore ? teamScore(p.set_casa, rCls) : '') + '</div>' +
-          '<div class="fixture-team' + (!isHome ? ' fixture-team--vv' : '') + '">' + teamLogo(p.logo_ospite, p.squadra_ospite) + '<span class="fixture-team-name">' + esc(p.squadra_ospite) + '</span>' + (hasScore ? teamScore(p.set_ospite, rCls) : '') + '</div>' +
+          '<div class="fixture-team' + (isHome ? ' fixture-team--vv' : '') + '">' + teamLogo(p.logo_casa, p.squadra_casa) + '<span class="fixture-team-name">' + (casaWins ? '<strong>' + esc(p.squadra_casa) + '</strong>' : esc(p.squadra_casa)) + '</span>' + (hasScore ? teamScore(p.set_casa, rCls) : '') + '</div>' +
+          '<div class="fixture-team' + (!isHome ? ' fixture-team--vv' : '') + '">' + teamLogo(p.logo_ospite, p.squadra_ospite) + '<span class="fixture-team-name">' + (hasScore && !casaWins ? '<strong>' + esc(p.squadra_ospite) + '</strong>' : esc(p.squadra_ospite)) + '</span>' + (hasScore ? teamScore(p.set_ospite, rCls) : '') + '</div>' +
         '</div>' +
         '<div class="fixture-row-venue">' + PIN_ICON + esc(p.palazzetto || '—') + '</div>' +
       '</div>';
