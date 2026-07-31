@@ -2514,6 +2514,52 @@ main, footer.site-footer {
   padding: 48px 24px;
 }
 
+/* Sponsor sopra il singolo articolo — fino a 3 loghi scelti in admin,
+   stessa dimensione per tutti e sempre interi (object-fit:contain,
+   mai ritagliati anche se il logo originale è più grande). */
+.art-sponsors {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 96px;
+  max-width: 1080px;
+  margin: 0 auto 24px;
+}
+.art-sponsors:empty { display: none; }
+
+.art-sponsors-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 130px;
+  height: 72px;
+  text-decoration: none;
+}
+
+.art-sponsors-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  transform: scale(1.8);
+}
+
+@media (max-width: 640px) {
+  .art-sponsors {
+    gap: clamp(10px, 5vw, 40px);
+    margin-bottom: 20px;
+    flex-wrap: nowrap;
+  }
+  .art-sponsors-item {
+    width: auto;
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 100px;
+    height: 56px;
+  }
+}
+
 /* ================================================
    News dettaglio — split a due colonne: copertina 9:16 sticky a
    sinistra, articolo (titolo + testo) a destra. Solo la colonna di
