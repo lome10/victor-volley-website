@@ -65,11 +65,7 @@
          restare così come sono. -->
     <section class="maglia-teaser" id="magliaTeaserSection" aria-labelledby="maglia-title" style="display:none">
       <div class="maglia-ticker" aria-hidden="true">
-        <div class="maglia-ticker-track">
-          <span>In arrivo</span> Reveal 3D <span>&#9733;</span> Nuova maglia <span>&#9733;</span> Stagione 2026/27 <span>&#9733;</span>
-          In arrivo <span>&#9733;</span> Reveal 3D <span>&#9733;</span> Nuova maglia <span>&#9733;</span> Stagione 2026/27 <span>&#9733;</span>
-          In arrivo <span>&#9733;</span> Reveal 3D <span>&#9733;</span> Nuova maglia <span>&#9733;</span> Stagione 2026/27 <span>&#9733;</span>
-        </div>
+        <div class="maglia-ticker-track" id="magliaTickerTrack"></div>
       </div>
       <div class="container">
         <div class="maglia-teaser-body" id="magliaTeaserContent">
@@ -354,6 +350,15 @@
 
       document.getElementById('maglia-title').textContent = m.title || '';
       document.getElementById('magliaTeaserSubtitle').textContent = m.subtitle || '';
+
+      /* Ticker: contenuto duplicato esattamente 2 volte, in linea con
+         l'animazione CSS (translateX(-50%)) — così il loop è sempre
+         perfettamente continuo, senza lo "scatto" che si vedeva con un
+         numero di ripetizioni statiche non allineato al -50%. */
+      var tickerUnit = '<span>In arrivo</span> Reveal 3D <span aria-hidden="true">&#9733;</span> ' +
+        'Nuova maglia <span aria-hidden="true">&#9733;</span> Stagione 2026/27 <span aria-hidden="true">&#9733;</span> ';
+      var tickerTrack = document.getElementById('magliaTickerTrack');
+      if (tickerTrack) tickerTrack.innerHTML = tickerUnit + tickerUnit;
 
       var el = document.getElementById('magliaCountdown');
       var target = new Date(m.revealDate).getTime();
