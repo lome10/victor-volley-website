@@ -428,36 +428,31 @@
         '</article>';
       }).join('');
 
-      var cards  = track.querySelectorAll('.hero-card');
-      var total  = articles.length;
-      var offset = 0;
-
+      var cards    = track.querySelectorAll('.hero-card');
       var CARD_GAP = 16;
-      function cardWidth() {
-        return cards[0] ? cards[0].offsetWidth : 0;
-      }
+      var offsetPx = 0;
+
       function cardStep() {
-        return cardWidth() + CARD_GAP;
+        return cards[0] ? cards[0].offsetWidth + CARD_GAP : 0;
       }
-      function visibleCount() {
-        var cw = cardWidth();
-        if (!cw) return 1;
-        /* N card entrano se N*cw + (N-1)*gap <= larghezza disponibile,
-           cioè N <= (larghezza + gap) / (cw + gap) — non N gap "pieni". */
-        return Math.max(1, Math.floor((track.parentElement.clientWidth + CARD_GAP) / (cw + CARD_GAP)));
+      /* Scorrimento massimo reale: larghezza vera di tutte le card meno
+         quella vera visibile — nessuna stima "quante card entrano",
+         così non si può né fermarsi prima né andare oltre il contenuto. */
+      function maxOffsetPx() {
+        return Math.max(0, track.scrollWidth - track.parentElement.clientWidth);
       }
-      function slideTo(n) {
-        var vc  = visibleCount();
-        offset  = Math.max(0, Math.min(n, total - vc));
-        track.style.transform = 'translateX(-' + offset * cardStep() + 'px)';
-        prevBtn.disabled = offset <= 0;
-        nextBtn.disabled = offset >= total - vc;
+      function slideBy(deltaCards) {
+        var max = maxOffsetPx();
+        offsetPx = Math.max(0, Math.min(offsetPx + deltaCards * cardStep(), max));
+        track.style.transform = 'translateX(-' + offsetPx + 'px)';
+        prevBtn.disabled = offsetPx <= 0;
+        nextBtn.disabled = offsetPx >= max - 1; /* -1: tolleranza per arrotondamenti subpixel */
       }
 
-      prevBtn.addEventListener('click', function () { slideTo(offset - 1); });
-      nextBtn.addEventListener('click', function () { slideTo(offset + 1); });
-      window.addEventListener('resize', function () { slideTo(offset); });
-      slideTo(0);
+      prevBtn.addEventListener('click', function () { slideBy(-1); });
+      nextBtn.addEventListener('click', function () { slideBy(1); });
+      window.addEventListener('resize', function () { slideBy(0); });
+      slideBy(0);
 
       /* Hover (desktop) */
       cards.forEach(function (card) {

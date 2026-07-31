@@ -1151,7 +1151,7 @@ main, footer.site-footer {
   position: relative;
   overflow: hidden;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   padding: 8px 0 32px;
 }
