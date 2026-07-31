@@ -26,6 +26,7 @@
   var _seasons  = [];
   var _maglia   = null;
   var _categorieArticoli = null;
+  var _livelliSponsorSub = null;
 
   var DEFAULT_CATEGORIE_ARTICOLI = ['Prima Divisione', 'Under 19', 'Under 13', 'Under 12', 'Minivolley', 'Società'];
 
@@ -34,6 +35,12 @@
     title: 'Nuova maglia 2026/27',
     subtitle: 'Il reveal si avvicina: presto potrai ruotarla, ingrandirla ed esplorarla in un render 3D interattivo.',
     revealDate: '2026-08-18T00:00:00'
+  };
+
+  var DEFAULT_LIVELLI_SPONSOR_SUB = {
+    gold:   'I partner principali della società',
+    silver: 'Le aziende che ci sostengono ogni stagione',
+    bronze: 'Gli amici della Victor Volley'
   };
 
   var DEFAULTS = {
@@ -194,6 +201,12 @@
     /* ---- SPONSORS ---- */
     getSponsors: function () { return _sponsors.slice(); },
     setSponsors: function (items) { _sponsors = Array.isArray(items) ? items : []; },
+
+    /* ---- LIVELLI SPONSOR: sottotitolo mostrato nella pagina Partner
+       per ciascun livello (Gold/Silver/Bronze restano fissi come chiave
+       interna, cambia solo il testo mostrato) ---- */
+    getLivelliSponsorSub: function () { return Object.assign({}, DEFAULT_LIVELLI_SPONSOR_SUB, _livelliSponsorSub || {}); },
+    setLivelliSponsorSub: function (obj) { _livelliSponsorSub = obj && typeof obj === 'object' ? obj : null; },
 
     /* ---- MAGLIA TEASER (homepage) ---- */
     getMaglia: function () { return _maglia || Object.assign({}, DEFAULT_MAGLIA); },

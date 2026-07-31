@@ -103,9 +103,9 @@
     function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
     var TIERS = [
-      { key: 'gold',   label: 'Gold',   sub: 'I partner principali della società' },
-      { key: 'silver', label: 'Silver', sub: 'Le aziende che ci sostengono ogni stagione' },
-      { key: 'bronze', label: 'Bronze', sub: 'Gli amici della Victor Volley' }
+      { key: 'gold',   label: 'Gold' },
+      { key: 'silver', label: 'Silver' },
+      { key: 'bronze', label: 'Bronze' }
     ];
 
     function card(s, tierKey) {
@@ -123,8 +123,9 @@
         '<a href="/contatti">Vuoi essere il primo?</a></div>';
     }
 
-    DB.load(['sponsors'], function () {
+    DB.load(['sponsors', 'livelliSponsorSub'], function () {
       var sponsors = VV.getSponsors().sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
+      var subTexts = VV.getLivelliSponsorSub();
       var wrap = document.getElementById('sponsorTiers');
 
       wrap.innerHTML = TIERS.map(function (t) {
@@ -136,7 +137,7 @@
         return '<div class="sponsor-tier">' +
           '<div class="sponsor-tier-head">' +
             '<span class="sponsor-tier-badge sponsor-tier-badge--' + t.key + '">' + t.label + '</span>' +
-            '<span class="sponsor-tier-sub">' + t.sub + '</span>' +
+            '<span class="sponsor-tier-sub">' + esc(subTexts[t.key]) + '</span>' +
           '</div>' +
           '<div class="sponsor-grid sponsor-grid--' + t.key + '">' + gridHtml + '</div>' +
         '</div>';

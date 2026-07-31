@@ -957,6 +957,29 @@
           <button class="btn-primary" id="spAddBtn">+ Aggiungi sponsor</button>
         </div>
 
+        <!-- Testi dei livelli mostrati nella pagina pubblica Partner -->
+        <div class="sp-form" id="spLevelsTextForm" style="margin-bottom:20px">
+          <h3 class="sp-form-title">Testi dei livelli (pagina Partner)</h3>
+          <div class="sp-form-grid">
+            <div class="form-group form-full">
+              <label class="form-label">Sottotitolo Gold</label>
+              <input type="text" id="spSubGold" class="form-input">
+            </div>
+            <div class="form-group form-full">
+              <label class="form-label">Sottotitolo Silver</label>
+              <input type="text" id="spSubSilver" class="form-input">
+            </div>
+            <div class="form-group form-full">
+              <label class="form-label">Sottotitolo Bronze</label>
+              <input type="text" id="spSubBronze" class="form-input">
+            </div>
+          </div>
+          <div class="form-actions">
+            <span id="spLevelsTextStatus" class="json-status"></span>
+            <button id="spLevelsTextSave" class="btn-primary">Salva testi</button>
+          </div>
+        </div>
+
         <!-- Form aggiungi / modifica -->
         <div class="sp-form is-hidden" id="spForm">
           <h3 class="sp-form-title" id="spFormTitle">Nuovo sponsor</h3>
@@ -1365,8 +1388,8 @@
       <div class="dg-form-group">
         <label class="dg-form-label">Nuova categoria</label>
         <div style="display:flex;gap:8px">
-          <input type="text" id="artCategoriesNewInput" class="dg-form-input" placeholder="es. Eventi">
-          <button id="artCategoriesAddBtn" class="dg-btn-primary" style="flex-shrink:0">Aggiungi</button>
+          <input type="text" id="artCategoriesNewInput" class="dg-form-input" placeholder="es. Eventi" style="flex:1;min-width:0">
+          <button id="artCategoriesAddBtn" class="dg-btn-primary" style="width:auto;flex-shrink:0">Aggiungi</button>
         </div>
       </div>
     </div>

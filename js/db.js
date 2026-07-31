@@ -102,7 +102,7 @@
      Per aggiungere una parte nuova in futuro: aggiungerla a PART_NAMES
      e insegnare a _fetchPart come caricarla.
   ============================================================ */
-  var PART_NAMES = ['articles', 'partite', 'albums', 'categories', 'players', 'staff', 'sponsors', 'seasons', 'stats', 'maglia', 'categorieArticoli'];
+  var PART_NAMES = ['articles', 'partite', 'albums', 'categories', 'players', 'staff', 'sponsors', 'seasons', 'stats', 'maglia', 'categorieArticoli', 'livelliSponsorSub'];
 
   var _parts = {};
   PART_NAMES.forEach(function (name) { _parts[name] = { loaded: false, loading: false, pending: [] }; });
@@ -133,6 +133,15 @@
     });
   }
 
+  /* settings/livelliSponsorSub: un unico oggetto {gold,silver,bronze},
+     stessa logica di settings/maglia — in assenza del doc restano i
+     sottotitoli di default (vedi DEFAULT_LIVELLI_SPONSOR_SUB in data.js). */
+  function _fetchLivelliSponsorSub() {
+    return global.db.collection('settings').doc('livelliSponsorSub').get().then(function (doc) {
+      if (doc.exists) VV.setLivelliSponsorSub(doc.data());
+    });
+  }
+
   function _fetchPart(name) {
     switch (name) {
       case 'articles':   return _loadOne('articles');
@@ -146,6 +155,7 @@
       case 'stats':      return _settingsDoc('stats',   VV.setStats);
       case 'maglia':     return _fetchMaglia();
       case 'categorieArticoli': return _settingsDoc('categorieArticoli', VV.setCategorieArticoli);
+      case 'livelliSponsorSub': return _fetchLivelliSponsorSub();
       default:           return Promise.resolve();
     }
   }
@@ -364,6 +374,18 @@
           _audit('magliaTeaser', 'maglia', 'Teaser nuova maglia (homepage)', 'update', _diffRecord(before, obj, Object.keys(obj)));
         })
         .catch(function (e) { console.error('[DB] saveMaglia', e); });
+    },
+
+    /* ---- LIVELLI SPONSOR: sottotitolo per livello (pagina Partner) --- */
+    saveLivelliSponsorSub: function (obj, cb) {
+      var before = VV.getLivelliSponsorSub();
+      VV.setLivelliSponsorSub(obj);
+      if (cb) cb();
+      global.db.collection('settings').doc('livelliSponsorSub').set(obj)
+        .then(function () {
+          _audit('livelliSponsorSub', 'livelliSponsorSub', 'Testi livelli sponsor (pagina Partner)', 'update', _diffRecord(before, obj, Object.keys(obj)));
+        })
+        .catch(function (e) { console.error('[DB] saveLivelliSponsorSub', e); });
     },
 
     /* ---- SEASONS -------------------------------------------- */

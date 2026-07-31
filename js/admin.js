@@ -1328,6 +1328,25 @@
   function renderSponsor() {
     refreshSpList();
 
+    var levelsSub = VV.getLivelliSponsorSub();
+    document.getElementById('spSubGold').value   = levelsSub.gold;
+    document.getElementById('spSubSilver').value = levelsSub.silver;
+    document.getElementById('spSubBronze').value = levelsSub.bronze;
+
+    document.getElementById('spLevelsTextSave').onclick = function () {
+      var obj = {
+        gold:   document.getElementById('spSubGold').value.trim(),
+        silver: document.getElementById('spSubSilver').value.trim(),
+        bronze: document.getElementById('spSubBronze').value.trim()
+      };
+      var statusEl = document.getElementById('spLevelsTextStatus');
+      DB.saveLivelliSponsorSub(obj, function () {
+        statusEl.textContent = '✓ Salvato';
+        statusEl.style.color = 'var(--a-green)';
+        setTimeout(function () { statusEl.textContent = ''; }, 2500);
+      });
+    };
+
     document.getElementById('spAddBtn').onclick = function () {
       _spEditing = null;
       document.getElementById('spFormTitle').textContent = 'Nuovo sponsor';
