@@ -85,10 +85,11 @@
               <p style="font-size:14px;margin-top:4px;color:#555">Ti contatteremo presto. Grazie per il tuo interesse!</p>
             </div>
 
-            <!-- TODO: collegare a Formspree o EmailJS per invio email reale.
-                 URL attuale usa mailto: come fallback.
-                 Per integrare Formspree: cambia action con "https://formspree.io/f/TUO_ID"
-                 e rimuovi il handler JS per mailto. -->
+            <div id="formError" style="display:none;padding:20px;background:rgba(200,40,40,0.08);border:1px solid rgba(200,40,40,0.25);border-radius:var(--card-radius);margin-bottom:24px">
+              <strong style="color:#c82828">Invio non riuscito.</strong>
+              <p style="font-size:14px;margin-top:4px;color:#555">Riprova oppure scrivici direttamente a <a href="mailto:victorvolley@libero.it">victorvolley@libero.it</a>.</p>
+            </div>
+
             <form class="form-wrapper" id="uniscitiForm" novalidate>
               <div class="form-row">
                 <div class="form-group">
@@ -160,10 +161,13 @@
   (function(){
     var form = document.getElementById('uniscitiForm');
     var success = document.getElementById('formSuccess');
+    var errorBox = document.getElementById('formError');
+    var submitBtn = form ? form.querySelector('button[type="submit"]') : null;
     if(!form) return;
 
     form.addEventListener('submit', function(e){
       e.preventDefault();
+      errorBox.style.display = 'none';
 
       // Validazione base
       var nome     = document.getElementById('nome').value.trim();
@@ -180,22 +184,43 @@
       var messaggio = document.getElementById('messaggio').value.trim();
       var telefono  = document.getElementById('telefono').value.trim();
 
-      // Fallback mailto: — sostituire con Formspree/EmailJS in produzione
-      var subject = encodeURIComponent('Richiesta informazioni: ' + nome + ' ' + cognome);
-      var body = encodeURIComponent(
-        'Nome: ' + nome + ' ' + cognome + '\n' +
-        'Email: ' + email + '\n' +
-        'Telefono: ' + (telefono||'non indicato') + '\n' +
-        'Età: ' + eta + '\n' +
-        'Categoria: ' + categoria + '\n\n' +
-        'Messaggio:\n' + (messaggio||'—')
-      );
+      var payload = {
+        access_key: 'c7fbab29-7da0-4cef-ade0-7ae64a201e97',
+        subject: 'Richiesta informazioni: ' + nome + ' ' + cognome,
+        from_name: nome + ' ' + cognome,
+        nome: nome,
+        cognome: cognome,
+        email: email,
+        telefono: telefono || 'non indicato',
+        eta: eta,
+        categoria: categoria,
+        messaggio: messaggio || '—'
+      };
 
-      window.location.href = 'mailto:victorvolley@libero.it?subject=' + subject + '&body=' + body;
+      submitBtn.disabled = true;
 
-      success.style.display = 'block';
-      form.reset();
-      success.scrollIntoView({ behavior: 'smooth' });
+      fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      .then(function(res){ return res.json(); })
+      .then(function(data){
+        submitBtn.disabled = false;
+        if(data.success){
+          success.style.display = 'block';
+          form.reset();
+          success.scrollIntoView({ behavior: 'smooth' });
+        } else {
+          errorBox.style.display = 'block';
+          errorBox.scrollIntoView({ behavior: 'smooth' });
+        }
+      })
+      .catch(function(){
+        submitBtn.disabled = false;
+        errorBox.style.display = 'block';
+        errorBox.scrollIntoView({ behavior: 'smooth' });
+      });
     });
   })();
   </script>
