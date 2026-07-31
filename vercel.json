@@ -3,5 +3,8 @@
   "trailingSlash": false,
   "redirects": [
     { "source": "/dirigenti", "destination": "/admin", "permanent": false }
+  ],
+  "rewrites": [
+    { "source": "/admin/:section*", "destination": "/admin.html" }
   ]
 }

@@ -58,7 +58,11 @@
       PhotoDB.init(function () {
         initNav();
         _loadBudgetData(function () {
-          goTo('dashboard');
+          var initialSection = _sectionFromPath();
+          _suppressPush = true;
+          goTo(initialSection);
+          _suppressPush = false;
+          history.replaceState({ section: initialSection }, '', '/admin/' + initialSection);
         });
       });
     });
@@ -86,6 +90,21 @@
       });
     });
     _initSidebarToggle();
+    window.addEventListener('popstate', function (e) {
+      var section = (e.state && e.state.section) || _sectionFromPath();
+      _suppressPush = true;
+      goTo(section);
+      _suppressPush = false;
+    });
+  }
+
+  /* ---- Routing: ogni sezione ha il proprio URL (/admin/<sezione>),
+     gestito via History API — niente reload, resta una SPA. ---- */
+  var _suppressPush = false;
+  function _sectionFromPath() {
+    var m = location.pathname.match(/^\/admin\/([a-zA-Z]+)/);
+    var s = m ? m[1] : 'dashboard';
+    return SECTIONS[s] ? s : 'dashboard';
   }
 
   /* ---- Sidebar off-canvas (mobile) ---- */
@@ -135,6 +154,11 @@
     if (section === 'datiJson')   renderDatiJson();
     if (section === 'log')        _renderLog();
     if (section === 'budget')     _renderActiveBudgetTab();
+
+    if (!_suppressPush) {
+      var path = '/admin/' + section;
+      if (location.pathname !== path) history.pushState({ section: section }, '', path);
+    }
   }
 
   function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
