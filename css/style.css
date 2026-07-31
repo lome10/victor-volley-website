@@ -2513,8 +2513,8 @@ main, footer.site-footer {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 130px;
-  height: 72px;
+  width: 190px;
+  height: 110px;
   text-decoration: none;
 }
 
@@ -2534,10 +2534,10 @@ main, footer.site-footer {
   }
   .art-sponsors-item {
     width: auto;
-    flex: 1 1 0;
-    min-width: 0;
-    max-width: 100px;
-    height: 56px;
+    flex: 1 1 110px;
+    min-width: 110px;
+    max-width: 190px;
+    height: 100px;
   }
 }
 
