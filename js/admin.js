@@ -361,7 +361,7 @@
   document.getElementById('artCancel').addEventListener('click', renderArticoli);
 
   /* ================================================
-     CALENDARIO — fonte unica: siteData/partite (via DB/VV)
+     CALENDARIO — collection Firestore "partite" (via DB/VV)
   ================================================ */
   var _matchEditing = null;
 
@@ -486,10 +486,7 @@
       });
     }
 
-    var partite = VV.getPartite();
-    var idx = partite.findIndex(function (p) { return p.id === partita.id; });
-    if (idx >= 0) { partite[idx] = partita; } else { partite.push(partita); }
-    DB.savePartite(partite, renderCalendario);
+    DB.savePartita(partita, renderCalendario);
   });
 
   document.getElementById('matchCancel').addEventListener('click', renderCalendario);
@@ -1625,8 +1622,7 @@
     },
     deleteMatch: function (id) {
       confirm('Eliminare questa partita?', function () {
-        var partite = VV.getPartite().filter(function (x) { return x.id !== id; });
-        DB.savePartite(partite, refreshMatchTable);
+        DB.deletePartita(id, refreshMatchTable);
       });
     },
     deleteAlbum: function (id) {
@@ -2261,8 +2257,7 @@
      FILE JSON
   ================================================ */
   var JSON_FILES = {
-    girone:  { label: 'data/girone.json',  staticPath: 'data/girone.json'  },
-    partite: { label: 'data/partite.json', staticPath: 'data/partite.json' }
+    girone:  { label: 'data/girone.json',  staticPath: 'data/girone.json'  }
   };
 
   function renderDatiJson() {

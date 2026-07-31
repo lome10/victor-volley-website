@@ -10,7 +10,8 @@
     albums:     'vv_albums',
     categories: 'vv_categories',
     players:    'vv_players',
-    staff:      'vv_staff'
+    staff:      'vv_staff',
+    partite:    'vv_partite'
   };
 
   var DEFAULT_STATS = [
@@ -23,7 +24,6 @@
   var _stats    = null;
   var _sponsors = [];
   var _seasons  = [];
-  var _partite  = [];
   var _maglia   = null;
   var _categorieArticoli = null;
 
@@ -199,9 +199,26 @@
     getMaglia: function () { return _maglia || Object.assign({}, DEFAULT_MAGLIA); },
     setMaglia: function (obj) { _maglia = obj && typeof obj === 'object' ? obj : null; },
 
-    /* ---- PARTITE (calendario) — fonte unica: siteData/partite ---- */
-    getPartite: function () { return _partite.slice(); },
-    setPartite: function (items) { _partite = Array.isArray(items) ? items : []; },
+    /* ---- PARTITE (calendario) — una collection Firestore, un documento
+       per partita: niente più sovrascritture dell'intero elenco quando
+       più persone lavorano in admin contemporaneamente. ---- */
+    getPartite: function () { return _read(KEYS.partite) || []; },
+    getPartita: function (id) {
+      return this.getPartite().find(function (p) { return p.id === id; }) || null;
+    },
+    savePartita: function (partita) {
+      if (!partita.id) partita.id = 'm' + Date.now();
+      var arr = this.getPartite();
+      var idx = arr.findIndex(function (p) { return p.id === partita.id; });
+      if (idx >= 0) { arr[idx] = partita; } else { arr.push(partita); }
+      _write(KEYS.partite, arr);
+      return partita;
+    },
+    deletePartita: function (id) {
+      _write(KEYS.partite, this.getPartite().filter(function (p) { return p.id !== id; }));
+    },
+    /* Bulk-set usato solo dalla migrazione una tantum (vedi DB.migratePartiteToCollection) */
+    setPartite: function (items) { _write(KEYS.partite, Array.isArray(items) ? items : []); },
 
     /* ---- SEASONS ---- */
     getSeasons: function () {

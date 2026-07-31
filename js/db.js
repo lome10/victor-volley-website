@@ -113,29 +113,16 @@
     });
   }
 
-  /* siteData/partite: un unico doc con un JSON stringify dentro (non una
-     collection con un doc per partita), con fallback su data/partite.json
-     se il doc non esiste ancora o Firestore non è raggiungibile. */
-  function _fetchPartiteStatic() {
-    return fetch('data/partite.json').then(function (r) { return r.json(); }).then(function (data) {
-      VV.setPartite(data);
+  /* Collection "partite": un documento per partita (id partita = id doc),
+     upsert/delete indipendenti — niente più sovrascritture dell'intero
+     elenco quando più persone lavorano in admin insieme (vedi il vecchio
+     schema a doc unico rimpiazzato da migratePartiteToCollection). */
+  function _loadOnePartite() {
+    return _col('partite').get().then(function (snap) {
+      var items = [];
+      snap.forEach(function (doc) { items.push(doc.data()); });
+      VV._load('partite', items);
     });
-  }
-
-  function _fetchPartite() {
-    try {
-      return global.db.collection('siteData').doc('partite').get()
-        .then(function (doc) {
-          if (doc.exists && doc.data() && doc.data().json) {
-            VV.setPartite(JSON.parse(doc.data().json));
-            return;
-          }
-          return _fetchPartiteStatic();
-        })
-        .catch(function () { return _fetchPartiteStatic(); });
-    } catch (e) {
-      return _fetchPartiteStatic();
-    }
   }
 
   /* settings/maglia: un unico oggetto (non {items:[...]}), gestisce da sé
@@ -149,7 +136,7 @@
   function _fetchPart(name) {
     switch (name) {
       case 'articles':   return _loadOne('articles');
-      case 'partite':    return _fetchPartite();
+      case 'partite':    return _loadOnePartite();
       case 'albums':     return _loadOne('albums');
       case 'categories': return _loadOne('categories');
       case 'players':    return _loadOne('players');
@@ -227,18 +214,26 @@
     },
 
     /* ---- PARTITE (calendario) ---------------------------------- */
-    /* siteData/partite è un doc unico con l'intero array in JSON, quindi
-       il salvataggio riscrive sempre l'array completo (non un upsert per id). */
-    savePartite: function (items, cb) {
-      var before = VV.getPartite();
-      VV.setPartite(items);
+    /* Un documento per partita (doc id = id partita): ogni salvataggio/
+       eliminazione tocca solo il proprio documento, mai l'elenco intero. */
+    savePartita: function (partita, cb) {
+      var before = partita.id ? VV.getPartita(partita.id) : null;
+      var saved  = VV.savePartita(partita);
+      if (cb) cb(saved);
+      _col('partite').doc(String(saved.id)).set(saved).then(function () {
+        var label = (saved.squadra_casa || '?') + ' vs ' + (saved.squadra_ospite || '?');
+        _audit('partita', String(saved.id), label, before ? 'update' : 'create', _diffRecord(before, saved, Object.keys(saved)));
+      }).catch(function (e) { console.error('[DB] savePartita', e); });
+      return saved;
+    },
+    deletePartita: function (id, cb) {
+      var before = VV.getPartita(id);
+      VV.deletePartita(id);
       if (cb) cb();
-      global.db.collection('siteData').doc('partite').set({
-        json:      JSON.stringify(items),
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      }).then(function () {
-        _audit('calendario', 'partite', 'Calendario partite', 'update', [{ campo: '(elenco)', prima: before.length + ' partite', dopo: items.length + ' partite' }]);
-      }).catch(function (e) { console.error('[DB] savePartite', e); });
+      _col('partite').doc(String(id)).delete().then(function () {
+        var label = before ? ((before.squadra_casa || '?') + ' vs ' + (before.squadra_ospite || '?')) : String(id);
+        _audit('partita', String(id), label, 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]);
+      }).catch(function (e) { console.error('[DB] deletePartita', e); });
     },
 
     /* ---- ALBUMS ---------------------------------------------- */
@@ -441,6 +436,44 @@
         })
         .catch(function (e) {
           console.error('[DB] Migrazione fallita:', e);
+          if (done) done();
+        });
+    },
+
+    /* ---- MIGRAZIONE PARTITE: da doc unico a collection ---------- */
+    /* Il vecchio schema (siteData/partite, un doc con l'intero elenco in
+       JSON) veniva riscritto per intero ad ogni salvataggio: se due
+       persone lavoravano in admin contemporaneamente, l'ultima a salvare
+       cancellava silenziosamente le partite aggiunte dall'altra. Il nuovo
+       schema usa una collection "partite" con un documento per partita.
+       Da eseguire una sola volta dalla console, da loggata in admin:
+         DB.migratePartiteToCollection(function(){ location.reload(); });
+       Sicura da rilanciare più volte: ogni partita viene semplicemente
+       riscritta con lo stesso id, nessun duplicato. Non recupera partite
+       già perse per sovrascritture avvenute prima di questa migrazione:
+       per quelle serve controllare i backup/point-in-time recovery di
+       Firestore, se abilitati. */
+    migratePartiteToCollection: function (done) {
+      function fromStatic() {
+        return fetch('data/partite.json').then(function (r) { return r.json(); });
+      }
+      global.db.collection('siteData').doc('partite').get()
+        .then(function (doc) {
+          if (doc.exists && doc.data() && doc.data().json) return JSON.parse(doc.data().json);
+          return fromStatic();
+        })
+        .catch(function () { return fromStatic(); })
+        .then(function (items) {
+          items = Array.isArray(items) ? items : [];
+          var validItems = items.filter(function (p) { return p && p.id; });
+          var ops = validItems.map(function (p) { return _col('partite').doc(String(p.id)).set(p); });
+          return Promise.all(ops).then(function () {
+            console.log('[DB] Migrazione partite completata: ' + validItems.length + ' partite importate nella collection "partite".');
+            if (done) done();
+          });
+        })
+        .catch(function (e) {
+          console.error('[DB] migratePartiteToCollection fallita:', e);
           if (done) done();
         });
     }
