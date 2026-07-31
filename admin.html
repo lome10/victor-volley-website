@@ -91,14 +91,6 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="9.5"/><path d="M6.5 3.8c1.5 3.5 1 8-1.5 11.5"/><path d="M17.5 20.2c-1.5-3.5-1-8 1.5-11.5"/><path d="M3 14c4-2 9-1.5 16.5 1"/></svg>
           Girone
         </a>
-        <a href="#" class="admin-nav-item" data-section="stagioni">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M3 3h7v7H3z"/><path d="M14 3h7v7h-7z"/><path d="M3 14h7v7H3z"/><path d="M17.5 17.5m-3.5 0a3.5 3.5 0 1 0 7 0 3.5 3.5 0 1 0-7 0"/><line x1="17.5" y1="15" x2="17.5" y2="14"/></svg>
-          Stagioni
-        </a>
-        <a href="#" class="admin-nav-item" data-section="maglia">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M6 4l2 3 4 0 2-3 5 3-2 4-3-1v11H8V10l-3 1-2-4z"/></svg>
-          Maglia
-        </a>
         <a href="#" class="admin-nav-item" data-section="datiJson">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><polyline points="16,18 22,12 16,6"/><polyline points="8,6 2,12 8,18"/></svg>
           File JSON
@@ -183,6 +175,70 @@
           <div class="dash-card is-hidden" id="dashPromemoriaWidget">
             <div class="dash-card-title">Promemoria sponsor in scadenza</div>
             <div id="dashPromemoriaList" class="dg-reminder-list" style="padding:14px 18px"></div>
+          </div>
+        </div>
+
+        <div class="dash-recent" style="margin-top:16px">
+          <div class="dash-card">
+            <div class="dash-card-title" style="display:flex;align-items:center;justify-content:space-between">
+              Stagioni
+              <button id="stagioneAddBtn" class="btn-ghost" style="font-size:11px;padding:5px 10px;text-transform:none;letter-spacing:0;font-weight:600">+ Nuova stagione</button>
+            </div>
+            <div style="padding:14px 18px">
+              <p style="font-size:12px;color:var(--a-muted);margin-bottom:14px">La stagione <strong>Corrente</strong> viene usata come default in Squadre e Calendario.</p>
+              <div id="stagionList"></div>
+              <div id="stagionForm" class="is-hidden" style="max-width:480px;margin-top:16px">
+                <div class="form-grid">
+                  <div class="form-group form-full">
+                    <label class="form-label">Nome stagione *</label>
+                    <input type="text" id="stagioneName" class="form-input" placeholder="es. 2026/2027" maxlength="20">
+                    <p style="font-size:11px;color:var(--a-muted);margin-top:4px">Usa il formato AAAA/AAAA, es. 2026/2027</p>
+                  </div>
+                  <div class="form-group form-full">
+                    <label class="toggle-label">
+                      <input type="checkbox" id="stagioneCurrent">
+                      <span class="toggle-track"></span>
+                      Imposta subito come stagione corrente
+                    </label>
+                  </div>
+                </div>
+                <div class="form-actions">
+                  <button id="stagioneCancel" class="btn-ghost">Annulla</button>
+                  <button id="stagioneSave" class="btn-primary">Crea stagione</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="dash-card">
+            <div class="dash-card-title">Maglia (teaser homepage)</div>
+            <div style="padding:14px 18px">
+              <p style="font-size:12px;color:var(--a-muted);margin-bottom:14px">Teaser "nuova maglia in arrivo" tra hero e prossime partite in homepage, countdown compreso.</p>
+              <div class="form-grid">
+                <div class="form-group form-full">
+                  <label class="toggle-label">
+                    <input type="checkbox" id="magliaEnabled">
+                    <span class="toggle-track"></span>
+                    Mostra la sezione in homepage
+                  </label>
+                </div>
+                <div class="form-group form-full">
+                  <label class="form-label">Titolo</label>
+                  <input type="text" id="magliaTitle" class="form-input" maxlength="60" placeholder="es. Nuova maglia 2026/27">
+                </div>
+                <div class="form-group form-full">
+                  <label class="form-label">Sottotitolo</label>
+                  <textarea id="magliaSubtitle" class="form-input" rows="3" maxlength="200" placeholder="es. Il reveal si avvicina: presto potrai ruotarla, ingrandirla ed esplorarla in un render 3D interattivo."></textarea>
+                </div>
+                <div class="form-group form-full">
+                  <label class="form-label">Data e ora del reveal</label>
+                  <input type="datetime-local" id="magliaRevealDate" class="form-input">
+                </div>
+              </div>
+              <div class="form-actions">
+                <button id="magliaSave" class="btn-primary">Salva</button>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -832,79 +888,6 @@
       </section>
 
       <!-- ---- STAGIONI ---- -->
-      <section id="sectionStagioni" class="admin-section is-hidden">
-
-        <div class="ga-info" style="margin-bottom:24px">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          La stagione contrassegnata come <strong>Corrente</strong> viene usata come default nelle pagine Squadre e Calendario. I nuovi giocatori, staff e partite vengono associati automaticamente alla stagione corrente.
-        </div>
-
-        <!-- Lista stagioni -->
-        <div id="stagionList"></div>
-
-        <!-- Form nuova stagione -->
-        <div id="stagionForm" class="is-hidden" style="max-width:480px">
-          <h3 style="margin-bottom:20px;font-family:var(--font-heading);font-size:16px">Nuova stagione</h3>
-          <div class="form-grid">
-            <div class="form-group form-full">
-              <label class="form-label">Nome stagione *</label>
-              <input type="text" id="stagioneName" class="form-input" placeholder="es. 2026/2027" maxlength="20">
-              <p style="font-size:11px;color:var(--a-muted);margin-top:4px">Usa il formato AAAA/AAAA, es. 2026/2027</p>
-            </div>
-            <div class="form-group form-full">
-              <label class="toggle-label">
-                <input type="checkbox" id="stagioneCurrent">
-                <span class="toggle-track"></span>
-                Imposta subito come stagione corrente
-              </label>
-            </div>
-          </div>
-          <div class="form-actions">
-            <button id="stagioneCancel" class="btn-ghost">Annulla</button>
-            <button id="stagioneSave" class="btn-primary">Crea stagione</button>
-          </div>
-        </div>
-
-      </section>
-
-      <!-- ---- MAGLIA (teaser homepage) ---- -->
-      <section id="sectionMaglia" class="admin-section is-hidden">
-
-        <div class="ga-info" style="margin-bottom:24px">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          Gestisce il teaser "nuova maglia in arrivo" tra hero e prossime partite in homepage (countdown compreso). Quando il render 3D sarà pronto andrà comunque incorporato nel codice: questi campi restano per titolo, sottotitolo, data di reveal e per nascondere la sezione quando non serve più.
-        </div>
-
-        <div style="max-width:560px">
-          <div class="form-grid">
-            <div class="form-group form-full">
-              <label class="toggle-label">
-                <input type="checkbox" id="magliaEnabled">
-                <span class="toggle-track"></span>
-                Mostra la sezione in homepage
-              </label>
-            </div>
-            <div class="form-group form-full">
-              <label class="form-label">Titolo</label>
-              <input type="text" id="magliaTitle" class="form-input" maxlength="60" placeholder="es. Nuova maglia 2026/27">
-            </div>
-            <div class="form-group form-full">
-              <label class="form-label">Sottotitolo</label>
-              <textarea id="magliaSubtitle" class="form-input" rows="3" maxlength="200" placeholder="es. Il reveal si avvicina: presto potrai ruotarla, ingrandirla ed esplorarla in un render 3D interattivo."></textarea>
-            </div>
-            <div class="form-group form-full">
-              <label class="form-label">Data e ora del reveal</label>
-              <input type="datetime-local" id="magliaRevealDate" class="form-input">
-              <p style="font-size:11px;color:var(--a-muted);margin-top:4px">Il countdown in homepage conta alla rovescia fino a questo momento.</p>
-            </div>
-          </div>
-          <div class="form-actions">
-            <button id="magliaSave" class="btn-primary">Salva</button>
-          </div>
-        </div>
-
-      </section>
-
       <!-- ---- DATI JSON ---- -->
       <section id="sectionDatiJson" class="admin-section is-hidden">
         <p class="json-section-desc">

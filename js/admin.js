@@ -77,7 +77,7 @@
   ================================================ */
   var SECTIONS = {
     dashboard: 'Dashboard', articoli: 'Articoli', calendario: 'Calendario', galleria: 'Galleria', squadre: 'Squadre',
-    sponsor: 'Sponsor', atleti: 'Atleti', dirigenti: 'Dirigenti', girone: 'Girone Prima Divisione', stagioni: 'Stagioni', maglia: 'Maglia', datiJson: 'File JSON',
+    sponsor: 'Sponsor', atleti: 'Atleti', dirigenti: 'Dirigenti', girone: 'Girone Prima Divisione', datiJson: 'File JSON',
     log: 'Log', budget: 'Budget & Forecast'
   };
 
@@ -149,8 +149,6 @@
     if (section === 'sponsor')    renderSponsor();
     if (section === 'atleti')     renderAtleti();
     if (section === 'dirigenti')  renderDirigenti();
-    if (section === 'stagioni')   renderStagioni();
-    if (section === 'maglia')     renderMaglia();
     if (section === 'datiJson')   renderDatiJson();
     if (section === 'log')        _renderLog();
     if (section === 'budget')     _renderActiveBudgetTab();
@@ -195,6 +193,8 @@
 
     _renderDashBudgetWidget();
     _renderDashCashflowWidget();
+    renderStagioni();
+    renderMaglia();
   }
 
   function _statCard(icon, val, label, mod) {
@@ -1248,12 +1248,12 @@
      STAGIONI
   ================================================ */
   function renderStagioni() {
-    setTopbarBtn('Nuova stagione', function () {
+    document.getElementById('stagioneAddBtn').onclick = function () {
       document.getElementById('stagioneName').value = '';
       document.getElementById('stagioneCurrent').checked = false;
       document.getElementById('stagionForm').classList.remove('is-hidden');
       document.getElementById('stagioneName').focus();
-    });
+    };
     refreshStagionList();
   }
 
