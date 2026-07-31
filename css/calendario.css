@@ -184,7 +184,8 @@
   font-family: var(--font-body); font-weight: 600; font-size: 14px; color: rgba(255,255,255,0.55);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
 }
-.fixture-team--vv .fixture-team-name { font-weight: 800; color: #fff; }
+.fixture-team--vv .fixture-team-name { color: #fff; }
+.fixture-team-name strong { font-weight: 800; color: #fff; }
 
 .fixture-row-score {
   flex-shrink: 0; width: 24px; text-align: center;
