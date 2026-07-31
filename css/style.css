@@ -3085,8 +3085,6 @@ main, footer.site-footer {
 .dt-sponsors-gold {
   overflow: hidden;
   padding: 20px 24px;
-  background: #fffaf0;
-  border-bottom: 1px solid #f3e0b8;
 }
 .dt-sponsors-gold:empty { display: none; }
 
