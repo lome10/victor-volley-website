@@ -400,15 +400,13 @@
     }).join('');
 
     if (p) {
-      var isHome = _isVV(p.squadra_casa);
       document.getElementById('matchDate').value     = p.data || '';
       document.getElementById('matchTime').value     = p.ora  || '18:30';
       catSel.value                                   = p.categoria || 'Prima Divisione';
-      document.getElementById('matchIsHome').checked = isHome;
-      document.getElementById('matchHomeTeam').value = isHome ? (p.squadra_casa || 'Victor Volley') : (p.squadra_ospite || 'Victor Volley');
-      document.getElementById('matchHomeLogo').value = isHome ? (p.logo_casa || '') : (p.logo_ospite || '');
-      document.getElementById('matchAwayTeam').value = isHome ? (p.squadra_ospite || '') : (p.squadra_casa || '');
-      document.getElementById('matchAwayLogo').value = isHome ? (p.logo_ospite || '') : (p.logo_casa || '');
+      document.getElementById('matchHomeTeam').value = p.squadra_casa   || '';
+      document.getElementById('matchHomeLogo').value = p.logo_casa     || '';
+      document.getElementById('matchAwayTeam').value = p.squadra_ospite || '';
+      document.getElementById('matchAwayLogo').value = p.logo_ospite   || '';
       _syncLogoPreview('matchHomeLogo', 'homeLogoPreview');
       _syncLogoPreview('matchAwayLogo', 'awayLogoPreview');
       document.getElementById('matchVenue').value    = p.palazzetto || '';
@@ -419,8 +417,7 @@
       document.getElementById('matchDate').value     = '';
       document.getElementById('matchTime').value     = '18:30';
       catSel.value                                   = 'Prima Divisione';
-      document.getElementById('matchIsHome').checked = true;
-      document.getElementById('matchHomeTeam').value = 'Victor Volley';
+      document.getElementById('matchHomeTeam').value = '';
       document.getElementById('matchHomeLogo').value = '';
       document.getElementById('matchAwayTeam').value = '';
       document.getElementById('matchAwayLogo').value = '';
@@ -437,12 +434,12 @@
   document.getElementById('matchSave').addEventListener('click', function () {
     var data = document.getElementById('matchDate').value;
     if (!data) { alert('La data è obbligatoria.'); return; }
-    var isHome    = document.getElementById('matchIsHome').checked;
-    var squadraVV = document.getElementById('matchHomeTeam').value.trim() || 'Victor Volley';
-    var avversario = document.getElementById('matchAwayTeam').value.trim();
-    if (!avversario) { alert('La squadra avversaria è obbligatoria.'); return; }
-    var logoVV    = document.getElementById('matchHomeLogo').value.trim();
-    var logoAvv   = document.getElementById('matchAwayLogo').value.trim();
+    var squadraCasa   = document.getElementById('matchHomeTeam').value.trim();
+    var squadraOspite = document.getElementById('matchAwayTeam').value.trim();
+    if (!squadraCasa)   { alert('La squadra di casa è obbligatoria.'); return; }
+    if (!squadraOspite) { alert('La squadra ospite è obbligatoria.'); return; }
+    var logoCasa   = document.getElementById('matchHomeLogo').value.trim();
+    var logoOspite = document.getElementById('matchAwayLogo').value.trim();
     var stato     = document.getElementById('matchStato').value;
     var setC      = document.getElementById('matchSetCasa').value;
     var setO      = document.getElementById('matchSetOspite').value;
@@ -451,10 +448,10 @@
       id:            (_matchEditing && _matchEditing.id) || ('m' + Date.now()),
       stagione:      (_matchEditing && _matchEditing.stagione) || (VV.getCurrentSeason() || {}).id || '2025/2026',
       categoria:     document.getElementById('matchCategory').value,
-      squadra_casa:  isHome ? squadraVV  : avversario,
-      squadra_ospite: isHome ? avversario : squadraVV,
-      logo_casa:     isHome ? logoVV     : logoAvv,
-      logo_ospite:   isHome ? logoAvv    : logoVV,
+      squadra_casa:   squadraCasa,
+      squadra_ospite: squadraOspite,
+      logo_casa:      logoCasa,
+      logo_ospite:    logoOspite,
       data:          data,
       ora:           document.getElementById('matchTime').value,
       palazzetto:    document.getElementById('matchVenue').value.trim(),
