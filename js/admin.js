@@ -385,7 +385,7 @@
       var nomeCasa   = esc(p.squadra_casa || '');
       var nomeOspite = esc(p.squadra_ospite || '');
       return '<tr>' +
-        '<td>' + esc(p.data || '—') + '</td>' +
+        '<td style="white-space:nowrap">' + _fmtDate(p.data) + '</td>' +
         '<td>' + esc(p.ora || '—') + '</td>' +
         '<td><span class="chip chip--blue">' + esc(p.categoria || '') + '</span></td>' +
         '<td>' +
