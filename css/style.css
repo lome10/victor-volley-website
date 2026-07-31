@@ -1950,7 +1950,7 @@ main, footer.site-footer {
 ================================================ */
 .news-page-cards {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
   padding: 8px 0 0;
 }
@@ -1991,9 +1991,6 @@ main, footer.site-footer {
   text-align: center;
 }
 
-@media (max-width: 900px) {
-  .news-page-cards { grid-template-columns: repeat(3, 1fr); }
-}
 @media (max-width: 640px) {
   .news-page-cards { grid-template-columns: repeat(2, 1fr); gap: 8px; }
 }
@@ -2621,6 +2618,9 @@ main, footer.site-footer {
   height: auto;
   aspect-ratio: 9 / 16;
   flex-shrink: unset;
+}
+.news-page-cards .hero-card {
+  aspect-ratio: 4 / 5;
 }
 @media (max-width: 640px) {
   .related-cards { grid-template-columns: repeat(2, 1fr); gap: 10px; }

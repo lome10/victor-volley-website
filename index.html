@@ -432,11 +432,19 @@
       var total  = articles.length;
       var offset = 0;
 
-      function visibleCount() {
-        return window.innerWidth <= 640 ? 1 : window.innerWidth <= 900 ? 2 : 3;
+      var CARD_GAP = 16;
+      function cardWidth() {
+        return cards[0] ? cards[0].offsetWidth : 0;
       }
       function cardStep() {
-        return cards[0] ? cards[0].offsetWidth + 16 : 0;
+        return cardWidth() + CARD_GAP;
+      }
+      function visibleCount() {
+        var cw = cardWidth();
+        if (!cw) return 1;
+        /* N card entrano se N*cw + (N-1)*gap <= larghezza disponibile,
+           cioè N <= (larghezza + gap) / (cw + gap) — non N gap "pieni". */
+        return Math.max(1, Math.floor((track.parentElement.clientWidth + CARD_GAP) / (cw + CARD_GAP)));
       }
       function slideTo(n) {
         var vc  = visibleCount();
