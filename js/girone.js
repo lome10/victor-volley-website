@@ -70,14 +70,17 @@
   }
 
   /* ----------------------------------------------------------------
-     Featured card (homepage)
+     Featured card (homepage) — dalla partita reale del calendario
   ---------------------------------------------------------------- */
-  function renderFeatured(match, squadre, homeId) {
-    var casa   = squadraById(squadre, match.squadra_casa);
-    var ospite = squadraById(squadre, match.squadra_ospite);
-    var isHome = match.squadra_casa === homeId;
-    var vv     = isHome ? casa   : ospite;
-    var avv    = isHome ? ospite : casa;
+  function _isVV(nome) { return (nome || '').toLowerCase().indexOf('victor') !== -1; }
+
+  /* Card "prossima partita" per una partita reale del calendario (collection
+     "partite"): squadra_casa/ospite sono nomi liberi, non id di un elenco
+     squadre, e i loghi sono già sul match (logo_casa/logo_ospite). */
+  function renderFeatured(match) {
+    var isHome = _isVV(match.squadra_casa);
+    var vv  = { nome: isHome ? match.squadra_casa : match.squadra_ospite, logo: isHome ? match.logo_casa : match.logo_ospite };
+    var avv = { nome: isHome ? match.squadra_ospite : match.squadra_casa, logo: isHome ? match.logo_ospite : match.logo_casa };
     var pin = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>';
 
     var cd = '';
@@ -92,7 +95,7 @@
 
     return '<div class="gf-card' + (isHome ? ' gf-card--home' : '') + '">' +
       '<div class="gf-top">' +
-        '<span class="gf-badge gf-badge--cat">Prima Divisione</span>' +
+        '<span class="gf-badge gf-badge--cat">' + esc(match.categoria || 'Prima Divisione') + '</span>' +
         '<span class="gf-badge ' + (isHome ? 'gf-badge--home' : 'gf-badge--away') + '">' + (isHome ? 'Casa' : 'Trasferta') + '</span>' +
         '<span class="gf-date">' + esc(formatData(match.data, match.ora)) + '</span>' +
       '</div>' +
@@ -224,13 +227,13 @@
           if (doc.exists && doc.data() && doc.data().json) {
             return JSON.parse(doc.data().json);
           }
-          return fetch('data/girone.json').then(function (r) { return r.json(); });
+          return fetch('/data/girone.json').then(function (r) { return r.json(); });
         })
         .catch(function () {
-          return fetch('data/girone.json').then(function (r) { return r.json(); });
+          return fetch('/data/girone.json').then(function (r) { return r.json(); });
         });
     }
-    return fetch('data/girone.json').then(function (r) { return r.json(); });
+    return fetch('/data/girone.json').then(function (r) { return r.json(); });
   }
 
   /* ----------------------------------------------------------------
@@ -248,25 +251,33 @@
         var classifica = calcolaClassifica(girone);
         var homeSquadra = girone.squadre.filter(function (s) { return s.home; })[0];
         var homeId = homeSquadra ? homeSquadra.id : null;
-        var today  = new Date().toISOString().slice(0, 10);
 
-        /* Homepage */
-        if (elFeat || elCl) {
-          var next = homeId ? girone.partite.filter(function (p) {
-            return (p.squadra_casa === homeId || p.squadra_ospite === homeId)
-              && p.set_casa == null && p.data >= today;
-          }).sort(function (a, b) { return a.data > b.data ? 1 : -1; })[0] : null;
+        /* Homepage — classifica gestita a mano via girone.json (il Calendario
+           registra solo le partite della Prima Squadra, non l'intero girone,
+           quindi da lì non è calcolabile una classifica vera). */
+        if (elCl) {
+          elCl.innerHTML = renderClassifica(classifica, girone.squadre, girone, homeId);
+        }
 
-          if (elFeat) {
+        /* La card "Prossima partita" invece legge dal calendario reale
+           (stagione corrente + Prima Divisione), non più da girone.json. */
+        if (elFeat && window.DB && typeof DB.load === 'function') {
+          DB.load(['partite', 'seasons'], function () {
+            var season   = VV.getCurrentSeason();
+            var todayStr = new Date().toISOString().slice(0, 10);
+            var next = VV.getPartite().filter(function (p) {
+              return p.categoria === 'Prima Divisione'
+                && (!season || p.stagione === season.id)
+                && p.stato !== 'conclusa'
+                && p.data >= todayStr;
+            }).sort(function (a, b) { return a.data > b.data ? 1 : -1; })[0];
+
             elFeat.innerHTML = next
-              ? renderFeatured(next, girone.squadre, homeId)
+              ? renderFeatured(next)
               : '<div class="gf-empty">Nessuna partita in programma per la Prima Divisione.</div>';
             tick();
             setInterval(tick, 60000);
-          }
-          if (elCl) {
-            elCl.innerHTML = renderClassifica(classifica, girone.squadre, girone, homeId);
-          }
+          });
         }
 
         /* Admin */

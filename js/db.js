@@ -477,7 +477,7 @@
        Firestore, se abilitati. */
     migratePartiteToCollection: function (done) {
       function fromStatic() {
-        return fetch('data/partite.json').then(function (r) { return r.json(); });
+        return fetch('/data/partite.json').then(function (r) { return r.json(); });
       }
       global.db.collection('siteData').doc('partite').get()
         .then(function (doc) {

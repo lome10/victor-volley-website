@@ -2300,7 +2300,7 @@
      FILE JSON
   ================================================ */
   var JSON_FILES = {
-    girone:  { label: 'data/girone.json',  staticPath: 'data/girone.json'  }
+    girone:  { label: 'data/girone.json',  staticPath: '/data/girone.json'  }
   };
 
   function renderDatiJson() {
