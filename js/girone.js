@@ -130,7 +130,7 @@
           (s.logo
             ? '<img src="' + esc(s.logo) + '" class="gc-logo" alt="">'
             : '<span class="gc-logo-init">' + esc((s.nome || '?').charAt(0)) + '</span>') +
-          esc(s.nome) +
+          '<span class="gc-name-text">' + esc(s.nome) + '</span>' +
         '</td>' +
         '<td class="gc-stat">' + r.v + '</td>' +
         '<td class="gc-stat">' + r.p + '</td>' +

@@ -588,26 +588,6 @@ main, footer.site-footer {
   color: var(--c-white);
 }
 
-.footer-links {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 22px;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.footer-links a {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.65);
-  text-decoration: none;
-  white-space: nowrap;
-  transition: color var(--t);
-}
-
-.footer-links a:hover { color: var(--c-azzurro); }
-
 .footer-side {
   display: flex;
   align-items: center;
@@ -1771,6 +1751,7 @@ main, footer.site-footer {
 
 .gc-pos  { text-align: center; width: 28px; color: #aaa; font-size: 11px; }
 .gc-name { display: flex; align-items: center; gap: 7px; font-weight: 500; }
+.gc-name-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .gc-stat { text-align: center; width: 28px; color: #777; }
 .gc-pts  { text-align: center; width: 36px; font-weight: 700; color: #111; }
 
@@ -3482,7 +3463,6 @@ main, footer.site-footer {
 
 @media (max-width: 768px) {
   .footer-main { align-items: center; padding: 28px 0; }
-  .footer-links { display: none; }
   .footer-side { display: contents; }
   .footer-social { order: 2; }
   .footer-email { order: 3; flex-basis: 100%; }

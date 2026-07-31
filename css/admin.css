@@ -1219,6 +1219,7 @@ button { font-family: var(--font-body); cursor: pointer; }
 .gc-table tbody tr:last-child td { border-bottom: none; }
 .gc-pos  { text-align: center; width: 28px; color: #aaa; font-size: 11px; }
 .gc-name { display: flex; align-items: center; gap: 7px; font-weight: 500; }
+.gc-name-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .gc-stat { text-align: center; width: 28px; color: #777; }
 .gc-pts  { text-align: center; width: 36px; font-weight: 700; color: #111; }
 .gc-logo {
