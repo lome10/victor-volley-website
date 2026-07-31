@@ -61,7 +61,7 @@
 
         <!-- Articoli correlati -->
         <div id="relatedSection" class="related-section" style="margin-top:64px;padding-top:48px;border-top:1px solid var(--c-gray-light);display:none">
-          <h3 style="margin-bottom:24px">Altri articoli</h3>
+          <h3 style="margin-bottom:24px">Articoli correlati</h3>
           <div class="related-cards" id="relatedGrid"></div>
         </div>
 
@@ -152,8 +152,10 @@
       ? article.content
       : '<p style="color:#aaa;font-style:italic">Contenuto non disponibile.</p>';
 
-    /* Articoli correlati — stessa card 9:16 e stessa animazione hover di hero/news */
-    var others = VV.getArticles(true).filter(function (a) { return a.id !== article.id; }).slice(0, 3);
+    /* Articoli correlati — stessa card 9:16 e stessa animazione hover di hero/news.
+       Su mobile solo 2, per non affollare la riga. */
+    var relatedCount = window.innerWidth <= 640 ? 2 : 3;
+    var others = VV.getArticles(true).filter(function (a) { return a.id !== article.id; }).slice(0, relatedCount);
     if (others.length) {
       var relatedGrid = document.getElementById('relatedGrid');
       document.getElementById('relatedSection').style.display = '';
