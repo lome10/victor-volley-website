@@ -1142,11 +1142,11 @@ main, footer.site-footer {
 }
 
 /* ================================================
-   News Cards — slider ultime news (stessa card 9:16 dell'hero)
+   News Cards — slider ultime news (card 4:5, diversa dall'hero 9:16)
 ================================================ */
 .news-cards {
   --card-h: 460px;
-  --card-w: calc(var(--card-h) * 9 / 16);
+  --card-w: calc(var(--card-h) * 4 / 5);
   --card-gap: 16px;
   position: relative;
   overflow: hidden;
@@ -1208,7 +1208,7 @@ main, footer.site-footer {
 @media (max-width: 640px) {
   .news-cards {
     --card-h: 340px;
-    --card-w: min(calc(var(--card-h) * 9 / 16), calc(100vw - 40px));
+    --card-w: min(calc(var(--card-h) * 4 / 5), calc(100vw - 40px));
     padding: 20px 0 40px;
     justify-content: flex-start;
   }
@@ -2571,7 +2571,7 @@ main, footer.site-footer {
 
 .article-hero-media {
   width: 100%;
-  aspect-ratio: 9 / 16;
+  aspect-ratio: 4 / 5;
   border-radius: var(--card-radius);
   overflow: hidden;
   box-shadow: var(--card-shadow-hover);
