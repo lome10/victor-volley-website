@@ -2892,20 +2892,58 @@
   /* ---- Drag & drop touch per Kanban sponsor (mobile) ---- */
   var _kanbanTouch = {
     timer: null, active: false, moved: false, card: null, id: null,
-    clone: null, offX: 0, offY: 0, startX: 0, startY: 0, curCol: null
+    clone: null, offX: 0, offY: 0, startX: 0, startY: 0, lastX: 0, lastY: 0,
+    curCol: null, boardEl: null, rafId: null
   };
+  var KANBAN_SCROLL_EDGE = 70;
+  var KANBAN_SCROLL_SPEED = 14;
 
   function _kanbanTouchCleanup() {
     if (_kanbanTouch.timer) { clearTimeout(_kanbanTouch.timer); }
+    if (_kanbanTouch.rafId) { cancelAnimationFrame(_kanbanTouch.rafId); }
     if (_kanbanTouch.clone) { _kanbanTouch.clone.remove(); }
     if (_kanbanTouch.card) { _kanbanTouch.card.classList.remove('is-dragging'); }
     if (_kanbanTouch.curCol) { _kanbanTouch.curCol.classList.remove('dg-drop-hover'); }
     _kanbanTouch.timer = null;
+    _kanbanTouch.rafId = null;
     _kanbanTouch.active = false;
     _kanbanTouch.card = null;
     _kanbanTouch.id = null;
     _kanbanTouch.clone = null;
     _kanbanTouch.curCol = null;
+    _kanbanTouch.boardEl = null;
+  }
+
+  function _kanbanUpdateDropTarget() {
+    var el = document.elementFromPoint(_kanbanTouch.lastX, _kanbanTouch.lastY);
+    var col = el ? el.closest('.dg-kanban-col-body') : null;
+    if (col !== _kanbanTouch.curCol) {
+      if (_kanbanTouch.curCol) _kanbanTouch.curCol.classList.remove('dg-drop-hover');
+      if (col) col.classList.add('dg-drop-hover');
+      _kanbanTouch.curCol = col;
+    }
+  }
+
+  function _kanbanAutoScrollTick() {
+    if (!_kanbanTouch.active) { _kanbanTouch.rafId = null; return; }
+    if (_kanbanTouch.clone) {
+      _kanbanTouch.clone.style.left = (_kanbanTouch.lastX - _kanbanTouch.offX) + 'px';
+      _kanbanTouch.clone.style.top = (_kanbanTouch.lastY - _kanbanTouch.offY) + 'px';
+    }
+    var board = _kanbanTouch.boardEl;
+    if (board) {
+      var rect = board.getBoundingClientRect();
+      var x = _kanbanTouch.lastX;
+      if (x < rect.left + KANBAN_SCROLL_EDGE) {
+        var distL = (rect.left + KANBAN_SCROLL_EDGE - x) / KANBAN_SCROLL_EDGE;
+        board.scrollLeft -= KANBAN_SCROLL_SPEED * Math.min(1, distL);
+      } else if (x > rect.right - KANBAN_SCROLL_EDGE) {
+        var distR = (x - (rect.right - KANBAN_SCROLL_EDGE)) / KANBAN_SCROLL_EDGE;
+        board.scrollLeft += KANBAN_SCROLL_SPEED * Math.min(1, distR);
+      }
+    }
+    _kanbanUpdateDropTarget();
+    _kanbanTouch.rafId = requestAnimationFrame(_kanbanAutoScrollTick);
   }
 
   function _bindKanbanCardTouch(card) {
@@ -2913,6 +2951,8 @@
       var t = e.touches[0];
       _kanbanTouch.startX = t.clientX;
       _kanbanTouch.startY = t.clientY;
+      _kanbanTouch.lastX = t.clientX;
+      _kanbanTouch.lastY = t.clientY;
       _kanbanTouch.card = card;
       _kanbanTouch.id = card.dataset.id;
       _kanbanTouch.active = false;
@@ -2920,6 +2960,7 @@
       _kanbanTouch.timer = setTimeout(function () {
         _kanbanTouch.active = true;
         card.classList.add('is-dragging');
+        _kanbanTouch.boardEl = card.closest('.dg-kanban');
         var rect = card.getBoundingClientRect();
         var clone = card.cloneNode(true);
         clone.classList.remove('is-dragging');
@@ -2936,6 +2977,7 @@
         _kanbanTouch.offX = t.clientX - rect.left;
         _kanbanTouch.offY = t.clientY - rect.top;
         if (navigator.vibrate) navigator.vibrate(10);
+        _kanbanTouch.rafId = requestAnimationFrame(_kanbanAutoScrollTick);
       }, 300);
     }, { passive: true });
 
@@ -2949,17 +2991,8 @@
       }
       e.preventDefault();
       _kanbanTouch.moved = true;
-      if (_kanbanTouch.clone) {
-        _kanbanTouch.clone.style.left = (t.clientX - _kanbanTouch.offX) + 'px';
-        _kanbanTouch.clone.style.top = (t.clientY - _kanbanTouch.offY) + 'px';
-      }
-      var el = document.elementFromPoint(t.clientX, t.clientY);
-      var col = el ? el.closest('.dg-kanban-col-body') : null;
-      if (col !== _kanbanTouch.curCol) {
-        if (_kanbanTouch.curCol) _kanbanTouch.curCol.classList.remove('dg-drop-hover');
-        if (col) col.classList.add('dg-drop-hover');
-        _kanbanTouch.curCol = col;
-      }
+      _kanbanTouch.lastX = t.clientX;
+      _kanbanTouch.lastY = t.clientY;
     }, { passive: false });
 
     card.addEventListener('touchend', function () {
