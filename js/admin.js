@@ -195,6 +195,7 @@
 
     _renderDashBudgetWidget();
     _renderDashCashflowWidget();
+    _renderDashSpeseWidget();
     renderStagioni();
     renderMaglia();
   }
@@ -2477,7 +2478,7 @@
     if (_activeBudgetTab === 'sponsor')   _renderKanban();
     if (_activeBudgetTab === 'rette')     _renderRette();
     if (_activeBudgetTab === 'spese')     _renderSpese();
-    if (_activeBudgetTab === 'bilancio')  _renderBilancio();
+    if (_activeBudgetTab === 'bilancio')  { _renderBilancio(); _renderSpeseForecast(); }
   }
 
   function _mapDoc(d) { return Object.assign({ id: d.id }, d.data()); }
@@ -3551,6 +3552,79 @@
     }).join('');
   }
 
+  /* ---- FORECASTING SPESE — preventivato vs sostenuto, per categoria ----
+     Un'unica funzione di calcolo/rendering condivisa tra Spese, Bilancio e
+     Dashboard: quando la sezione Budget verrà riorganizzata, questo blocco
+     resta il punto unico da spostare/estendere. */
+  function _calcSpeseForecast() {
+    var totPreventivato = 0, totSostenuto = 0;
+    var perCategoria = {};
+    _vociSpesa.forEach(function (v) {
+      var prev = +v.importoPreventivato || 0, sost = +v.importoSostenuto || 0;
+      totPreventivato += prev; totSostenuto += sost;
+      var key = v.categoriaSpesaId || '__none__';
+      perCategoria[key] = perCategoria[key] || { preventivato: 0, sostenuto: 0 };
+      perCategoria[key].preventivato += prev;
+      perCategoria[key].sostenuto += sost;
+    });
+    var righe = Object.keys(perCategoria).map(function (key) {
+      var c = key === '__none__' ? null : _categoriaSpesaById(key);
+      var p = perCategoria[key];
+      return { nome: c ? c.nome : 'Senza categoria', preventivato: p.preventivato, sostenuto: p.sostenuto, scostamento: p.sostenuto - p.preventivato };
+    }).sort(function (a, b) { return a.nome.localeCompare(b.nome); });
+    return { totPreventivato: totPreventivato, totSostenuto: totSostenuto, scostamento: totSostenuto - totPreventivato, righe: righe };
+  }
+
+  /* Scostamento: positivo = speso più del previsto (rosso), negativo/zero = entro il preventivo (verde) — segno opposto a un normale "saldo". */
+  function _speseForecastStatsHtml(r) {
+    return _budgetStatCard('Preventivato', r.totPreventivato, '') +
+      _budgetStatCard('Sostenuto', r.totSostenuto, '') +
+      _budgetStatCard('Scostamento dal preventivo', r.scostamento, r.scostamento > 0 ? '--red' : '--green');
+  }
+
+  function _speseForecastTableHtml(r) {
+    if (!r.righe.length) return '<p class="dg-muted">Nessuna voce di spesa per questa stagione.</p>';
+    var rows = r.righe.map(function (x) {
+      return '<tr>' +
+        '<td>' + esc(x.nome) + '</td>' +
+        '<td>' + _eur(x.preventivato) + '</td>' +
+        '<td>' + _eur(x.sostenuto) + '</td>' +
+        '<td style="color:' + (x.scostamento > 0 ? 'var(--dg-red)' : 'var(--dg-green)') + '">' + (x.scostamento > 0 ? '+' : '') + _eur(x.scostamento) + '</td>' +
+        '</tr>';
+    }).join('');
+    return '<div class="dg-table-wrap"><table class="dg-table"><thead><tr><th>Categoria</th><th>Preventivato</th><th>Sostenuto</th><th>Scostamento</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+  }
+
+  /* Riempie ogni istanza presente nel DOM (Spese e Bilancio condividono lo stesso widget). */
+  function _renderSpeseForecast() {
+    var r = _calcSpeseForecast();
+    var statsHtml = _speseForecastStatsHtml(r);
+    var tableHtml = _speseForecastTableHtml(r);
+    ['speseForecastStats', 'bilancioForecastStats'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.innerHTML = statsHtml;
+    });
+    ['speseForecastTable', 'bilancioForecastTable'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.innerHTML = tableHtml;
+    });
+  }
+
+  function _renderDashSpeseWidget() {
+    var r = _calcSpeseForecast();
+    var season = _seasons.find(function (s) { return s.id === _currentSeasonId; }) || {};
+    var pct = r.totPreventivato > 0 ? Math.round(r.totSostenuto / r.totPreventivato * 100) : 0;
+
+    document.getElementById('dashSpeseSeasonName').textContent = season.nome ? '· ' + season.nome : '';
+    document.getElementById('dashSpeseSostenuto').textContent =
+      '€' + Math.round(r.totSostenuto).toLocaleString('it-IT') + ' / €' + Math.round(r.totPreventivato).toLocaleString('it-IT');
+    document.getElementById('dashSpesePct').textContent = pct + '%';
+    document.getElementById('dashSpeseBarFill').style.width = Math.max(0, Math.min(100, pct)) + '%';
+    var scostEl = document.getElementById('dashSpeseScostamento');
+    scostEl.textContent = (r.scostamento > 0 ? '+' : '') + '€' + Math.round(r.scostamento).toLocaleString('it-IT') + ' rispetto al preventivo';
+    scostEl.className = 'dash-budget-obiettivo ' + (r.scostamento > 0 ? 'dash-budget-saldo--neg' : 'dash-budget-saldo--pos');
+  }
+
   var _speseFilterCategoriaId = '';
 
   function _populateSpeseFilterCategoria() {
@@ -3564,6 +3638,7 @@
 
   function _renderSpese() {
     _populateSpeseFilterCategoria();
+    _renderSpeseForecast();
     var body = document.getElementById('speseBody');
     var items = _vociSpesa.filter(function (v) {
       if (!_speseFilterCategoriaId) return true;
@@ -4007,6 +4082,13 @@
     dashCashflowCard.addEventListener('click', _goToBudgetRiepilogo);
     dashCashflowCard.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); _goToBudgetRiepilogo(); }
+    });
+
+    var dashSpeseCard = document.getElementById('dashSpeseCard');
+    var _goToBudgetSpese = function () { goTo('budget'); _switchBudgetTab('spese'); };
+    dashSpeseCard.addEventListener('click', _goToBudgetSpese);
+    dashSpeseCard.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); _goToBudgetSpese(); }
     });
 
     document.getElementById('filterMieiSponsor').addEventListener('change', _renderKanban);

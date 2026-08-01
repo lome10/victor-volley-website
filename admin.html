@@ -174,6 +174,20 @@
               <div class="dash-budget-obiettivo" id="dashCashflowTranche">0 tranche pianificate</div>
             </div>
           </div>
+          <div class="dash-card dash-card--clickable" id="dashSpeseCard" role="button" tabindex="0" aria-label="Vai a Budget &amp; Forecast">
+            <div class="dash-card-title">Spese stagione<span id="dashSpeseSeasonName" class="dash-card-title-sub"></span></div>
+            <div class="dash-budget-body">
+              <div class="dash-budget-row">
+                <div>
+                  <div class="dash-budget-label">Sostenuto / Preventivato</div>
+                  <div class="dash-budget-saldo" id="dashSpeseSostenuto">€0 / €0</div>
+                </div>
+                <div class="dash-budget-pct" id="dashSpesePct">0%</div>
+              </div>
+              <div class="dg-obiettivo-bar"><div id="dashSpeseBarFill" class="dg-obiettivo-bar-fill"></div></div>
+              <div class="dash-budget-obiettivo" id="dashSpeseScostamento">€0 rispetto al preventivo</div>
+            </div>
+          </div>
           <div class="dash-card is-hidden" id="dashPromemoriaWidget">
             <div class="dash-card-title">Promemoria sponsor in scadenza</div>
             <div id="dashPromemoriaList" class="dg-reminder-list" style="padding:14px 18px"></div>
@@ -1160,7 +1174,13 @@
 
         <!-- ---- Spese ---- -->
         <div id="budgetPaneSpese" class="dg-section is-hidden">
-          <div class="dg-toolbar">
+          <div class="dg-card">
+            <div class="dg-card-title">Preventivato vs Sostenuto</div>
+            <div class="dg-card-sub">Riepilogo di forecasting per questa stagione, per categoria di spesa.</div>
+            <div class="dg-stat-row" id="speseForecastStats" style="margin-top:14px"></div>
+            <div id="speseForecastTable" style="margin-top:14px"></div>
+          </div>
+          <div class="dg-toolbar" style="margin-top:14px">
             <button id="newSpesaBtn" class="dg-btn-primary dg-btn-sm">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               Nuova voce
@@ -1227,6 +1247,13 @@
                 <tbody id="bilancioEntrateBody"><tr><td colspan="4" class="dg-empty">—</td></tr></tbody>
               </table>
             </div>
+          </div>
+
+          <div class="dg-card" style="margin-top:14px">
+            <div class="dg-card-title">Spese: preventivato vs sostenuto (forecasting)</div>
+            <div class="dg-card-sub">A differenza del saldo mensile qui sopra (soldi realmente mossi), questo riepilogo confronta quanto preventivato con quanto effettivamente speso, per categoria.</div>
+            <div class="dg-stat-row" id="bilancioForecastStats" style="margin-top:14px"></div>
+            <div id="bilancioForecastTable" style="margin-top:14px"></div>
           </div>
         </div>
 
