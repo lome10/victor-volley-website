@@ -3562,7 +3562,7 @@
         '<td><input type="number" class="dg-table-input" value="' + (v.importoSostenuto || 0) + '" data-id="' + v.id + '" data-field="importoSostenuto" onchange="DG.saveSpesaField(this)"></td>' +
         '<td><input type="date" class="dg-table-input" value="' + esc(v.dataSpesa || '') + '" data-id="' + v.id + '" data-field="dataSpesa" onchange="DG.saveSpesaField(this)">' +
         (v.dataSpesa ? '<div style="font-size:11px;color:var(--dg-muted);margin-top:3px">' + esc(_fmtDateLong(v.dataSpesa)) + '</div>' : '') + '</td>' +
-        '<td>' + esc(v.note || '') + '</td>' +
+        '<td><input type="text" class="dg-table-input" style="width:160px" value="' + esc(v.note || '') + '" data-id="' + v.id + '" data-field="note" onchange="DG.saveSpesaField(this)"></td>' +
         '<td><button class="dg-btn-icon-only" title="Elimina" onclick="DG.deleteSpesa(\'' + v.id + '\')">' + _delIconSm() + '</button></td>' +
         '</tr>';
     }).join('');
@@ -3573,9 +3573,9 @@
     var v = _vociSpesa.find(function (x) { return x.id === id; });
     if (!v) return;
     if (field === 'categoria' && !el.value.trim()) { alert('La voce di spesa non può essere vuota.'); el.value = v.categoria; return; }
-    var isText = field === 'dataSpesa' || field === 'categoriaSpesaId' || field === 'categoria';
+    var isText = field === 'dataSpesa' || field === 'categoriaSpesaId' || field === 'categoria' || field === 'note';
     var old = {}; old[field] = isText ? (v[field] || '') : (v[field] || 0);
-    var nv = isText ? (field === 'categoria' ? el.value.trim() : el.value) : (+el.value || 0);
+    var nv = isText ? (field === 'categoria' || field === 'note' ? el.value.trim() : el.value) : (+el.value || 0);
     v[field] = nv;
     var patch = {}; patch[field] = nv;
     db.collection('vociSpesa').doc(id).update(patch)
