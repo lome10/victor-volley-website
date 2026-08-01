@@ -3551,10 +3551,32 @@
     }).join('');
   }
 
+  var _speseFilterCategoriaId = '';
+
+  function _populateSpeseFilterCategoria() {
+    var sel = document.getElementById('speseFilterCategoria');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Tutte le categorie</option>' +
+      '<option value="__none__">Senza categoria</option>' +
+      _categorieSpesa.map(function (c) { return '<option value="' + c.id + '">' + esc(c.nome) + '</option>'; }).join('');
+    sel.value = _speseFilterCategoriaId;
+  }
+
   function _renderSpese() {
+    _populateSpeseFilterCategoria();
     var body = document.getElementById('speseBody');
-    if (!_vociSpesa.length) { body.innerHTML = '<tr><td colspan="7" class="dg-empty">Nessuna voce di spesa per questa stagione.</td></tr>'; return; }
-    body.innerHTML = _vociSpesa.map(function (v) {
+    var items = _vociSpesa.filter(function (v) {
+      if (!_speseFilterCategoriaId) return true;
+      if (_speseFilterCategoriaId === '__none__') return !v.categoriaSpesaId;
+      return v.categoriaSpesaId === _speseFilterCategoriaId;
+    });
+    if (!items.length) {
+      body.innerHTML = '<tr><td colspan="7" class="dg-empty">' +
+        (_vociSpesa.length ? 'Nessuna voce di spesa per questa categoria.' : 'Nessuna voce di spesa per questa stagione.') +
+        '</td></tr>';
+      return;
+    }
+    body.innerHTML = items.map(function (v) {
       return '<tr>' +
         '<td><input type="text" class="dg-table-input" style="width:180px" value="' + esc(v.categoria) + '" data-id="' + v.id + '" data-field="categoria" onchange="DG.saveSpesaField(this)"></td>' +
         '<td><select class="dg-table-input" data-id="' + v.id + '" data-field="categoriaSpesaId" onchange="DG.saveSpesaField(this)">' + _categorieSpesaOptionsHtml(v.categoriaSpesaId) + '</select></td>' +
@@ -4063,6 +4085,11 @@
     document.getElementById('categoriaSpesaAddBtn').addEventListener('click', DG.addCategoriaSpesa);
     document.getElementById('manageCategorieSpesaClose').addEventListener('click', function () { _closeBudgetModal('manageCategorieSpesaModal'); });
     document.getElementById('manageCategorieSpesaDone').addEventListener('click', function () { _closeBudgetModal('manageCategorieSpesaModal'); });
+
+    document.getElementById('speseFilterCategoria').addEventListener('change', function () {
+      _speseFilterCategoriaId = this.value;
+      _renderSpese();
+    });
   });
 
 })();
