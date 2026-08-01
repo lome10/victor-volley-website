@@ -3358,6 +3358,29 @@
       .catch(function (e) { alert('Errore: ' + e.message); });
   };
 
+  /* Alla prima spunta "pagata" di una tranche genera in automatico la spesa
+     IVA corrispondente (11% dell'importo tranche, data da compilare a mano).
+     ivaVoceSpesaId sulla tranche evita di rigenerarla se viene despuntata e
+     rispuntata. */
+  function _generaSpesaIvaTranche(t, az) {
+    var nome = ('IVA ' + (az ? az.ragioneSociale : '')).trim();
+    var importoIva = Math.round((+t.importo || 0) * 0.11 * 100) / 100;
+    var data = {
+      seasonId: _currentSeasonId, categoria: nome, categoriaSpesaId: '',
+      importoPreventivato: 0, importoSostenuto: importoIva, dataSpesa: '',
+      note: 'IVA 11% generata automaticamente sulla tranche di €' + Number(t.importo || 0).toLocaleString('it-IT')
+    };
+    var ref = db.collection('vociSpesa').doc();
+    return ref.set(data).then(function () {
+      data.id = ref.id;
+      _vociSpesa.push(data);
+      t.ivaVoceSpesaId = ref.id;
+      return db.collection('tranchePagamento').doc(t.id).update({ ivaVoceSpesaId: ref.id });
+    }).then(function () {
+      return _logWrite('voceSpesa', ref.id, 'Spesa — ' + nome, 'create', _diff({}, data, Object.keys(data)));
+    });
+  }
+
   DG.toggleTranchePagata = function (id, checked) {
     var t = _tranche.find(function (x) { return x.id === id; });
     if (!t) return;
@@ -3366,7 +3389,8 @@
     var az = _aziendaById(_curAziendaId);
     db.collection('tranchePagamento').doc(id).update({ pagato: checked })
       .then(function () { return _logWrite('tranchePagamento', id, 'Tranche — ' + (az ? az.ragioneSociale : ''), 'update', _diff(old, { pagato: checked }, ['pagato'])); })
-      .then(function () { _refreshAccordionSection('pagamenti'); _renderStatCards(); _renderCharts(); _renderCashflow(); _renderBilancio(); })
+      .then(function () { if (checked && !t.ivaVoceSpesaId) return _generaSpesaIvaTranche(t, az); })
+      .then(function () { _refreshAccordionSection('pagamenti'); _renderStatCards(); _renderCharts(); _renderCashflow(); _renderBilancio(); _renderSpese(); })
       .catch(function (e) { alert('Errore: ' + e.message); });
   };
 
