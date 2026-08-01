@@ -1044,6 +1044,7 @@
           <button class="budget-subtab" data-btab="sponsor">Pipeline Sponsor</button>
           <button class="budget-subtab" data-btab="rette">Rette Atleti</button>
           <button class="budget-subtab" data-btab="spese">Spese</button>
+          <button class="budget-subtab" data-btab="bilancio">Bilancio</button>
         </nav>
 
         <div id="budgetPaneRiepilogo" class="dg-section">
@@ -1173,11 +1174,52 @@
                     <th>Voce di spesa</th>
                     <th>Preventivato</th>
                     <th>Sostenuto</th>
+                    <th>Data</th>
                     <th>Note</th>
                     <th></th>
                   </tr>
                 </thead>
-                <tbody id="speseBody"><tr><td colspan="5" class="dg-empty">—</td></tr></tbody>
+                <tbody id="speseBody"><tr><td colspan="6" class="dg-empty">—</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ---- Bilancio (entrate vs uscite, per mese) ---- -->
+        <div id="budgetPaneBilancio" class="dg-section is-hidden">
+          <div class="dg-card">
+            <div class="dg-card-title">Saldo mensile</div>
+            <div class="dg-card-sub">Entrate = tranche sponsor incassate (segnate come pagate). Uscite = spese con data indicata; quelle senza data sono raggruppate a parte.</div>
+            <div class="dg-table-wrap" style="margin-top:14px">
+              <table class="dg-table">
+                <thead>
+                  <tr>
+                    <th>Mese</th>
+                    <th>Entrate</th>
+                    <th>Uscite</th>
+                    <th>Saldo mese</th>
+                    <th>Saldo progressivo</th>
+                  </tr>
+                </thead>
+                <tbody id="bilancioMesiBody"><tr><td colspan="5" class="dg-empty">—</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="dg-card" style="margin-top:14px">
+            <div class="dg-card-title">Entrate — tranche incassate</div>
+            <div class="dg-card-sub">Ogni tranche di pagamento sponsor segnata come pagata, per questa stagione.</div>
+            <div class="dg-table-wrap" style="margin-top:14px">
+              <table class="dg-table">
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Azienda</th>
+                    <th>Importo</th>
+                    <th>Note</th>
+                  </tr>
+                </thead>
+                <tbody id="bilancioEntrateBody"><tr><td colspan="4" class="dg-empty">—</td></tr></tbody>
               </table>
             </div>
           </div>
@@ -1434,6 +1476,11 @@
           <label class="dg-form-label">Sostenuto (€)</label>
           <input type="number" id="spesaSostenutoInput" class="dg-form-input" min="0" step="10" value="0">
         </div>
+      </div>
+      <div class="dg-form-group">
+        <label class="dg-form-label">Data sostenuta</label>
+        <input type="date" id="spesaDataInput" class="dg-form-input">
+        <p class="dg-card-sub" style="margin-top:4px">Facoltativa: serve a collocare la spesa nel mese giusto nel Bilancio.</p>
       </div>
       <div class="dg-form-group">
         <label class="dg-form-label">Note</label>

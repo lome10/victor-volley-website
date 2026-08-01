@@ -2469,6 +2469,7 @@
     if (_activeBudgetTab === 'sponsor')   _renderKanban();
     if (_activeBudgetTab === 'rette')     _renderRette();
     if (_activeBudgetTab === 'spese')     _renderSpese();
+    if (_activeBudgetTab === 'bilancio')  _renderBilancio();
   }
 
   function _mapDoc(d) { return Object.assign({ id: d.id }, d.data()); }
@@ -3309,7 +3310,7 @@
       data.id = ref.id;
       _tranche.push(data);
       return _logWrite('tranchePagamento', ref.id, 'Tranche — ' + (az ? az.ragioneSociale : ''), 'create', _diff({}, data, Object.keys(data)));
-    }).then(function () { _refreshAccordionSection('pagamenti'); _renderStatCards(); _renderCharts(); _renderCashflow(); })
+    }).then(function () { _refreshAccordionSection('pagamenti'); _renderStatCards(); _renderCharts(); _renderCashflow(); _renderBilancio(); })
       .catch(function (e) { alert('Errore: ' + e.message); });
   };
 
@@ -3337,7 +3338,7 @@
       .then(function () { return _logWrite('tranchePagamento', id, 'Tranche — ' + (az ? az.ragioneSociale : ''), 'update', _diff(old, patch, Object.keys(patch))); })
       .then(function () {
         _trancheEditingId = null;
-        _refreshAccordionSection('pagamenti'); _renderStatCards(); _renderCharts(); _renderCashflow();
+        _refreshAccordionSection('pagamenti'); _renderStatCards(); _renderCharts(); _renderCashflow(); _renderBilancio();
       })
       .catch(function (e) { alert('Errore: ' + e.message); });
   };
@@ -3350,7 +3351,7 @@
     var az = _aziendaById(_curAziendaId);
     db.collection('tranchePagamento').doc(id).update({ pagato: checked })
       .then(function () { return _logWrite('tranchePagamento', id, 'Tranche — ' + (az ? az.ragioneSociale : ''), 'update', _diff(old, { pagato: checked }, ['pagato'])); })
-      .then(function () { _refreshAccordionSection('pagamenti'); _renderStatCards(); _renderCharts(); _renderCashflow(); })
+      .then(function () { _refreshAccordionSection('pagamenti'); _renderStatCards(); _renderCharts(); _renderCashflow(); _renderBilancio(); })
       .catch(function (e) { alert('Errore: ' + e.message); });
   };
 
@@ -3361,7 +3362,7 @@
         .then(function () { return _logWrite('tranchePagamento', id, 'Tranche — ' + (az ? az.ragioneSociale : ''), 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]); })
         .then(function () {
           _tranche = _tranche.filter(function (x) { return x.id !== id; });
-          _refreshAccordionSection('pagamenti'); _renderStatCards(); _renderCharts(); _renderCashflow();
+          _refreshAccordionSection('pagamenti'); _renderStatCards(); _renderCharts(); _renderCashflow(); _renderBilancio();
         })
         .catch(function (e) { alert('Errore: ' + e.message); });
     });
@@ -3530,12 +3531,13 @@
   /* ---- SPESE ---- */
   function _renderSpese() {
     var body = document.getElementById('speseBody');
-    if (!_vociSpesa.length) { body.innerHTML = '<tr><td colspan="5" class="dg-empty">Nessuna voce di spesa per questa stagione.</td></tr>'; return; }
+    if (!_vociSpesa.length) { body.innerHTML = '<tr><td colspan="6" class="dg-empty">Nessuna voce di spesa per questa stagione.</td></tr>'; return; }
     body.innerHTML = _vociSpesa.map(function (v) {
       return '<tr>' +
         '<td>' + esc(v.categoria) + '</td>' +
         '<td><input type="number" class="dg-table-input" value="' + (v.importoPreventivato || 0) + '" data-id="' + v.id + '" data-field="importoPreventivato" onchange="DG.saveSpesaField(this)"></td>' +
         '<td><input type="number" class="dg-table-input" value="' + (v.importoSostenuto || 0) + '" data-id="' + v.id + '" data-field="importoSostenuto" onchange="DG.saveSpesaField(this)"></td>' +
+        '<td><input type="date" class="dg-table-input" value="' + esc(v.dataSpesa || '') + '" data-id="' + v.id + '" data-field="dataSpesa" onchange="DG.saveSpesaField(this)"></td>' +
         '<td>' + esc(v.note || '') + '</td>' +
         '<td><button class="dg-btn-icon-only" title="Elimina" onclick="DG.deleteSpesa(\'' + v.id + '\')">' + _delIconSm() + '</button></td>' +
         '</tr>';
@@ -3546,13 +3548,14 @@
     var id = el.dataset.id, field = el.dataset.field;
     var v = _vociSpesa.find(function (x) { return x.id === id; });
     if (!v) return;
-    var old = {}; old[field] = v[field] || 0;
-    var nv = +el.value || 0;
+    var isDate = field === 'dataSpesa';
+    var old = {}; old[field] = isDate ? (v[field] || '') : (v[field] || 0);
+    var nv = isDate ? el.value : (+el.value || 0);
     v[field] = nv;
     var patch = {}; patch[field] = nv;
     db.collection('vociSpesa').doc(id).update(patch)
       .then(function () { return _logWrite('voceSpesa', id, 'Spesa — ' + v.categoria, 'update', _diff(old, patch, [field])); })
-      .then(function () { _renderSpese(); _renderStatCards(); _renderCharts(); })
+      .then(function () { _renderSpese(); _renderStatCards(); _renderCharts(); _renderBilancio(); })
       .catch(function (e) { alert('Errore: ' + e.message); });
   };
 
@@ -3564,11 +3567,99 @@
         .then(function () { return _logWrite('voceSpesa', id, 'Spesa — ' + v.categoria, 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]); })
         .then(function () {
           _vociSpesa = _vociSpesa.filter(function (x) { return x.id !== id; });
-          _renderSpese(); _renderStatCards(); _renderCharts();
+          _renderSpese(); _renderStatCards(); _renderCharts(); _renderBilancio();
         })
         .catch(function (e) { alert('Errore: ' + e.message); });
     });
   };
+
+  /* ---- BILANCIO — entrate (tranche sponsor pagate) vs uscite (spese sostenute), per mese ---- */
+  var MESI_IT = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
+
+  function _monthKey(dateStr) { return dateStr ? dateStr.slice(0, 7) : null; }
+  function _monthLabel(key) {
+    var p = key.split('-');
+    return MESI_IT[(+p[1]) - 1] + ' ' + p[0];
+  }
+  function _eur(n) { return '€' + Math.round(n).toLocaleString('it-IT'); }
+
+  function _renderBilancio() {
+    var mesiBody = document.getElementById('bilancioMesiBody');
+    var entrateBody = document.getElementById('bilancioEntrateBody');
+    if (!mesiBody || !entrateBody) return;
+
+    var curIds = _sponsorizzazioni.filter(function (s) { return s.seasonId === _currentSeasonId; }).map(function (s) { return s.id; });
+    var entrate = _tranche.filter(function (t) { return t.pagato && curIds.indexOf(t.sponsorizzazioneId) !== -1; });
+    var uscite = _vociSpesa.filter(function (v) { return +v.importoSostenuto > 0; });
+
+    var months = {};
+    var senzaData = 0;
+    entrate.forEach(function (t) {
+      var k = _monthKey(t.scadenza);
+      if (!k) return;
+      months[k] = months[k] || { entrate: 0, uscite: 0 };
+      months[k].entrate += (+t.importo || 0);
+    });
+    uscite.forEach(function (v) {
+      var k = _monthKey(v.dataSpesa);
+      var importo = +v.importoSostenuto || 0;
+      if (!k) { senzaData += importo; return; }
+      months[k] = months[k] || { entrate: 0, uscite: 0 };
+      months[k].uscite += importo;
+    });
+
+    var keys = Object.keys(months).sort();
+    if (!keys.length && !senzaData) {
+      mesiBody.innerHTML = '<tr><td colspan="5" class="dg-empty">Nessuna tranche incassata o spesa datata per questa stagione.</td></tr>';
+    } else {
+      var progressivo = 0;
+      var totEntrate = 0, totUscite = 0;
+      var rows = keys.map(function (k) {
+        var m = months[k];
+        var saldo = m.entrate - m.uscite;
+        progressivo += saldo;
+        totEntrate += m.entrate; totUscite += m.uscite;
+        return '<tr>' +
+          '<td>' + esc(_monthLabel(k)) + '</td>' +
+          '<td>' + _eur(m.entrate) + '</td>' +
+          '<td>' + _eur(m.uscite) + '</td>' +
+          '<td style="color:' + (saldo < 0 ? 'var(--dg-red)' : 'var(--dg-green)') + '">' + _eur(saldo) + '</td>' +
+          '<td>' + _eur(progressivo) + '</td>' +
+          '</tr>';
+      });
+      if (senzaData) {
+        progressivo -= senzaData;
+        totUscite += senzaData;
+        rows.push('<tr>' +
+          '<td>Spese senza data</td>' +
+          '<td>' + _eur(0) + '</td>' +
+          '<td>' + _eur(senzaData) + '</td>' +
+          '<td style="color:var(--dg-red)">' + _eur(-senzaData) + '</td>' +
+          '<td>' + _eur(progressivo) + '</td>' +
+          '</tr>');
+      }
+      rows.push('<tr style="font-weight:700">' +
+        '<td>Totale</td>' +
+        '<td>' + _eur(totEntrate) + '</td>' +
+        '<td>' + _eur(totUscite) + '</td>' +
+        '<td>' + _eur(totEntrate - totUscite) + '</td>' +
+        '<td>—</td>' +
+        '</tr>');
+      mesiBody.innerHTML = rows.join('');
+    }
+
+    var entrateSorted = entrate.slice().sort(function (a, b) { return a.scadenza < b.scadenza ? -1 : 1; });
+    entrateBody.innerHTML = entrateSorted.length ? entrateSorted.map(function (t) {
+      var s = _sponsorizzazioni.find(function (x) { return x.id === t.sponsorizzazioneId; });
+      var az = s ? _aziendaById(s.aziendaId) : null;
+      return '<tr>' +
+        '<td>' + _fmtDate(t.scadenza) + '</td>' +
+        '<td>' + esc(az ? az.ragioneSociale : '—') + '</td>' +
+        '<td>' + _eur(+t.importo || 0) + '</td>' +
+        '<td>' + esc(t.note || '') + '</td>' +
+        '</tr>';
+    }).join('') : '<tr><td colspan="4" class="dg-empty">Nessuna tranche incassata per questa stagione.</td></tr>';
+  }
 
   /* ---- LOG (sola lettura, copre tutta l'Area Dirigenti + il CMS) ---- */
   function _logDate(l) {
@@ -3724,7 +3815,7 @@
       _populateSeasonSelect();
       return _loadSeasonScoped();
     }).then(function () {
-      _renderObiettivo(); _renderPromemoriaWidget(); _renderStatCards(); _renderCharts(); _renderCashflow(); _renderKanban(); _renderRette(); _renderSpese();
+      _renderObiettivo(); _renderPromemoriaWidget(); _renderStatCards(); _renderCharts(); _renderCashflow(); _renderKanban(); _renderRette(); _renderSpese(); _renderBilancio();
     }).catch(function (e) { alert('Errore: ' + e.message); });
   }
 
@@ -3755,6 +3846,7 @@
       seasonId: _currentSeasonId, categoria: categoria,
       importoPreventivato: +val('spesaPreventivatoInput') || 0,
       importoSostenuto: +val('spesaSostenutoInput') || 0,
+      dataSpesa: val('spesaDataInput'),
       note: val('spesaNoteInput').trim()
     };
     var ref = db.collection('vociSpesa').doc();
@@ -3764,7 +3856,7 @@
       return _logWrite('voceSpesa', ref.id, 'Spesa — ' + categoria, 'create', _diff({}, data, Object.keys(data)));
     }).then(function () {
       _closeBudgetModal('newSpesaModal');
-      _renderSpese(); _renderStatCards(); _renderCharts();
+      _renderSpese(); _renderStatCards(); _renderCharts(); _renderBilancio();
     }).catch(function (e) { alert('Errore: ' + e.message); });
   }
 
@@ -3830,7 +3922,7 @@
       _currentSeasonId = this.value;
       _loadSeasonScoped().then(function () {
         _renderObiettivo(); _renderPromemoriaWidget(); _renderStatCards();
-        _renderCharts(); _renderCashflow(); _renderKanban(); _renderRette(); _renderSpese();
+        _renderCharts(); _renderCashflow(); _renderKanban(); _renderRette(); _renderSpese(); _renderBilancio();
       });
     });
 
@@ -3883,6 +3975,7 @@
       document.getElementById('spesaCategoriaInput').value = '';
       document.getElementById('spesaPreventivatoInput').value = 0;
       document.getElementById('spesaSostenutoInput').value = 0;
+      document.getElementById('spesaDataInput').value = '';
       document.getElementById('spesaNoteInput').value = '';
       _openBudgetModal('newSpesaModal');
     });
