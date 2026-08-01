@@ -2455,6 +2455,7 @@
   var _trancheEditingId = null;
   var _categorieAtleti = [];
   var _vociSpesa = [];
+  var _categorieSpesa = [];
   var _auditLog = [];
   var _dirigentiList = [];
   var _curSponsorId = null, _curAziendaId = null;
@@ -2538,6 +2539,11 @@
       db.collection('tranchePagamento').get().catch(function (e) {
         console.error('[budget] tranchePagamento', e);
         return { docs: [] };
+      }),
+      /* Collezione globale (non per stagione): stesso trattamento difensivo. */
+      db.collection('categorieSpesa').get().catch(function (e) {
+        console.error('[budget] categorieSpesa', e);
+        return { docs: [] };
       })
     ]).then(function (res) {
       _dirigentiList    = res[0].docs.map(_mapDoc);
@@ -2547,6 +2553,7 @@
       _attivita         = res[4].docs.map(_mapDoc);
       _promemoria       = res[5].docs.map(_mapDoc);
       _tranche          = res[6].docs.map(_mapDoc);
+      _categorieSpesa   = res[7].docs.map(_mapDoc).sort(function (a, b) { return (a.nome || '').localeCompare(b.nome || ''); });
 
       var chain = _seasons.length ? Promise.resolve() : _createDefaultSeason();
 
@@ -3536,12 +3543,21 @@
   };
 
   /* ---- SPESE ---- */
+  function _categoriaSpesaById(id) { return _categorieSpesa.find(function (c) { return c.id === id; }); }
+
+  function _categorieSpesaOptionsHtml(selectedId) {
+    return '<option value="">— Nessuna —</option>' + _categorieSpesa.map(function (c) {
+      return '<option value="' + c.id + '"' + (c.id === selectedId ? ' selected' : '') + '>' + esc(c.nome) + '</option>';
+    }).join('');
+  }
+
   function _renderSpese() {
     var body = document.getElementById('speseBody');
-    if (!_vociSpesa.length) { body.innerHTML = '<tr><td colspan="6" class="dg-empty">Nessuna voce di spesa per questa stagione.</td></tr>'; return; }
+    if (!_vociSpesa.length) { body.innerHTML = '<tr><td colspan="7" class="dg-empty">Nessuna voce di spesa per questa stagione.</td></tr>'; return; }
     body.innerHTML = _vociSpesa.map(function (v) {
       return '<tr>' +
         '<td>' + esc(v.categoria) + '</td>' +
+        '<td><select class="dg-table-input" data-id="' + v.id + '" data-field="categoriaSpesaId" onchange="DG.saveSpesaField(this)">' + _categorieSpesaOptionsHtml(v.categoriaSpesaId) + '</select></td>' +
         '<td><input type="number" class="dg-table-input" value="' + (v.importoPreventivato || 0) + '" data-id="' + v.id + '" data-field="importoPreventivato" onchange="DG.saveSpesaField(this)"></td>' +
         '<td><input type="number" class="dg-table-input" value="' + (v.importoSostenuto || 0) + '" data-id="' + v.id + '" data-field="importoSostenuto" onchange="DG.saveSpesaField(this)"></td>' +
         '<td><input type="date" class="dg-table-input" value="' + esc(v.dataSpesa || '') + '" data-id="' + v.id + '" data-field="dataSpesa" onchange="DG.saveSpesaField(this)">' +
@@ -3556,9 +3572,9 @@
     var id = el.dataset.id, field = el.dataset.field;
     var v = _vociSpesa.find(function (x) { return x.id === id; });
     if (!v) return;
-    var isDate = field === 'dataSpesa';
-    var old = {}; old[field] = isDate ? (v[field] || '') : (v[field] || 0);
-    var nv = isDate ? el.value : (+el.value || 0);
+    var isText = field === 'dataSpesa' || field === 'categoriaSpesaId';
+    var old = {}; old[field] = isText ? (v[field] || '') : (v[field] || 0);
+    var nv = isText ? el.value : (+el.value || 0);
     v[field] = nv;
     var patch = {}; patch[field] = nv;
     db.collection('vociSpesa').doc(id).update(patch)
@@ -3576,6 +3592,51 @@
         .then(function () {
           _vociSpesa = _vociSpesa.filter(function (x) { return x.id !== id; });
           _renderSpese(); _renderStatCards(); _renderCharts(); _renderBilancio();
+        })
+        .catch(function (e) { alert('Errore: ' + e.message); });
+    });
+  };
+
+  /* ---- CATEGORIE DI SPESA (gestione, valide per tutte le stagioni) ---- */
+  function _renderCategorieSpesaModalList() {
+    var list = document.getElementById('categorieSpesaModalList');
+    list.innerHTML = _categorieSpesa.length ? _categorieSpesa.map(function (c) {
+      return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:#f8fafc;border-radius:8px">' +
+        '<span>' + esc(c.nome) + '</span>' +
+        '<button class="dg-btn-icon-only" title="Elimina" onclick="DG.deleteCategoriaSpesa(\'' + c.id + '\')">' + _delIconSm() + '</button>' +
+        '</div>';
+    }).join('') : '<p class="dg-muted">Nessuna categoria ancora.</p>';
+  }
+
+  DG.addCategoriaSpesa = function () {
+    var input = document.getElementById('categoriaSpesaNewInput');
+    var nome = input.value.trim();
+    if (!nome) return;
+    if (_categorieSpesa.some(function (c) { return c.nome.toLowerCase() === nome.toLowerCase(); })) { alert('Categoria già esistente.'); return; }
+    var data = { nome: nome, createdAt: new Date().toISOString() };
+    var ref = db.collection('categorieSpesa').doc();
+    ref.set(data).then(function () {
+      data.id = ref.id;
+      _categorieSpesa.push(data);
+      _categorieSpesa.sort(function (a, b) { return a.nome.localeCompare(b.nome); });
+      return _logWrite('categoriaSpesa', ref.id, 'Categoria di spesa — ' + nome, 'create', _diff({}, data, Object.keys(data)));
+    }).then(function () {
+      input.value = '';
+      _renderCategorieSpesaModalList();
+      _renderSpese();
+    }).catch(function (e) { alert('Errore: ' + e.message); });
+  };
+
+  DG.deleteCategoriaSpesa = function (id) {
+    var c = _categoriaSpesaById(id);
+    if (!c) return;
+    confirm('Eliminare la categoria "' + c.nome + '"? Le voci di spesa che la usano perderanno l\'assegnazione.', function () {
+      db.collection('categorieSpesa').doc(id).delete()
+        .then(function () { return _logWrite('categoriaSpesa', id, 'Categoria di spesa — ' + c.nome, 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]); })
+        .then(function () {
+          _categorieSpesa = _categorieSpesa.filter(function (x) { return x.id !== id; });
+          _renderCategorieSpesaModalList();
+          _renderSpese();
         })
         .catch(function (e) { alert('Errore: ' + e.message); });
     });
@@ -3852,6 +3913,7 @@
     if (!categoria) { alert('Inserisci il nome della voce di spesa.'); return; }
     var data = {
       seasonId: _currentSeasonId, categoria: categoria,
+      categoriaSpesaId: val('spesaCategoriaSpesaSelect'),
       importoPreventivato: +val('spesaPreventivatoInput') || 0,
       importoSostenuto: +val('spesaSostenutoInput') || 0,
       dataSpesa: val('spesaDataInput'),
@@ -3981,6 +4043,7 @@
 
     document.getElementById('newSpesaBtn').addEventListener('click', function () {
       document.getElementById('spesaCategoriaInput').value = '';
+      document.getElementById('spesaCategoriaSpesaSelect').innerHTML = _categorieSpesaOptionsHtml('');
       document.getElementById('spesaPreventivatoInput').value = 0;
       document.getElementById('spesaSostenutoInput').value = 0;
       document.getElementById('spesaDataInput').value = '';
@@ -3990,6 +4053,15 @@
     document.getElementById('newSpesaClose').addEventListener('click', function () { _closeBudgetModal('newSpesaModal'); });
     document.getElementById('newSpesaCancel').addEventListener('click', function () { _closeBudgetModal('newSpesaModal'); });
     document.getElementById('newSpesaSave').addEventListener('click', _saveNewSpesa);
+
+    document.getElementById('manageCategorieSpesaBtn').addEventListener('click', function () {
+      _renderCategorieSpesaModalList();
+      document.getElementById('categoriaSpesaNewInput').value = '';
+      _openBudgetModal('manageCategorieSpesaModal');
+    });
+    document.getElementById('categoriaSpesaAddBtn').addEventListener('click', DG.addCategoriaSpesa);
+    document.getElementById('manageCategorieSpesaClose').addEventListener('click', function () { _closeBudgetModal('manageCategorieSpesaModal'); });
+    document.getElementById('manageCategorieSpesaDone').addEventListener('click', function () { _closeBudgetModal('manageCategorieSpesaModal'); });
   });
 
 })();
