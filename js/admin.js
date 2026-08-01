@@ -2445,6 +2445,7 @@
   var _attivita = [];
   var _promemoria = [];
   var _tranche = [];
+  var _trancheEditingId = null;
   var _categorieAtleti = [];
   var _vociSpesa = [];
   var _auditLog = [];
@@ -3044,6 +3045,7 @@
     if (!s) return;
     _curSponsorId = sponsorId;
     _curAziendaId = s.aziendaId;
+    _trancheEditingId = null;
     var az = _aziendaById(_curAziendaId);
     document.getElementById('drawerAziendaNome').textContent = az ? az.ragioneSociale : '—';
     document.getElementById('drawerStoricoBadge').classList.toggle('is-hidden', !_isStorico(_curAziendaId));
@@ -3261,11 +3263,26 @@
       '</div>';
 
     var list = items.length ? items.map(function (t) {
+      if (t.id === _trancheEditingId) {
+        return '<div class="dg-reminder-item" style="cursor:default;flex-direction:column;align-items:stretch;gap:8px">' +
+          '<div class="dg-form-grid">' +
+          '<div class="dg-form-group"><label class="dg-form-label">Importo (€)</label><input type="number" id="dgTrancheEditImporto" class="dg-form-input" min="0" step="50" value="' + Number(t.importo || 0) + '"></div>' +
+          '<div class="dg-form-group"><label class="dg-form-label">Scadenza</label><input type="date" id="dgTrancheEditScadenza" class="dg-form-input" value="' + esc(t.scadenza || '') + '"></div>' +
+          '</div>' +
+          '<div class="dg-form-group"><label class="dg-form-label">Note</label><input type="text" id="dgTrancheEditNote" class="dg-form-input" value="' + esc(t.note || '') + '"></div>' +
+          '<div class="dg-form-actions" style="margin-top:0">' +
+          '<button class="dg-btn-ghost dg-btn-sm" onclick="DG.editTrancheCancel()">Annulla</button>' +
+          '<button class="dg-btn-primary dg-btn-sm" onclick="DG.saveTranche(\'' + t.id + '\')">Salva</button>' +
+          '</div></div>';
+      }
       return '<div class="dg-reminder-item" style="cursor:default">' +
         '<label class="dg-check"><input type="checkbox" ' + (t.pagato ? 'checked' : '') + ' onchange="DG.toggleTranchePagata(\'' + t.id + '\', this.checked)">' +
         '<span><div class="dg-reminder-azienda">€' + Number(t.importo || 0).toLocaleString('it-IT') + (t.pagato ? ' — pagata' : ' — da pagare') + '</div>' +
         '<div class="dg-reminder-desc">Scadenza: ' + _fmtDate(t.scadenza) + (t.note ? ' · ' + esc(t.note) : '') + '</div></span></label>' +
-        '<button class="dg-btn-icon-only" title="Elimina" onclick="DG.deleteTranche(\'' + t.id + '\')">' + _delIconSm() + '</button></div>';
+        '<div style="display:flex;gap:4px;flex-shrink:0">' +
+        '<button class="dg-btn-icon-only" title="Modifica" onclick="DG.editTrancheStart(\'' + t.id + '\')">' + EDIT_ICON_SM + '</button>' +
+        '<button class="dg-btn-icon-only" title="Elimina" onclick="DG.deleteTranche(\'' + t.id + '\')">' + _delIconSm() + '</button>' +
+        '</div></div>';
     }).join('') : '<p class="dg-muted">Nessuna tranche pianificata: l\'importo confermato conta per intero nel saldo.</p>';
 
     return intro + summary +
@@ -3293,6 +3310,35 @@
       _tranche.push(data);
       return _logWrite('tranchePagamento', ref.id, 'Tranche — ' + (az ? az.ragioneSociale : ''), 'create', _diff({}, data, Object.keys(data)));
     }).then(function () { _refreshAccordionSection('pagamenti'); _renderStatCards(); _renderCharts(); _renderCashflow(); })
+      .catch(function (e) { alert('Errore: ' + e.message); });
+  };
+
+  DG.editTrancheStart = function (id) {
+    _trancheEditingId = id;
+    _refreshAccordionSection('pagamenti');
+  };
+
+  DG.editTrancheCancel = function () {
+    _trancheEditingId = null;
+    _refreshAccordionSection('pagamenti');
+  };
+
+  DG.saveTranche = function (id) {
+    var t = _tranche.find(function (x) { return x.id === id; });
+    if (!t) return;
+    var importo = +val('dgTrancheEditImporto') || 0;
+    var scadenza = val('dgTrancheEditScadenza');
+    if (!importo || !scadenza) { alert('Importo e scadenza sono obbligatori.'); return; }
+    var patch = { importo: importo, scadenza: scadenza, note: val('dgTrancheEditNote').trim() };
+    var old = { importo: t.importo, scadenza: t.scadenza, note: t.note };
+    var az = _aziendaById(_curAziendaId);
+    Object.assign(t, patch);
+    db.collection('tranchePagamento').doc(id).update(patch)
+      .then(function () { return _logWrite('tranchePagamento', id, 'Tranche — ' + (az ? az.ragioneSociale : ''), 'update', _diff(old, patch, Object.keys(patch))); })
+      .then(function () {
+        _trancheEditingId = null;
+        _refreshAccordionSection('pagamenti'); _renderStatCards(); _renderCharts(); _renderCashflow();
+      })
       .catch(function (e) { alert('Errore: ' + e.message); });
   };
 
