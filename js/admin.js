@@ -1849,6 +1849,13 @@
     return p[2] + '/' + p[1] + '/' + p[0];
   }
 
+  var MESI_IT_MIN = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
+  function _fmtDateLong(str) {
+    if (!str) return '—';
+    var p = str.split('-');
+    return (+p[2]) + ' ' + MESI_IT_MIN[(+p[1]) - 1] + ' ' + p[0];
+  }
+
   /* ---- Nuovo atleta form ---- */
 
   function _openAtletaForm() {
@@ -3537,7 +3544,8 @@
         '<td>' + esc(v.categoria) + '</td>' +
         '<td><input type="number" class="dg-table-input" value="' + (v.importoPreventivato || 0) + '" data-id="' + v.id + '" data-field="importoPreventivato" onchange="DG.saveSpesaField(this)"></td>' +
         '<td><input type="number" class="dg-table-input" value="' + (v.importoSostenuto || 0) + '" data-id="' + v.id + '" data-field="importoSostenuto" onchange="DG.saveSpesaField(this)"></td>' +
-        '<td><input type="date" class="dg-table-input" value="' + esc(v.dataSpesa || '') + '" data-id="' + v.id + '" data-field="dataSpesa" onchange="DG.saveSpesaField(this)"></td>' +
+        '<td><input type="date" class="dg-table-input" value="' + esc(v.dataSpesa || '') + '" data-id="' + v.id + '" data-field="dataSpesa" onchange="DG.saveSpesaField(this)">' +
+        (v.dataSpesa ? '<div style="font-size:11px;color:var(--dg-muted);margin-top:3px">' + esc(_fmtDateLong(v.dataSpesa)) + '</div>' : '') + '</td>' +
         '<td>' + esc(v.note || '') + '</td>' +
         '<td><button class="dg-btn-icon-only" title="Elimina" onclick="DG.deleteSpesa(\'' + v.id + '\')">' + _delIconSm() + '</button></td>' +
         '</tr>';
@@ -3653,7 +3661,7 @@
       var s = _sponsorizzazioni.find(function (x) { return x.id === t.sponsorizzazioneId; });
       var az = s ? _aziendaById(s.aziendaId) : null;
       return '<tr>' +
-        '<td>' + _fmtDate(t.scadenza) + '</td>' +
+        '<td>' + _fmtDateLong(t.scadenza) + '</td>' +
         '<td>' + esc(az ? az.ragioneSociale : '—') + '</td>' +
         '<td>' + _eur(+t.importo || 0) + '</td>' +
         '<td>' + esc(t.note || '') + '</td>' +
