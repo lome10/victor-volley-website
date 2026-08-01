@@ -402,9 +402,13 @@ input, select, textarea { font-family: inherit; }
   cursor: grab;
   box-shadow: var(--dg-shadow);
   transition: transform var(--dg-t), box-shadow var(--dg-t);
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 .dg-kanban-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
 .dg-kanban-card.is-dragging { opacity: 0.4; }
+.dg-kanban-card--ghost { box-shadow: 0 8px 24px rgba(0,0,0,0.25); transform: scale(1.03); opacity: 0.95; }
 
 .dg-kanban-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
 .dg-kanban-card-nome { font-size: 13px; font-weight: 700; color: var(--dg-text); line-height: 1.3; }
