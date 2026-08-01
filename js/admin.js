@@ -3556,7 +3556,7 @@
     if (!_vociSpesa.length) { body.innerHTML = '<tr><td colspan="7" class="dg-empty">Nessuna voce di spesa per questa stagione.</td></tr>'; return; }
     body.innerHTML = _vociSpesa.map(function (v) {
       return '<tr>' +
-        '<td>' + esc(v.categoria) + '</td>' +
+        '<td><input type="text" class="dg-table-input" style="width:180px" value="' + esc(v.categoria) + '" data-id="' + v.id + '" data-field="categoria" onchange="DG.saveSpesaField(this)"></td>' +
         '<td><select class="dg-table-input" data-id="' + v.id + '" data-field="categoriaSpesaId" onchange="DG.saveSpesaField(this)">' + _categorieSpesaOptionsHtml(v.categoriaSpesaId) + '</select></td>' +
         '<td><input type="number" class="dg-table-input" value="' + (v.importoPreventivato || 0) + '" data-id="' + v.id + '" data-field="importoPreventivato" onchange="DG.saveSpesaField(this)"></td>' +
         '<td><input type="number" class="dg-table-input" value="' + (v.importoSostenuto || 0) + '" data-id="' + v.id + '" data-field="importoSostenuto" onchange="DG.saveSpesaField(this)"></td>' +
@@ -3572,9 +3572,10 @@
     var id = el.dataset.id, field = el.dataset.field;
     var v = _vociSpesa.find(function (x) { return x.id === id; });
     if (!v) return;
-    var isText = field === 'dataSpesa' || field === 'categoriaSpesaId';
+    if (field === 'categoria' && !el.value.trim()) { alert('La voce di spesa non può essere vuota.'); el.value = v.categoria; return; }
+    var isText = field === 'dataSpesa' || field === 'categoriaSpesaId' || field === 'categoria';
     var old = {}; old[field] = isText ? (v[field] || '') : (v[field] || 0);
-    var nv = isText ? el.value : (+el.value || 0);
+    var nv = isText ? (field === 'categoria' ? el.value.trim() : el.value) : (+el.value || 0);
     v[field] = nv;
     var patch = {}; patch[field] = nv;
     db.collection('vociSpesa').doc(id).update(patch)
