@@ -130,6 +130,8 @@
   }
 
   function goTo(section) {
+    var bootLoading = document.getElementById('adminBootLoading');
+    if (bootLoading) bootLoading.classList.add('is-hidden');
     document.querySelectorAll('.admin-nav-item').forEach(function (el) {
       el.classList.toggle('is-active', el.dataset.section === section);
     });
