@@ -3396,11 +3396,12 @@
   function _generaSpesaIvaTranche(t, az) {
     var nome = ('IVA ' + (az ? az.ragioneSociale : '')).trim();
     var importoIva = Math.round((+t.importo || 0) * 0.11 * 100) / 100;
+    var auto = _trimestreIvaDaData('');
     var data = {
       seasonId: _currentSeasonId, categoria: nome, categoriaSpesaId: '',
       importoPreventivato: 0, importoSostenuto: importoIva, dataSpesa: '',
       note: 'IVA 11% generata automaticamente sulla tranche di €' + Number(t.importo || 0).toLocaleString('it-IT'),
-      isIva: true
+      isIva: true, ivaTrimestre: auto ? auto.trimestre : '', ivaScadenza: auto ? auto.scadenza : '', ivaScadenzaManuale: false
     };
     var ref = db.collection('vociSpesa').doc();
     return ref.set(data).then(function () {
@@ -3734,9 +3735,19 @@
     var nv = isText ? (field === 'categoria' || field === 'note' ? el.value.trim() : el.value) : (+el.value || 0);
     v[field] = nv;
     var patch = {}; patch[field] = nv;
+    var fields = [field];
+    /* Se è la voce IVA stessa (non la sua "genitrice") e la scadenza non è mai stata forzata a mano,
+       cambiare la data ricalcola in automatico il trimestre di versamento. */
+    if (v.isIva && field === 'dataSpesa' && !v.ivaScadenzaManuale) {
+      var auto = _trimestreIvaDaData(nv);
+      old.ivaTrimestre = v.ivaTrimestre || ''; old.ivaScadenza = v.ivaScadenza || '';
+      v.ivaTrimestre = patch.ivaTrimestre = auto ? auto.trimestre : '';
+      v.ivaScadenza = patch.ivaScadenza = auto ? auto.scadenza : '';
+      fields.push('ivaTrimestre', 'ivaScadenza');
+    }
     var needsIvaSync = field === 'importoSostenuto' || field === 'ivaAliquota' || field === 'categoria' || field === 'dataSpesa';
     db.collection('vociSpesa').doc(id).update(patch)
-      .then(function () { return _logWrite('voceSpesa', id, 'Spesa — ' + v.categoria, 'update', _diff(old, patch, [field])); })
+      .then(function () { return _logWrite('voceSpesa', id, 'Spesa — ' + v.categoria, 'update', _diff(old, patch, fields)); })
       .then(function () { return needsIvaSync ? _syncSpesaIva(v) : null; })
       .then(function () { _renderSpese(); _renderStatCards(); _renderCharts(); _renderBilancio(); })
       .catch(function (e) { alert('Errore: ' + e.message); });
@@ -3783,19 +3794,29 @@
 
     var importoIva = Math.round((+v.importoSostenuto || 0) * aliquota) / 100;
     var nome = 'IVA ' + v.categoria;
+    var auto = _trimestreIvaDaData(v.dataSpesa);
 
     if (figlia) {
       var old = { categoria: figlia.categoria, importoSostenuto: figlia.importoSostenuto, dataSpesa: figlia.dataSpesa };
       var patch = { categoria: nome, importoSostenuto: importoIva, dataSpesa: v.dataSpesa || '' };
+      /* La scadenza di versamento si ricalcola solo se non è mai stata forzata a mano sulla voce IVA. */
+      if (!figlia.ivaScadenzaManuale) {
+        old.ivaTrimestre = figlia.ivaTrimestre || ''; old.ivaScadenza = figlia.ivaScadenza || '';
+        patch.ivaTrimestre = auto ? auto.trimestre : ''; patch.ivaScadenza = auto ? auto.scadenza : '';
+      }
       return db.collection('vociSpesa').doc(figlia.id).update(patch)
         .then(function () { return _logWrite('voceSpesa', figlia.id, 'Spesa — ' + nome, 'update', _diff(old, patch, Object.keys(patch))); })
-        .then(function () { figlia.categoria = nome; figlia.importoSostenuto = importoIva; figlia.dataSpesa = v.dataSpesa || ''; });
+        .then(function () {
+          figlia.categoria = nome; figlia.importoSostenuto = importoIva; figlia.dataSpesa = v.dataSpesa || '';
+          if (patch.ivaTrimestre !== undefined) { figlia.ivaTrimestre = patch.ivaTrimestre; figlia.ivaScadenza = patch.ivaScadenza; }
+        });
     }
 
     var data = {
       seasonId: _currentSeasonId, categoria: nome, categoriaSpesaId: v.categoriaSpesaId || '',
       importoPreventivato: 0, importoSostenuto: importoIva, dataSpesa: v.dataSpesa || '',
-      note: 'IVA ' + aliquota + '% generata automaticamente sulla voce "' + v.categoria + '"', isIva: true
+      note: 'IVA ' + aliquota + '% generata automaticamente sulla voce "' + v.categoria + '"', isIva: true,
+      ivaTrimestre: auto ? auto.trimestre : '', ivaScadenza: auto ? auto.scadenza : '', ivaScadenzaManuale: false
     };
     var ref = db.collection('vociSpesa').doc();
     return ref.set(data).then(function () {
@@ -3809,12 +3830,67 @@
   }
 
   /* ---- RIEPILOGO IVA — somma di tutte le voci IVA (sponsor + spese), per questa stagione ---- */
+
+  /* Scadenze classiche di versamento IVA trimestrale: I trim. 16/5, II trim. 20/8, III trim. 16/11,
+     IV trim. 16/3 dell'anno successivo (saldo con la dichiarazione annuale). */
+  var TRIMESTRI_IVA_LABEL = { T1: 'I trimestre (gen-mar)', T2: 'II trimestre (apr-giu)', T3: 'III trimestre (lug-set)', T4: 'IV trimestre (ott-dic)' };
+
+  function _trimestreIvaDaData(dataStr) {
+    if (!dataStr) return null;
+    var y = +dataStr.slice(0, 4), m = +dataStr.slice(5, 7);
+    if (m <= 3) return { trimestre: 'T1', scadenza: y + '-05-16' };
+    if (m <= 6) return { trimestre: 'T2', scadenza: y + '-08-20' };
+    if (m <= 9) return { trimestre: 'T3', scadenza: y + '-11-16' };
+    return { trimestre: 'T4', scadenza: (y + 1) + '-03-16' };
+  }
+
+  function _ivaTrimestriOptions(refYear) {
+    return [
+      { key: 'T1', scadenza: refYear + '-05-16' },
+      { key: 'T2', scadenza: refYear + '-08-20' },
+      { key: 'T3', scadenza: refYear + '-11-16' },
+      { key: 'T4', scadenza: (refYear + 1) + '-03-16' }
+    ];
+  }
+
   function _calcIvaTotale() {
     var righe = _vociSpesa.filter(function (v) { return v.isIva; })
-      .map(function (v) { return { nome: v.categoria, importo: +v.importoSostenuto || 0, data: v.dataSpesa || '' }; })
-      .sort(function (a, b) { return b.importo - a.importo; });
-    var totale = righe.reduce(function (s, r) { return s + r.importo; }, 0);
+      .slice().sort(function (a, b) { return (+b.importoSostenuto || 0) - (+a.importoSostenuto || 0); });
+    var totale = righe.reduce(function (s, v) { return s + (+v.importoSostenuto || 0); }, 0);
     return { righe: righe, totale: totale };
+  }
+
+  DG.setIvaScadenza = function (sel) {
+    var id = sel.dataset.id, refYear = +sel.dataset.refyear;
+    var v = _vociSpesa.find(function (x) { return x.id === id; });
+    if (!v) return;
+    var patch;
+    if (!sel.value) {
+      var auto = _trimestreIvaDaData(v.dataSpesa);
+      patch = { ivaScadenzaManuale: false, ivaTrimestre: auto ? auto.trimestre : '', ivaScadenza: auto ? auto.scadenza : '' };
+    } else {
+      var opt = _ivaTrimestriOptions(refYear).find(function (o) { return o.key === sel.value; });
+      patch = { ivaScadenzaManuale: true, ivaTrimestre: opt.key, ivaScadenza: opt.scadenza };
+    }
+    var old = { ivaScadenzaManuale: !!v.ivaScadenzaManuale, ivaTrimestre: v.ivaTrimestre || '', ivaScadenza: v.ivaScadenza || '' };
+    db.collection('vociSpesa').doc(id).update(patch)
+      .then(function () { return _logWrite('voceSpesa', id, 'Spesa — ' + v.categoria, 'update', _diff(old, patch, Object.keys(patch))); })
+      .then(function () {
+        v.ivaScadenzaManuale = patch.ivaScadenzaManuale; v.ivaTrimestre = patch.ivaTrimestre; v.ivaScadenza = patch.ivaScadenza;
+        _renderIvaRiepilogo();
+      })
+      .catch(function (e) { alert('Errore: ' + e.message); });
+  };
+
+  function _ivaScadenzaSelectHtml(v) {
+    var refYear = v.dataSpesa ? +v.dataSpesa.slice(0, 4) : new Date().getFullYear();
+    var autoLabel = 'Automatica' + (!v.ivaScadenzaManuale && v.ivaTrimestre ? ' (' + TRIMESTRI_IVA_LABEL[v.ivaTrimestre] + ')' : '');
+    var opts = '<option value=""' + (!v.ivaScadenzaManuale ? ' selected' : '') + '>' + esc(autoLabel) + '</option>' +
+      _ivaTrimestriOptions(refYear).map(function (o) {
+        return '<option value="' + o.key + '"' + (v.ivaScadenzaManuale && v.ivaTrimestre === o.key ? ' selected' : '') + '>' +
+          esc(TRIMESTRI_IVA_LABEL[o.key] + ' — scade ' + _fmtDateLong(o.scadenza)) + '</option>';
+      }).join('');
+    return '<select class="dg-table-input" data-id="' + v.id + '" data-refyear="' + refYear + '" onchange="DG.setIvaScadenza(this)">' + opts + '</select>';
   }
 
   function _renderIvaRiepilogo() {
@@ -3823,9 +3899,13 @@
     if (!statsEl || !bodyEl) return;
     var d = _calcIvaTotale();
     statsEl.innerHTML = _budgetStatCard('Totale IVA', d.totale, '');
-    bodyEl.innerHTML = d.righe.length ? d.righe.map(function (r) {
-      return '<tr><td>' + esc(r.nome) + '</td><td>' + _eur(r.importo) + '</td><td>' + (r.data ? esc(_fmtDateLong(r.data)) : '—') + '</td></tr>';
-    }).join('') : '<tr><td colspan="3" class="dg-empty">Nessuna voce IVA per questa stagione.</td></tr>';
+    bodyEl.innerHTML = d.righe.length ? d.righe.map(function (v) {
+      return '<tr><td>' + esc(v.categoria) + '</td><td>' + _eur(+v.importoSostenuto || 0) + '</td>' +
+        '<td>' + (v.dataSpesa ? esc(_fmtDateLong(v.dataSpesa)) : '—') + '</td>' +
+        '<td>' + _ivaScadenzaSelectHtml(v) +
+        (v.ivaScadenza ? '<div style="font-size:11px;color:var(--dg-muted);margin-top:3px">Scade il ' + esc(_fmtDateLong(v.ivaScadenza)) + '</div>' : '') + '</td>' +
+        '</tr>';
+    }).join('') : '<tr><td colspan="4" class="dg-empty">Nessuna voce IVA per questa stagione.</td></tr>';
   }
 
   /* ---- EXPORT PDF (bilancio + spese per categoria + singole voci), via finestra di stampa del browser ---- */
@@ -3901,8 +3981,11 @@
     var ivaTot = _calcIvaTotale();
     html += '<section><h2>Riepilogo IVA</h2>' +
       _pdfStatRow([['Totale IVA', ivaTot.totale]]) +
-      _pdfTableHtml(['Voce', 'Importo', 'Data'],
-        ivaTot.righe.map(function (x) { return [esc(x.nome), _eur(x.importo), x.data ? esc(_fmtDateLong(x.data)) : '—']; }),
+      _pdfTableHtml(['Voce', 'Importo', 'Data', 'Scadenza versamento'],
+        ivaTot.righe.map(function (v) {
+          var scad = v.ivaTrimestre ? (TRIMESTRI_IVA_LABEL[v.ivaTrimestre] + ' — ' + _fmtDateLong(v.ivaScadenza)) : '—';
+          return [esc(v.categoria), _eur(+v.importoSostenuto || 0), v.dataSpesa ? esc(_fmtDateLong(v.dataSpesa)) : '—', esc(scad)];
+        }),
         'Nessuna voce IVA per questa stagione.') + '</section>';
 
     html += '<section><h2>Spese per categoria — preventivato vs sostenuto</h2>' +
