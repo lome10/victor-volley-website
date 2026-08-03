@@ -2642,6 +2642,36 @@
     };
   }
 
+  /* Scompone "entrate confermate" nelle singole fonti (sponsor chiusi + categorie rette), condiviso da UI e export PDF. */
+  function _calcEntrateConfermateDettaglio() {
+    var cur = _sponsorizzazioni.filter(function (s) { return s.seasonId === _currentSeasonId && s.stato === 'chiuso'; });
+    var righe = cur.map(function (s) {
+      var az = _aziendaById(s.aziendaId);
+      return { tipo: 'Sponsor', nome: az ? az.ragioneSociale : '—', importo: _sponsorIncassato(s) };
+    }).concat(_categorieAtleti.map(function (c) {
+      return { tipo: 'Retta atleti', nome: c.nome, importo: +c.incassato || 0 };
+    })).filter(function (r) { return r.importo > 0; });
+    righe.sort(function (a, b) { return b.importo - a.importo; });
+    var totale = righe.reduce(function (s, r) { return s + r.importo; }, 0);
+    return { righe: righe, totale: totale };
+  }
+
+  function _renderEntrateConfermateDettaglio() {
+    var body = document.getElementById('entrateConfermateDettaglioBody');
+    if (!body) return;
+    var d = _calcEntrateConfermateDettaglio();
+    if (!d.righe.length) { body.innerHTML = '<tr><td colspan="3" class="dg-empty">Nessuna entrata confermata per questa stagione.</td></tr>'; return; }
+    var rows = d.righe.map(function (r) {
+      return '<tr>' +
+        '<td>' + esc(r.tipo) + '</td>' +
+        '<td>' + esc(r.nome) + '</td>' +
+        '<td>' + _eur(r.importo) + '</td>' +
+        '</tr>';
+    });
+    rows.push('<tr style="font-weight:700"><td>Totale</td><td></td><td>' + _eur(d.totale) + '</td></tr>');
+    body.innerHTML = rows.join('');
+  }
+
   function _renderObiettivo() {
     var season = _seasons.find(function (s) { return s.id === _currentSeasonId; }) || {};
     document.getElementById('obiettivoSeasonNome').textContent = 'Stagione ' + (season.nome || '—');
@@ -2742,6 +2772,7 @@
       _budgetStatCard('Uscite', r.uscite, '--red') +
       _budgetStatCard('Saldo', r.saldo, r.saldo >= 0 ? '--green' : '--red') +
       _budgetStatCard('Differenza da obiettivo', r.differenza, r.differenza >= 0 ? '--green' : '--orange');
+    _renderEntrateConfermateDettaglio();
   }
 
   /* ---- CHARTS — SVG inline, nessuna libreria esterna ---- */
@@ -3772,6 +3803,13 @@
         ['Obiettivo', r.obiettivo],
         ['Differenza da obiettivo', r.differenza]
       ]) + '</section>';
+
+    var entrateDett = _calcEntrateConfermateDettaglio();
+    html += '<section><h2>Da chi arrivano le entrate confermate</h2>' +
+      _pdfTableHtml(['Fonte', 'Nome', 'Importo'],
+        entrateDett.righe.map(function (x) { return [esc(x.tipo), esc(x.nome), _eur(x.importo)]; })
+          .concat(entrateDett.righe.length ? [['<strong>Totale</strong>', '', '<strong>' + _eur(entrateDett.totale) + '</strong>']] : []),
+        'Nessuna entrata confermata per questa stagione.') + '</section>';
 
     html += '<section><h2>Bilancio mensile (entrate vs uscite realmente mosse)</h2>' +
       _pdfTableHtml(['Mese', 'Entrate', 'Uscite', 'Saldo mese', 'Saldo progressivo'],
