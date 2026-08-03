@@ -3719,6 +3719,95 @@
     });
   };
 
+  /* ---- EXPORT PDF (bilancio + spese per categoria + singole voci), via finestra di stampa del browser ---- */
+  function _pdfCss() {
+    return 'body{font-family:Arial,Helvetica,sans-serif;color:#1E293B;margin:0;padding:32px}' +
+      'header{border-bottom:3px solid #1E3A5F;padding-bottom:12px;margin-bottom:26px}' +
+      'header h1{margin:0 0 4px;font-size:19px;color:#1E3A5F}' +
+      'header p{margin:0;font-size:12px;color:#64748B}' +
+      'section{margin-bottom:26px;page-break-inside:avoid}' +
+      'h2{font-size:14px;color:#1E3A5F;border-bottom:1px solid #E2E8F0;padding-bottom:6px;margin:0 0 10px}' +
+      'table{width:100%;border-collapse:collapse;font-size:11px}' +
+      'th,td{padding:6px 8px;border-bottom:1px solid #E2E8F0;text-align:left}' +
+      'th{background:#F8FAFC;font-weight:700;color:#1E3A5F}' +
+      '.pdf-stat-row{display:flex;gap:10px;flex-wrap:wrap}' +
+      '.pdf-stat-card{flex:1;min-width:110px;background:#F8FAFC;border-radius:8px;padding:10px 12px}' +
+      '.pdf-stat-label{font-size:10px;color:#64748B;text-transform:uppercase;letter-spacing:.03em}' +
+      '.pdf-stat-value{font-size:15px;font-weight:700;margin-top:2px}' +
+      'footer{margin-top:8px;font-size:10px;color:#94A3B8;text-align:center}' +
+      '@media print{body{padding:12px}}';
+  }
+
+  function _pdfStatRow(items) {
+    return '<div class="pdf-stat-row">' + items.map(function (it) {
+      return '<div class="pdf-stat-card"><div class="pdf-stat-label">' + esc(it[0]) + '</div><div class="pdf-stat-value">' + _eur(it[1]) + '</div></div>';
+    }).join('') + '</div>';
+  }
+
+  function _pdfTableHtml(headers, rows, emptyMsg) {
+    if (!rows.length) return '<p style="color:#94A3B8;font-size:12px">' + esc(emptyMsg) + '</p>';
+    var thead = '<tr>' + headers.map(function (h) { return '<th>' + esc(h) + '</th>'; }).join('') + '</tr>';
+    var tbody = rows.map(function (r) { return '<tr>' + r.map(function (c) { return '<td>' + c + '</td>'; }).join('') + '</tr>'; }).join('');
+    return '<table><thead>' + thead + '</thead><tbody>' + tbody + '</tbody></table>';
+  }
+
+  DG.exportSpesePdf = function () {
+    var season = _seasons.find(function (s) { return s.id === _currentSeasonId; }) || {};
+    var r = _calcRiepilogo();
+    var forecast = _calcSpeseForecast();
+    var bilancio = _calcBilancioMensile();
+    var oggi = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
+
+    var html = '<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Report Spese — ' + esc(season.nome || '') + '</title>' +
+      '<style>' + _pdfCss() + '</style></head><body>';
+
+    html += '<header><h1>Victor Volley — Report Spese &amp; Bilancio</h1>' +
+      '<p>Stagione: <strong>' + esc(season.nome || '—') + '</strong> &middot; Generato il ' + oggi + '</p></header>';
+
+    html += '<section><h2>Riepilogo generale</h2>' +
+      _pdfStatRow([
+        ['Entrate confermate', r.entrateConfermate],
+        ['Uscite', r.uscite],
+        ['Saldo', r.saldo],
+        ['Obiettivo', r.obiettivo],
+        ['Differenza da obiettivo', r.differenza]
+      ]) + '</section>';
+
+    html += '<section><h2>Bilancio mensile (entrate vs uscite realmente mosse)</h2>' +
+      _pdfTableHtml(['Mese', 'Entrate', 'Uscite', 'Saldo mese', 'Saldo progressivo'],
+        bilancio.righe.map(function (x) { return [esc(x.label), _eur(x.entrate), _eur(x.uscite), _eur(x.saldo), _eur(x.progressivo)]; })
+          .concat(bilancio.righe.length ? [[
+            '<strong>Totale</strong>', '<strong>' + _eur(bilancio.totEntrate) + '</strong>', '<strong>' + _eur(bilancio.totUscite) + '</strong>',
+            '<strong>' + _eur(bilancio.totEntrate - bilancio.totUscite) + '</strong>', '—'
+          ]] : []),
+        'Nessuna tranche incassata o spesa datata per questa stagione.') + '</section>';
+
+    html += '<section><h2>Spese per categoria — preventivato vs sostenuto</h2>' +
+      _pdfTableHtml(['Categoria', 'Preventivato', 'Sostenuto', 'Scostamento'],
+        forecast.righe.map(function (x) {
+          return [esc(x.nome), _eur(x.preventivato), _eur(x.sostenuto),
+            '<span style="color:' + (x.scostamento > 0 ? '#DC2626' : '#16A34A') + '">' + (x.scostamento > 0 ? '+' : '') + _eur(x.scostamento) + '</span>'];
+        }), 'Nessuna voce di spesa per questa stagione.') + '</section>';
+
+    html += '<section><h2>Singole voci di spesa</h2>' +
+      _pdfTableHtml(['Voce', 'Categoria', 'Preventivato', 'Sostenuto', 'Data', 'Note'],
+        _vociSpesa.map(function (v) {
+          var cat = v.categoriaSpesaId ? _categoriaSpesaById(v.categoriaSpesaId) : null;
+          return [esc(v.categoria), esc(cat ? cat.nome : '—'), _eur(v.importoPreventivato || 0), _eur(v.importoSostenuto || 0),
+            v.dataSpesa ? esc(_fmtDateLong(v.dataSpesa)) : '—', esc(v.note || '')];
+        }), 'Nessuna voce di spesa per questa stagione.') + '</section>';
+
+    html += '<footer>Victor Volley — Area Dirigenti · Documento generato automaticamente</footer>';
+    html += '</body></html>';
+
+    var w = window.open('', '_blank');
+    if (!w) { alert('Il browser ha bloccato la finestra di stampa. Consenti i popup per questo sito e riprova.'); return; }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+    setTimeout(function () { w.focus(); w.print(); }, 300);
+  };
+
   /* ---- CATEGORIE DI SPESA (gestione, valide per tutte le stagioni) ---- */
   function _renderCategorieSpesaModalList() {
     var list = document.getElementById('categorieSpesaModalList');
@@ -3774,11 +3863,8 @@
   }
   function _eur(n) { return '€' + Math.round(n).toLocaleString('it-IT'); }
 
-  function _renderBilancio() {
-    var mesiBody = document.getElementById('bilancioMesiBody');
-    var entrateBody = document.getElementById('bilancioEntrateBody');
-    if (!mesiBody || !entrateBody) return;
-
+  /* Calcolo puro (nessun DOM), condiviso da _renderBilancio() e dall'export PDF. */
+  function _calcBilancioMensile() {
     var curIds = _sponsorizzazioni.filter(function (s) { return s.seasonId === _currentSeasonId; }).map(function (s) { return s.id; });
     var entrate = _tranche.filter(function (t) { return t.pagato && curIds.indexOf(t.sponsorizzazioneId) !== -1; });
     var uscite = _vociSpesa.filter(function (v) { return +v.importoSostenuto > 0; });
@@ -3800,47 +3886,53 @@
     });
 
     var keys = Object.keys(months).sort();
-    if (!keys.length && !senzaData) {
+    var progressivo = 0, totEntrate = 0, totUscite = 0;
+    var righe = keys.map(function (k) {
+      var m = months[k];
+      var saldo = m.entrate - m.uscite;
+      progressivo += saldo;
+      totEntrate += m.entrate; totUscite += m.uscite;
+      return { label: _monthLabel(k), entrate: m.entrate, uscite: m.uscite, saldo: saldo, progressivo: progressivo };
+    });
+    if (senzaData) {
+      progressivo -= senzaData;
+      totUscite += senzaData;
+      righe.push({ label: 'Spese senza data', entrate: 0, uscite: senzaData, saldo: -senzaData, progressivo: progressivo });
+    }
+
+    var entrateSorted = entrate.slice().sort(function (a, b) { return a.scadenza < b.scadenza ? -1 : 1; });
+    return { righe: righe, totEntrate: totEntrate, totUscite: totUscite, entrateList: entrateSorted };
+  }
+
+  function _renderBilancio() {
+    var mesiBody = document.getElementById('bilancioMesiBody');
+    var entrateBody = document.getElementById('bilancioEntrateBody');
+    if (!mesiBody || !entrateBody) return;
+
+    var b = _calcBilancioMensile();
+    if (!b.righe.length) {
       mesiBody.innerHTML = '<tr><td colspan="5" class="dg-empty">Nessuna tranche incassata o spesa datata per questa stagione.</td></tr>';
     } else {
-      var progressivo = 0;
-      var totEntrate = 0, totUscite = 0;
-      var rows = keys.map(function (k) {
-        var m = months[k];
-        var saldo = m.entrate - m.uscite;
-        progressivo += saldo;
-        totEntrate += m.entrate; totUscite += m.uscite;
+      var rows = b.righe.map(function (r) {
         return '<tr>' +
-          '<td>' + esc(_monthLabel(k)) + '</td>' +
-          '<td>' + _eur(m.entrate) + '</td>' +
-          '<td>' + _eur(m.uscite) + '</td>' +
-          '<td style="color:' + (saldo < 0 ? 'var(--dg-red)' : 'var(--dg-green)') + '">' + _eur(saldo) + '</td>' +
-          '<td>' + _eur(progressivo) + '</td>' +
+          '<td>' + esc(r.label) + '</td>' +
+          '<td>' + _eur(r.entrate) + '</td>' +
+          '<td>' + _eur(r.uscite) + '</td>' +
+          '<td style="color:' + (r.saldo < 0 ? 'var(--dg-red)' : 'var(--dg-green)') + '">' + _eur(r.saldo) + '</td>' +
+          '<td>' + _eur(r.progressivo) + '</td>' +
           '</tr>';
       });
-      if (senzaData) {
-        progressivo -= senzaData;
-        totUscite += senzaData;
-        rows.push('<tr>' +
-          '<td>Spese senza data</td>' +
-          '<td>' + _eur(0) + '</td>' +
-          '<td>' + _eur(senzaData) + '</td>' +
-          '<td style="color:var(--dg-red)">' + _eur(-senzaData) + '</td>' +
-          '<td>' + _eur(progressivo) + '</td>' +
-          '</tr>');
-      }
       rows.push('<tr style="font-weight:700">' +
         '<td>Totale</td>' +
-        '<td>' + _eur(totEntrate) + '</td>' +
-        '<td>' + _eur(totUscite) + '</td>' +
-        '<td>' + _eur(totEntrate - totUscite) + '</td>' +
+        '<td>' + _eur(b.totEntrate) + '</td>' +
+        '<td>' + _eur(b.totUscite) + '</td>' +
+        '<td>' + _eur(b.totEntrate - b.totUscite) + '</td>' +
         '<td>—</td>' +
         '</tr>');
       mesiBody.innerHTML = rows.join('');
     }
 
-    var entrateSorted = entrate.slice().sort(function (a, b) { return a.scadenza < b.scadenza ? -1 : 1; });
-    entrateBody.innerHTML = entrateSorted.length ? entrateSorted.map(function (t) {
+    entrateBody.innerHTML = b.entrateList.length ? b.entrateList.map(function (t) {
       var s = _sponsorizzazioni.find(function (x) { return x.id === t.sponsorizzazioneId; });
       var az = s ? _aziendaById(s.aziendaId) : null;
       return '<tr>' +
