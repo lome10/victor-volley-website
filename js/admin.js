@@ -3726,6 +3726,20 @@
       if (_speseFilterCategoriaId === '__none__') return !v.categoriaSpesaId;
       return v.categoriaSpesaId === _speseFilterCategoriaId;
     });
+    /* Ogni voce IVA generata da un'altra voce di spesa viene spostata subito
+       dopo la sua genitrice, così il collegamento è visibile a colpo d'occhio
+       (vedi anche il connettore "↳" nella cella categoria qui sotto). */
+    var byId = {};
+    items.forEach(function (v) { byId[v.id] = v; });
+    var isLinkedChild = {};
+    items.forEach(function (p) { if (p.ivaVoceSpesaId && byId[p.ivaVoceSpesaId]) isLinkedChild[p.ivaVoceSpesaId] = true; });
+    var ordered = [];
+    items.forEach(function (v) {
+      if (isLinkedChild[v.id]) return;
+      ordered.push(v);
+      if (v.ivaVoceSpesaId && byId[v.ivaVoceSpesaId]) ordered.push(byId[v.ivaVoceSpesaId]);
+    });
+    items = ordered;
     if (!items.length) {
       body.innerHTML = '<tr><td colspan="8" class="dg-empty">' +
         (_vociSpesa.length ? 'Nessuna voce di spesa per questa categoria.' : 'Nessuna voce di spesa per questa stagione.') +
@@ -3733,8 +3747,10 @@
       return;
     }
     body.innerHTML = items.map(function (v) {
+      var linked = v.isIva && isLinkedChild[v.id];
       return '<tr' + (v.isIva ? ' style="background:#F8FAFC"' : '') + '>' +
-        '<td><input type="text" class="dg-table-input" style="width:180px" value="' + esc(v.categoria) + '" data-id="' + v.id + '" data-field="categoria" onchange="DG.saveSpesaField(this)"></td>' +
+        '<td>' + (linked ? '<span class="dg-iva-link" title="Generata automaticamente dalla voce sopra">↳</span>' : '') +
+        '<input type="text" class="dg-table-input" style="width:180px" value="' + esc(v.categoria) + '" data-id="' + v.id + '" data-field="categoria" onchange="DG.saveSpesaField(this)"></td>' +
         '<td><select class="dg-table-input" data-id="' + v.id + '" data-field="categoriaSpesaId" onchange="DG.saveSpesaField(this)">' + _categorieSpesaOptionsHtml(v.categoriaSpesaId) + '</select></td>' +
         '<td><input type="number" class="dg-table-input" value="' + (v.importoPreventivato || 0) + '" data-id="' + v.id + '" data-field="importoPreventivato" onchange="DG.saveSpesaField(this)"></td>' +
         '<td><input type="number" class="dg-table-input" value="' + (v.importoSostenuto || 0) + '" data-id="' + v.id + '" data-field="importoSostenuto" onchange="DG.saveSpesaField(this)"></td>' +

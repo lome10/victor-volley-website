@@ -493,6 +493,7 @@ input, select, textarea { font-family: inherit; }
   color: var(--dg-text);
 }
 .dg-table-input:focus { border-color: var(--dg-blue); outline: none; }
+.dg-iva-link { color: var(--dg-slate); font-weight: 700; margin-right: 4px; }
 
 .dg-diff-pos { color: var(--dg-green); font-weight: 700; }
 .dg-diff-neg { color: var(--dg-red); font-weight: 700; }
