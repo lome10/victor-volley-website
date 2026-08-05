@@ -2604,8 +2604,7 @@ main, footer.site-footer {
   .article-body { text-align: left; }
 }
 
-/* Articoli correlati — stessa card 9:16 usata in hero/news, non più
-   il vecchio thumb orizzontale */
+/* Articoli correlati — card 4:5, stesso formato usato nella pagina news */
 .related-section { max-width: 1080px; margin: 0 auto; }
 .related-cards {
   display: grid;
@@ -2616,11 +2615,8 @@ main, footer.site-footer {
 .related-cards .hero-card {
   width: 100%;
   height: auto;
-  aspect-ratio: 9 / 16;
-  flex-shrink: unset;
-}
-.news-page-cards .hero-card {
   aspect-ratio: 4 / 5;
+  flex-shrink: unset;
 }
 @media (max-width: 640px) {
   .related-cards { grid-template-columns: repeat(2, 1fr); gap: 10px; }

@@ -152,7 +152,7 @@
       ? article.content
       : '<p style="color:#aaa;font-style:italic">Contenuto non disponibile.</p>';
 
-    /* Articoli correlati — stessa card 9:16 e stessa animazione hover di hero/news.
+    /* Articoli correlati — stessa card 4:5 e stessa animazione hover di hero/news.
        Genera sempre 3 card: su mobile la terza resta nascosta via CSS
        (vedi .related-cards in style.css), niente da ricalcolare in JS. */
     var others = VV.getArticles(true).filter(function (a) { return a.id !== article.id; }).slice(0, 3);
