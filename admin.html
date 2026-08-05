@@ -1188,12 +1188,14 @@
             </button>
           </div>
           <div class="dg-card">
-            <div class="dg-table-wrap">
+            <div class="dg-card-title">Categorie</div>
+            <div class="dg-card-sub">N. atleti e Incassato sono calcolati dagli atleti assegnati qui sotto. Retta unitaria è il valore suggerito quando aggiungi un nuovo atleta alla categoria.</div>
+            <div class="dg-table-wrap" style="margin-top:14px">
               <table class="dg-table">
                 <thead>
                   <tr>
                     <th>Categoria</th>
-                    <th>N. atleti previsti</th>
+                    <th>N. atleti</th>
                     <th>Retta unitaria</th>
                     <th>Previsto</th>
                     <th>Incassato</th>
@@ -1202,6 +1204,32 @@
                   </tr>
                 </thead>
                 <tbody id="retteBody"><tr><td colspan="7" class="dg-empty">—</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="dg-toolbar" style="margin-top:14px">
+            <button id="newAtletaRettaBtn" class="dg-btn-primary dg-btn-sm">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Nuovo atleta
+            </button>
+          </div>
+          <div class="dg-card">
+            <div class="dg-card-title">Atleti</div>
+            <div class="dg-card-sub">Nome, categoria e rate trimestrali per ciascun atleta di questa stagione.</div>
+            <div class="dg-table-wrap" style="margin-top:14px">
+              <table class="dg-table">
+                <thead>
+                  <tr>
+                    <th>Nome</th>
+                    <th>Cognome</th>
+                    <th>Categoria</th>
+                    <th>Rate</th>
+                    <th>Incassato</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="atletiRetteBody"><tr><td colspan="6" class="dg-empty">—</td></tr></tbody>
               </table>
             </div>
           </div>
@@ -1265,7 +1293,7 @@
         <div id="budgetPaneBilancio" class="dg-section is-hidden">
           <div class="dg-card">
             <div class="dg-card-title">Saldo mensile</div>
-            <div class="dg-card-sub">Entrate = tranche sponsor incassate (segnate come pagate). Uscite = spese con data indicata; quelle senza data sono raggruppate a parte.</div>
+            <div class="dg-card-sub">Entrate = tranche sponsor e rate atleti segnate come pagate. Uscite = spese con data indicata; quelle senza data sono raggruppate a parte.</div>
             <div class="dg-table-wrap" style="margin-top:14px">
               <table class="dg-table">
                 <thead>
@@ -1283,19 +1311,20 @@
           </div>
 
           <div class="dg-card" style="margin-top:14px">
-            <div class="dg-card-title">Entrate — tranche incassate</div>
-            <div class="dg-card-sub">Ogni tranche di pagamento sponsor segnata come pagata, per questa stagione.</div>
+            <div class="dg-card-title">Entrate incassate</div>
+            <div class="dg-card-sub">Tranche sponsor e rate atleti segnate come pagate, per questa stagione.</div>
             <div class="dg-table-wrap" style="margin-top:14px">
               <table class="dg-table">
                 <thead>
                   <tr>
                     <th>Data</th>
-                    <th>Azienda</th>
+                    <th>Fonte</th>
+                    <th>Nome</th>
                     <th>Importo</th>
                     <th>Note</th>
                   </tr>
                 </thead>
-                <tbody id="bilancioEntrateBody"><tr><td colspan="4" class="dg-empty">—</td></tr></tbody>
+                <tbody id="bilancioEntrateBody"><tr><td colspan="5" class="dg-empty">—</td></tr></tbody>
               </table>
             </div>
           </div>
@@ -1521,20 +1550,78 @@
         <label class="dg-form-label">Nome categoria *</label>
         <input type="text" id="categoriaNomeInput" class="dg-form-input" placeholder="es. Under 13 Maschile">
       </div>
-      <div class="dg-form-grid">
-        <div class="dg-form-group">
-          <label class="dg-form-label">N. atleti previsti</label>
-          <input type="number" id="categoriaNInput" class="dg-form-input" min="0" step="1" value="0">
-        </div>
-        <div class="dg-form-group">
-          <label class="dg-form-label">Retta unitaria (€)</label>
-          <input type="number" id="categoriaRettaInput" class="dg-form-input" min="0" step="10" value="0">
-        </div>
+      <div class="dg-form-group">
+        <label class="dg-form-label">Retta unitaria (€)</label>
+        <input type="number" id="categoriaRettaInput" class="dg-form-input" min="0" step="10" value="0">
+        <p class="dg-card-sub" style="margin-top:4px">Valore suggerito quando aggiungi un atleta a questa categoria — modificabile per singolo atleta.</p>
       </div>
     </div>
     <div class="dg-modal-actions">
       <button id="newCategoriaCancel" class="dg-btn-ghost">Annulla</button>
       <button id="newCategoriaSave" class="dg-btn-primary">Crea</button>
+    </div>
+  </div>
+
+  <!-- MODAL: nuovo atleta (rette) -->
+  <div id="newAtletaRettaModal" class="dg-modal is-hidden">
+    <div class="dg-modal-head">
+      <h3>Nuovo atleta</h3>
+      <button id="newAtletaRettaClose" class="dg-btn-icon-only" aria-label="Chiudi">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="dg-modal-body">
+      <div class="dg-form-grid">
+        <div class="dg-form-group">
+          <label class="dg-form-label">Nome *</label>
+          <input type="text" id="atletaRettaNomeInput" class="dg-form-input">
+        </div>
+        <div class="dg-form-group">
+          <label class="dg-form-label">Cognome *</label>
+          <input type="text" id="atletaRettaCognomeInput" class="dg-form-input">
+        </div>
+      </div>
+      <div class="dg-form-group">
+        <label class="dg-form-label">Categoria</label>
+        <select id="atletaRettaCategoriaSelect" class="dg-form-input"></select>
+      </div>
+    </div>
+    <div class="dg-modal-actions">
+      <button id="newAtletaRettaCancel" class="dg-btn-ghost">Annulla</button>
+      <button id="newAtletaRettaSave" class="dg-btn-primary">Crea</button>
+    </div>
+  </div>
+
+  <!-- MODAL: gestione rate di un atleta -->
+  <div id="rateAtletaModal" class="dg-modal is-hidden">
+    <div class="dg-modal-head">
+      <h3>Rate — <span id="rateAtletaNome">—</span></h3>
+      <button id="rateAtletaClose" class="dg-btn-icon-only" aria-label="Chiudi">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="dg-modal-body">
+      <div id="rateAtletaList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px"></div>
+      <div class="dg-form-grid">
+        <div class="dg-form-group">
+          <label class="dg-form-label">Importo (€)</label>
+          <input type="number" id="rataAtletaImporto" class="dg-form-input" min="0" step="10">
+        </div>
+        <div class="dg-form-group">
+          <label class="dg-form-label">Scadenza</label>
+          <input type="date" id="rataAtletaScadenza" class="dg-form-input" value="">
+        </div>
+      </div>
+      <div class="dg-form-group">
+        <label class="dg-form-label">Note</label>
+        <input type="text" id="rataAtletaNote" class="dg-form-input" placeholder="es. Prima rata">
+      </div>
+      <div class="dg-form-actions">
+        <button id="rataAtletaAddBtn" class="dg-btn-primary dg-btn-sm">Aggiungi rata</button>
+      </div>
+    </div>
+    <div class="dg-modal-actions">
+      <button id="rateAtletaDone" class="dg-btn-ghost">Chiudi</button>
     </div>
   </div>
 

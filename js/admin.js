@@ -2455,6 +2455,9 @@
   var _tranche = [];
   var _trancheEditingId = null;
   var _categorieAtleti = [];
+  var _atletiRette = [];
+  var _rateAtleti = [];
+  var _curAtletaRettaId = null;
   var _vociSpesa = [];
   var _categorieSpesa = [];
   var _auditLog = [];
@@ -2545,6 +2548,11 @@
       db.collection('categorieSpesa').get().catch(function (e) {
         console.error('[budget] categorieSpesa', e);
         return { docs: [] };
+      }),
+      /* Rate atleti: come tranchePagamento, collegate via atletaRettaId (non seasonId diretto). */
+      db.collection('rateAtleti').get().catch(function (e) {
+        console.error('[budget] rateAtleti', e);
+        return { docs: [] };
       })
     ]).then(function (res) {
       _dirigentiList    = res[0].docs.map(_mapDoc);
@@ -2555,6 +2563,7 @@
       _promemoria       = res[5].docs.map(_mapDoc);
       _tranche          = res[6].docs.map(_mapDoc);
       _categorieSpesa   = res[7].docs.map(_mapDoc).sort(function (a, b) { return (a.nome || '').localeCompare(b.nome || ''); });
+      _rateAtleti       = res[8].docs.map(_mapDoc);
 
       var chain = _seasons.length ? Promise.resolve() : _createDefaultSeason();
 
@@ -2588,10 +2597,12 @@
   function _loadSeasonScoped() {
     return Promise.all([
       db.collection('categorieAtleti').where('seasonId', '==', _currentSeasonId).get(),
-      db.collection('vociSpesa').where('seasonId', '==', _currentSeasonId).get()
+      db.collection('vociSpesa').where('seasonId', '==', _currentSeasonId).get(),
+      db.collection('atletiRette').where('seasonId', '==', _currentSeasonId).get()
     ]).then(function (res) {
       _categorieAtleti = res[0].docs.map(_mapDoc);
       _vociSpesa       = res[1].docs.map(_mapDoc);
+      _atletiRette     = res[2].docs.map(_mapDoc);
     });
   }
 
@@ -2620,6 +2631,44 @@
     return t.reduce(function (sum, x) { return sum + (x.pagato ? 0 : (+x.importo || 0)); }, 0);
   }
 
+  /* ---- RETTE ATLETI — per categoria, calcolate dagli atleti/rate assegnati ----
+     N. atleti e Incassato non sono più campi salvati a mano su categorieAtleti:
+     si derivano da _atletiRette (chi) + _rateAtleti (le singole rate, pagate o no). */
+  function _atletaRettaById(id) { return _atletiRette.find(function (a) { return a.id === id; }); }
+  function _rateByAtleta(atletaId) { return _rateAtleti.filter(function (r) { return r.atletaRettaId === atletaId; }); }
+
+  function _calcRetteAtleti() {
+    var perCategoria = {};
+    _atletiRette.forEach(function (a) {
+      var key = a.categoriaAtletiId || '__none__';
+      var rate = _rateByAtleta(a.id);
+      var incassato = rate.filter(function (r) { return r.pagata; }).reduce(function (s, r) { return s + (+r.importo || 0); }, 0);
+      perCategoria[key] = perCategoria[key] || { nAtleti: 0, incassato: 0 };
+      perCategoria[key].nAtleti++;
+      perCategoria[key].incassato += incassato;
+    });
+    var totIncassato = 0, totPrevisto = 0;
+    var righe = _categorieAtleti.map(function (c) {
+      var p = perCategoria[c.id] || { nAtleti: 0, incassato: 0 };
+      delete perCategoria[c.id];
+      var previsto = p.nAtleti * (+c.rettaUnitaria || 0);
+      totIncassato += p.incassato; totPrevisto += previsto;
+      return {
+        id: c.id, nome: c.nome, rettaUnitaria: +c.rettaUnitaria || 0,
+        nAtleti: p.nAtleti, previsto: previsto, incassato: p.incassato, diff: p.incassato - previsto
+      };
+    });
+    /* Atleti senza categoria assegnata: mai persi dal totale, raggruppati a parte
+       (stesso trattamento di "Senza categoria" già usato per le voci di spesa). */
+    if (perCategoria.__none__) {
+      var pn = perCategoria.__none__;
+      totIncassato += pn.incassato;
+      righe.push({ id: null, nome: 'Senza categoria', rettaUnitaria: 0, nAtleti: pn.nAtleti, previsto: 0, incassato: pn.incassato, diff: pn.incassato });
+    }
+    righe.sort(function (a, b) { return a.nome.localeCompare(b.nome); });
+    return { righe: righe, totIncassato: totIncassato, totPrevisto: totPrevisto };
+  }
+
   /* ---- OBIETTIVO / RIEPILOGO ---- */
   function _calcRiepilogo() {
     var cur = _sponsorizzazioni.filter(function (s) { return s.seasonId === _currentSeasonId; });
@@ -2628,7 +2677,7 @@
     var sponsorDaIncassare = chiusi.reduce(function (s, x) { return s + _sponsorDaIncassare(x); }, 0);
     var sponsorPotenziali = cur.filter(function (s) { return s.stato !== 'chiuso' && s.stato !== 'rifiutato'; })
       .reduce(function (s, x) { return s + (+x.importoStimato || 0) * (+x.probabilitaChiusura || 0); }, 0);
-    var rette = _categorieAtleti.reduce(function (s, c) { return s + (+c.incassato || 0); }, 0);
+    var rette = _calcRetteAtleti().totIncassato;
     var uscite = _vociSpesa.reduce(function (s, v) { return s + (+v.importoSostenuto || 0); }, 0);
     var entrateConfermate = sponsorChiusi + rette;
     var saldo = entrateConfermate - uscite;
@@ -2648,8 +2697,8 @@
     var righe = cur.map(function (s) {
       var az = _aziendaById(s.aziendaId);
       return { tipo: 'Sponsor', nome: az ? az.ragioneSociale : '—', importo: _sponsorIncassato(s) };
-    }).concat(_categorieAtleti.map(function (c) {
-      return { tipo: 'Retta atleti', nome: c.nome, importo: +c.incassato || 0 };
+    }).concat(_calcRetteAtleti().righe.map(function (r) {
+      return { tipo: 'Retta atleti', nome: r.nome, importo: r.incassato };
     })).filter(function (r) { return r.importo > 0; });
     righe.sort(function (a, b) { return b.importo - a.importo; });
     var totale = righe.reduce(function (s, r) { return s + r.importo; }, 0);
@@ -3605,32 +3654,37 @@
   /* ---- RETTE ATLETI ---- */
   function _renderRette() {
     var body = document.getElementById('retteBody');
-    if (!_categorieAtleti.length) { body.innerHTML = '<tr><td colspan="7" class="dg-empty">Nessuna categoria per questa stagione.</td></tr>'; return; }
-    body.innerHTML = _categorieAtleti.map(function (c) {
-      var previsto = (+c.nAtletiPrevisti || 0) * (+c.rettaUnitaria || 0);
-      var incassato = +c.incassato || 0;
-      var diff = incassato - previsto;
+    var r = _calcRetteAtleti();
+    body.innerHTML = r.righe.length ? r.righe.map(function (c) {
+      var rettaCell = c.id
+        ? '<input type="number" class="dg-table-input" value="' + c.rettaUnitaria + '" data-id="' + c.id + '" onchange="DG.saveRettaUnitaria(this)">'
+        : '—';
+      var azioniCell = c.id
+        ? '<button class="dg-btn-icon-only" title="Elimina" onclick="DG.deleteCategoria(\'' + c.id + '\')">' + _delIconSm() + '</button>'
+        : '';
       return '<tr>' +
         '<td>' + esc(c.nome) + '</td>' +
-        '<td>' + (c.nAtletiPrevisti || 0) + '</td>' +
-        '<td>€' + Number(c.rettaUnitaria || 0).toLocaleString('it-IT') + '</td>' +
-        '<td>€' + previsto.toLocaleString('it-IT') + '</td>' +
-        '<td><input type="number" class="dg-table-input" value="' + incassato + '" data-id="' + c.id + '" onchange="DG.saveIncassato(this)"></td>' +
-        '<td class="' + (diff >= 0 ? 'dg-diff-pos' : 'dg-diff-neg') + '">' + (diff >= 0 ? '+' : '') + Math.round(diff).toLocaleString('it-IT') + ' €</td>' +
-        '<td><button class="dg-btn-icon-only" title="Elimina" onclick="DG.deleteCategoria(\'' + c.id + '\')">' + _delIconSm() + '</button></td>' +
+        '<td>' + c.nAtleti + '</td>' +
+        '<td>' + rettaCell + '</td>' +
+        '<td>€' + Math.round(c.previsto).toLocaleString('it-IT') + '</td>' +
+        '<td>€' + Math.round(c.incassato).toLocaleString('it-IT') + '</td>' +
+        '<td class="' + (c.diff >= 0 ? 'dg-diff-pos' : 'dg-diff-neg') + '">' + (c.diff >= 0 ? '+' : '') + Math.round(c.diff).toLocaleString('it-IT') + ' €</td>' +
+        '<td>' + azioniCell + '</td>' +
         '</tr>';
-    }).join('');
+    }).join('') : '<tr><td colspan="7" class="dg-empty">Nessuna categoria per questa stagione.</td></tr>';
+
+    _renderAtletiRette();
   }
 
-  DG.saveIncassato = function (el) {
+  DG.saveRettaUnitaria = function (el) {
     var id = el.dataset.id;
     var c = _categorieAtleti.find(function (x) { return x.id === id; });
     if (!c) return;
-    var old = { incassato: c.incassato || 0 };
+    var old = { rettaUnitaria: c.rettaUnitaria || 0 };
     var v = +el.value || 0;
-    c.incassato = v;
-    db.collection('categorieAtleti').doc(id).update({ incassato: v })
-      .then(function () { return _logWrite('categoriaAtleti', id, 'Categoria — ' + c.nome, 'update', _diff(old, { incassato: v }, ['incassato'])); })
+    c.rettaUnitaria = v;
+    db.collection('categorieAtleti').doc(id).update({ rettaUnitaria: v })
+      .then(function () { return _logWrite('categoriaAtleti', id, 'Categoria — ' + c.nome, 'update', _diff(old, { rettaUnitaria: v }, ['rettaUnitaria'])); })
       .then(function () { _renderRette(); _renderStatCards(); _renderCharts(); })
       .catch(function (e) { alert('Errore: ' + e.message); });
   };
@@ -3638,12 +3692,183 @@
   DG.deleteCategoria = function (id) {
     var c = _categorieAtleti.find(function (x) { return x.id === id; });
     if (!c) return;
+    if (_atletiRette.some(function (a) { return a.categoriaAtletiId === id; })) {
+      alert('Questa categoria ha ancora atleti assegnati. Sposta o elimina prima gli atleti dalla tabella qui sotto.');
+      return;
+    }
     confirm('Eliminare la categoria "' + c.nome + '"?', function () {
       db.collection('categorieAtleti').doc(id).delete()
         .then(function () { return _logWrite('categoriaAtleti', id, 'Categoria — ' + c.nome, 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]); })
         .then(function () {
           _categorieAtleti = _categorieAtleti.filter(function (x) { return x.id !== id; });
           _renderRette(); _renderStatCards(); _renderCharts();
+        })
+        .catch(function (e) { alert('Errore: ' + e.message); });
+    });
+  };
+
+  function _categoriaAtletiOptionsHtml(selectedId) {
+    return '<option value="">— Nessuna —</option>' + _categorieAtleti.map(function (c) {
+      return '<option value="' + c.id + '"' + (c.id === selectedId ? ' selected' : '') + '>' + esc(c.nome) + '</option>';
+    }).join('');
+  }
+
+  function _renderAtletiRette() {
+    var body = document.getElementById('atletiRetteBody');
+    if (!body) return;
+    if (!_atletiRette.length) { body.innerHTML = '<tr><td colspan="6" class="dg-empty">Nessun atleta per questa stagione.</td></tr>'; return; }
+    var list = _atletiRette.slice().sort(function (a, b) { return (a.cognome || '').localeCompare(b.cognome || ''); });
+    body.innerHTML = list.map(function (a) {
+      var cat = _categorieAtleti.find(function (c) { return c.id === a.categoriaAtletiId; });
+      var rate = _rateByAtleta(a.id);
+      var pagate = rate.filter(function (r) { return r.pagata; });
+      var incassato = pagate.reduce(function (s, r) { return s + (+r.importo || 0); }, 0);
+      var totale = rate.reduce(function (s, r) { return s + (+r.importo || 0); }, 0);
+      return '<tr>' +
+        '<td><input type="text" class="dg-table-input" value="' + esc(a.nome) + '" data-id="' + a.id + '" data-field="nome" onchange="DG.saveAtletaRettaField(this)"></td>' +
+        '<td><input type="text" class="dg-table-input" value="' + esc(a.cognome) + '" data-id="' + a.id + '" data-field="cognome" onchange="DG.saveAtletaRettaField(this)"></td>' +
+        '<td><select class="dg-table-input" data-id="' + a.id + '" data-field="categoriaAtletiId" onchange="DG.saveAtletaRettaField(this)">' + _categoriaAtletiOptionsHtml(a.categoriaAtletiId) + '</select></td>' +
+        '<td>' + pagate.length + '/' + rate.length + ' pagate' + (rate.length ? ' — €' + Math.round(totale).toLocaleString('it-IT') : '') + '</td>' +
+        '<td>€' + Math.round(incassato).toLocaleString('it-IT') + '</td>' +
+        '<td>' +
+          '<button class="dg-btn-ghost dg-btn-sm" onclick="DG.manageRateAtleta(\'' + a.id + '\')">Gestisci rate</button> ' +
+          '<button class="dg-btn-icon-only" title="Elimina" onclick="DG.deleteAtletaRetta(\'' + a.id + '\')">' + _delIconSm() + '</button>' +
+        '</td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  DG.saveAtletaRettaField = function (el) {
+    var id = el.dataset.id, field = el.dataset.field;
+    var a = _atletiRette.find(function (x) { return x.id === id; });
+    if (!a) return;
+    if (field !== 'categoriaAtletiId' && !el.value.trim()) { alert('Il campo non può essere vuoto.'); el.value = a[field]; return; }
+    var nv = field === 'categoriaAtletiId' ? el.value : el.value.trim();
+    var old = {}; old[field] = a[field] || '';
+    a[field] = nv;
+    var patch = {}; patch[field] = nv;
+    db.collection('atletiRette').doc(id).update(patch)
+      .then(function () { return _logWrite('atletaRetta', id, 'Atleta — ' + a.cognome + ' ' + a.nome, 'update', _diff(old, patch, [field])); })
+      .then(function () { _renderRette(); _renderStatCards(); _renderCharts(); })
+      .catch(function (e) { alert('Errore: ' + e.message); });
+  };
+
+  DG.deleteAtletaRetta = function (id) {
+    var a = _atletiRette.find(function (x) { return x.id === id; });
+    if (!a) return;
+    confirm('Eliminare l\'atleta "' + a.nome + ' ' + a.cognome + '"? Verranno eliminate anche le sue rate.', function () {
+      var rate = _rateByAtleta(id);
+      var batch = db.batch();
+      rate.forEach(function (r) { batch.delete(db.collection('rateAtleti').doc(r.id)); });
+      batch.delete(db.collection('atletiRette').doc(id));
+      batch.commit()
+        .then(function () { return _logWrite('atletaRetta', id, 'Atleta — ' + a.cognome + ' ' + a.nome, 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]); })
+        .then(function () {
+          _atletiRette = _atletiRette.filter(function (x) { return x.id !== id; });
+          _rateAtleti = _rateAtleti.filter(function (x) { return x.atletaRettaId !== id; });
+          _renderRette(); _renderStatCards(); _renderCharts();
+        })
+        .catch(function (e) { alert('Errore: ' + e.message); });
+    });
+  };
+
+  function _saveNewAtletaRetta() {
+    var nome = val('atletaRettaNomeInput').trim();
+    var cognome = val('atletaRettaCognomeInput').trim();
+    if (!nome || !cognome) { alert('Inserisci nome e cognome dell\'atleta.'); return; }
+    var data = {
+      seasonId: _currentSeasonId, nome: nome, cognome: cognome,
+      categoriaAtletiId: val('atletaRettaCategoriaSelect')
+    };
+    var ref = db.collection('atletiRette').doc();
+    ref.set(data).then(function () {
+      data.id = ref.id;
+      _atletiRette.push(data);
+      return _logWrite('atletaRetta', ref.id, 'Atleta — ' + cognome + ' ' + nome, 'create', _diff({}, data, Object.keys(data)));
+    }).then(function () {
+      _closeBudgetModal('newAtletaRettaModal');
+      _renderRette(); _renderStatCards(); _renderCharts();
+    }).catch(function (e) { alert('Errore: ' + e.message); });
+  }
+
+  /* ---- Rate atleti (modal) — stesso pattern delle tranche sponsor ---- */
+  DG.manageRateAtleta = function (id) {
+    var a = _atletiRette.find(function (x) { return x.id === id; });
+    if (!a) return;
+    _curAtletaRettaId = id;
+    document.getElementById('rateAtletaNome').textContent = a.nome + ' ' + a.cognome;
+    document.getElementById('rataAtletaImporto').value = '';
+    document.getElementById('rataAtletaScadenza').value = '';
+    document.getElementById('rataAtletaNote').value = '';
+    _renderRateAtletaModal();
+    _openBudgetModal('rateAtletaModal');
+  };
+
+  function _renderRateAtletaModal() {
+    var el = document.getElementById('rateAtletaList');
+    var rate = _curAtletaRettaId ? _rateByAtleta(_curAtletaRettaId) : [];
+    rate = rate.slice().sort(function (a, b) { return (a.scadenza || '') < (b.scadenza || '') ? -1 : 1; });
+    el.innerHTML = rate.length ? rate.map(function (r) {
+      return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:#f8fafc;border-radius:8px">' +
+        '<div>' +
+          '<div style="font-weight:700;font-size:13px">€' + Number(r.importo || 0).toLocaleString('it-IT') + (r.note ? ' — ' + esc(r.note) : '') + '</div>' +
+          '<div style="font-size:12px;color:var(--dg-muted)">Scadenza: ' + (r.scadenza ? _fmtDate(r.scadenza) : '—') + '</div>' +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0">' +
+          '<label class="dg-check" style="font-size:12px"><input type="checkbox"' + (r.pagata ? ' checked' : '') + ' onchange="DG.toggleRataAtleta(\'' + r.id + '\', this.checked)"> Pagata</label>' +
+          '<button class="dg-btn-icon-only" title="Elimina" onclick="DG.deleteRataAtleta(\'' + r.id + '\')">' + _delIconSm() + '</button>' +
+        '</div>' +
+      '</div>';
+    }).join('') : '<p class="dg-muted">Nessuna rata inserita.</p>';
+  }
+
+  function _addRataAtleta() {
+    if (!_curAtletaRettaId) return;
+    var importo = +val('rataAtletaImporto') || 0;
+    var scadenza = val('rataAtletaScadenza');
+    if (!importo) { alert('Inserisci un importo.'); return; }
+    var data = {
+      atletaRettaId: _curAtletaRettaId, importo: importo, scadenza: scadenza,
+      note: val('rataAtletaNote').trim(), pagata: false, createdAt: new Date().toISOString()
+    };
+    var ref = db.collection('rateAtleti').doc();
+    var a = _atletiRette.find(function (x) { return x.id === _curAtletaRettaId; });
+    ref.set(data).then(function () {
+      data.id = ref.id;
+      _rateAtleti.push(data);
+      return _logWrite('rataAtleti', ref.id, 'Rata — ' + (a ? a.cognome + ' ' + a.nome : ''), 'create', _diff({}, data, Object.keys(data)));
+    }).then(function () {
+      document.getElementById('rataAtletaImporto').value = '';
+      document.getElementById('rataAtletaScadenza').value = '';
+      document.getElementById('rataAtletaNote').value = '';
+      _renderRateAtletaModal();
+      _renderRette(); _renderStatCards(); _renderCharts();
+    }).catch(function (e) { alert('Errore: ' + e.message); });
+  }
+
+  DG.toggleRataAtleta = function (id, checked) {
+    var r = _rateAtleti.find(function (x) { return x.id === id; });
+    if (!r) return;
+    var old = { pagata: !!r.pagata };
+    var patch = { pagata: checked };
+    r.pagata = checked;
+    var a = _atletiRette.find(function (x) { return x.id === r.atletaRettaId; });
+    db.collection('rateAtleti').doc(id).update(patch)
+      .then(function () { return _logWrite('rataAtleti', id, 'Rata — ' + (a ? a.cognome + ' ' + a.nome : ''), 'update', _diff(old, patch, ['pagata'])); })
+      .then(function () { _renderRateAtletaModal(); _renderRette(); _renderStatCards(); _renderCharts(); _renderBilancio(); })
+      .catch(function (e) { alert('Errore: ' + e.message); });
+  };
+
+  DG.deleteRataAtleta = function (id) {
+    var r = _rateAtleti.find(function (x) { return x.id === id; });
+    if (!r) return;
+    var a = _atletiRette.find(function (x) { return x.id === r.atletaRettaId; });
+    confirm('Eliminare questa rata?', function () {
+      db.collection('rateAtleti').doc(id).delete()
+        .then(function () { return _logWrite('rataAtleti', id, 'Rata — ' + (a ? a.cognome + ' ' + a.nome : ''), 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]); })
+        .then(function () {
+          _rateAtleti = _rateAtleti.filter(function (x) { return x.id !== id; });
+          _renderRateAtletaModal(); _renderRette(); _renderStatCards(); _renderCharts();
         })
         .catch(function (e) { alert('Errore: ' + e.message); });
     });
@@ -4154,7 +4379,20 @@
   /* Calcolo puro (nessun DOM), condiviso da _renderBilancio() e dall'export PDF. */
   function _calcBilancioMensile() {
     var curIds = _sponsorizzazioni.filter(function (s) { return s.seasonId === _currentSeasonId; }).map(function (s) { return s.id; });
-    var entrate = _tranche.filter(function (t) { return t.pagato && curIds.indexOf(t.sponsorizzazioneId) !== -1; });
+    var entrateSponsor = _tranche.filter(function (t) { return t.pagato && curIds.indexOf(t.sponsorizzazioneId) !== -1; })
+      .map(function (t) {
+        var s = _sponsorizzazioni.find(function (x) { return x.id === t.sponsorizzazioneId; });
+        var az = s ? _aziendaById(s.aziendaId) : null;
+        return { scadenza: t.scadenza, importo: +t.importo || 0, tipo: 'Sponsor', nome: az ? az.ragioneSociale : '—', note: t.note || '' };
+      });
+    /* _atletiRette è già filtrato per la stagione corrente (vedi _loadSeasonScoped). */
+    var atletiIds = _atletiRette.map(function (a) { return a.id; });
+    var entrateRette = _rateAtleti.filter(function (r) { return r.pagata && atletiIds.indexOf(r.atletaRettaId) !== -1; })
+      .map(function (r) {
+        var a = _atletaRettaById(r.atletaRettaId);
+        return { scadenza: r.scadenza, importo: +r.importo || 0, tipo: 'Retta atleti', nome: a ? (a.nome + ' ' + a.cognome) : '—', note: r.note || '' };
+      });
+    var entrate = entrateSponsor.concat(entrateRette);
     /* Le voci IVA sono "sostenute" ma non ancora un'uscita di cassa reale finché
        non vengono marcate come versate (v.pagata) nel Riepilogo IVA. */
     var uscite = _vociSpesa.filter(function (v) { return +v.importoSostenuto > 0 && (!v.isIva || v.pagata); });
@@ -4201,7 +4439,7 @@
 
     var b = _calcBilancioMensile();
     if (!b.righe.length) {
-      mesiBody.innerHTML = '<tr><td colspan="5" class="dg-empty">Nessuna tranche incassata o spesa datata per questa stagione.</td></tr>';
+      mesiBody.innerHTML = '<tr><td colspan="5" class="dg-empty">Nessuna entrata incassata o spesa datata per questa stagione.</td></tr>';
     } else {
       var rows = b.righe.map(function (r) {
         return '<tr>' +
@@ -4223,15 +4461,14 @@
     }
 
     entrateBody.innerHTML = b.entrateList.length ? b.entrateList.map(function (t) {
-      var s = _sponsorizzazioni.find(function (x) { return x.id === t.sponsorizzazioneId; });
-      var az = s ? _aziendaById(s.aziendaId) : null;
       return '<tr>' +
         '<td>' + _fmtDateLong(t.scadenza) + '</td>' +
-        '<td>' + esc(az ? az.ragioneSociale : '—') + '</td>' +
-        '<td>' + _eur(+t.importo || 0) + '</td>' +
+        '<td>' + esc(t.tipo) + '</td>' +
+        '<td>' + esc(t.nome) + '</td>' +
+        '<td>' + _eur(t.importo) + '</td>' +
         '<td>' + esc(t.note || '') + '</td>' +
         '</tr>';
-    }).join('') : '<tr><td colspan="4" class="dg-empty">Nessuna tranche incassata per questa stagione.</td></tr>';
+    }).join('') : '<tr><td colspan="5" class="dg-empty">Nessuna entrata incassata per questa stagione.</td></tr>';
   }
 
   /* ---- LOG (sola lettura, copre tutta l'Area Dirigenti + il CMS) ---- */
@@ -4397,9 +4634,7 @@
     if (!nome) { alert('Inserisci il nome della categoria.'); return; }
     var data = {
       seasonId: _currentSeasonId, nome: nome,
-      nAtletiPrevisti: +val('categoriaNInput') || 0,
-      rettaUnitaria: +val('categoriaRettaInput') || 0,
-      incassato: 0
+      rettaUnitaria: +val('categoriaRettaInput') || 0
     };
     var ref = db.collection('categorieAtleti').doc();
     ref.set(data).then(function () {
@@ -4547,13 +4782,26 @@
 
     document.getElementById('newCategoriaBtn').addEventListener('click', function () {
       document.getElementById('categoriaNomeInput').value = '';
-      document.getElementById('categoriaNInput').value = 0;
       document.getElementById('categoriaRettaInput').value = 0;
       _openBudgetModal('newCategoriaModal');
     });
     document.getElementById('newCategoriaClose').addEventListener('click', function () { _closeBudgetModal('newCategoriaModal'); });
     document.getElementById('newCategoriaCancel').addEventListener('click', function () { _closeBudgetModal('newCategoriaModal'); });
     document.getElementById('newCategoriaSave').addEventListener('click', _saveNewCategoria);
+
+    document.getElementById('newAtletaRettaBtn').addEventListener('click', function () {
+      document.getElementById('atletaRettaNomeInput').value = '';
+      document.getElementById('atletaRettaCognomeInput').value = '';
+      document.getElementById('atletaRettaCategoriaSelect').innerHTML = _categoriaAtletiOptionsHtml('');
+      _openBudgetModal('newAtletaRettaModal');
+    });
+    document.getElementById('newAtletaRettaClose').addEventListener('click', function () { _closeBudgetModal('newAtletaRettaModal'); });
+    document.getElementById('newAtletaRettaCancel').addEventListener('click', function () { _closeBudgetModal('newAtletaRettaModal'); });
+    document.getElementById('newAtletaRettaSave').addEventListener('click', _saveNewAtletaRetta);
+
+    document.getElementById('rateAtletaClose').addEventListener('click', function () { _closeBudgetModal('rateAtletaModal'); });
+    document.getElementById('rateAtletaDone').addEventListener('click', function () { _closeBudgetModal('rateAtletaModal'); });
+    document.getElementById('rataAtletaAddBtn').addEventListener('click', _addRataAtleta);
 
     document.getElementById('newSpesaBtn').addEventListener('click', function () {
       document.getElementById('spesaCategoriaInput').value = '';
