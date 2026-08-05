@@ -2680,6 +2680,21 @@
     var pct = Math.max(0, Math.min(100, r.pct));
     document.getElementById('obiettivoBarFill').style.width = pct + '%';
     document.getElementById('obiettivoPct').textContent = r.pct + '%';
+
+    var saldoEl = document.getElementById('heroSaldo');
+    saldoEl.textContent = (r.saldo < 0 ? '-' : '') + '€' + Math.abs(Math.round(r.saldo)).toLocaleString('it-IT');
+    saldoEl.className = 'dg-hero-saldo ' + (r.saldo >= 0 ? 'dg-hero-saldo--pos' : 'dg-hero-saldo--neg');
+
+    var diffEl = document.getElementById('heroDifferenza');
+    if (r.obiettivo > 0) {
+      diffEl.textContent = r.differenza >= 0
+        ? '+€' + Math.round(r.differenza).toLocaleString('it-IT') + ' oltre l\'obiettivo di €' + Math.round(r.obiettivo).toLocaleString('it-IT')
+        : 'Mancano €' + Math.round(Math.abs(r.differenza)).toLocaleString('it-IT') + ' per raggiungere l\'obiettivo di €' + Math.round(r.obiettivo).toLocaleString('it-IT');
+      diffEl.className = 'dg-hero-differenza ' + (r.differenza >= 0 ? 'dg-hero-differenza--pos' : 'dg-hero-differenza--neg');
+    } else {
+      diffEl.textContent = 'Nessun obiettivo impostato per questa stagione';
+      diffEl.className = 'dg-hero-differenza';
+    }
   }
 
   function _saveObiettivo() {
@@ -2764,14 +2779,14 @@
       '<div class="dg-stat-value">' + sign + '€' + Math.abs(Math.round(val2)).toLocaleString('it-IT') + '</div></div>';
   }
 
+  /* Saldo e Differenza da obiettivo sono ora nella hero card (_renderObiettivo);
+     qui restano solo i numeri di supporto, senza ripetere quanto già in vista. */
   function _renderStatCards() {
     var r = _calcRiepilogo();
     document.getElementById('dgStatRow').innerHTML =
       _budgetStatCard('Entrate confermate', r.entrateConfermate, '') +
       _budgetStatCard('Da incassare (sponsor)', r.sponsorDaIncassare, '--orange') +
-      _budgetStatCard('Uscite', r.uscite, '--red') +
-      _budgetStatCard('Saldo', r.saldo, r.saldo >= 0 ? '--green' : '--red') +
-      _budgetStatCard('Differenza da obiettivo', r.differenza, r.differenza >= 0 ? '--green' : '--orange');
+      _budgetStatCard('Uscite', r.uscite, '--red');
     _renderEntrateConfermateDettaglio();
   }
 

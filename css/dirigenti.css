@@ -250,11 +250,19 @@ input, select, textarea { font-family: inherit; }
 .dg-empty { text-align: center; color: var(--dg-muted); padding: 24px 0 !important; }
 
 /* ================================================
-   OBIETTIVO
+   HERO — Saldo + Obiettivo (Riepilogo budget)
 ================================================ */
-.dg-obiettivo-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.dg-hero-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 
-.dg-obiettivo-input-wrap { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--dg-muted); }
+.dg-hero-eyebrow { font-size: 12px; color: var(--dg-muted); font-weight: 600; }
+.dg-hero-saldo { font-family: 'Barlow', sans-serif; font-size: 34px; font-weight: 700; color: var(--dg-text); margin-top: 2px; line-height: 1.1; }
+.dg-hero-saldo--pos { color: var(--dg-green); }
+.dg-hero-saldo--neg { color: var(--dg-red); }
+.dg-hero-differenza { font-size: 13px; color: var(--dg-muted); font-weight: 600; margin-top: 4px; }
+.dg-hero-differenza--pos { color: var(--dg-green); }
+.dg-hero-differenza--neg { color: var(--dg-orange); }
+
+.dg-obiettivo-input-wrap { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--dg-muted); font-size: 13px; }
 .dg-obiettivo-input {
   width: 130px;
   padding: 9px 10px;
@@ -267,10 +275,16 @@ input, select, textarea { font-family: inherit; }
 }
 .dg-obiettivo-input:focus { border-color: var(--dg-blue); }
 
-.dg-obiettivo-progress { display: flex; align-items: center; gap: 12px; margin-top: 16px; }
+.dg-obiettivo-progress { display: flex; align-items: center; gap: 12px; margin-top: 18px; }
 .dg-obiettivo-bar { flex: 1; height: 10px; border-radius: 6px; background: var(--dg-bg); overflow: hidden; }
 .dg-obiettivo-bar-fill { height: 100%; background: linear-gradient(90deg, var(--dg-blue), var(--dg-green)); border-radius: 6px; transition: width 0.4s ease; width: 0%; }
 .dg-obiettivo-pct { font-weight: 700; font-size: 13px; color: var(--dg-text); min-width: 42px; text-align: right; }
+
+/* ================================================
+   RIEPILOGO — layout principale + sidebar
+================================================ */
+.dg-riepilogo-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 18px; align-items: start; }
+.dg-riepilogo-main, .dg-riepilogo-side { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
 
 /* ================================================
    PROMEMORIA WIDGET
@@ -618,6 +632,8 @@ input, select, textarea { font-family: inherit; }
 @media (max-width: 900px) {
   .dg-stat-row { grid-template-columns: repeat(2, 1fr); }
   .dg-chart-row { grid-template-columns: 1fr; }
+  .dg-riepilogo-grid { grid-template-columns: 1fr; }
+  .dg-hero-saldo { font-size: 28px; }
 }
 
 @media (max-width: 600px) {
@@ -632,7 +648,7 @@ input, select, textarea { font-family: inherit; }
   .dg-drawer { width: 100%; }
   .dg-modal { width: calc(100% - 24px); }
   .dg-obiettivo-input-wrap { width: 100%; }
-  .dg-obiettivo-row { flex-direction: column; align-items: stretch; }
+  .dg-hero-row { flex-direction: column; align-items: stretch; }
 }
 
 /* ================================================

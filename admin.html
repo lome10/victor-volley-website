@@ -1063,14 +1063,16 @@
 
         <div id="budgetPaneRiepilogo" class="dg-section">
 
-        <div class="dg-card dg-obiettivo-card">
-          <div class="dg-obiettivo-row">
-            <div>
-              <div class="dg-card-title">Obiettivo stagione</div>
-              <div class="dg-card-sub" id="obiettivoSeasonNome">—</div>
+        <!-- Hero: unico punto in cui si legge "siamo in linea con l'obiettivo?" -->
+        <div class="dg-card dg-hero-card">
+          <div class="dg-hero-row">
+            <div class="dg-hero-saldo-block">
+              <div class="dg-hero-eyebrow" id="obiettivoSeasonNome">—</div>
+              <div class="dg-hero-saldo" id="heroSaldo">€0</div>
+              <div class="dg-hero-differenza" id="heroDifferenza">—</div>
             </div>
             <div class="dg-obiettivo-input-wrap">
-              <span>€</span>
+              <span>Obiettivo €</span>
               <input type="number" id="obiettivoInput" class="dg-obiettivo-input" min="0" step="100">
               <button id="obiettivoSave" class="dg-btn-ghost dg-btn-sm">Salva</button>
             </div>
@@ -1081,46 +1083,55 @@
           </div>
         </div>
 
-        <div id="promemoriaWidget" class="dg-card is-hidden">
-          <div class="dg-card-title">Promemoria in scadenza</div>
-          <div id="promemoriaWidgetList" class="dg-reminder-list"></div>
-        </div>
-
         <div class="dg-stat-row" id="dgStatRow"></div>
 
-        <div class="dg-card" id="entrateConfermateDettaglioCard" style="margin-top:14px">
-          <div class="dg-card-title">Da chi arrivano le entrate confermate</div>
-          <div class="dg-card-sub">Sponsor chiusi (incassato) e rette atleti (incassato), per questa stagione.</div>
-          <div class="dg-table-wrap" style="margin-top:14px">
-            <table class="dg-table">
-              <thead>
-                <tr>
-                  <th>Fonte</th>
-                  <th>Nome</th>
-                  <th>Importo</th>
-                </tr>
-              </thead>
-              <tbody id="entrateConfermateDettaglioBody"><tr><td colspan="3" class="dg-empty">—</td></tr></tbody>
-            </table>
-          </div>
-        </div>
+        <div class="dg-riepilogo-grid">
+          <div class="dg-riepilogo-main">
 
-        <div class="dg-chart-row">
-          <div class="dg-card dg-chart-card">
-            <div class="dg-card-title">Entrate vs Uscite vs Obiettivo</div>
-            <div id="chartBar" class="dg-chart-box"></div>
-          </div>
-          <div class="dg-card dg-chart-card">
-            <div class="dg-card-title">Composizione entrate</div>
-            <div id="chartDonut" class="dg-chart-box"></div>
-          </div>
-        </div>
+            <div class="dg-card" id="entrateConfermateDettaglioCard">
+              <div class="dg-card-title">Da chi arrivano le entrate confermate</div>
+              <div class="dg-card-sub">Sponsor chiusi (incassato) e rette atleti (incassato), per questa stagione.</div>
+              <div class="dg-table-wrap" style="margin-top:14px">
+                <table class="dg-table">
+                  <thead>
+                    <tr>
+                      <th>Fonte</th>
+                      <th>Nome</th>
+                      <th>Importo</th>
+                    </tr>
+                  </thead>
+                  <tbody id="entrateConfermateDettaglioBody"><tr><td colspan="3" class="dg-empty">—</td></tr></tbody>
+                </table>
+              </div>
+            </div>
 
-        <div class="dg-card" id="cashflowWidget" style="margin-top:14px">
-          <div class="dg-card-title">Cashflow sponsor</div>
-          <div class="dg-card-sub">Tranche di pagamento pianificate per gli sponsor di questa stagione</div>
-          <div class="dg-stat-row" id="cashflowStats" style="margin-top:14px"></div>
-          <div class="dg-chart-box" id="cashflowDonut" style="margin-top:14px"></div>
+            <div class="dg-chart-row">
+              <div class="dg-card dg-chart-card">
+                <div class="dg-card-title">Entrate vs Uscite vs Obiettivo</div>
+                <div id="chartBar" class="dg-chart-box"></div>
+              </div>
+              <div class="dg-card dg-chart-card">
+                <div class="dg-card-title">Composizione entrate</div>
+                <div id="chartDonut" class="dg-chart-box"></div>
+              </div>
+            </div>
+
+          </div>
+          <div class="dg-riepilogo-side">
+
+            <div id="promemoriaWidget" class="dg-card is-hidden">
+              <div class="dg-card-title">Promemoria in scadenza</div>
+              <div id="promemoriaWidgetList" class="dg-reminder-list"></div>
+            </div>
+
+            <div class="dg-card" id="cashflowWidget">
+              <div class="dg-card-title">Cashflow sponsor</div>
+              <div class="dg-card-sub">Tranche di pagamento pianificate per gli sponsor di questa stagione</div>
+              <div class="dg-stat-row" id="cashflowStats" style="margin-top:14px"></div>
+              <div class="dg-chart-box" id="cashflowDonut" style="margin-top:14px"></div>
+            </div>
+
+          </div>
         </div>
 
         </div>
