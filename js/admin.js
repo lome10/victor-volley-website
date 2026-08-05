@@ -3424,7 +3424,7 @@
       seasonId: _currentSeasonId, categoria: nome, categoriaSpesaId: '',
       importoPreventivato: 0, importoSostenuto: importoIva, dataSpesa: '',
       note: 'IVA 11% generata automaticamente sulla tranche di €' + Number(t.importo || 0).toLocaleString('it-IT'),
-      isIva: true, ivaTrimestre: auto ? auto.trimestre : '', ivaScadenza: auto ? auto.scadenza : '', ivaScadenzaManuale: false
+      isIva: true, pagata: false, ivaTrimestre: auto ? auto.trimestre : '', ivaScadenza: auto ? auto.scadenza : '', ivaScadenzaManuale: false
     };
     var ref = db.collection('vociSpesa').doc();
     return ref.set(data).then(function () {
@@ -3854,7 +3854,7 @@
     var data = {
       seasonId: _currentSeasonId, categoria: nome, categoriaSpesaId: v.categoriaSpesaId || '',
       importoPreventivato: 0, importoSostenuto: importoIva, dataSpesa: v.dataSpesa || '',
-      note: 'IVA ' + aliquota + '% generata automaticamente sulla voce "' + v.categoria + '"', isIva: true,
+      note: 'IVA ' + aliquota + '% generata automaticamente sulla voce "' + v.categoria + '"', isIva: true, pagata: false,
       ivaTrimestre: auto ? auto.trimestre : '', ivaScadenza: auto ? auto.scadenza : '', ivaScadenzaManuale: false
     };
     var ref = db.collection('vociSpesa').doc();
@@ -3943,9 +3943,26 @@
         '<td>' + (v.dataSpesa ? esc(_fmtDateLong(v.dataSpesa)) : '—') + '</td>' +
         '<td>' + _ivaScadenzaSelectHtml(v) +
         (v.ivaScadenza ? '<div style="font-size:11px;color:var(--dg-muted);margin-top:3px">Scade il ' + esc(_fmtDateLong(v.ivaScadenza)) + '</div>' : '') + '</td>' +
+        '<td style="text-align:center"><input type="checkbox" data-id="' + v.id + '"' + (v.pagata ? ' checked' : '') +
+          ' title="Segna come versata all\'Erario — solo allora conta come uscita nel Bilancio" onchange="DG.toggleIvaPagata(this.dataset.id, this.checked)"></td>' +
         '</tr>';
-    }).join('') : '<tr><td colspan="4" class="dg-empty">Nessuna voce IVA per questa stagione.</td></tr>';
+    }).join('') : '<tr><td colspan="5" class="dg-empty">Nessuna voce IVA per questa stagione.</td></tr>';
   }
+
+  /* La voce IVA è "Sostenuto" (accrual, sempre conteggiata in Spese/Forecasting)
+     ma diventa uscita reale nel Bilancio/flussi di cassa solo quando la si
+     marca come effettivamente versata all'Erario. */
+  DG.toggleIvaPagata = function (id, checked) {
+    var v = _vociSpesa.find(function (x) { return x.id === id; });
+    if (!v) return;
+    var old = { pagata: !!v.pagata };
+    var patch = { pagata: checked };
+    v.pagata = checked;
+    db.collection('vociSpesa').doc(id).update(patch)
+      .then(function () { return _logWrite('voceSpesa', id, 'Spesa — ' + v.categoria, 'update', _diff(old, patch, ['pagata'])); })
+      .then(function () { _renderIvaRiepilogo(); _renderBilancio(); })
+      .catch(function (e) { alert('Errore: ' + e.message); });
+  };
 
   /* ---- EXPORT PDF (bilancio + spese per categoria + singole voci), via finestra di stampa del browser ---- */
   function _pdfCss() {
@@ -4112,7 +4129,9 @@
   function _calcBilancioMensile() {
     var curIds = _sponsorizzazioni.filter(function (s) { return s.seasonId === _currentSeasonId; }).map(function (s) { return s.id; });
     var entrate = _tranche.filter(function (t) { return t.pagato && curIds.indexOf(t.sponsorizzazioneId) !== -1; });
-    var uscite = _vociSpesa.filter(function (v) { return +v.importoSostenuto > 0; });
+    /* Le voci IVA sono "sostenute" ma non ancora un'uscita di cassa reale finché
+       non vengono marcate come versate (v.pagata) nel Riepilogo IVA. */
+    var uscite = _vociSpesa.filter(function (v) { return +v.importoSostenuto > 0 && (!v.isIva || v.pagata); });
 
     var months = {};
     var senzaData = 0;
