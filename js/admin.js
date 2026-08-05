@@ -2820,7 +2820,7 @@
     return svg;
   }
 
-  function _svgDonut(parts) {
+  function _svgDonut(parts, ariaLabel) {
     var total = parts.reduce(function (s, p) { return s + p.value; }, 0) || 1;
     var size = 200, r = 80, cx = 100, cy = 100, strokeW = 28, GAP = 4;
     var circumference = 2 * Math.PI * r;
@@ -2833,7 +2833,7 @@
         '" stroke-dasharray="' + len + ' ' + (circumference - len) + '" stroke-dashoffset="' + (-offset) + '" transform="rotate(-90 ' + cx + ' ' + cy + ')"/>';
       offset += full;
     });
-    var svg = '<svg viewBox="0 0 ' + size + ' ' + size + '" width="100%" height="200" role="img" aria-label="Composizione entrate">' + segs +
+    var svg = '<svg viewBox="0 0 ' + size + ' ' + size + '" width="100%" height="200" role="img" aria-label="' + esc(ariaLabel || 'Composizione') + '">' + segs +
       '<circle cx="' + cx + '" cy="' + cy + '" r="' + (r - strokeW / 2 - 4) + '" fill="#fff"/>' +
       '<text x="' + cx + '" y="' + (cy - 4) + '" text-anchor="middle" font-size="12" fill="#64748B">Totale</text>' +
       '<text x="' + cx + '" y="' + (cy + 16) + '" text-anchor="middle" font-size="15" font-weight="700" fill="#1E293B">€' + Math.round(total).toLocaleString('it-IT') + '</text>' +
@@ -2846,14 +2846,25 @@
     return svg + legend;
   }
 
+  var DONUT_PALETTE = ['#008CFD', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#14B8A6', '#EF4444', '#64748B'];
+
   function _renderCharts() {
     var r = _calcRiepilogo();
     document.getElementById('chartBar').innerHTML = _svgBarChart(r.entrateConfermate, r.uscite, r.obiettivo);
-    document.getElementById('chartDonut').innerHTML = _svgDonut([
+
+    /* Solo incassi reali (rette + sponsor chiusi): il potenziale pesato è una
+       stima di forecast, mescolarlo qui confondeva "quanto ho" con "quanto spero". */
+    document.getElementById('chartDonutEntrate').innerHTML = _svgDonut([
       { label: 'Rette atleti', value: r.rette, color: '#008CFD' },
-      { label: 'Sponsor chiusi', value: r.sponsorChiusi, color: '#10B981' },
-      { label: 'Sponsor potenziali (pesato)', value: r.sponsorPotenziali, color: '#F59E0B' }
-    ]);
+      { label: 'Sponsor chiusi', value: r.sponsorChiusi, color: '#10B981' }
+    ], 'Composizione entrate confermate');
+
+    var speseBox = document.getElementById('chartDonutUscite');
+    var usciteParts = _calcSpeseForecast().righe
+      .filter(function (x) { return x.sostenuto > 0; })
+      .sort(function (a, b) { return b.sostenuto - a.sostenuto; })
+      .map(function (x, i) { return { label: x.nome, value: x.sostenuto, color: DONUT_PALETTE[i % DONUT_PALETTE.length] }; });
+    speseBox.innerHTML = usciteParts.length ? _svgDonut(usciteParts, 'Composizione uscite per categoria') : '<p class="dg-muted">Nessuna uscita registrata per questa stagione.</p>';
   }
 
   /* ---- CASHFLOW — quante tranche, quanto incassato vs promesso ---- */
