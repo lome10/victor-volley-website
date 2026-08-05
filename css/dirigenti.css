@@ -411,6 +411,7 @@ input, select, textarea { font-family: inherit; }
 .dg-kanban-card--ghost { box-shadow: 0 8px 24px rgba(0,0,0,0.25); transform: scale(1.03); opacity: 0.95; }
 
 .dg-kanban-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
+.dg-note-icon { color: var(--dg-slate); flex-shrink: 0; margin-top: 1px; }
 .dg-kanban-card-nome { font-size: 13px; font-weight: 700; color: var(--dg-text); line-height: 1.3; }
 .dg-kanban-card-importo { font-family: 'Barlow', sans-serif; font-size: 14px; font-weight: 700; color: var(--dg-blue); margin-top: 6px; }
 .dg-kanban-card-bottom { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }

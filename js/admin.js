@@ -2904,7 +2904,9 @@
           '<div class="dg-kanban-card-top">' +
           '<span class="dg-kanban-card-nome">' + esc(azienda ? azienda.ragioneSociale : '—') +
           (azienda && _isStorico(azienda.id) ? ' <span class="dg-badge dg-badge--storico" title="Sponsor storico">storico</span>' : '') +
-          '</span></div>' +
+          '</span>' +
+          (s.note ? '<svg class="dg-note-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" title="' + esc(s.note) + '"><path d="M4 4h16v13l-4 4H4z"/><path d="M8 9h8M8 13h5"/></svg>' : '') +
+          '</div>' +
           '<div class="dg-kanban-card-importo">€' + Number(importo || 0).toLocaleString('it-IT') + '</div>' +
           '<div class="dg-kanban-card-bottom">' +
           '<span class="dg-avatar" title="' + esc(resp ? (resp.nome + ' ' + resp.cognome) : 'Non assegnato') + '">' + (resp ? _initials(resp.nome, resp.cognome) : '?') + '</span>' +
@@ -3080,6 +3082,7 @@
   var DRAWER_SECTIONS = [
     { key: 'anagrafica', label: 'Anagrafica',       fn: function () { return _tabAnagrafica(); } },
     { key: 'deal',       label: 'Sponsorizzazione', fn: function () { return _tabDeal(); } },
+    { key: 'note',       label: 'Note',             fn: function () { return _tabNote(); } },
     { key: 'pagamenti',  label: 'Pagamenti',        fn: function () { return _tabPagamenti(); } },
     { key: 'timeline',   label: 'Timeline',         fn: function () { return _tabTimeline(); } },
     { key: 'promemoria', label: 'Promemoria',       fn: function () { return _tabPromemoria(); } },
@@ -3162,7 +3165,6 @@
       _field('dgAzEmail', 'Email', a.email) +
       '</div>' +
       '<div class="dg-form-group"><label class="dg-form-label">Sito web</label><input class="dg-form-input" id="dgAzSito" value="' + esc(a.sitoWeb) + '"></div>' +
-      '<div class="dg-form-group"><label class="dg-form-label">Note</label><textarea class="dg-form-input dg-form-textarea" id="dgAzNote" rows="3">' + esc(a.note || '') + '</textarea></div>' +
       '<div class="dg-form-actions" style="justify-content:space-between">' +
         '<button class="dg-btn-ghost dg-btn-ghost--danger dg-btn-sm" onclick="DG.deleteAzienda()">Elimina azienda</button>' +
         '<button class="dg-btn-primary dg-btn-sm" onclick="DG.saveAzienda()">Salva anagrafica</button>' +
@@ -3175,7 +3177,7 @@
     var old = Object.assign({}, a);
     var patch = {
       ragioneSociale: val('dgAzNome'), settore: val('dgAzSettore'), referente: val('dgAzReferente'),
-      telefono: val('dgAzTelefono'), email: val('dgAzEmail'), sitoWeb: val('dgAzSito'), note: val('dgAzNote')
+      telefono: val('dgAzTelefono'), email: val('dgAzEmail'), sitoWeb: val('dgAzSito')
     };
     Object.assign(a, patch);
     db.collection('aziende').doc(a.id).update(patch)
@@ -3231,7 +3233,6 @@
       '<div class="dg-form-group"><label class="dg-form-label">Responsabile</label><select id="dgDealResponsabile" class="dg-form-input">' + respOptions + '</select></div>' +
       '</div>' +
       '<div class="dg-form-group"><label class="dg-form-label">Contropartite</label><textarea id="dgDealContropartite" class="dg-form-input dg-form-textarea" rows="2">' + esc(s.contropartite || '') + '</textarea></div>' +
-      '<div class="dg-form-group"><label class="dg-form-label">Note</label><textarea id="dgDealNote" class="dg-form-input dg-form-textarea" rows="2">' + esc(s.note || '') + '</textarea></div>' +
       '<div class="dg-form-actions" style="justify-content:space-between">' +
         '<button class="dg-btn-ghost dg-btn-ghost--danger dg-btn-sm" onclick="DG.deleteDeal()">Elimina sponsorizzazione</button>' +
         '<button class="dg-btn-primary dg-btn-sm" onclick="DG.saveDeal()">Salva</button>' +
@@ -3252,8 +3253,7 @@
       scadenza: val('dgDealScadenza'),
       modalitaPagamento: val('dgDealPagamento'),
       dirigenteResponsabileId: val('dgDealResponsabile'),
-      contropartite: val('dgDealContropartite'),
-      note: val('dgDealNote')
+      contropartite: val('dgDealContropartite')
     };
     Object.assign(s, patch);
     var az = _aziendaById(s.aziendaId);
@@ -3261,6 +3261,29 @@
     db.collection('sponsorizzazioni').doc(s.id).update(patch)
       .then(function () { return _logWrite('sponsorizzazione', s.id, label, 'update', _diff(old, patch, Object.keys(patch))); })
       .then(function () { _renderKanban(); _renderStatCards(); _renderCharts(); _refreshAccordionSection('deal'); })
+      .catch(function (e) { alert('Errore: ' + e.message); });
+  };
+
+  function _tabNote() {
+    var s = _sponsorizzazioni.find(function (x) { return x.id === _curSponsorId; });
+    if (!s) return '';
+    return '<div class="dg-form-group"><textarea id="dgNoteText" class="dg-form-input dg-form-textarea" rows="5" placeholder="Nota su questa sponsorizzazione...">' + esc(s.note || '') + '</textarea></div>' +
+      '<div class="dg-form-actions" style="justify-content:flex-end">' +
+        '<button class="dg-btn-primary dg-btn-sm" onclick="DG.saveNote()">Salva nota</button>' +
+      '</div>';
+  }
+
+  DG.saveNote = function () {
+    var s = _sponsorizzazioni.find(function (x) { return x.id === _curSponsorId; });
+    if (!s) return;
+    var old = Object.assign({}, s);
+    var patch = { note: val('dgNoteText') };
+    Object.assign(s, patch);
+    var az = _aziendaById(s.aziendaId);
+    var label = 'Sponsorizzazione — ' + (az ? az.ragioneSociale : s.id);
+    db.collection('sponsorizzazioni').doc(s.id).update(patch)
+      .then(function () { return _logWrite('sponsorizzazione', s.id, label, 'update', _diff(old, patch, Object.keys(patch))); })
+      .then(function () { _renderKanban(); })
       .catch(function (e) { alert('Errore: ' + e.message); });
   };
 
