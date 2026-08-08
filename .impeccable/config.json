@@ -1,0 +1,26 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "broken-image",
+        "value": "*",
+        "files": [
+          "admin.html"
+        ],
+        "createdAt": "2026-08-08T07:06:57.442Z",
+        "reason": "Anteprime immagine popolate via JS (upload/focal-point/lightbox), src vuoto intenzionale"
+      },
+      {
+        "rule": "broken-image",
+        "value": "*",
+        "files": [
+          "galleria.html"
+        ],
+        "createdAt": "2026-08-08T07:06:59.945Z",
+        "reason": "Lightbox img popolata via JS, src vuoto intenzionale"
+      }
+    ]
+  }
+}
