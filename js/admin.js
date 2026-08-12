@@ -310,6 +310,7 @@
       document.getElementById('artDate').value        = article.date || '';
       document.getElementById('artImage').value       = article.image || '';
       document.getElementById('artPhotoFocus').value  = article.imageFocus || '';
+      _setArtCoverRatio(article.coverRatio || '4:5');
       document.getElementById('artExcerpt').value     = article.excerpt || '';
       document.getElementById('artContent').value     = article.content || '';
       document.getElementById('artPublished').checked = !!article.published;
@@ -321,6 +322,7 @@
       document.getElementById('artDate').value        = new Date().toISOString().slice(0, 10);
       document.getElementById('artImage').value       = '';
       document.getElementById('artPhotoFocus').value  = '';
+      _setArtCoverRatio('4:5');
       document.getElementById('artExcerpt').value     = '';
       document.getElementById('artContent').value     = '';
       document.getElementById('artPublished').checked = true;
@@ -350,6 +352,7 @@
       date:       document.getElementById('artDate').value,
       image:      document.getElementById('artImage').value.trim(),
       imageFocus: document.getElementById('artPhotoFocus').value.trim() || null,
+      coverRatio: (document.querySelector('input[name="artCoverRatio"]:checked') || {}).value || '4:5',
       excerpt:    document.getElementById('artExcerpt').value.trim(),
       content:    document.getElementById('artContent').value.trim(),
       published:  document.getElementById('artPublished').checked
@@ -701,6 +704,12 @@
       imgEl.src = '';
     }
     if (infoEl) infoEl.textContent = info || '';
+  }
+
+  function _setArtCoverRatio(ratio) {
+    document.querySelectorAll('input[name="artCoverRatio"]').forEach(function (r) {
+      r.checked = (r.value === ratio);
+    });
   }
 
   /* ---- Focal point picker per l'immagine di copertina articolo ---- */
