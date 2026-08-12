@@ -301,6 +301,7 @@
     showSubview('articoli', 'form');
     document.getElementById('topbarActions').innerHTML = '';
     _initArtFocusInputs();
+    _initArtRTE();
 
     _renderArtCategoriesCheckboxes(article ? VV.getArticleCategories(article) : []);
     _renderArtSponsorSelects(article && Array.isArray(article.sponsor_ids) ? article.sponsor_ids : []);
@@ -312,7 +313,7 @@
       document.getElementById('artPhotoFocus').value  = article.imageFocus || '';
       _setArtCoverRatio(article.coverRatio || '4:5');
       document.getElementById('artExcerpt').value     = article.excerpt || '';
-      document.getElementById('artContent').value     = article.content || '';
+      _setArtContent(article.content || '');
       document.getElementById('artPublished').checked = !!article.published;
       _setArtPreview(article.image || null, article.image ? 'Immagine salvata' : '');
       if (article.image) _showArtFocusPicker(article.image, article.imageFocus || '');
@@ -324,7 +325,7 @@
       document.getElementById('artPhotoFocus').value  = '';
       _setArtCoverRatio('4:5');
       document.getElementById('artExcerpt').value     = '';
-      document.getElementById('artContent').value     = '';
+      _setArtContent('');
       document.getElementById('artPublished').checked = true;
       _setArtPreview(null);
       _hideArtFocusPicker();
@@ -709,6 +710,59 @@
   function _setArtCoverRatio(ratio) {
     document.querySelectorAll('input[name="artCoverRatio"]').forEach(function (r) {
       r.checked = (r.value === ratio);
+    });
+  }
+
+  /* ---- Editor HTML per il contenuto articolo ---- */
+  function _setArtContent(html) {
+    document.getElementById('artContent').value = html || '';
+    document.getElementById('artContentEditor').innerHTML = html || '';
+    document.getElementById('artContentEditor').style.display = '';
+    document.getElementById('artContent').style.display = 'none';
+  }
+
+  var _artRTEReady = false;
+  function _initArtRTE() {
+    if (_artRTEReady) return;
+    _artRTEReady = true;
+    var editor   = document.getElementById('artContentEditor');
+    var textarea = document.getElementById('artContent');
+    editor.setAttribute('data-placeholder', "Scrivi il testo dell'articolo…");
+
+    document.querySelectorAll('#artContentToolbar .rte-btn[data-cmd]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        editor.focus();
+        document.execCommand(btn.getAttribute('data-cmd'), false, null);
+        textarea.value = editor.innerHTML;
+      });
+    });
+    document.querySelectorAll('#artContentToolbar .rte-btn[data-block]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        editor.focus();
+        document.execCommand('formatBlock', false, btn.getAttribute('data-block'));
+        textarea.value = editor.innerHTML;
+      });
+    });
+    document.getElementById('artContentLinkBtn').addEventListener('click', function () {
+      var url = prompt('URL del link:', 'https://');
+      if (!url) return;
+      editor.focus();
+      document.execCommand('createLink', false, url);
+      textarea.value = editor.innerHTML;
+    });
+    editor.addEventListener('input', function () { textarea.value = editor.innerHTML; });
+
+    document.getElementById('artContentSourceToggle').addEventListener('click', function () {
+      var isSource = textarea.style.display !== 'none';
+      if (isSource) {
+        editor.innerHTML = textarea.value;
+        editor.style.display   = '';
+        textarea.style.display = 'none';
+      } else {
+        textarea.value = editor.innerHTML;
+        textarea.style.display = '';
+        editor.style.display   = 'none';
+      }
     });
   }
 

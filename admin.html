@@ -351,7 +351,26 @@
             </div>
             <div class="form-group form-full">
               <label class="form-label">Contenuto</label>
-              <textarea id="artContent" class="form-input form-textarea form-textarea--lg" placeholder="Testo dell'articolo (HTML supportato)"></textarea>
+              <div id="artContentToolbar" class="rte-toolbar">
+                <button type="button" class="rte-btn" data-cmd="bold" title="Grassetto"><b>B</b></button>
+                <button type="button" class="rte-btn" data-cmd="italic" title="Corsivo"><i>I</i></button>
+                <button type="button" class="rte-btn" data-cmd="underline" title="Sottolineato"><u>U</u></button>
+                <span class="rte-sep"></span>
+                <button type="button" class="rte-btn" data-block="h2" title="Titolo grande">H2</button>
+                <button type="button" class="rte-btn" data-block="h3" title="Titolo medio">H3</button>
+                <button type="button" class="rte-btn" data-block="p" title="Paragrafo">¶</button>
+                <span class="rte-sep"></span>
+                <button type="button" class="rte-btn" data-cmd="insertUnorderedList" title="Elenco puntato">&bull; &bull;</button>
+                <button type="button" class="rte-btn" data-cmd="insertOrderedList" title="Elenco numerato">1.&nbsp;2.</button>
+                <button type="button" class="rte-btn" data-block="blockquote" title="Citazione">&rdquo;</button>
+                <span class="rte-sep"></span>
+                <button type="button" class="rte-btn" id="artContentLinkBtn" title="Inserisci link">🔗</button>
+                <button type="button" class="rte-btn" data-cmd="unlink" title="Rimuovi link">🚫🔗</button>
+                <button type="button" class="rte-btn" data-cmd="removeFormat" title="Rimuovi formattazione">Tx</button>
+                <button type="button" class="rte-btn" id="artContentSourceToggle" style="margin-left:auto" title="Modifica HTML grezzo">&lt;/&gt;</button>
+              </div>
+              <div id="artContentEditor" class="form-input form-textarea form-textarea--lg rte-editor" contenteditable="true"></div>
+              <textarea id="artContent" class="form-input form-textarea form-textarea--lg" style="display:none" placeholder="Testo dell'articolo (HTML supportato)"></textarea>
             </div>
             <div class="form-group form-full">
               <label class="toggle-label">
