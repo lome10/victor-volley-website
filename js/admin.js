@@ -300,6 +300,7 @@
     _artEditing = article;
     showSubview('articoli', 'form');
     document.getElementById('topbarActions').innerHTML = '';
+    _initArtFocusInputs();
 
     _renderArtCategoriesCheckboxes(article ? VV.getArticleCategories(article) : []);
     _renderArtSponsorSelects(article && Array.isArray(article.sponsor_ids) ? article.sponsor_ids : []);
@@ -308,18 +309,23 @@
       document.getElementById('artTitle').value      = article.title || '';
       document.getElementById('artDate').value        = article.date || '';
       document.getElementById('artImage').value       = article.image || '';
+      document.getElementById('artPhotoFocus').value  = article.imageFocus || '';
       document.getElementById('artExcerpt').value     = article.excerpt || '';
       document.getElementById('artContent').value     = article.content || '';
       document.getElementById('artPublished').checked = !!article.published;
       _setArtPreview(article.image || null, article.image ? 'Immagine salvata' : '');
+      if (article.image) _showArtFocusPicker(article.image, article.imageFocus || '');
+      else                _hideArtFocusPicker();
     } else {
       document.getElementById('artTitle').value      = '';
       document.getElementById('artDate').value        = new Date().toISOString().slice(0, 10);
       document.getElementById('artImage').value       = '';
+      document.getElementById('artPhotoFocus').value  = '';
       document.getElementById('artExcerpt').value     = '';
       document.getElementById('artContent').value     = '';
       document.getElementById('artPublished').checked = true;
       _setArtPreview(null);
+      _hideArtFocusPicker();
     }
   }
 
@@ -343,6 +349,7 @@
       sponsor_ids: sponsorIds,
       date:       document.getElementById('artDate').value,
       image:      document.getElementById('artImage').value.trim(),
+      imageFocus: document.getElementById('artPhotoFocus').value.trim() || null,
       excerpt:    document.getElementById('artExcerpt').value.trim(),
       content:    document.getElementById('artContent').value.trim(),
       published:  document.getElementById('artPublished').checked
@@ -459,6 +466,7 @@
       document.getElementById('matchStato').value    = p.stato || 'programmata';
       document.getElementById('matchSetCasa').value    = (p.set_casa   != null) ? p.set_casa   : '';
       document.getElementById('matchSetOspite').value  = (p.set_ospite != null) ? p.set_ospite : '';
+      document.getElementById('matchSppCode').value    = p.spp_code || '';
     } else {
       document.getElementById('matchDate').value     = '';
       document.getElementById('matchTime').value     = '18:30';
@@ -473,6 +481,7 @@
       document.getElementById('matchStato').value      = 'programmata';
       document.getElementById('matchSetCasa').value    = '';
       document.getElementById('matchSetOspite').value  = '';
+      document.getElementById('matchSppCode').value    = '';
     }
     AdminActions.toggleResultFields();
   }
@@ -489,6 +498,7 @@
     var stato     = document.getElementById('matchStato').value;
     var setC      = document.getElementById('matchSetCasa').value;
     var setO      = document.getElementById('matchSetOspite').value;
+    var sppCode   = document.getElementById('matchSppCode').value.trim();
 
     var partita = {
       id:            (_matchEditing && _matchEditing.id) || ('m' + Date.now()),
@@ -503,7 +513,8 @@
       palazzetto:    document.getElementById('matchVenue').value.trim(),
       stato:         stato,
       set_casa:      (stato === 'conclusa' && setC !== '') ? +setC : null,
-      set_ospite:    (stato === 'conclusa' && setO !== '') ? +setO : null
+      set_ospite:    (stato === 'conclusa' && setO !== '') ? +setO : null,
+      spp_code:      sppCode || null
     };
 
     /* Mantieni campi live (codice_tabellone ecc.) se esistenti */
@@ -692,6 +703,49 @@
     if (infoEl) infoEl.textContent = info || '';
   }
 
+  /* ---- Focal point picker per l'immagine di copertina articolo ---- */
+  function _artApplyFocus(focus) {
+    var pos = focus || '';
+    var previewImg = document.getElementById('artImagePreviewImg');
+    var focusImg   = document.getElementById('artFocusImg');
+    if (previewImg) previewImg.style.objectPosition = pos;
+    if (focusImg)   focusImg.style.objectPosition    = pos;
+  }
+
+  function _showArtFocusPicker(src, focus) {
+    document.getElementById('artFocusPicker').style.display = '';
+    document.getElementById('artFocusImg').src = src;
+    var parts = (focus || '').match(/(\d+(?:\.\d+)?)%\s*(\d+(?:\.\d+)?)%/);
+    var x = parts ? +parts[1] : 50;
+    var y = parts ? +parts[2] : 50;
+    _artApplyFocus(focus || '');
+    _updateFocusDot('art', x, y);
+  }
+
+  function _hideArtFocusPicker() {
+    document.getElementById('artFocusPicker').style.display = 'none';
+  }
+
+  var _artFocusInputsReady = false;
+  function _initArtFocusInputs() {
+    if (_artFocusInputsReady) return;
+    _artFocusInputsReady = true;
+    document.getElementById('artFocusWrap').addEventListener('click', function (e) {
+      var rect = this.getBoundingClientRect();
+      var x = Math.max(0, Math.min(100, Math.round((e.clientX - rect.left) / rect.width  * 100)));
+      var y = Math.max(0, Math.min(100, Math.round((e.clientY - rect.top)  / rect.height * 100)));
+      var focus = x + '% ' + y + '%';
+      document.getElementById('artPhotoFocus').value = focus;
+      _artApplyFocus(focus);
+      _updateFocusDot('art', x, y);
+    });
+    document.getElementById('artImage').addEventListener('input', function () {
+      var val = this.value.trim();
+      if (val) _showArtFocusPicker(val, document.getElementById('artPhotoFocus').value);
+      else      _hideArtFocusPicker();
+    });
+  }
+
   document.getElementById('artImageFile').addEventListener('change', function () {
     var file = this.files[0];
     if (!file) return;
@@ -699,17 +753,21 @@
     document.getElementById('artImagePreview').style.display = '';
     resizeToFullHD(file, function (dataUrl, w, h) {
       document.getElementById('artImage').value = dataUrl;
+      document.getElementById('artPhotoFocus').value = '';
       var kb = Math.round(dataUrl.length * 0.75 / 1024);
       var info = w + ' × ' + h + ' px · ~' + kb + ' KB';
       if (kb > 750) info += '  ⚠ file grande';
       _setArtPreview(dataUrl, info);
+      _showArtFocusPicker(dataUrl, '');
     });
     this.value = '';
   });
 
   document.getElementById('artImageClear').addEventListener('click', function () {
     document.getElementById('artImage').value = '';
+    document.getElementById('artPhotoFocus').value = '';
     _setArtPreview(null);
+    _hideArtFocusPicker();
   });
 
   /* ================================================

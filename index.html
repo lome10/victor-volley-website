@@ -415,7 +415,7 @@
 
       track.innerHTML = articles.map(function (a, i) {
         var bgStyle = a.image
-          ? 'background-image:url(' + esc(a.image) + ')'
+          ? 'background-image:url(' + esc(a.image) + ')' + (a.imageFocus ? ';background-position:' + esc(a.imageFocus) : '')
           : 'background:' + GRADIENTS[i % GRADIENTS.length];
         return '<article class="hero-card" data-id="' + a.id + '">' +
           '<div class="hero-card-bg" style="' + bgStyle + '"></div>' +
@@ -527,7 +527,7 @@
     /* Costruisce le card */
     track.innerHTML = articles.map(function (a, i) {
       var bgStyle = a.image
-        ? 'background-image:url(' + esc(a.image) + ')'
+        ? 'background-image:url(' + esc(a.image) + ')' + (a.imageFocus ? ';background-position:' + esc(a.imageFocus) : '')
         : 'background:' + GRADIENTS[i % GRADIENTS.length];
       return '<article class="hero-card" data-id="' + a.id + '">' +
         '<div class="hero-card-bg" style="' + bgStyle + '"></div>' +

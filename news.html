@@ -128,7 +128,7 @@
         } else {
           grid.innerHTML = page.map(function (a, i) {
             var bgStyle = a.image
-              ? 'background-image:url(' + esc(a.image) + ')'
+              ? 'background-image:url(' + esc(a.image) + ')' + (a.imageFocus ? ';background-position:' + esc(a.imageFocus) : '')
               : 'background:' + GRADIENTS[(start + i) % GRADIENTS.length];
             var aCats = VV.getArticleCategories(a);
             return '<article class="hero-card" data-cat="' + aCats.map(slug).join(' ') + '" data-id="' + esc(a.id) + '">' +

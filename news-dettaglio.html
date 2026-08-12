@@ -136,7 +136,7 @@
     /* Cover — 9:16, coerente con hero/news card */
     var cover = document.getElementById('articleCover');
     cover.innerHTML = article.image
-      ? '<img src="' + esc(article.image) + '" alt="' + esc(article.title) + '">'
+      ? '<img src="' + esc(article.image) + '" alt="' + esc(article.title) + '"' + (article.imageFocus ? ' style="object-position:' + esc(article.imageFocus) + '"' : '') + '>'
       : '<div class="article-cover-placeholder">&#127944;</div>';
 
     /* Metadati */
@@ -161,7 +161,7 @@
       document.getElementById('relatedSection').style.display = '';
       relatedGrid.innerHTML = others.map(function (a) {
         var bgStyle = a.image
-          ? 'background-image:url(' + esc(a.image) + ')'
+          ? 'background-image:url(' + esc(a.image) + ')' + (a.imageFocus ? ';background-position:' + esc(a.imageFocus) : '')
           : 'background:linear-gradient(135deg,#053063,#008CFD)';
         return '<article class="hero-card" data-id="' + a.id + '">' +
           '<div class="hero-card-bg" style="' + bgStyle + '"></div>' +
