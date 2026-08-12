@@ -224,7 +224,9 @@
   }
 
   function refreshArtTable() {
-    var articles    = VV.getArticles();
+    var articles    = VV.getArticles().slice().sort(function (a, b) {
+      return (b.date || '').localeCompare(a.date || '');
+    });
     var featCount   = articles.filter(function (a) { return a.featured; }).length;
 
     var hint = document.getElementById('artSliderHint');
