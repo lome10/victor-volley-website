@@ -11,7 +11,6 @@
     appId:             '1:567031992105:web:9248ce4a69ed2bff413138'
   };
   firebase.initializeApp(config);
-  window.db      = firebase.firestore();
-  window.auth    = firebase.auth();
-  window.storage = firebase.storage ? firebase.storage() : null;
+  window.db   = firebase.firestore();
+  window.auth = firebase.auth();
 })();

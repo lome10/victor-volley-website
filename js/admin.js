@@ -672,41 +672,6 @@
   document.getElementById('albumCancel').addEventListener('click', renderGalleria);
 
   /* ================================================
-     STORAGE — upload immagini su Firebase Storage
-     Le immagini vengono caricate come file (non più come
-     stringhe base64 dentro i documenti Firestore): ogni
-     campo immagine finisce per contenere solo l'URL pubblico.
-  ================================================ */
-
-  function _uploadToStorage(blob, path, cb) {
-    if (!storage) { cb(new Error('Firebase Storage non inizializzato')); return; }
-    storage.ref().child(path).put(blob)
-      .then(function (snap) { return snap.ref.getDownloadURL(); })
-      .then(function (url) { cb(null, url); })
-      .catch(function (err) { cb(err); });
-  }
-
-  function _storagePath(folder, ext) {
-    return folder + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 9) + '.' + ext;
-  }
-
-  /* Migra un singolo campo immagine se contiene ancora un data URL base64:
-     lo carica su Storage e risolve con il nuovo URL. Se il campo è già un
-     URL vero (o vuoto) lo restituisce invariato — rende la migrazione
-     idempotente, sicura da rilanciare più volte. */
-  function _migrateFieldIfBase64(value, folder) {
-    if (!value || value.indexOf('data:') !== 0) return Promise.resolve(value);
-    return fetch(value).then(function (r) { return r.blob(); }).then(function (blob) {
-      var ext = blob.type === 'image/png' ? 'png' : 'jpg';
-      return new Promise(function (resolve, reject) {
-        _uploadToStorage(blob, _storagePath(folder, ext), function (err, url) {
-          if (err) reject(err); else resolve(url);
-        });
-      });
-    });
-  }
-
-  /* ================================================
      IMMAGINE COPERTINA ARTICOLO — resize Full HD
   ================================================ */
 
@@ -723,7 +688,7 @@
         canvas.width = outW; canvas.height = outH;
         canvas.getContext('2d').drawImage(img, 0, 0, outW, outH);
         var dataUrl = canvas.toDataURL('image/jpeg', 0.82);
-        canvas.toBlob(function (blob) { cb(dataUrl, outW, outH, blob); }, 'image/jpeg', 0.82);
+        cb(dataUrl, outW, outH);
       };
       img.src = e.target.result;
     };
@@ -851,26 +816,14 @@
     if (!file) return;
     document.getElementById('artImagePreviewInfo').textContent = 'Ridimensionamento in corso…';
     document.getElementById('artImagePreview').style.display = '';
-    resizeToFullHD(file, function (dataUrl, w, h, blob) {
-      document.getElementById('artImage').value = '';
+    resizeToFullHD(file, function (dataUrl, w, h) {
+      document.getElementById('artImage').value = dataUrl;
       document.getElementById('artPhotoFocus').value = '';
-      _setArtPreview(dataUrl, w + ' × ' + h + ' px · caricamento…');
+      var kb = Math.round(dataUrl.length * 0.75 / 1024);
+      var info = w + ' × ' + h + ' px · ~' + kb + ' KB';
+      if (kb > 750) info += '  ⚠ file grande';
+      _setArtPreview(dataUrl, info);
       _showArtFocusPicker(dataUrl, '');
-      var saveBtn = document.getElementById('artSave');
-      saveBtn.disabled = true;
-      _uploadToStorage(blob, _storagePath('articles', 'jpg'), function (err, url) {
-        saveBtn.disabled = false;
-        if (err) {
-          console.error('[admin] upload copertina articolo', err);
-          _setArtPreview(dataUrl, w + ' × ' + h + ' px · ⚠ errore caricamento, riprova');
-          return;
-        }
-        document.getElementById('artImage').value = url;
-        var kb = Math.round(blob.size / 1024);
-        var info = w + ' × ' + h + ' px · ~' + kb + ' KB';
-        if (kb > 750) info += '  ⚠ file grande';
-        _setArtPreview(dataUrl, info);
-      });
     });
     this.value = '';
   });
@@ -1005,9 +958,7 @@
         ctx.imageSmoothingQuality = 'high';
         ctx.drawImage(img, 0, 0);
         _removeWhiteBg(ctx, w, h);
-        var finalCanvas = _trimAndScale(canvas, size);
-        var outDataUrl = finalCanvas.toDataURL('image/png');
-        finalCanvas.toBlob(function (blob) { cb(outDataUrl, blob); }, 'image/png');
+        cb(_trimAndScale(canvas, size).toDataURL('image/png'));
       };
       img.src = dataUrl;
     };
@@ -1033,19 +984,10 @@
       document.getElementById(cfg.file).addEventListener('change', function () {
         if (!this.files.length) return;
         var fileEl = this;
-        convertLogoToPng(this.files[0], 256, function (dataUrl, blob) {
-          document.getElementById(cfg.url).value = '';
-          var preview = document.getElementById(cfg.preview);
-          preview.src = dataUrl;
-          preview.style.display = '';
+        convertLogoToPng(this.files[0], 256, function (dataUrl) {
+          document.getElementById(cfg.url).value = dataUrl;
+          _syncLogoPreview(cfg.url, cfg.preview);
           fileEl.value = '';
-          var saveBtn = document.getElementById('matchSave');
-          saveBtn.disabled = true;
-          _uploadToStorage(blob, _storagePath('matches', 'png'), function (err, url) {
-            saveBtn.disabled = false;
-            if (err) { console.error('[admin] upload logo squadra', err); alert('Errore caricamento logo, riprova.'); return; }
-            document.getElementById(cfg.url).value = url;
-          });
         });
       });
 
@@ -1340,8 +1282,7 @@
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
         ctx.drawImage(img, 0, 0, outW, outH);
-        var dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-        canvas.toBlob(function (blob) { cb(dataUrl, blob); }, 'image/jpeg', 0.85);
+        cb(canvas.toDataURL('image/jpeg', 0.85));
       };
       img.src = e.target.result;
     };
@@ -1396,18 +1337,11 @@
     document.getElementById('playerPhotoFile').addEventListener('change', function () {
       if (!this.files.length) return;
       var fileEl = this;
-      resizePlayerPhoto(this.files[0], function (dataUrl, blob) {
+      resizePlayerPhoto(this.files[0], function (dataUrl) {
+        document.getElementById('playerPhoto').value = dataUrl;
         var focus = document.getElementById('playerPhotoFocus').value || '50% 25%';
-        document.getElementById('playerPhoto').value = '';
         _showFocusPicker('player', dataUrl, focus);
         fileEl.value = '';
-        var saveBtn = document.getElementById('playerSave');
-        saveBtn.disabled = true;
-        _uploadToStorage(blob, _storagePath('players', 'jpg'), function (err, url) {
-          saveBtn.disabled = false;
-          if (err) { console.error('[admin] upload foto giocatore', err); alert('Errore caricamento foto, riprova.'); return; }
-          document.getElementById('playerPhoto').value = url;
-        });
       });
     });
     document.getElementById('playerPhoto').addEventListener('input', function () {
@@ -1421,18 +1355,11 @@
     document.getElementById('staffPhotoFile').addEventListener('change', function () {
       if (!this.files.length) return;
       var fileEl = this;
-      resizePlayerPhoto(this.files[0], function (dataUrl, blob) {
+      resizePlayerPhoto(this.files[0], function (dataUrl) {
+        document.getElementById('staffPhoto').value = dataUrl;
         var focus = document.getElementById('staffPhotoFocus').value || '50% 25%';
-        document.getElementById('staffPhoto').value = '';
         _showFocusPicker('staff', dataUrl, focus);
         fileEl.value = '';
-        var saveBtn = document.getElementById('staffSave');
-        saveBtn.disabled = true;
-        _uploadToStorage(blob, _storagePath('staff', 'jpg'), function (err, url) {
-          saveBtn.disabled = false;
-          if (err) { console.error('[admin] upload foto staff', err); alert('Errore caricamento foto, riprova.'); return; }
-          document.getElementById('staffPhoto').value = url;
-        });
       });
     });
     document.getElementById('staffPhoto').addEventListener('input', function () {
@@ -1772,21 +1699,9 @@
       ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(document.getElementById('spLogoEditorImg'), dx, dy, w, h);
 
-      var prev = document.getElementById('spLogoPreview');
-      prev.src = canvas.toDataURL('image/png');
-      prev.style.display = '';
-      document.getElementById('spLogoUrl').value = '';
+      document.getElementById('spLogoUrl').value = canvas.toDataURL('image/png');
+      _syncSpPreview();
       document.getElementById('spLogoEditor').style.display = 'none';
-
-      var saveBtn = document.getElementById('spFormSave');
-      saveBtn.disabled = true;
-      canvas.toBlob(function (blob) {
-        _uploadToStorage(blob, _storagePath('sponsors', 'png'), function (err, url) {
-          saveBtn.disabled = false;
-          if (err) { console.error('[admin] upload logo sponsor', err); alert('Errore caricamento logo, riprova.'); return; }
-          document.getElementById('spLogoUrl').value = url;
-        });
-      }, 'image/png');
     });
   }
 
@@ -2601,119 +2516,6 @@
     }).catch(function (e) {
       statusEl.textContent = 'Errore: ' + e.message;
       statusEl.style.color = 'var(--a-red)';
-    });
-  };
-
-  /* ---- Migrazione immagini base64 → Firebase Storage ----
-     Da attivare manualmente (pulsante in "File JSON"). Scorre articoli,
-     giocatori, staff, sponsor e loghi partita: ogni campo immagine ancora
-     in base64 viene caricato su Storage e il documento riscritto con il
-     solo URL. Idempotente — i record già migrati vengono saltati, quindi
-     è sicura da rilanciare più volte (es. se interrotta a metà). */
-  window.AdminActions.migrateImagesToStorage = function () {
-    var btn      = document.getElementById('imgMigrationBtn');
-    var statusEl = document.getElementById('imgMigrationStatus');
-    var logEl    = document.getElementById('imgMigrationLog');
-    if (btn) btn.disabled = true;
-    statusEl.textContent = 'Analisi in corso…';
-    statusEl.style.color = '';
-    logEl.style.display = '';
-    logEl.textContent = '';
-
-    function log(msg) {
-      logEl.textContent += msg + '\n';
-      logEl.scrollTop = logEl.scrollHeight;
-    }
-
-    var jobs = [];
-
-    VV.getArticles().forEach(function (a) {
-      jobs.push({ label: 'Articolo — ' + a.title, run: function () {
-        return _migrateFieldIfBase64(a.image, 'articles').then(function (url) {
-          if (url === a.image) return false;
-          a.image = url;
-          return new Promise(function (resolve) { DB.saveArticle(a, function () { resolve(true); }); });
-        });
-      }});
-    });
-
-    VV.getPlayers().forEach(function (p) {
-      jobs.push({ label: 'Giocatore — ' + p.name, run: function () {
-        return _migrateFieldIfBase64(p.photo, 'players').then(function (url) {
-          if (url === p.photo) return false;
-          p.photo = url;
-          return new Promise(function (resolve) { DB.savePlayer(p, function () { resolve(true); }); });
-        });
-      }});
-    });
-
-    VV.getStaff().forEach(function (s) {
-      jobs.push({ label: 'Staff — ' + s.name, run: function () {
-        return _migrateFieldIfBase64(s.photo, 'staff').then(function (url) {
-          if (url === s.photo) return false;
-          s.photo = url;
-          return new Promise(function (resolve) { DB.saveStaffMember(s, function () { resolve(true); }); });
-        });
-      }});
-    });
-
-    VV.getPartite().forEach(function (m) {
-      var label = 'Partita — ' + (m.squadra_casa || '?') + ' vs ' + (m.squadra_ospite || '?');
-      jobs.push({ label: label + ' (logo casa)', run: function () {
-        return _migrateFieldIfBase64(m.logo_casa, 'matches').then(function (url) {
-          if (url === m.logo_casa) return false;
-          m.logo_casa = url;
-          return new Promise(function (resolve) { DB.savePartita(m, function () { resolve(true); }); });
-        });
-      }});
-      jobs.push({ label: label + ' (logo ospite)', run: function () {
-        return _migrateFieldIfBase64(m.logo_ospite, 'matches').then(function (url) {
-          if (url === m.logo_ospite) return false;
-          m.logo_ospite = url;
-          return new Promise(function (resolve) { DB.savePartita(m, function () { resolve(true); }); });
-        });
-      }});
-    });
-
-    /* Sponsor: un unico documento con tutti i loghi in items[] — un solo
-       salvataggio in coda dopo aver migrato ogni logo della lista. */
-    var sponsorList = VV.getSponsors();
-    jobs.push({ label: 'Sponsor (loghi)', run: function () {
-      var changed = false;
-      var chain = Promise.resolve();
-      sponsorList.forEach(function (s) {
-        chain = chain.then(function () {
-          return _migrateFieldIfBase64(s.logo, 'sponsors').then(function (url) {
-            if (url !== s.logo) { s.logo = url; changed = true; }
-          });
-        });
-      });
-      return chain.then(function () {
-        if (!changed) return false;
-        DB.saveSponsors(sponsorList);
-        return true;
-      });
-    }});
-
-    log('Trovati ' + jobs.length + ' elementi da controllare…');
-
-    var migrated = 0, skipped = 0, failed = 0;
-
-    jobs.reduce(function (chain, job) {
-      return chain.then(function () {
-        return job.run().then(function (didMigrate) {
-          if (didMigrate) { migrated++; log('✓ migrato: ' + job.label); }
-          else { skipped++; }
-        }).catch(function (err) {
-          failed++;
-          log('✗ errore su ' + job.label + ': ' + (err && err.message || err));
-        });
-      });
-    }, Promise.resolve()).then(function () {
-      log('Fatto. Migrati: ' + migrated + ' · già a posto: ' + skipped + ' · errori: ' + failed);
-      statusEl.textContent = migrated + ' migrati, ' + skipped + ' già ok, ' + failed + ' errori';
-      statusEl.style.color = failed ? 'var(--a-red)' : 'var(--a-green)';
-      if (btn) btn.disabled = false;
     });
   };
 
