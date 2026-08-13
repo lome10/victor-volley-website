@@ -976,6 +976,23 @@
           </div>
 
         </div>
+
+        <!-- Migrazione immagini base64 → Firebase Storage -->
+        <div class="json-file-card" style="margin-top:24px">
+          <div class="json-file-header">
+            <div>
+              <span class="json-file-name">Migrazione immagini a Firebase Storage</span>
+              <span class="json-file-desc">Sposta le immagini salvate come base64 dentro i documenti (copertine articoli, foto giocatori/staff, loghi sponsor e squadre) su Firebase Storage, lasciando solo l'URL nel documento. Riduce il peso delle pagine che le mostrano. Sicura da rilanciare più volte: salta i record già migrati.</span>
+            </div>
+          </div>
+          <div class="json-file-footer">
+            <span id="imgMigrationStatus" class="json-status"></span>
+            <div class="json-file-actions">
+              <button id="imgMigrationBtn" class="btn-primary" onclick="AdminActions.migrateImagesToStorage()">Avvia migrazione</button>
+            </div>
+          </div>
+          <pre id="imgMigrationLog" style="display:none;max-height:220px;overflow:auto;background:var(--a-bg-soft,#f4f4f6);border-radius:6px;padding:12px;font-size:12px;line-height:1.5;margin-top:10px;white-space:pre-wrap"></pre>
+        </div>
       </section>
 
       <!-- ---- GIRONE ---- -->
@@ -1756,6 +1773,7 @@
   <script src="/js/vendor/firebase-app-compat.js"></script>
   <script src="/js/vendor/firebase-firestore-compat.js"></script>
   <script src="/js/vendor/firebase-auth-compat.js"></script>
+  <script src="/js/vendor/firebase-storage-compat.js"></script>
   <script src="/js/vendor/firebase-functions-compat.js"></script>
   <script src="/js/firebase-config.js"></script>
   <script src="/js/data.js?v=20260719"></script>
