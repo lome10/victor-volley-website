@@ -20,6 +20,15 @@
         ],
         "createdAt": "2026-08-08T07:06:59.945Z",
         "reason": "Lightbox img popolata via JS, src vuoto intenzionale"
+      },
+      {
+        "rule": "flat-type-hierarchy",
+        "value": "*",
+        "files": [
+          "unisciti-a-noi.html"
+        ],
+        "createdAt": "2026-08-13T08:29:04.682Z",
+        "reason": "User confirmed: real title/description contrast fix applied at L51-53 (16px/700 vs 12px); residual page-wide ratio comes from unrelated form status text, not worth resizing just to satisfy the heuristic"
       }
     ]
   }

@@ -17,7 +17,7 @@
     .gallery-album-section + .gallery-album-section { border-top: 1px solid var(--c-gray-light); padding-top: 48px; }
     .gallery-album-hd { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
     .gallery-album-hd h3 { font-size: 20px; font-weight: 700; color: var(--c-navy); margin: 0; }
-    .gallery-album-meta { color: #aaa; font-size: 13px; }
+    .gallery-album-meta { color: #aaa; font-size: 12px; }
     .gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .gallery-empty { text-align: center; padding: 80px 0; color: #aaa; font-size: 16px; line-height: 1.7; }
 
@@ -35,7 +35,7 @@
     #lightboxNext { right: 16px; }
     #lightboxImg { max-width: min(85vw, 960px); max-height: 78vh; border-radius: 8px; display: block; margin: 0 auto; object-fit: contain; }
     .lightbox-body { text-align: center; }
-    #lightboxCaption { color: rgba(255,255,255,0.65); margin-top: 14px; font-size: 14px; }
+    #lightboxCaption { color: rgba(255,255,255,0.65); margin-top: 14px; font-size: 12px; }
   </style>
 </head>
 <body>
@@ -159,7 +159,7 @@
         var albums = VV.getAlbums();
 
         if (!albums.length) {
-          container.innerHTML = '<div class="gallery-empty"><p>Nessun album ancora.<br><span style="font-size:14px">Le foto verranno caricate dalla societ&agrave;.</span></p></div>';
+          container.innerHTML = '<div class="gallery-empty"><p>Nessun album ancora.<br><span style="font-size:12px">Le foto verranno caricate dalla societ&agrave;.</span></p></div>';
           filterBar.innerHTML = '<button class="filter-btn is-active" data-filter="all">Tutte le foto</button>';
           return;
         }
@@ -183,7 +183,7 @@
       var populated = albums.filter(function (a) { return (allPhotos[a.id] || []).length > 0; });
 
       if (!populated.length) {
-        container.innerHTML = '<div class="gallery-empty"><p>Nessuna foto ancora.<br><span style="font-size:14px">Le foto verranno caricate dalla societ&agrave;.</span></p></div>';
+        container.innerHTML = '<div class="gallery-empty"><p>Nessuna foto ancora.<br><span style="font-size:12px">Le foto verranno caricate dalla societ&agrave;.</span></p></div>';
         filterBar.innerHTML = '<button class="filter-btn is-active" data-filter="all">Tutte le foto</button>';
         return;
       }
