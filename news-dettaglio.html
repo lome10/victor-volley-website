@@ -63,6 +63,7 @@
         <div id="relatedSection" class="related-section" style="margin-top:64px;padding-top:48px;border-top:1px solid var(--c-gray-light);display:none">
           <h3 style="margin-bottom:24px">Articoli correlati</h3>
           <div class="related-cards" id="relatedGrid"></div>
+          <div class="related-dots-mobile" id="relatedDotsMobile"></div>
         </div>
 
       </div>
@@ -154,11 +155,12 @@
       : '<p style="color:#aaa;font-style:italic">Contenuto non disponibile.</p>';
 
     /* Articoli correlati — stessa card 4:5 e stessa animazione hover di hero/news.
-       Genera sempre 3 card: su mobile la terza resta nascosta via CSS
-       (vedi .related-cards in style.css), niente da ricalcolare in JS. */
+       Su mobile diventa un carosello scroll-snap (come l'hero) con puntini,
+       così titolo e badge hanno spazio a sufficienza per restare leggibili. */
     var others = VV.getArticles(true).filter(function (a) { return a.id !== article.id; }).slice(0, 3);
     if (others.length) {
       var relatedGrid = document.getElementById('relatedGrid');
+      var relatedDots = document.getElementById('relatedDotsMobile');
       document.getElementById('relatedSection').style.display = '';
       relatedGrid.innerHTML = others.map(function (a) {
         var bgStyle = a.image
@@ -194,6 +196,23 @@
           window.location.href = '/news-dettaglio?id=' + relId;
         });
       });
+
+      /* Dots (carosello mobile scroll-snap) */
+      others.forEach(function (_, i) {
+        var dot = document.createElement('span');
+        dot.className = 'hero-dot-m' + (i === 0 ? ' is-active' : '');
+        relatedDots.appendChild(dot);
+      });
+      var relatedDotEls = relatedDots.querySelectorAll('.hero-dot-m');
+      relatedGrid.addEventListener('scroll', function () {
+        var mid = relatedGrid.scrollLeft + relatedGrid.clientWidth / 2;
+        var closest = 0, minDist = Infinity;
+        relatedCards.forEach(function (card, i) {
+          var dist = Math.abs(card.offsetLeft + card.offsetWidth / 2 - mid);
+          if (dist < minDist) { minDist = dist; closest = i; }
+        });
+        relatedDotEls.forEach(function (d, i) { d.classList.toggle('is-active', i === closest); });
+      }, { passive: true });
     }
     }); // DB.load
   })();
