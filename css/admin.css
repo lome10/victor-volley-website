@@ -1494,6 +1494,146 @@ button { font-family: var(--font-body); cursor: pointer; }
 }
 
 /* ================================================
+   BACHECA — KANBAN
+================================================ */
+.kb-board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+.kb-col {
+  background: #F1F5F9;
+  border-radius: var(--a-radius);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 120px;
+}
+.kb-col-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 4px 2px;
+}
+.kb-col-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.kb-col[data-stato="daFare"]  .kb-col-dot { background: var(--a-muted); }
+.kb-col[data-stato="inCorso"] .kb-col-dot { background: var(--a-yellow); }
+.kb-col[data-stato="fatta"]   .kb-col-dot { background: var(--a-green); }
+.kb-col-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--a-text);
+}
+.kb-col-count {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--a-muted);
+  background: var(--a-white);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+.kb-col-add {
+  margin-left: auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid var(--a-border);
+  background: var(--a-white);
+  color: var(--a-muted);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: border-color var(--a-t), color var(--a-t);
+}
+.kb-col-add:hover { border-color: var(--a-blue); color: var(--a-blue); }
+.kb-col-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 40px;
+  border-radius: 6px;
+  transition: background var(--a-t);
+}
+.kb-col-body--over { background: rgba(0,140,253,0.08); }
+.kb-col-empty {
+  font-size: 12px;
+  color: var(--a-muted);
+  padding: 10px 6px;
+  text-align: center;
+}
+.kb-card {
+  background: var(--a-card);
+  border-radius: 8px;
+  padding: 10px 12px;
+  box-shadow: var(--a-shadow);
+  cursor: grab;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.kb-card:active { cursor: grabbing; }
+.kb-card--dragging { opacity: 0.4; }
+.kb-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--a-text);
+  line-height: 1.35;
+}
+.kb-card-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.kb-card-resp {
+  font-size: 11px;
+  color: var(--a-muted);
+  background: var(--a-bg);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+.kb-card-due {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--a-muted);
+}
+.kb-card-due--late { color: var(--a-red); }
+.kb-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 2px;
+}
+.kb-card-move {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid var(--a-border);
+  background: transparent;
+  color: var(--a-muted);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: border-color var(--a-t), color var(--a-t);
+}
+.kb-card-move:hover { border-color: var(--a-blue); color: var(--a-blue); }
+.kb-card-move:disabled { opacity: 0.3; cursor: default; }
+.kb-card-move:disabled:hover { border-color: var(--a-border); color: var(--a-muted); }
+
+/* ================================================
    RESPONSIVE — CONTENUTI (forms, dashboard, liste)
 ================================================ */
 @media (max-width: 768px) {
@@ -1503,6 +1643,7 @@ button { font-family: var(--font-body); cursor: pointer; }
   .photos-toolbar { flex-wrap: wrap; gap: 10px; }
   .pe-cal-cell { min-height: 76px; }
   .pe-cal-month-label { min-width: 0; }
+  .kb-board { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 480px) {
