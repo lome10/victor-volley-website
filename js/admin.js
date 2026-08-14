@@ -76,7 +76,8 @@
      NAVIGATION
   ================================================ */
   var SECTIONS = {
-    dashboard: 'Dashboard', articoli: 'Articoli', calendario: 'Calendario', galleria: 'Galleria', squadre: 'Squadre',
+    dashboard: 'Dashboard', articoli: 'Articoli', calendario: 'Calendario', pianoEditoriale: 'Piano Editoriale',
+    galleria: 'Galleria', squadre: 'Squadre',
     sponsor: 'Sponsor', atleti: 'Atleti', dirigenti: 'Dirigenti', girone: 'Girone Prima Divisione', datiJson: 'File JSON',
     log: 'Log', budget: 'Budget & Forecast'
   };
@@ -146,6 +147,7 @@
     if (section === 'dashboard')  renderDashboard();
     if (section === 'articoli')   renderArticoli();
     if (section === 'calendario') renderCalendario();
+    if (section === 'pianoEditoriale') renderPianoEditoriale();
     if (section === 'galleria')   renderGalleria();
     if (section === 'squadre')    renderSquadre();
     if (section === 'sponsor')    renderSponsor();
@@ -2428,6 +2430,259 @@
       }
     );
   };
+
+  /* ================================================
+     PIANO EDITORIALE (Instagram / Facebook / TikTok / Sito)
+     Dati privati dell'Area Dirigenti — stesso pattern di attivita/
+     promemoria: niente cache pubblica VV.js, caricamento lazy on-demand
+     al primo accesso alla sezione, scrittura diretta su Firestore.
+  ================================================ */
+  var _peItems     = [];
+  var _peLoaded    = false;
+  var _peEditing   = null;
+  var _peDirigenti = null;
+  var _peMonthCursor = new Date();
+  _peMonthCursor.setDate(1);
+  var _pePlatformFilter = { instagram: true, facebook: true, tiktok: true, sito: true };
+
+  var PE_PLATFORMS = [
+    { key: 'instagram', label: 'Instagram', chipClass: 'chip--pink'  },
+    { key: 'facebook',  label: 'Facebook',  chipClass: 'chip--blue'  },
+    { key: 'tiktok',    label: 'TikTok',    chipClass: 'chip--black' },
+    { key: 'sito',      label: 'Sito Web',  chipClass: 'chip--green' }
+  ];
+  var PE_WEEKDAYS = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
+
+  function _peYmd(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
+  function _loadPianoEditoriale(cb) {
+    if (_peLoaded) { cb(); return; }
+    db.collection('pianoEditoriale').get().then(function (snap) {
+      _peItems = snap.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); });
+      _peLoaded = true;
+      cb();
+    }).catch(function (e) {
+      console.error('[pianoEditoriale] load', e);
+      _peLoaded = true;
+      cb();
+    });
+  }
+
+  function _loadPeDirigenti(cb) {
+    if (_peDirigenti) { cb(); return; }
+    db.collection('dirigenti').get().then(function (snap) {
+      _peDirigenti = snap.docs.map(function (d) { return Object.assign({ uid: d.id }, d.data()); });
+      cb();
+    }).catch(function (e) {
+      console.error('[pianoEditoriale] dirigenti', e);
+      _peDirigenti = [];
+      cb();
+    });
+  }
+
+  function renderPianoEditoriale() {
+    _loadPianoEditoriale(function () {
+      showSubview('pianoEditoriale', 'list');
+      setTopbarBtn('Nuovo contenuto', function () { _openPeForm(null, null); });
+      _renderPeFilterBox();
+      _renderPeGrid();
+    });
+  }
+
+  function _renderPeFilterBox() {
+    var box = document.getElementById('pePlatformFilter');
+    box.innerHTML = PE_PLATFORMS.map(function (p) {
+      var checked = _pePlatformFilter[p.key] ? ' checked' : '';
+      return '<label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:5px 12px;border:1px solid #e2e8f0;border-radius:20px;cursor:pointer;user-select:none">' +
+        '<input type="checkbox" class="peFilterCheck" value="' + p.key + '"' + checked + '> ' + p.label +
+        '</label>';
+    }).join('');
+    box.querySelectorAll('.peFilterCheck').forEach(function (cb) {
+      cb.addEventListener('change', function () {
+        _pePlatformFilter[cb.value] = cb.checked;
+        _renderPeGrid();
+      });
+    });
+  }
+
+  function _renderPeGrid() {
+    document.getElementById('peMonthLabel').textContent =
+      cap(_peMonthCursor.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' }));
+
+    var year  = _peMonthCursor.getFullYear();
+    var month = _peMonthCursor.getMonth();
+    var firstOfMonth  = new Date(year, month, 1);
+    var startOffset   = (firstOfMonth.getDay() + 6) % 7; /* lun = 0 */
+    var gridStart     = new Date(year, month, 1 - startOffset);
+    var todayYmd      = _peYmd(new Date());
+
+    var itemsByDate = {};
+    _peItems.forEach(function (item) {
+      if (!item.data) return;
+      (itemsByDate[item.data] = itemsByDate[item.data] || []).push(item);
+    });
+
+    var html = PE_WEEKDAYS.map(function (w) { return '<div class="pe-cal-weekday">' + w + '</div>'; }).join('');
+
+    for (var i = 0; i < 42; i++) {
+      var cellDate = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + i);
+      var ymd      = _peYmd(cellDate);
+      var inMonth  = cellDate.getMonth() === month;
+      var dayItems = (itemsByDate[ymd] || []).filter(function (it) {
+        return (it.piattaforme || []).some(function (p) { return _pePlatformFilter[p]; });
+      }).sort(function (a, b) { return (a.ora || '').localeCompare(b.ora || ''); });
+
+      var chipsHtml = dayItems.map(function (it) {
+        var platKey = (it.piattaforme || [])[0];
+        var plat = PE_PLATFORMS.find(function (p) { return p.key === platKey; }) || PE_PLATFORMS[0];
+        return '<div class="pe-chip chip ' + plat.chipClass + '" onclick="AdminActions.editPianoEditoriale(\'' + it.id + '\')" title="' + esc(it.titolo) + '">' + esc(it.titolo) + '</div>';
+      }).join('');
+
+      html +=
+        '<div class="pe-cal-cell' + (inMonth ? '' : ' pe-cal-cell--out') + (ymd === todayYmd ? ' pe-cal-cell--today' : '') + '">' +
+          '<div class="pe-cal-cell-head"><span>' + cellDate.getDate() + '</span>' +
+            '<button type="button" class="pe-cal-add" onclick="AdminActions.newPianoEditoriale(\'' + ymd + '\')" title="Nuovo contenuto">+</button>' +
+          '</div>' +
+          '<div class="pe-cal-cell-body">' + chipsHtml + '</div>' +
+        '</div>';
+    }
+
+    document.getElementById('peCalGrid').innerHTML = html;
+  }
+
+  document.getElementById('peMonthPrev').addEventListener('click', function () {
+    _peMonthCursor.setMonth(_peMonthCursor.getMonth() - 1);
+    _renderPeGrid();
+  });
+  document.getElementById('peMonthNext').addEventListener('click', function () {
+    _peMonthCursor.setMonth(_peMonthCursor.getMonth() + 1);
+    _renderPeGrid();
+  });
+  document.getElementById('peMonthToday').addEventListener('click', function () {
+    _peMonthCursor = new Date();
+    _peMonthCursor.setDate(1);
+    _renderPeGrid();
+  });
+
+  function _renderPePiattaformeCheckboxes(selected) {
+    var box = document.getElementById('pePiattaformeBox');
+    box.innerHTML = PE_PLATFORMS.map(function (p) {
+      var checked = selected.indexOf(p.key) !== -1 ? ' checked' : '';
+      return '<label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:6px 14px;border:1px solid #e2e8f0;border-radius:20px;cursor:pointer;user-select:none">' +
+        '<input type="checkbox" class="pePiattaformaCheck" value="' + p.key + '"' + checked + '> ' + p.label +
+        '</label>';
+    }).join('');
+  }
+
+  function _renderPeArticoloSelect(selectedId) {
+    var articles = VV.getArticles().slice().sort(function (a, b) { return (b.date || '').localeCompare(a.date || ''); });
+    var sel = document.getElementById('peArticolo');
+    sel.innerHTML = '<option value="">— Nessuno —</option>' +
+      articles.map(function (a) { return '<option value="' + a.id + '">' + esc(a.title) + '</option>'; }).join('');
+    sel.value = selectedId != null ? String(selectedId) : '';
+  }
+
+  function _renderPeResponsabileSelect(selected) {
+    var sel = document.getElementById('peResponsabile');
+    sel.innerHTML = '<option value="">— Nessuno —</option>' +
+      _peDirigenti.map(function (d) {
+        var nome = ((d.nome || '') + ' ' + (d.cognome || '')).trim() || d.email || d.uid;
+        return '<option value="' + esc(nome) + '">' + esc(nome) + '</option>';
+      }).join('');
+    sel.value = selected || '';
+  }
+
+  function _openPeForm(item, presetDate) {
+    _peEditing = item;
+    showSubview('pianoEditoriale', 'form');
+    document.getElementById('topbarActions').innerHTML = '';
+
+    _renderPeArticoloSelect(item ? item.articoloId : null);
+    _renderPePiattaformeCheckboxes(item ? (item.piattaforme || []) : []);
+    _loadPeDirigenti(function () { _renderPeResponsabileSelect(item ? item.responsabile : ''); });
+
+    document.getElementById('peTitolo').value = item ? (item.titolo || '') : '';
+    document.getElementById('peData').value   = item ? (item.data || '') : (presetDate || '');
+    document.getElementById('peOra').value    = item ? (item.ora || '') : '';
+    document.getElementById('peStato').value  = item ? (item.stato || 'daFare') : 'daFare';
+    document.getElementById('peNote').value   = item ? (item.note || '') : '';
+    document.getElementById('peDelete').classList.toggle('is-hidden', !item);
+  }
+
+  window.AdminActions.editPianoEditoriale = function (id) {
+    var item = _peItems.find(function (x) { return x.id === id; });
+    if (item) _openPeForm(item, null);
+  };
+  window.AdminActions.newPianoEditoriale = function (ymd) {
+    _openPeForm(null, ymd);
+  };
+
+  document.getElementById('peArticolo').addEventListener('change', function () {
+    if (!this.value) return;
+    var titleEl = document.getElementById('peTitolo');
+    if (titleEl.value.trim()) return;
+    var article = VV.getArticle(+this.value);
+    if (article) titleEl.value = article.title;
+  });
+
+  document.getElementById('peCancel').addEventListener('click', renderPianoEditoriale);
+
+  document.getElementById('peSave').addEventListener('click', function () {
+    var titolo = document.getElementById('peTitolo').value.trim();
+    if (!titolo) { alert('Il titolo è obbligatorio.'); return; }
+    var data = document.getElementById('peData').value;
+    if (!data) { alert('La data è obbligatoria.'); return; }
+    var piattaforme = Array.prototype.map.call(
+      document.querySelectorAll('#pePiattaformeBox .pePiattaformaCheck:checked'),
+      function (cb) { return cb.value; }
+    );
+    if (!piattaforme.length) { alert('Seleziona almeno una piattaforma.'); return; }
+    var articoloRaw = document.getElementById('peArticolo').value;
+
+    var item = {
+      titolo:       titolo,
+      data:         data,
+      ora:          document.getElementById('peOra').value,
+      piattaforme:  piattaforme,
+      stato:        document.getElementById('peStato').value,
+      articoloId:   articoloRaw ? +articoloRaw : null,
+      responsabile: document.getElementById('peResponsabile').value,
+      note:         document.getElementById('peNote').value.trim()
+    };
+
+    var before = _peEditing;
+    var ref = before ? db.collection('pianoEditoriale').doc(before.id) : db.collection('pianoEditoriale').doc();
+    ref.set(item).then(function () {
+      var saved = Object.assign({ id: ref.id }, item);
+      if (before) _peItems = _peItems.map(function (x) { return x.id === ref.id ? saved : x; });
+      else        _peItems.push(saved);
+      return _logWrite('pianoEditoriale', ref.id, 'Piano editoriale — ' + titolo,
+        before ? 'update' : 'create', _diff(before, saved, Object.keys(item)));
+    }).then(function () {
+      renderPianoEditoriale();
+    }).catch(function (e) {
+      console.error('[pianoEditoriale] save', e);
+      alert('Errore nel salvataggio. Riprova.');
+    });
+  });
+
+  document.getElementById('peDelete').addEventListener('click', function () {
+    if (!_peEditing) return;
+    var id = _peEditing.id, titolo = _peEditing.titolo;
+    confirm('Eliminare "' + titolo + '" dal piano editoriale?', function () {
+      db.collection('pianoEditoriale').doc(id).delete().then(function () {
+        _peItems = _peItems.filter(function (x) { return x.id !== id; });
+        return _logWrite('pianoEditoriale', id, 'Piano editoriale — ' + titolo, 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]);
+      }).then(function () {
+        renderPianoEditoriale();
+      }).catch(function (e) {
+        console.error('[pianoEditoriale] delete', e);
+        alert('Errore durante l\'eliminazione. Riprova.');
+      });
+    });
+  });
 
   /* ================================================
      FILE JSON

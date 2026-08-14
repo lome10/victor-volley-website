@@ -38,6 +38,7 @@ service cloud.firestore {
     match /tranchePagamento/{document=**} { allow read, write: if isDirigente(); }
     match /attivita/{document=**}         { allow read, write: if isDirigente(); }
     match /promemoria/{document=**}       { allow read, write: if isDirigente(); }
+    match /pianoEditoriale/{document=**}  { allow read, write: if isDirigente(); }
     match /categorieAtleti/{document=**}  { allow read, write: if isDirigente(); }
     match /atletiRette/{document=**}      { allow read, write: if isDirigente(); }
     match /rateAtleti/{document=**}       { allow read, write: if isDirigente(); }

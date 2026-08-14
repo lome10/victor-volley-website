@@ -67,6 +67,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
           Calendario
         </a>
+        <a href="#" class="admin-nav-item" data-section="pianoEditoriale">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          Piano Editoriale
+        </a>
         <a href="#" class="admin-nav-item" data-section="galleria">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/></svg>
           Galleria
@@ -475,6 +479,73 @@
           <div class="form-actions">
             <button id="matchCancel" class="btn-ghost">Annulla</button>
             <button id="matchSave" class="btn-primary">Salva partita</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---- PIANO EDITORIALE ---- -->
+      <section id="sectionPianoEditoriale" class="admin-section is-hidden">
+        <!-- Calendario -->
+        <div id="pianoEditorialeList">
+          <div class="pe-cal-toolbar">
+            <div class="pe-cal-nav">
+              <button id="peMonthPrev" type="button" class="btn-icon" title="Mese precedente">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="15,18 9,12 15,6"/></svg>
+              </button>
+              <span id="peMonthLabel" class="pe-cal-month-label"></span>
+              <button id="peMonthNext" type="button" class="btn-icon" title="Mese successivo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="9,18 15,12 9,6"/></svg>
+              </button>
+              <button id="peMonthToday" type="button" class="btn-ghost" style="font-size:12px;padding:6px 12px">Oggi</button>
+            </div>
+            <div id="pePlatformFilter" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+          </div>
+          <div id="peCalGrid" class="pe-cal-grid"></div>
+        </div>
+        <!-- Form -->
+        <div id="pianoEditorialeForm" class="is-hidden">
+          <div class="form-grid">
+            <div class="form-group form-full">
+              <label class="form-label">Titolo *</label>
+              <input type="text" id="peTitolo" class="form-input" placeholder="es. Video allenamento squadra U18">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Data *</label>
+              <input type="date" id="peData" class="form-input">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Ora</label>
+              <input type="time" id="peOra" class="form-input">
+            </div>
+            <div class="form-group form-full">
+              <label class="form-label">Piattaforme *</label>
+              <div id="pePiattaformeBox" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Collega articolo</label>
+              <select id="peArticolo" class="form-input"></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Stato</label>
+              <select id="peStato" class="form-input">
+                <option value="daFare">Da fare</option>
+                <option value="pronto">Pronto</option>
+                <option value="pubblicato">Pubblicato</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Responsabile</label>
+              <select id="peResponsabile" class="form-input"></select>
+            </div>
+            <div class="form-group form-full">
+              <label class="form-label">Note / testo</label>
+              <textarea id="peNote" class="form-input form-textarea" rows="3" placeholder="Caption, bozza testo, appunti..."></textarea>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button id="peDelete" type="button" class="btn-ghost is-hidden" style="color:var(--a-red);border-color:var(--a-red);margin-right:auto">Elimina</button>
+            <button id="peCancel" type="button" class="btn-ghost">Annulla</button>
+            <button id="peSave" type="button" class="btn-primary">Salva</button>
           </div>
         </div>
       </section>
