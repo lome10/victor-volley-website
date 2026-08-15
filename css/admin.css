@@ -448,10 +448,24 @@ button { font-family: var(--font-body); cursor: pointer; }
 .rte-editor p  { margin: 0 0 10px; }
 .rte-editor ul, .rte-editor ol { margin: 0 0 10px 22px; }
 .rte-editor blockquote {
+  position: relative;
   margin: 0 0 10px;
-  padding: 4px 14px;
-  border-left: 3px solid var(--a-blue);
+  padding: 2px 0 2px 30px;
+  font-style: italic;
   color: var(--a-muted);
+}
+.rte-editor blockquote::before {
+  content: '\201C';
+  position: absolute;
+  left: 0;
+  top: -12px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-style: normal;
+  font-weight: 700;
+  font-size: 46px;
+  line-height: 1;
+  color: var(--a-blue);
+  opacity: 0.45;
 }
 .rte-editor a { color: var(--a-blue-dark); }
 
