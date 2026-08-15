@@ -788,11 +788,14 @@
   document.getElementById('albumCancel').addEventListener('click', renderGalleria);
 
   /* ================================================
-     IMMAGINE COPERTINA ARTICOLO — resize Full HD
+     IMMAGINE COPERTINA ARTICOLO — resize
+     Mostrata come card (home) o dentro una colonna da
+     ~500-600px (dettaglio articolo): mai a piena pagina,
+     quindi non serve conservarla a risoluzione Full HD.
   ================================================ */
 
   function resizeToFullHD(file, cb) {
-    var MAX_W = 1920, MAX_H = 1080;
+    var MAX_W = 1200, MAX_H = 675;
     var reader = new FileReader();
     reader.onload = function (e) {
       var img = new Image();
@@ -803,7 +806,7 @@
         var canvas = document.createElement('canvas');
         canvas.width = outW; canvas.height = outH;
         canvas.getContext('2d').drawImage(img, 0, 0, outW, outH);
-        var dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+        var dataUrl = canvas.toDataURL('image/jpeg', 0.78);
         cb(dataUrl, outW, outH);
       };
       img.src = e.target.result;
