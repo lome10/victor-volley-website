@@ -5,6 +5,10 @@
     "dev": "npx serve ."
   },
   "devDependencies": {
-    "firebase": "^10.14.1"
+    "css-select": "^7.0.0",
+    "css-tree": "^3.2.1",
+    "domutils": "^4.0.2",
+    "firebase": "^10.14.1",
+    "htmlparser2": "^12.0.0"
   }
 }
