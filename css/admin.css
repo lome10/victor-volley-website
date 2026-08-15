@@ -2,7 +2,7 @@
    Victor Volley — Admin Panel
 ================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Inter:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap');
 
 :root {
   --a-bg:        #F1F5F9;
@@ -24,7 +24,7 @@
   --sidebar-w:   220px;
   --topbar-h:    60px;
   --font-head:   'Barlow', sans-serif;
-  --font-body:   'Inter', sans-serif;
+  --font-body:   'Manrope', sans-serif;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
