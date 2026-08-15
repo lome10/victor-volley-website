@@ -754,12 +754,12 @@
     var bar       = document.getElementById('uploadBarFill');
     var text      = document.getElementById('uploadProgressText');
     progress.classList.remove('is-hidden');
-    bar.style.width = '0%';
+    bar.style.transform = 'scaleX(0)';
 
     PhotoDB.addPhotos(_currentAlbumId, files,
       function (done, total) {
         var pct = Math.round(done / total * 100);
-        bar.style.width = pct + '%';
+        bar.style.transform = 'scaleX(' + (pct / 100) + ')';
         text.textContent = done + ' / ' + total + ' foto caricate';
       },
       function (count) {
@@ -3474,7 +3474,7 @@
     document.getElementById('obiettivoInput').value = season.obiettivoSaldo || 0;
     var r = _calcRiepilogo();
     var pct = Math.max(0, Math.min(100, r.pct));
-    document.getElementById('obiettivoBarFill').style.width = pct + '%';
+    document.getElementById('obiettivoBarFill').style.transform = 'scaleX(' + (pct / 100) + ')';
     document.getElementById('obiettivoPct').textContent = r.pct + '%';
 
     var saldoEl = document.getElementById('heroSaldo');
