@@ -228,7 +228,7 @@ button { font-family: var(--font-body); cursor: pointer; }
 
 .admin-topbar h2 {
   font-family: var(--font-head);
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 700;
   color: var(--a-text);
   flex: 1;
