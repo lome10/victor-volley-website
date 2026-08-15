@@ -1639,6 +1639,36 @@
     </div>
   </div>
 
+  <!-- MODAL: cambia la mia password (dirigente) -->
+  <div id="myPasswordModal" class="dg-modal is-hidden">
+    <div class="dg-modal-head">
+      <h3>Cambia la tua password</h3>
+      <button id="myPasswordClose" class="dg-btn-icon-only" aria-label="Chiudi">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="dg-modal-body">
+      <p style="font-size:13px;color:var(--dg-muted);margin-bottom:16px">Vale solo per il tuo account. Nessuna email verrà inviata.</p>
+      <div class="dg-form-group">
+        <label class="dg-form-label">Password attuale</label>
+        <input type="password" id="myPwdCurrent" class="dg-form-input" autocomplete="current-password">
+      </div>
+      <div class="dg-form-group">
+        <label class="dg-form-label">Nuova password</label>
+        <input type="password" id="myPwdNew" class="dg-form-input" placeholder="Minimo 6 caratteri" autocomplete="new-password">
+      </div>
+      <div class="dg-form-group">
+        <label class="dg-form-label">Conferma nuova password</label>
+        <input type="password" id="myPwdConfirm" class="dg-form-input" placeholder="Ripeti la password" autocomplete="new-password">
+      </div>
+      <p id="myPwdMsg" class="sicurezza-msg is-hidden"></p>
+    </div>
+    <div class="dg-modal-actions">
+      <button id="myPwdCancel" class="dg-btn-ghost">Annulla</button>
+      <button id="myPwdSave" class="dg-btn-primary">Salva password</button>
+    </div>
+  </div>
+
   <!-- MODAL: nuova categoria atleti -->
   <!-- MODAL: categorie articoli -->
   <div id="artCategoriesModal" class="dg-modal is-hidden">
@@ -1830,6 +1860,7 @@
       </button>
     </div>
     <div class="dg-modal-body">
+      <p id="kbCreatoInfo" class="dg-card-sub is-hidden" style="margin-bottom:14px"></p>
       <div class="dg-form-group">
         <label class="dg-form-label">Titolo *</label>
         <input type="text" id="kbTitolo" class="dg-form-input" placeholder="es. Prenotare palazzetto per il torneo">
@@ -1847,7 +1878,7 @@
         </select>
       </div>
       <div class="dg-form-group">
-        <label class="dg-form-label">Responsabile</label>
+        <label class="dg-form-label">Assegnata a</label>
         <select id="kbResponsabile" class="dg-form-input"></select>
       </div>
       <div class="dg-form-group">

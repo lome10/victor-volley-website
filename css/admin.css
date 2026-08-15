@@ -1592,6 +1592,7 @@ button { font-family: var(--font-body); cursor: pointer; }
   color: var(--a-text);
   line-height: 1.35;
 }
+.kb-card-creator { font-size: 11px; color: var(--a-muted); }
 .kb-card-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .kb-card-resp {
   font-size: 11px;

@@ -8,8 +8,7 @@
     "ora": "18:30",
     "palazzetto": "ARKÈ Melissano",
     "stato": "programmata",
-    "codice_tabellone": "SPP-XEYG",
-    "tabellone_squadra_casa": "A"
+    "spp_code": "SPP-XEYG"
   },
   {
     "id": "p2",

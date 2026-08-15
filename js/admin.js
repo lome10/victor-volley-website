@@ -73,6 +73,83 @@
   });
 
   /* ================================================
+     CAMBIA LA MIA PASSWORD (self-service dirigente)
+     Le email @victorvolley non sono caselle reali: niente
+     reset via email, quindi il dirigente cambia la password
+     da qui confermando quella attuale. Pulsante nella topbar
+     della Dashboard, vedi renderDashboard().
+  ================================================ */
+  function _openMyPasswordModal() {
+    document.getElementById('myPwdCurrent').value = '';
+    document.getElementById('myPwdNew').value = '';
+    document.getElementById('myPwdConfirm').value = '';
+    var msg = document.getElementById('myPwdMsg');
+    msg.classList.add('is-hidden');
+    _openBudgetModal('myPasswordModal');
+  }
+  document.getElementById('myPasswordClose').addEventListener('click', function () { _closeBudgetModal('myPasswordModal'); });
+  document.getElementById('myPwdCancel').addEventListener('click', function () { _closeBudgetModal('myPasswordModal'); });
+
+  document.getElementById('myPwdSave').addEventListener('click', function () {
+    var btn        = this;
+    var msg        = document.getElementById('myPwdMsg');
+    var current    = document.getElementById('myPwdCurrent').value;
+    var pwd        = document.getElementById('myPwdNew').value;
+    var confirmPwd = document.getElementById('myPwdConfirm').value;
+
+    msg.classList.add('is-hidden');
+
+    if (!current) {
+      msg.textContent = 'Inserisci la password attuale.';
+      msg.style.color = 'var(--a-red)';
+      msg.classList.remove('is-hidden');
+      return;
+    }
+    if (pwd.length < 6) {
+      msg.textContent = 'La nuova password deve avere almeno 6 caratteri.';
+      msg.style.color = 'var(--a-red)';
+      msg.classList.remove('is-hidden');
+      return;
+    }
+    if (pwd !== confirmPwd) {
+      msg.textContent = 'Le due password non coincidono.';
+      msg.style.color = 'var(--a-red)';
+      msg.classList.remove('is-hidden');
+      return;
+    }
+
+    var user = auth.currentUser;
+    if (!user) return;
+
+    btn.disabled = true;
+    btn.textContent = 'Salvataggio…';
+
+    var cred = firebase.auth.EmailAuthProvider.credential(user.email, current);
+    user.reauthenticateWithCredential(cred)
+      .then(function () { return user.updatePassword(pwd); })
+      .then(function () {
+        msg.textContent = 'Password aggiornata con successo.';
+        msg.style.color = 'var(--a-green)';
+        msg.classList.remove('is-hidden');
+        document.getElementById('myPwdCurrent').value = '';
+        document.getElementById('myPwdNew').value = '';
+        document.getElementById('myPwdConfirm').value = '';
+        btn.disabled = false;
+        btn.textContent = 'Salva password';
+      })
+      .catch(function (err) {
+        var text = 'Errore: ' + (err.message || 'riprova più tardi.');
+        if (err.code === 'auth/wrong-password') text = 'Password attuale non corretta.';
+        if (err.code === 'auth/too-many-requests') text = 'Troppi tentativi. Riprova tra qualche minuto.';
+        msg.textContent = text;
+        msg.style.color = 'var(--a-red)';
+        msg.classList.remove('is-hidden');
+        btn.disabled = false;
+        btn.textContent = 'Salva password';
+      });
+  });
+
+  /* ================================================
      NAVIGATION
   ================================================ */
   var SECTIONS = {
@@ -170,6 +247,12 @@
      DASHBOARD
   ================================================ */
   function renderDashboard() {
+    var pwdBtn = document.createElement('button');
+    pwdBtn.className = 'btn-ghost';
+    pwdBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg> Cambia password';
+    pwdBtn.addEventListener('click', _openMyPasswordModal);
+    document.getElementById('topbarActions').appendChild(pwdBtn);
+
     var articles = VV.getArticles();
     var partite  = VV.getPartite();
     var albums   = VV.getAlbums();
@@ -2785,9 +2868,10 @@
         var late = it.scadenza && it.scadenza < todayYmd && col.key !== 'fatta';
         return '<div class="kb-card" draggable="true" data-id="' + esc(it.id) + '">' +
           '<div class="kb-card-title">' + esc(it.titolo) + '</div>' +
+          (it.creatoDa ? '<div class="kb-card-creator">Creata da ' + esc(it.creatoDa) + '</div>' : '') +
           (it.responsabile || it.scadenza
             ? '<div class="kb-card-meta">' +
-                (it.responsabile ? '<span class="kb-card-resp">' + esc(it.responsabile) + '</span>' : '') +
+                (it.responsabile ? '<span class="kb-card-resp">Assegnata a ' + esc(it.responsabile) + '</span>' : '') +
                 (it.scadenza ? '<span class="kb-card-due' + (late ? ' kb-card-due--late' : '') + '">' + _kbFmtDate(it.scadenza) + '</span>' : '') +
               '</div>'
             : '') +
@@ -2906,6 +2990,13 @@
     document.getElementById('kbStato').value        = item ? (item.stato || 'daFare') : (presetStato || 'daFare');
     document.getElementById('kbScadenza').value     = item ? (item.scadenza || '') : '';
     document.getElementById('kbDelete').classList.toggle('is-hidden', !item);
+    var creatoInfo = document.getElementById('kbCreatoInfo');
+    if (item && item.creatoDa) {
+      creatoInfo.textContent = 'Creata da ' + item.creatoDa + (item.createdAt ? ' il ' + new Date(item.createdAt).toLocaleDateString('it-IT') : '');
+      creatoInfo.classList.remove('is-hidden');
+    } else {
+      creatoInfo.classList.add('is-hidden');
+    }
     _loadKbDirigenti(function () { _renderKbResponsabileSelect(item ? item.responsabile : ''); });
     _openBudgetModal('kbModal');
   }
@@ -2924,7 +3015,9 @@
       stato:        document.getElementById('kbStato').value,
       responsabile: document.getElementById('kbResponsabile').value,
       scadenza:     document.getElementById('kbScadenza').value,
-      createdAt:    before ? (before.createdAt || new Date().toISOString()) : new Date().toISOString()
+      createdAt:    before ? (before.createdAt || new Date().toISOString()) : new Date().toISOString(),
+      creatoDa:     before ? (before.creatoDa || _dirigenteNome) : _dirigenteNome,
+      creatoDaUid:  before ? (before.creatoDaUid || _uid) : _uid
     };
 
     var ref = before ? db.collection('bacheca').doc(before.id) : db.collection('bacheca').doc();
@@ -3478,7 +3571,7 @@
 
   function _budgetStatCard(label, val2, cls) {
     var sign = val2 < 0 ? '-' : '';
-    return '<div class="dg-stat-card ' + (cls || '') + '"><div class="dg-stat-label">' + label + '</div>' +
+    return '<div class="dg-stat-card' + (cls ? ' dg-stat-card' + cls : '') + '"><div class="dg-stat-label">' + label + '</div>' +
       '<div class="dg-stat-value">' + sign + '€' + Math.abs(Math.round(val2)).toLocaleString('it-IT') + '</div></div>';
   }
 
@@ -3572,7 +3665,7 @@
 
   /* ---- CASHFLOW — quante tranche, quanto incassato vs promesso ---- */
   function _countStatCard(label, val2, cls) {
-    return '<div class="dg-stat-card ' + (cls || '') + '"><div class="dg-stat-label">' + label + '</div>' +
+    return '<div class="dg-stat-card' + (cls ? ' dg-stat-card' + cls : '') + '"><div class="dg-stat-label">' + label + '</div>' +
       '<div class="dg-stat-value">' + val2.toLocaleString('it-IT') + '</div></div>';
   }
 
@@ -4557,14 +4650,21 @@
       var p = perCategoria[key];
       return { nome: c ? c.nome : 'Senza categoria', preventivato: p.preventivato, sostenuto: p.sostenuto, scostamento: p.sostenuto - p.preventivato };
     }).sort(function (a, b) { return a.nome.localeCompare(b.nome); });
-    return { totPreventivato: totPreventivato, totSostenuto: totSostenuto, scostamento: totSostenuto - totPreventivato, righe: righe };
+    var bufferPreventivato = totPreventivato * 0.1;
+    return {
+      totPreventivato: totPreventivato, totSostenuto: totSostenuto, scostamento: totSostenuto - totPreventivato,
+      bufferPreventivato: bufferPreventivato, totPreventivatoConBuffer: totPreventivato + bufferPreventivato,
+      righe: righe
+    };
   }
 
-  /* Scostamento: positivo = speso più del previsto (rosso), negativo/zero = entro il preventivo (verde) — segno opposto a un normale "saldo". */
+  /* Scostamento: positivo = speso più del previsto (rosso), negativo/zero = entro il preventivo (verde) — segno opposto a un normale "saldo".
+     Il preventivo + margine 10% è un margine di sicurezza consigliato, non una spesa reale: non entra nel bilancio, è solo un riferimento visivo. */
   function _speseForecastStatsHtml(r) {
     return _budgetStatCard('Preventivato', r.totPreventivato, '') +
       _budgetStatCard('Sostenuto', r.totSostenuto, '') +
-      _budgetStatCard('Scostamento dal preventivo', r.scostamento, r.scostamento > 0 ? '--red' : '--green');
+      _budgetStatCard('Scostamento dal preventivo', r.scostamento, r.scostamento > 0 ? '--red' : '--green') +
+      _budgetStatCard('Preventivato + margine 10%', r.totPreventivatoConBuffer, '--orange');
   }
 
   function _speseForecastTableHtml(r) {
