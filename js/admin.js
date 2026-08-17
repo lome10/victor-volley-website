@@ -2818,6 +2818,9 @@
     { key: 'fatta',   label: 'Fatta' }
   ];
 
+  var KB_PRIORITA_ORDER = { alta: 0, media: 1, bassa: 2 };
+  var KB_PRIORITA_LABEL = { alta: 'Alta', media: 'Media', bassa: 'Bassa' };
+
   function _loadBacheca(cb) {
     if (_kbLoaded) { cb(); return; }
     db.collection('bacheca').get().then(function (snap) {
@@ -2861,6 +2864,9 @@
     var html = KB_COLUMNS.map(function (col, colIdx) {
       var items = _kbItems.filter(function (it) { return (it.stato || 'daFare') === col.key; })
         .sort(function (a, b) {
+          var pa = KB_PRIORITA_ORDER[a.priorita] != null ? KB_PRIORITA_ORDER[a.priorita] : 1;
+          var pb = KB_PRIORITA_ORDER[b.priorita] != null ? KB_PRIORITA_ORDER[b.priorita] : 1;
+          if (pa !== pb) return pa - pb;
           if (a.scadenza && b.scadenza) return a.scadenza < b.scadenza ? -1 : 1;
           if (a.scadenza) return -1;
           if (b.scadenza) return 1;
@@ -2869,15 +2875,15 @@
 
       var cards = items.map(function (it) {
         var late = it.scadenza && it.scadenza < todayYmd && col.key !== 'fatta';
-        return '<div class="kb-card" draggable="true" data-id="' + esc(it.id) + '">' +
+        var priorita = it.priorita || 'media';
+        return '<div class="kb-card kb-card--' + priorita + '" draggable="true" data-id="' + esc(it.id) + '">' +
           '<div class="kb-card-title">' + esc(it.titolo) + '</div>' +
           (it.creatoDa ? '<div class="kb-card-creator">Creata da ' + esc(it.creatoDa) + '</div>' : '') +
-          (it.responsabile || it.scadenza
-            ? '<div class="kb-card-meta">' +
-                (it.responsabile ? '<span class="kb-card-resp">Assegnata a ' + esc(it.responsabile) + '</span>' : '') +
-                (it.scadenza ? '<span class="kb-card-due' + (late ? ' kb-card-due--late' : '') + '">' + _kbFmtDate(it.scadenza) + '</span>' : '') +
-              '</div>'
-            : '') +
+          '<div class="kb-card-meta">' +
+            '<span class="kb-card-priorita kb-card-priorita--' + priorita + '">' + KB_PRIORITA_LABEL[priorita] + '</span>' +
+            (it.responsabile ? '<span class="kb-card-resp">Assegnata a ' + esc(it.responsabile) + '</span>' : '') +
+            (it.scadenza ? '<span class="kb-card-due' + (late ? ' kb-card-due--late' : '') + '">' + _kbFmtDate(it.scadenza) + '</span>' : '') +
+          '</div>' +
           '<div class="kb-card-actions">' +
             '<button type="button" class="kb-card-move" data-id="' + esc(it.id) + '" data-dir="-1"' + (colIdx === 0 ? ' disabled' : '') + ' title="Sposta indietro">&lsaquo;</button>' +
             '<button type="button" class="kb-card-move" data-id="' + esc(it.id) + '" data-dir="1"' + (colIdx === KB_COLUMNS.length - 1 ? ' disabled' : '') + ' title="Sposta avanti">&rsaquo;</button>' +
@@ -2991,6 +2997,7 @@
     document.getElementById('kbTitolo').value       = item ? (item.titolo || '') : '';
     document.getElementById('kbDescrizione').value  = item ? (item.descrizione || '') : '';
     document.getElementById('kbStato').value        = item ? (item.stato || 'daFare') : (presetStato || 'daFare');
+    document.getElementById('kbPriorita').value      = item ? (item.priorita || 'media') : 'media';
     document.getElementById('kbScadenza').value     = item ? (item.scadenza || '') : '';
     document.getElementById('kbDelete').classList.toggle('is-hidden', !item);
     var creatoInfo = document.getElementById('kbCreatoInfo');
@@ -3016,6 +3023,7 @@
       titolo:       titolo,
       descrizione:  document.getElementById('kbDescrizione').value.trim(),
       stato:        document.getElementById('kbStato').value,
+      priorita:     document.getElementById('kbPriorita').value,
       responsabile: document.getElementById('kbResponsabile').value,
       scadenza:     document.getElementById('kbScadenza').value,
       createdAt:    before ? (before.createdAt || new Date().toISOString()) : new Date().toISOString(),
