@@ -4296,6 +4296,48 @@
     });
   }
 
+  /* Migrazione una tantum (da lanciare col bottone "Ricalcola IVA sponsor" in Riepilogo IVA):
+     applica _syncSponsorIva agli sponsor già "chiusi" prima che esistesse questo calcolo. Ripulisce
+     anche le vecchie voci "IVA <azienda>" generate dal meccanismo precedente (una per tranche pagata,
+     solo sostenuto, mai preventivato — riconoscibili dal campo ivaVoceSpesaId rimasto sulla tranche),
+     così non restano duplicate rispetto all'unica voce consolidata per sponsor. Agisce solo sulla
+     stagione correntemente selezionata (i dati di spesa sono caricati per stagione). */
+  DG.migraIvaSponsor = function () {
+    var candidati = _sponsorizzazioni.filter(function (s) { return s.seasonId === _currentSeasonId && s.stato === 'chiuso'; });
+    if (!candidati.length) { alert('Nessuno sponsor "chiuso" in questa stagione: niente da ricalcolare.'); return; }
+    confirm('Ricalcolare l\'IVA per ' + candidati.length + ' sponsor "chiusi" di questa stagione? Le eventuali vecchie voci IVA generate per singola tranche pagata verranno unificate in una sola voce per sponsor (preventivato all\'11% dell\'importo confermato, sostenuto sulle tranche già incassate).', function () {
+      var orfane = [];
+      candidati.forEach(function (s) {
+        _trancheOf(s.id).forEach(function (t) {
+          if (t.ivaVoceSpesaId && orfane.indexOf(t.ivaVoceSpesaId) === -1) orfane.push(t.ivaVoceSpesaId);
+        });
+      });
+      var chain = Promise.resolve();
+      orfane.forEach(function (voceId) {
+        chain = chain.then(function () {
+          var v = _vociSpesa.find(function (x) { return x.id === voceId; });
+          if (!v) return null;
+          return db.collection('vociSpesa').doc(v.id).delete()
+            .then(function () { return _logWrite('voceSpesa', v.id, 'Spesa — ' + v.categoria, 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]); })
+            .then(function () { _vociSpesa = _vociSpesa.filter(function (x) { return x.id !== v.id; }); });
+        });
+      });
+      candidati.forEach(function (s) {
+        _trancheOf(s.id).forEach(function (t) {
+          if (t.ivaVoceSpesaId) {
+            chain = chain.then(function () { return db.collection('tranchePagamento').doc(t.id).update({ ivaVoceSpesaId: '' }); })
+              .then(function () { t.ivaVoceSpesaId = ''; });
+          }
+        });
+        chain = chain.then(function () { return _syncSponsorIva(s); });
+      });
+      chain.then(function () {
+        _renderSpese(); _renderBilancio(); _renderKanban();
+        alert('IVA ricalcolata per ' + candidati.length + ' sponsor.');
+      }).catch(function (e) { alert('Errore durante il ricalcolo: ' + e.message); });
+    });
+  };
+
   DG.toggleTranchePagata = function (id, checked) {
     var t = _tranche.find(function (x) { return x.id === id; });
     if (!t) return;

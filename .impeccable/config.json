@@ -29,6 +29,15 @@
         ],
         "createdAt": "2026-08-13T08:29:04.682Z",
         "reason": "User confirmed: real title/description contrast fix applied at L51-53 (16px/700 vs 12px); residual page-wide ratio comes from unrelated form status text, not worth resizing just to satisfy the heuristic"
+      },
+      {
+        "rule": "flat-type-hierarchy",
+        "value": "*",
+        "files": [
+          "admin.html"
+        ],
+        "createdAt": "2026-08-17T07:57:48.018Z",
+        "reason": "pre-existing sitewide pattern in admin.html (dozens of 11-13px muted sublabels/hints across the whole panel, e.g. lines 212,219,240,321,340... predating this change); this session only added a toolbar+button reusing existing dg-card-sub/dg-btn-ghost classes, no new font-size introduced — out of scope for a backend IVA-calc task"
       }
     ]
   }

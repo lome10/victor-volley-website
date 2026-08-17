@@ -1369,8 +1369,13 @@
             <div id="speseForecastTable" style="margin-top:14px"></div>
           </div>
           <div class="dg-card" style="margin-top:14px">
-            <div class="dg-card-title">Riepilogo IVA</div>
-            <div class="dg-card-sub">Voci IVA generate automaticamente: sulle tranche sponsor incassate (11%) e sulle voci di spesa con "IVA %" impostata. La scadenza di versamento è calcolata in automatico sui 4 trimestri classici (16 mag, 20 ago, 16 nov, 16 mar) in base alla data della voce, ma puoi forzarla a mano. Finché non spunti "Pagata" l'IVA resta nel totale Spese ma non conta come uscita nel Bilancio/flussi di cassa.</div>
+            <div class="dg-toolbar" style="justify-content:space-between;align-items:flex-start">
+              <div>
+                <div class="dg-card-title">Riepilogo IVA</div>
+                <div class="dg-card-sub">Voci IVA generate automaticamente: sugli sponsor "chiusi" (11% dell'importo confermato, già a preventivo alla chiusura; a sostenuto man mano che le tranche vengono incassate) e sulle voci di spesa con "IVA %" impostata. La scadenza di versamento è calcolata in automatico sui 4 trimestri classici (16 mag, 20 ago, 16 nov, 16 mar) in base alla data della voce, ma puoi forzarla a mano. Finché non spunti "Pagata" l'IVA resta nel totale Spese ma non conta come uscita nel Bilancio/flussi di cassa.</div>
+              </div>
+              <button class="dg-btn-ghost dg-btn-sm" style="flex-shrink:0" onclick="DG.migraIvaSponsor()" title="Da lanciare una volta per stagione: applica il calcolo IVA agli sponsor già chiusi in passato e unifica le vecchie voci generate per singola tranche">Ricalcola IVA sponsor</button>
+            </div>
             <div class="dg-stat-row" id="ivaRiepilogoStats" style="margin-top:14px"></div>
             <div class="dg-table-wrap" style="margin-top:14px">
               <table class="dg-table">
