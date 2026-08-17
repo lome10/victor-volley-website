@@ -3900,6 +3900,8 @@
     var label = 'Sponsorizzazione — ' + (az ? az.ragioneSociale : id);
     db.collection('sponsorizzazioni').doc(id).update(patch)
       .then(function () { return _logWrite('sponsorizzazione', id, label, 'update', _diff(old, patch, Object.keys(patch))); })
+      .then(function () { return _syncSponsorIva(s); })
+      .then(function () { _renderSpese(); _renderBilancio(); })
       .catch(function (e) { alert('Errore: ' + e.message); });
   }
 
@@ -4085,7 +4087,8 @@
     var label = 'Sponsorizzazione — ' + (az ? az.ragioneSociale : s.id);
     db.collection('sponsorizzazioni').doc(s.id).update(patch)
       .then(function () { return _logWrite('sponsorizzazione', s.id, label, 'update', _diff(old, patch, Object.keys(patch))); })
-      .then(function () { _renderKanban(); _renderStatCards(); _renderCharts(); _refreshAccordionSection('deal'); })
+      .then(function () { return _syncSponsorIva(s); })
+      .then(function () { _renderKanban(); _renderStatCards(); _renderCharts(); _refreshAccordionSection('deal'); _renderSpese(); _renderBilancio(); })
       .catch(function (e) { alert('Errore: ' + e.message); });
   };
 
@@ -4118,12 +4121,16 @@
     var az = _aziendaById(s.aziendaId);
     var label = 'Sponsorizzazione — ' + (az ? az.ragioneSociale : s.id);
     confirm('Eliminare definitivamente "' + label + '"? L\'operazione non è reversibile.', function () {
+      var figlia = s.ivaVoceSpesaId ? _vociSpesa.find(function (x) { return x.id === s.ivaVoceSpesaId; }) : null;
       db.collection('sponsorizzazioni').doc(s.id).delete()
         .then(function () { return _logWrite('sponsorizzazione', s.id, label, 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]); })
+        .then(function () { return figlia ? db.collection('vociSpesa').doc(figlia.id).delete()
+          .then(function () { return _logWrite('voceSpesa', figlia.id, 'Spesa — ' + figlia.categoria, 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]); }) : null; })
         .then(function () {
           _sponsorizzazioni = _sponsorizzazioni.filter(function (x) { return x.id !== s.id; });
+          if (figlia) _vociSpesa = _vociSpesa.filter(function (x) { return x.id !== figlia.id; });
           _closeDrawer();
-          _renderKanban(); _renderStatCards(); _renderCharts();
+          _renderKanban(); _renderStatCards(); _renderCharts(); _renderSpese(); _renderBilancio();
         })
         .catch(function (e) { alert('Errore: ' + e.message); });
     });
@@ -4227,36 +4234,63 @@
     var patch = { importo: importo, scadenza: scadenza, note: val('dgTrancheEditNote').trim() };
     var old = { importo: t.importo, scadenza: t.scadenza, note: t.note };
     var az = _aziendaById(_curAziendaId);
+    var s = _sponsorizzazioni.find(function (x) { return x.id === t.sponsorizzazioneId; });
     Object.assign(t, patch);
     db.collection('tranchePagamento').doc(id).update(patch)
       .then(function () { return _logWrite('tranchePagamento', id, 'Tranche — ' + (az ? az.ragioneSociale : ''), 'update', _diff(old, patch, Object.keys(patch))); })
+      .then(function () { return (t.pagato && s) ? _syncSponsorIva(s) : null; })
       .then(function () {
         _trancheEditingId = null;
-        _refreshAccordionSection('pagamenti'); _renderStatCards(); _renderCharts(); _renderCashflow(); _renderBilancio();
+        _refreshAccordionSection('pagamenti'); _renderStatCards(); _renderCharts(); _renderCashflow(); _renderBilancio(); _renderSpese();
       })
       .catch(function (e) { alert('Errore: ' + e.message); });
   };
 
-  /* Alla prima spunta "pagata" di una tranche genera in automatico la spesa
-     IVA corrispondente (11% dell'importo tranche, data da compilare a mano).
-     ivaVoceSpesaId sulla tranche evita di rigenerarla se viene despuntata e
-     rispuntata. */
-  function _generaSpesaIvaTranche(t, az) {
+  /* Voce di spesa "IVA <azienda>" collegata a uno sponsor (s.ivaVoceSpesaId): il preventivato
+     scatta all'11% dell'importoConfermato appena lo stato passa a "chiuso" (anche prima di
+     incassare), il sostenuto è l'11% delle sole tranche già segnate pagate. Si aggiorna ad ogni
+     cambio di stato/importo/tranche invece di generare righe nuove, e si rimuove da sola se
+     preventivato e sostenuto tornano entrambi a zero (es. lo stato torna indietro da "chiuso"). */
+  function _syncSponsorIva(s) {
+    var preventivato = s.stato === 'chiuso' ? Math.round((+s.importoConfermato || 0) * 0.11 * 100) / 100 : 0;
+    var pagate = _trancheOf(s.id).filter(function (t) { return t.pagato; });
+    var incassato = pagate.reduce(function (sum, t) { return sum + (+t.importo || 0); }, 0);
+    var sostenuto = Math.round(incassato * 0.11 * 100) / 100;
+    var figlia = s.ivaVoceSpesaId ? _vociSpesa.find(function (x) { return x.id === s.ivaVoceSpesaId; }) : null;
+    var az = _aziendaById(s.aziendaId);
     var nome = ('IVA ' + (az ? az.ragioneSociale : '')).trim();
-    var importoIva = Math.round((+t.importo || 0) * 0.11 * 100) / 100;
-    var auto = _trimestreIvaDaData('');
+
+    if (preventivato <= 0 && sostenuto <= 0) {
+      if (!figlia) return Promise.resolve();
+      return db.collection('vociSpesa').doc(figlia.id).delete()
+        .then(function () { return _logWrite('voceSpesa', figlia.id, 'Spesa — ' + figlia.categoria, 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]); })
+        .then(function () { return db.collection('sponsorizzazioni').doc(s.id).update({ ivaVoceSpesaId: '' }); })
+        .then(function () {
+          _vociSpesa = _vociSpesa.filter(function (x) { return x.id !== figlia.id; });
+          s.ivaVoceSpesaId = '';
+        });
+    }
+
+    if (figlia) {
+      var old = { categoria: figlia.categoria, importoPreventivato: figlia.importoPreventivato, importoSostenuto: figlia.importoSostenuto };
+      var patch = { categoria: nome, importoPreventivato: preventivato, importoSostenuto: sostenuto };
+      return db.collection('vociSpesa').doc(figlia.id).update(patch)
+        .then(function () { return _logWrite('voceSpesa', figlia.id, 'Spesa — ' + nome, 'update', _diff(old, patch, Object.keys(patch))); })
+        .then(function () { Object.assign(figlia, patch); });
+    }
+
     var data = {
-      seasonId: _currentSeasonId, categoria: nome, categoriaSpesaId: '',
-      importoPreventivato: 0, importoSostenuto: importoIva, dataSpesa: '',
-      note: 'IVA 11% generata automaticamente sulla tranche di €' + Number(t.importo || 0).toLocaleString('it-IT'),
-      isIva: true, pagata: false, ivaTrimestre: auto ? auto.trimestre : '', ivaScadenza: auto ? auto.scadenza : '', ivaScadenzaManuale: false
+      seasonId: s.seasonId, categoria: nome, categoriaSpesaId: '',
+      importoPreventivato: preventivato, importoSostenuto: sostenuto, dataSpesa: '',
+      note: 'IVA 11% generata automaticamente sullo sponsor "' + nome.replace(/^IVA /, '') + '" (preventivo alla chiusura, saldo sulle tranche incassate)',
+      isIva: true, pagata: false, ivaTrimestre: '', ivaScadenza: '', ivaScadenzaManuale: false
     };
     var ref = db.collection('vociSpesa').doc();
     return ref.set(data).then(function () {
       data.id = ref.id;
       _vociSpesa.push(data);
-      t.ivaVoceSpesaId = ref.id;
-      return db.collection('tranchePagamento').doc(t.id).update({ ivaVoceSpesaId: ref.id });
+      s.ivaVoceSpesaId = ref.id;
+      return db.collection('sponsorizzazioni').doc(s.id).update({ ivaVoceSpesaId: ref.id });
     }).then(function () {
       return _logWrite('voceSpesa', ref.id, 'Spesa — ' + nome, 'create', _diff({}, data, Object.keys(data)));
     });
@@ -4268,21 +4302,27 @@
     var old = { pagato: !!t.pagato };
     t.pagato = checked;
     var az = _aziendaById(_curAziendaId);
+    var s = _sponsorizzazioni.find(function (x) { return x.id === t.sponsorizzazioneId; });
     db.collection('tranchePagamento').doc(id).update({ pagato: checked })
       .then(function () { return _logWrite('tranchePagamento', id, 'Tranche — ' + (az ? az.ragioneSociale : ''), 'update', _diff(old, { pagato: checked }, ['pagato'])); })
-      .then(function () { if (checked && !t.ivaVoceSpesaId) return _generaSpesaIvaTranche(t, az); })
+      .then(function () { return s ? _syncSponsorIva(s) : null; })
       .then(function () { _refreshAccordionSection('pagamenti'); _renderStatCards(); _renderCharts(); _renderCashflow(); _renderBilancio(); _renderSpese(); })
       .catch(function (e) { alert('Errore: ' + e.message); });
   };
 
   DG.deleteTranche = function (id) {
     confirm('Eliminare questa tranche?', function () {
+      var t = _tranche.find(function (x) { return x.id === id; });
+      var s = t ? _sponsorizzazioni.find(function (x) { return x.id === t.sponsorizzazioneId; }) : null;
       var az = _aziendaById(_curAziendaId);
       db.collection('tranchePagamento').doc(id).delete()
         .then(function () { return _logWrite('tranchePagamento', id, 'Tranche — ' + (az ? az.ragioneSociale : ''), 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]); })
         .then(function () {
           _tranche = _tranche.filter(function (x) { return x.id !== id; });
-          _refreshAccordionSection('pagamenti'); _renderStatCards(); _renderCharts(); _renderCashflow(); _renderBilancio();
+          return (t && t.pagato && s) ? _syncSponsorIva(s) : null;
+        })
+        .then(function () {
+          _refreshAccordionSection('pagamenti'); _renderStatCards(); _renderCharts(); _renderCashflow(); _renderBilancio(); _renderSpese();
         })
         .catch(function (e) { alert('Errore: ' + e.message); });
     });
