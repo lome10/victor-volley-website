@@ -1304,9 +1304,15 @@
           </div>
 
           <div class="dg-card dg-pezzi-card" style="margin-top:16px">
-            <div class="dg-card-title">Materiali sponsor</div>
-            <div class="dg-card-sub">Pezzi da realizzare per ciascuno sponsor chiuso di questa stagione — clicca una cella per mettere/togliere la "x"</div>
+            <div class="dg-toolbar">
+              <div>
+                <div class="dg-card-title">Materiali sponsor</div>
+                <div class="dg-card-sub">Pezzi da realizzare per ciascuno sponsor chiuso di questa stagione — assegna una dimensione per calcolare il prezzo + IVA</div>
+              </div>
+              <button id="dimensioniModalBtn" class="dg-btn-ghost dg-btn-sm">Listino dimensioni</button>
+            </div>
             <div class="dg-table-wrap" id="pezziSponsorWrap" style="margin-top:14px"></div>
+            <div id="pezziSponsorRiepilogo" style="margin-top:14px"></div>
           </div>
         </div>
 
@@ -1859,6 +1865,31 @@
     </div>
     <div class="dg-modal-actions">
       <button id="manageCategorieSpesaDone" class="dg-btn-ghost">Chiudi</button>
+    </div>
+  </div>
+
+  <!-- MODAL: gestione listino dimensioni stampe (Materiali sponsor) -->
+  <div id="dimensioniModal" class="dg-modal is-hidden">
+    <div class="dg-modal-head">
+      <h3>Listino dimensioni stampe</h3>
+      <button id="dimensioniModalClose" class="dg-btn-icon-only" aria-label="Chiudi">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="dg-modal-body">
+      <div id="dimensioniModalList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px"></div>
+      <div class="dg-form-group">
+        <label class="dg-form-label">Nuova dimensione</label>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="dimensioneNewNomeInput" class="dg-form-input" placeholder="es. 70x100 cm" style="flex:1;min-width:0">
+          <input type="number" id="dimensioneNewPrezzoInput" class="dg-form-input" placeholder="Prezzo €" min="0" step="0.5" style="width:110px;flex-shrink:0">
+          <button id="dimensioneAddBtn" class="dg-btn-primary" style="width:auto;flex-shrink:0">Aggiungi</button>
+        </div>
+        <p class="dg-card-sub" style="margin-top:4px">Prezzo IVA 22% esclusa. Le stampe già assegnate mantengono il prezzo impostato al momento, anche se in seguito modifichi qui il listino.</p>
+      </div>
+    </div>
+    <div class="dg-modal-actions">
+      <button id="dimensioniModalDone" class="dg-btn-ghost">Chiudi</button>
     </div>
   </div>
 

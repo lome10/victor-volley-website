@@ -3752,18 +3752,26 @@
     _renderPezziSponsor();
   }
 
-  /* ---- Materiali sponsor — tabella pezzi da realizzare per sponsor chiuso ---- */
+  /* ---- Materiali sponsor — tabella pezzi da realizzare per sponsor chiuso ----
+     Ogni cella assegna una dimensione (dal listino catalogoDimensioni della stagione),
+     il cui prezzo viene "fotografato" sulla cella (sponsorizzazione.pezzi[pezzo] = {dimensione, prezzo})
+     così un ritocco successivo del listino non altera le stampe già assegnate.
+     Il totale imponibile confluisce in automatico in una voce di spesa "Materiali sponsor"
+     con IVA 22% figlia, tramite _syncMaterialiSpesa() — stesso meccanismo IVA già usato per gli sponsor. */
   function _renderPezziSponsor() {
     var wrap = document.getElementById('pezziSponsorWrap');
+    var riepilogoEl = document.getElementById('pezziSponsorRiepilogo');
     if (!wrap) return;
     var season = _seasons.find(function (s) { return s.id === _currentSeasonId; }) || {};
     var pezzi = season.pezziSponsor || [];
+    var catalogo = season.catalogoDimensioni || [];
     var rows = _sponsorizzazioni.filter(function (s) { return s.seasonId === _currentSeasonId && s.stato === 'chiuso'; })
       .map(function (s) { return { s: s, azienda: _aziendaById(s.aziendaId) }; })
       .sort(function (a, b) { return (a.azienda ? a.azienda.ragioneSociale : '').localeCompare(b.azienda ? b.azienda.ragioneSociale : ''); });
 
     if (!rows.length) {
       wrap.innerHTML = '<div class="dg-empty">Nessuno sponsor chiuso in questa stagione.</div>';
+      if (riepilogoEl) riepilogoEl.innerHTML = '';
       return;
     }
 
@@ -3777,19 +3785,71 @@
     var body = rows.map(function (r) {
       var nome = r.azienda ? r.azienda.ragioneSociale : '—';
       var cells = pezzi.map(function (p) {
-        var on = !!(r.s.pezzi && r.s.pezzi[p]);
-        return '<td class="dg-pezzi-cell" data-id="' + r.s.id + '" data-pezzo="' + esc(p) + '">' + (on ? '✕' : '') + '</td>';
+        var cell = r.s.pezzi && r.s.pezzi[p];
+        var cur = cell && cell.dimensione ? cell.dimensione : '';
+        var priceLabel = cell && cell.dimensione ? '<div class="dg-pezzi-price">€' + Number(cell.prezzo || 0).toLocaleString('it-IT', { minimumFractionDigits: 2 }) + ' +iva</div>' : '';
+        return '<td class="dg-pezzi-cell">' +
+          '<select class="dg-pezzi-select" data-id="' + r.s.id + '" data-pezzo="' + esc(p) + '"' + (!catalogo.length ? ' disabled title="Crea prima il listino dimensioni"' : '') + '>' +
+          _pezzoSelectOptionsHtml(catalogo, cur) + '</select>' + priceLabel + '</td>';
       }).join('');
       return '<tr><td>' + esc(nome) + '</td>' + cells + '<td></td></tr>';
     }).join('');
 
     wrap.innerHTML = '<table class="dg-table dg-pezzi-table"><thead>' + head + '</thead><tbody>' + body + '</tbody></table>';
     _attachPezziSponsorEvents(wrap);
+    _renderPezziRiepilogo(rows, riepilogoEl);
+    _syncMaterialiSpesa();
+  }
+
+  function _pezzoSelectOptionsHtml(catalogo, cur) {
+    var found = false;
+    var opts = '<option value=""' + (!cur ? ' selected' : '') + '>—</option>';
+    catalogo.forEach(function (d) {
+      var isSel = d.nome === cur;
+      if (isSel) found = true;
+      opts += '<option value="' + esc(d.nome) + '"' + (isSel ? ' selected' : '') + '>' + esc(d.nome) + ' · €' + Number(d.prezzo || 0).toLocaleString('it-IT') + '</option>';
+    });
+    if (cur && !found) opts += '<option value="' + esc(cur) + '" selected>' + esc(cur) + ' (rimossa dal listino)</option>';
+    return opts;
+  }
+
+  function _renderPezziRiepilogo(rows, el) {
+    if (!el) return;
+    var perDimensione = {};
+    var imponibile = 0;
+    rows.forEach(function (r) {
+      if (!r.s.pezzi) return;
+      Object.keys(r.s.pezzi).forEach(function (k) {
+        var cell = r.s.pezzi[k];
+        if (!cell || !cell.dimensione) return;
+        var prezzo = +cell.prezzo || 0;
+        imponibile += prezzo;
+        var d = perDimensione[cell.dimensione] || (perDimensione[cell.dimensione] = { count: 0, subtotale: 0 });
+        d.count++; d.subtotale += prezzo;
+      });
+    });
+    if (!imponibile) { el.innerHTML = ''; return; }
+
+    var iva = Math.round(imponibile * 22) / 100;
+    var totale = Math.round((imponibile + iva) * 100) / 100;
+    var fmt = function (n) { return '€' + Number(n).toLocaleString('it-IT', { minimumFractionDigits: 2 }); };
+
+    var righe = Object.keys(perDimensione).sort().map(function (nome) {
+      var d = perDimensione[nome];
+      return '<div class="dg-pezzi-riepilogo-row"><span>' + esc(nome) + ' × ' + d.count + '</span><span>' + fmt(d.subtotale) + '</span></div>';
+    }).join('');
+
+    el.innerHTML = '<div class="dg-pezzi-riepilogo">' +
+      '<div class="dg-pezzi-riepilogo-title">Riepilogo stampe</div>' + righe +
+      '<div class="dg-pezzi-riepilogo-row dg-pezzi-riepilogo-total"><span>Imponibile</span><span>' + fmt(imponibile) + '</span></div>' +
+      '<div class="dg-pezzi-riepilogo-row"><span>IVA 22%</span><span>' + fmt(iva) + '</span></div>' +
+      '<div class="dg-pezzi-riepilogo-row dg-pezzi-riepilogo-total"><span>Totale</span><span>' + fmt(totale) + '</span></div>' +
+      '</div>';
   }
 
   function _attachPezziSponsorEvents(wrap) {
-    wrap.querySelectorAll('.dg-pezzi-cell').forEach(function (td) {
-      td.addEventListener('click', function () { _togglePezzoSponsor(td.dataset.id, td.dataset.pezzo); });
+    wrap.querySelectorAll('.dg-pezzi-select').forEach(function (sel) {
+      sel.addEventListener('change', function () { _onPezzoDimensioneChange(sel); });
     });
     wrap.querySelectorAll('.dg-pezzi-th-remove').forEach(function (btn) {
       btn.addEventListener('click', function (e) { e.stopPropagation(); _removePezzoSponsor(btn.dataset.pezzo); });
@@ -3798,12 +3858,19 @@
     if (addBtn) addBtn.addEventListener('click', _addPezzoSponsor);
   }
 
-  function _togglePezzoSponsor(id, pezzo) {
+  function _onPezzoDimensioneChange(sel) {
+    var id = sel.dataset.id, pezzo = sel.dataset.pezzo, nome = sel.value;
     var s = _sponsorizzazioni.find(function (x) { return x.id === id; });
     if (!s) return;
+    var season = _seasons.find(function (x) { return x.id === _currentSeasonId; }) || {};
     var before = s.pezzi || {};
     var after = Object.assign({}, before);
-    if (after[pezzo]) delete after[pezzo]; else after[pezzo] = true;
+    if (!nome) {
+      delete after[pezzo];
+    } else {
+      var dim = (season.catalogoDimensioni || []).find(function (d) { return d.nome === nome; });
+      after[pezzo] = { dimensione: nome, prezzo: dim ? (+dim.prezzo || 0) : 0 };
+    }
     s.pezzi = after;
     _renderPezziSponsor();
     var az = _aziendaById(s.aziendaId);
@@ -3832,7 +3899,7 @@
   function _removePezzoSponsor(pezzo) {
     var season = _seasons.find(function (s) { return s.id === _currentSeasonId; });
     if (!season) return;
-    confirm('Rimuovere la colonna "' + pezzo + '"? La "x" impostata per ogni sponsor su questo pezzo andrà persa.', function () {
+    confirm('Rimuovere la colonna "' + pezzo + '"? Le eventuali dimensioni assegnate per questo pezzo andranno perse.', function () {
       var pezzi = (season.pezziSponsor || []).filter(function (p) { return p !== pezzo; });
       season.pezziSponsor = pezzi;
       var interessati = _sponsorizzazioni.filter(function (s) { return s.seasonId === _currentSeasonId && s.pezzi && s.pezzi[pezzo]; });
@@ -3847,6 +3914,127 @@
       _renderPezziSponsor();
       batch.commit().catch(function (e) { alert('Errore: ' + e.message); });
     });
+  }
+
+  /* ---- Listino dimensioni stampe (catalogoDimensioni della stagione) ---- */
+  function _renderDimensioniModalList() {
+    var list = document.getElementById('dimensioniModalList');
+    if (!list) return;
+    var season = _seasons.find(function (s) { return s.id === _currentSeasonId; }) || {};
+    var cat = season.catalogoDimensioni || [];
+    list.innerHTML = cat.length ? cat.map(function (d, i) {
+      return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:#f8fafc;border-radius:8px">' +
+        '<span>' + esc(d.nome) + ' — €' + Number(d.prezzo || 0).toLocaleString('it-IT', { minimumFractionDigits: 2 }) + '</span>' +
+        '<button class="dg-btn-icon-only dg-dimensione-del" title="Elimina" data-idx="' + i + '">' + _delIconSm() + '</button>' +
+        '</div>';
+    }).join('') : '<p class="dg-muted">Nessuna dimensione ancora.</p>';
+    list.querySelectorAll('.dg-dimensione-del').forEach(function (btn) {
+      btn.addEventListener('click', function () { _deleteDimensione(+btn.dataset.idx); });
+    });
+  }
+
+  function _addDimensione() {
+    var nomeInput = document.getElementById('dimensioneNewNomeInput');
+    var prezzoInput = document.getElementById('dimensioneNewPrezzoInput');
+    var nome = nomeInput.value.trim();
+    var prezzo = +prezzoInput.value || 0;
+    if (!nome) return;
+    var season = _seasons.find(function (s) { return s.id === _currentSeasonId; });
+    if (!season) return;
+    var cat = (season.catalogoDimensioni || []).slice();
+    if (cat.some(function (d) { return d.nome.toLowerCase() === nome.toLowerCase(); })) { alert('Esiste già una dimensione con questo nome.'); return; }
+    cat.push({ nome: nome, prezzo: prezzo });
+    season.catalogoDimensioni = cat;
+    nomeInput.value = ''; prezzoInput.value = '';
+    _renderDimensioniModalList();
+    _renderPezziSponsor();
+    db.collection('budgetSeasons').doc(season.id).update({ catalogoDimensioni: cat })
+      .catch(function (e) { alert('Errore: ' + e.message); });
+  }
+
+  function _deleteDimensione(idx) {
+    var season = _seasons.find(function (s) { return s.id === _currentSeasonId; });
+    if (!season) return;
+    var cat = (season.catalogoDimensioni || []).slice();
+    var d = cat[idx];
+    if (!d) return;
+    confirm('Rimuovere la dimensione "' + d.nome + '" dal listino? Le stampe già assegnate con questa dimensione mantengono comunque il prezzo già impostato.', function () {
+      cat.splice(idx, 1);
+      season.catalogoDimensioni = cat;
+      _renderDimensioniModalList();
+      _renderPezziSponsor();
+      db.collection('budgetSeasons').doc(season.id).update({ catalogoDimensioni: cat })
+        .catch(function (e) { alert('Errore: ' + e.message); });
+    });
+  }
+
+  /* ---- Voce di spesa "Materiali sponsor" — somma automaticamente il netto delle stampe
+     assegnate (stato chiuso, stagione corrente) e mantiene allineata la voce di spesa
+     tramite _syncSpesaIva (IVA 22% figlia, stesso meccanismo generico usato per ogni voce). ---- */
+  var _materialiSyncBusy = false;
+  function _totaleMaterialiSponsor() {
+    var tot = 0;
+    _sponsorizzazioni.filter(function (s) { return s.seasonId === _currentSeasonId && s.stato === 'chiuso'; })
+      .forEach(function (s) {
+        if (!s.pezzi) return;
+        Object.keys(s.pezzi).forEach(function (k) {
+          var cell = s.pezzi[k];
+          if (cell && cell.dimensione) tot += (+cell.prezzo || 0);
+        });
+      });
+    return Math.round(tot * 100) / 100;
+  }
+
+  function _syncMaterialiSpesa() {
+    if (_materialiSyncBusy) return;
+    var season = _seasons.find(function (s) { return s.id === _currentSeasonId; });
+    if (!season) return;
+    var totale = _totaleMaterialiSponsor();
+    var v = season.materialiVoceSpesaId ? _vociSpesa.find(function (x) { return x.id === season.materialiVoceSpesaId; }) : null;
+    if (!totale && !v) return;
+    if (v && v.importoSostenuto === totale) return;
+
+    _materialiSyncBusy = true;
+    var release = function () { _materialiSyncBusy = false; _renderSpese(); _renderStatCards(); _renderBilancio(); };
+    var p;
+
+    if (!totale) {
+      var figlia = v.ivaVoceSpesaId ? _vociSpesa.find(function (x) { return x.id === v.ivaVoceSpesaId; }) : null;
+      p = db.collection('vociSpesa').doc(v.id).delete()
+        .then(function () { return _logWrite('voceSpesa', v.id, 'Spesa — ' + v.categoria, 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]); })
+        .then(function () { return figlia ? db.collection('vociSpesa').doc(figlia.id).delete()
+          .then(function () { return _logWrite('voceSpesa', figlia.id, 'Spesa — ' + figlia.categoria, 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]); }) : null; })
+        .then(function () {
+          _vociSpesa = _vociSpesa.filter(function (x) { return x.id !== v.id && (!figlia || x.id !== figlia.id); });
+          season.materialiVoceSpesaId = '';
+          return db.collection('budgetSeasons').doc(season.id).update({ materialiVoceSpesaId: '' });
+        });
+    } else if (v) {
+      var old = { importoSostenuto: v.importoSostenuto || 0 };
+      v.importoSostenuto = totale;
+      p = db.collection('vociSpesa').doc(v.id).update({ importoSostenuto: totale })
+        .then(function () { return _logWrite('voceSpesa', v.id, 'Spesa — ' + v.categoria, 'update', _diff(old, { importoSostenuto: totale }, ['importoSostenuto'])); })
+        .then(function () { return _syncSpesaIva(v); });
+    } else {
+      var data = {
+        seasonId: _currentSeasonId, categoria: 'Materiali sponsor', categoriaSpesaId: '',
+        importoPreventivato: 0, importoSostenuto: totale, ivaAliquota: 22, dataSpesa: '',
+        note: 'Totale automatico delle stampe assegnate agli sponsor chiusi (tabella "Materiali sponsor")'
+      };
+      var ref = db.collection('vociSpesa').doc();
+      p = ref.set(data).then(function () {
+        data.id = ref.id;
+        _vociSpesa.push(data);
+        season.materialiVoceSpesaId = ref.id;
+        return db.collection('budgetSeasons').doc(season.id).update({ materialiVoceSpesaId: ref.id });
+      }).then(function () {
+        return _logWrite('voceSpesa', ref.id, 'Spesa — Materiali sponsor', 'create', _diff({}, data, Object.keys(data)));
+      }).then(function () {
+        return _syncSpesaIva(data);
+      });
+    }
+
+    p.then(release, function (e) { release(); alert('Errore aggiornamento spesa materiali: ' + e.message); });
   }
 
   function _attachKanbanEvents() {
@@ -5770,6 +5958,16 @@
     document.getElementById('categoriaSpesaAddBtn').addEventListener('click', DG.addCategoriaSpesa);
     document.getElementById('manageCategorieSpesaClose').addEventListener('click', function () { _closeBudgetModal('manageCategorieSpesaModal'); });
     document.getElementById('manageCategorieSpesaDone').addEventListener('click', function () { _closeBudgetModal('manageCategorieSpesaModal'); });
+
+    document.getElementById('dimensioniModalBtn').addEventListener('click', function () {
+      _renderDimensioniModalList();
+      document.getElementById('dimensioneNewNomeInput').value = '';
+      document.getElementById('dimensioneNewPrezzoInput').value = '';
+      _openBudgetModal('dimensioniModal');
+    });
+    document.getElementById('dimensioneAddBtn').addEventListener('click', _addDimensione);
+    document.getElementById('dimensioniModalClose').addEventListener('click', function () { _closeBudgetModal('dimensioniModal'); });
+    document.getElementById('dimensioniModalDone').addEventListener('click', function () { _closeBudgetModal('dimensioniModal'); });
 
     document.getElementById('speseFilterCategoria').addEventListener('change', function () {
       _speseFilterCategoriaId = this.value;
