@@ -3786,11 +3786,10 @@
       var nome = r.azienda ? r.azienda.ragioneSociale : '—';
       var cells = pezzi.map(function (p) {
         var cell = r.s.pezzi && r.s.pezzi[p];
-        var cur = cell && cell.dimensione ? cell.dimensione : '';
-        var priceLabel = cell && cell.dimensione ? '<div class="dg-pezzi-price">€' + Number(cell.prezzo || 0).toLocaleString('it-IT', { minimumFractionDigits: 2 }) + ' +iva</div>' : '';
-        return '<td class="dg-pezzi-cell">' +
-          '<select class="dg-pezzi-select" data-id="' + r.s.id + '" data-pezzo="' + esc(p) + '"' + (!catalogo.length ? ' disabled title="Crea prima il listino dimensioni"' : '') + '>' +
-          _pezzoSelectOptionsHtml(catalogo, cur) + '</select>' + priceLabel + '</td>';
+        var chip = cell && cell.dimensione
+          ? '<span class="dg-pezzi-chip">' + esc(cell.dimensione) + '<small>€' + Number(cell.prezzo || 0).toLocaleString('it-IT', { minimumFractionDigits: 2 }) + '</small></span>'
+          : '<span class="dg-pezzi-chip dg-pezzi-chip--empty">+</span>';
+        return '<td class="dg-pezzi-cell' + (!catalogo.length ? ' is-disabled' : '') + '" data-id="' + r.s.id + '" data-pezzo="' + esc(p) + '">' + chip + '</td>';
       }).join('');
       return '<tr><td>' + esc(nome) + '</td>' + cells + '<td></td></tr>';
     }).join('');
@@ -3799,18 +3798,6 @@
     _attachPezziSponsorEvents(wrap);
     _renderPezziRiepilogo(rows, riepilogoEl);
     _syncMaterialiSpesa();
-  }
-
-  function _pezzoSelectOptionsHtml(catalogo, cur) {
-    var found = false;
-    var opts = '<option value=""' + (!cur ? ' selected' : '') + '>—</option>';
-    catalogo.forEach(function (d) {
-      var isSel = d.nome === cur;
-      if (isSel) found = true;
-      opts += '<option value="' + esc(d.nome) + '"' + (isSel ? ' selected' : '') + '>' + esc(d.nome) + ' · €' + Number(d.prezzo || 0).toLocaleString('it-IT') + '</option>';
-    });
-    if (cur && !found) opts += '<option value="' + esc(cur) + '" selected>' + esc(cur) + ' (rimossa dal listino)</option>';
-    return opts;
   }
 
   function _renderPezziRiepilogo(rows, el) {
@@ -3848,8 +3835,8 @@
   }
 
   function _attachPezziSponsorEvents(wrap) {
-    wrap.querySelectorAll('.dg-pezzi-select').forEach(function (sel) {
-      sel.addEventListener('change', function () { _onPezzoDimensioneChange(sel); });
+    wrap.querySelectorAll('.dg-pezzi-cell').forEach(function (td) {
+      td.addEventListener('click', function () { _openPezzoPopover(td); });
     });
     wrap.querySelectorAll('.dg-pezzi-th-remove').forEach(function (btn) {
       btn.addEventListener('click', function (e) { e.stopPropagation(); _removePezzoSponsor(btn.dataset.pezzo); });
@@ -3858,8 +3845,52 @@
     if (addBtn) addBtn.addEventListener('click', _addPezzoSponsor);
   }
 
-  function _onPezzoDimensioneChange(sel) {
-    var id = sel.dataset.id, pezzo = sel.dataset.pezzo, nome = sel.value;
+  /* ---- Popover leggero per assegnare la dimensione a una cella (al posto di una select fissa in ogni cella) ---- */
+  function _closePezzoPopover() {
+    var pop = document.getElementById('dgPezziPopover');
+    if (pop) { pop.classList.add('is-hidden'); pop.innerHTML = ''; }
+    document.removeEventListener('click', _pezzoPopoverOutsideClick, true);
+  }
+
+  function _pezzoPopoverOutsideClick(e) {
+    var pop = document.getElementById('dgPezziPopover');
+    if (pop && !pop.contains(e.target)) _closePezzoPopover();
+  }
+
+  function _openPezzoPopover(td) {
+    var season = _seasons.find(function (s) { return s.id === _currentSeasonId; }) || {};
+    var catalogo = season.catalogoDimensioni || [];
+    if (!catalogo.length) { alert('Crea prima il listino dimensioni (pulsante "Listino dimensioni" in alto a destra).'); return; }
+
+    var id = td.dataset.id, pezzo = td.dataset.pezzo;
+    var s = _sponsorizzazioni.find(function (x) { return x.id === id; });
+    var cur = s && s.pezzi && s.pezzi[pezzo] ? s.pezzi[pezzo].dimensione : '';
+
+    var pop = document.getElementById('dgPezziPopover');
+    var items = catalogo.map(function (d) {
+      return '<div class="dg-pezzi-popover-item' + (d.nome === cur ? ' is-active' : '') + '" data-nome="' + esc(d.nome) + '"><span>' + esc(d.nome) + '</span><span>€' + Number(d.prezzo || 0).toLocaleString('it-IT') + '</span></div>';
+    }).join('');
+    if (cur) items += '<div class="dg-pezzi-popover-item dg-pezzi-popover-item--clear" data-nome="">Rimuovi assegnazione</div>';
+    pop.innerHTML = items;
+
+    var rect = td.getBoundingClientRect();
+    pop.classList.remove('is-hidden');
+    var popW = pop.offsetWidth || 170;
+    var spazioSotto = window.innerHeight - rect.bottom;
+    pop.style.left = Math.max(4, Math.min(rect.left, window.innerWidth - popW - 4)) + 'px';
+    pop.style.top = (spazioSotto > pop.offsetHeight + 8 ? rect.bottom + 4 : rect.top - pop.offsetHeight - 4) + 'px';
+
+    pop.querySelectorAll('.dg-pezzi-popover-item').forEach(function (it) {
+      it.addEventListener('click', function () {
+        _setPezzoDimensione(id, pezzo, it.dataset.nome);
+        _closePezzoPopover();
+      });
+    });
+
+    setTimeout(function () { document.addEventListener('click', _pezzoPopoverOutsideClick, true); }, 0);
+  }
+
+  function _setPezzoDimensione(id, pezzo, nome) {
     var s = _sponsorizzazioni.find(function (x) { return x.id === id; });
     if (!s) return;
     var season = _seasons.find(function (x) { return x.id === _currentSeasonId; }) || {};
