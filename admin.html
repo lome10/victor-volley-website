@@ -1307,9 +1307,12 @@
             <div class="dg-toolbar">
               <div>
                 <div class="dg-card-title">Materiali sponsor</div>
-                <div class="dg-card-sub">Pezzi da realizzare per ciascuno sponsor chiuso di questa stagione — assegna una dimensione per calcolare il prezzo + IVA</div>
+                <div class="dg-card-sub">Pezzi da realizzare per gli sponsor chiusi di questa stagione (o aggiunti a mano con "+ Sponsor") — assegna una dimensione per calcolare il prezzo + IVA</div>
               </div>
-              <button id="dimensioniModalBtn" class="dg-btn-ghost dg-btn-sm">Listino dimensioni</button>
+              <div style="display:flex;gap:8px">
+                <button id="aggiungiSponsorPezziBtn" class="dg-btn-ghost dg-btn-sm">+ Sponsor</button>
+                <button id="dimensioniModalBtn" class="dg-btn-ghost dg-btn-sm">Listino dimensioni</button>
+              </div>
             </div>
             <div class="dg-table-wrap" id="pezziSponsorWrap" style="margin-top:14px"></div>
             <div id="pezziSponsorRiepilogo" style="margin-top:14px"></div>

@@ -3766,18 +3766,18 @@
     var season = _seasons.find(function (s) { return s.id === _currentSeasonId; }) || {};
     var pezzi = season.pezziSponsor || [];
     var catalogo = season.catalogoDimensioni || [];
-    var chiusi = _sponsorizzazioni.filter(function (s) { return s.seasonId === _currentSeasonId && s.stato === 'chiuso'; });
-    var rows = chiusi.filter(function (s) { return !s.escludiMateriali; })
+    var visibili = _sponsorizzazioni.filter(function (s) { return s.seasonId === _currentSeasonId && (s.stato === 'chiuso' || s.includiMateriali); });
+    var rows = visibili.filter(function (s) { return !s.escludiMateriali; })
       .map(function (s) { return { s: s, azienda: _aziendaById(s.aziendaId) }; })
       .sort(function (a, b) { return (a.azienda ? a.azienda.ragioneSociale : '').localeCompare(b.azienda ? b.azienda.ragioneSociale : ''); });
-    var esclusi = chiusi.filter(function (s) { return s.escludiMateriali; })
+    var esclusi = visibili.filter(function (s) { return s.escludiMateriali; })
       .map(function (s) { return { s: s, azienda: _aziendaById(s.aziendaId) }; })
       .sort(function (a, b) { return (a.azienda ? a.azienda.ragioneSociale : '').localeCompare(b.azienda ? b.azienda.ragioneSociale : ''); });
 
     _renderPezziEsclusi(esclusi, esclusiEl);
 
     if (!rows.length) {
-      wrap.innerHTML = '<div class="dg-empty">' + (esclusi.length ? 'Tutti gli sponsor chiusi sono stati esclusi da questa tabella.' : 'Nessuno sponsor chiuso in questa stagione.') + '</div>';
+      wrap.innerHTML = '<div class="dg-empty">' + (esclusi.length ? 'Tutti gli sponsor sono stati esclusi da questa tabella.' : 'Nessuno sponsor in questa tabella — aggiungine uno con "+ Sponsor".') + '</div>';
       if (riepilogoEl) riepilogoEl.innerHTML = '';
       return;
     }
@@ -3791,14 +3791,15 @@
 
     var body = rows.map(function (r) {
       var nome = r.azienda ? r.azienda.ragioneSociale : '—';
+      var badge = r.s.stato !== 'chiuso' ? ' <span class="dg-badge dg-badge--' + r.s.stato + '" style="margin-left:6px">' + esc(_statoLabel(r.s.stato)) + '</span>' : '';
       var cells = pezzi.map(function (p) {
         var cell = r.s.pezzi && r.s.pezzi[p];
         var chip = cell && cell.dimensione
-          ? '<span class="dg-pezzi-chip">' + esc(cell.dimensione) + '<small>€' + Number(cell.prezzo || 0).toLocaleString('it-IT', { minimumFractionDigits: 2 }) + '</small></span>'
+          ? '<span class="dg-pezzi-chip" title="' + esc(cell.dimensione) + '">€' + Number(cell.prezzo || 0).toLocaleString('it-IT', { minimumFractionDigits: 2 }) + '</span>'
           : '<span class="dg-pezzi-chip dg-pezzi-chip--empty">+</span>';
         return '<td class="dg-pezzi-cell' + (!catalogo.length ? ' is-disabled' : '') + '" data-id="' + r.s.id + '" data-pezzo="' + esc(p) + '">' + chip + '</td>';
       }).join('');
-      return '<tr><td>' + esc(nome) + '</td>' + cells +
+      return '<tr><td>' + esc(nome) + badge + '</td>' + cells +
         '<td><button type="button" class="dg-pezzi-row-remove" data-id="' + r.s.id + '" title="Rimuovi sponsor da questa tabella">✕</button></td></tr>';
     }).join('');
 
@@ -3848,6 +3849,52 @@
     _renderPezziSponsor();
     db.collection('sponsorizzazioni').doc(id).update({ escludiMateriali: false })
       .then(function () { return _logWrite('sponsorizzazione', id, label, 'update', [{ campo: 'escludiMateriali', prima: true, dopo: false }]); })
+      .catch(function (e) { alert('Errore: ' + e.message); });
+  }
+
+  /* ---- "+ Sponsor" — aggiunge manualmente alla tabella uno sponsor non ancora chiuso
+     (prospect/contattato/in trattativa/rifiutato), per pianificare i materiali in anticipo. ---- */
+  function _sponsorPezziCandidati() {
+    return _sponsorizzazioni.filter(function (s) {
+      return s.seasonId === _currentSeasonId && s.stato !== 'chiuso' && !s.includiMateriali;
+    }).map(function (s) { return { s: s, azienda: _aziendaById(s.aziendaId) }; })
+      .sort(function (a, b) { return (a.azienda ? a.azienda.ragioneSociale : '').localeCompare(b.azienda ? b.azienda.ragioneSociale : ''); });
+  }
+
+  function _openAggiungiSponsorPopover(btn) {
+    var candidati = _sponsorPezziCandidati();
+    var pop = document.getElementById('dgPezziPopover');
+    pop.innerHTML = candidati.length ? candidati.map(function (r) {
+      var nome = r.azienda ? r.azienda.ragioneSociale : '—';
+      return '<div class="dg-pezzi-popover-item" data-id="' + r.s.id + '"><span>' + esc(nome) + '</span><span class="dg-muted" style="font-size:11px">' + esc(_statoLabel(r.s.stato)) + '</span></div>';
+    }).join('') : '<div class="dg-pezzi-popover-empty">Nessun altro sponsor disponibile per questa stagione.</div>';
+
+    var rect = btn.getBoundingClientRect();
+    pop.classList.remove('is-hidden');
+    var popW = pop.offsetWidth || 170;
+    var spazioSotto = window.innerHeight - rect.bottom;
+    pop.style.left = Math.max(4, Math.min(rect.right - popW, window.innerWidth - popW - 4)) + 'px';
+    pop.style.top = (spazioSotto > pop.offsetHeight + 8 ? rect.bottom + 4 : rect.top - pop.offsetHeight - 4) + 'px';
+
+    pop.querySelectorAll('.dg-pezzi-popover-item[data-id]').forEach(function (it) {
+      it.addEventListener('click', function () {
+        _addSponsorToPezzi(it.dataset.id);
+        _closePezzoPopover();
+      });
+    });
+    setTimeout(function () { document.addEventListener('click', _pezzoPopoverOutsideClick, true); }, 0);
+  }
+
+  function _addSponsorToPezzi(id) {
+    var s = _sponsorizzazioni.find(function (x) { return x.id === id; });
+    if (!s) return;
+    var az = _aziendaById(s.aziendaId);
+    var label = 'Sponsorizzazione — ' + (az ? az.ragioneSociale : id);
+    s.includiMateriali = true;
+    s.escludiMateriali = false;
+    _renderPezziSponsor();
+    db.collection('sponsorizzazioni').doc(id).update({ includiMateriali: true, escludiMateriali: false })
+      .then(function () { return _logWrite('sponsorizzazione', id, label, 'update', [{ campo: 'includiMateriali', prima: false, dopo: true }]); })
       .catch(function (e) { alert('Errore: ' + e.message); });
   }
 
@@ -4059,7 +4106,7 @@
   var _materialiSyncBusy = false;
   function _totaleMaterialiSponsor() {
     var tot = 0;
-    _sponsorizzazioni.filter(function (s) { return s.seasonId === _currentSeasonId && s.stato === 'chiuso'; })
+    _sponsorizzazioni.filter(function (s) { return s.seasonId === _currentSeasonId && (s.stato === 'chiuso' || s.includiMateriali); })
       .forEach(function (s) {
         if (!s.pezzi) return;
         Object.keys(s.pezzi).forEach(function (k) {
@@ -6043,6 +6090,10 @@
     document.getElementById('categoriaSpesaAddBtn').addEventListener('click', DG.addCategoriaSpesa);
     document.getElementById('manageCategorieSpesaClose').addEventListener('click', function () { _closeBudgetModal('manageCategorieSpesaModal'); });
     document.getElementById('manageCategorieSpesaDone').addEventListener('click', function () { _closeBudgetModal('manageCategorieSpesaModal'); });
+
+    document.getElementById('aggiungiSponsorPezziBtn').addEventListener('click', function () {
+      _openAggiungiSponsorPopover(document.getElementById('aggiungiSponsorPezziBtn'));
+    });
 
     document.getElementById('dimensioniModalBtn').addEventListener('click', function () {
       _renderDimensioniModalList();
