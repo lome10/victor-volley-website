@@ -3749,6 +3749,104 @@
     });
 
     _attachKanbanEvents();
+    _renderPezziSponsor();
+  }
+
+  /* ---- Materiali sponsor — tabella pezzi da realizzare per sponsor chiuso ---- */
+  function _renderPezziSponsor() {
+    var wrap = document.getElementById('pezziSponsorWrap');
+    if (!wrap) return;
+    var season = _seasons.find(function (s) { return s.id === _currentSeasonId; }) || {};
+    var pezzi = season.pezziSponsor || [];
+    var rows = _sponsorizzazioni.filter(function (s) { return s.seasonId === _currentSeasonId && s.stato === 'chiuso'; })
+      .map(function (s) { return { s: s, azienda: _aziendaById(s.aziendaId) }; })
+      .sort(function (a, b) { return (a.azienda ? a.azienda.ragioneSociale : '').localeCompare(b.azienda ? b.azienda.ragioneSociale : ''); });
+
+    if (!rows.length) {
+      wrap.innerHTML = '<div class="dg-empty">Nessuno sponsor chiuso in questa stagione.</div>';
+      return;
+    }
+
+    var head = '<tr><th>Sponsor</th>' +
+      pezzi.map(function (p) {
+        return '<th class="dg-pezzi-th-col">' + esc(p) +
+          '<button type="button" class="dg-pezzi-th-remove" data-pezzo="' + esc(p) + '" title="Rimuovi colonna">✕</button></th>';
+      }).join('') +
+      '<th><button type="button" class="dg-pezzi-addcol">+ Pezzo</button></th></tr>';
+
+    var body = rows.map(function (r) {
+      var nome = r.azienda ? r.azienda.ragioneSociale : '—';
+      var cells = pezzi.map(function (p) {
+        var on = !!(r.s.pezzi && r.s.pezzi[p]);
+        return '<td class="dg-pezzi-cell" data-id="' + r.s.id + '" data-pezzo="' + esc(p) + '">' + (on ? '✕' : '') + '</td>';
+      }).join('');
+      return '<tr><td>' + esc(nome) + '</td>' + cells + '<td></td></tr>';
+    }).join('');
+
+    wrap.innerHTML = '<table class="dg-table dg-pezzi-table"><thead>' + head + '</thead><tbody>' + body + '</tbody></table>';
+    _attachPezziSponsorEvents(wrap);
+  }
+
+  function _attachPezziSponsorEvents(wrap) {
+    wrap.querySelectorAll('.dg-pezzi-cell').forEach(function (td) {
+      td.addEventListener('click', function () { _togglePezzoSponsor(td.dataset.id, td.dataset.pezzo); });
+    });
+    wrap.querySelectorAll('.dg-pezzi-th-remove').forEach(function (btn) {
+      btn.addEventListener('click', function (e) { e.stopPropagation(); _removePezzoSponsor(btn.dataset.pezzo); });
+    });
+    var addBtn = wrap.querySelector('.dg-pezzi-addcol');
+    if (addBtn) addBtn.addEventListener('click', _addPezzoSponsor);
+  }
+
+  function _togglePezzoSponsor(id, pezzo) {
+    var s = _sponsorizzazioni.find(function (x) { return x.id === id; });
+    if (!s) return;
+    var before = s.pezzi || {};
+    var after = Object.assign({}, before);
+    if (after[pezzo]) delete after[pezzo]; else after[pezzo] = true;
+    s.pezzi = after;
+    _renderPezziSponsor();
+    var az = _aziendaById(s.aziendaId);
+    var label = 'Sponsorizzazione — ' + (az ? az.ragioneSociale : id);
+    db.collection('sponsorizzazioni').doc(id).update({ pezzi: after })
+      .then(function () { return _logWrite('sponsorizzazione', id, label, 'update', _diff({ pezzi: before }, { pezzi: after }, ['pezzi'])); })
+      .catch(function (e) { alert('Errore: ' + e.message); });
+  }
+
+  function _addPezzoSponsor() {
+    var nome = prompt('Nome del pezzo da realizzare (es. Cartellone, Maglia, Banner sito):');
+    if (!nome) return;
+    nome = nome.trim();
+    if (!nome) return;
+    var season = _seasons.find(function (s) { return s.id === _currentSeasonId; });
+    if (!season) return;
+    var pezzi = (season.pezziSponsor || []).slice();
+    if (pezzi.some(function (p) { return p.toLowerCase() === nome.toLowerCase(); })) { alert('Esiste già un pezzo con questo nome.'); return; }
+    pezzi.push(nome);
+    season.pezziSponsor = pezzi;
+    _renderPezziSponsor();
+    db.collection('budgetSeasons').doc(season.id).update({ pezziSponsor: pezzi })
+      .catch(function (e) { alert('Errore: ' + e.message); });
+  }
+
+  function _removePezzoSponsor(pezzo) {
+    var season = _seasons.find(function (s) { return s.id === _currentSeasonId; });
+    if (!season) return;
+    confirm('Rimuovere la colonna "' + pezzo + '"? La "x" impostata per ogni sponsor su questo pezzo andrà persa.', function () {
+      var pezzi = (season.pezziSponsor || []).filter(function (p) { return p !== pezzo; });
+      season.pezziSponsor = pezzi;
+      var interessati = _sponsorizzazioni.filter(function (s) { return s.seasonId === _currentSeasonId && s.pezzi && s.pezzi[pezzo]; });
+      var batch = db.batch();
+      batch.update(db.collection('budgetSeasons').doc(season.id), { pezziSponsor: pezzi });
+      interessati.forEach(function (s) {
+        var after = Object.assign({}, s.pezzi);
+        delete after[pezzo];
+        s.pezzi = after;
+        batch.update(db.collection('sponsorizzazioni').doc(s.id), { pezzi: after });
+      });
+      _renderPezziSponsor();
+      batch.commit().catch(function (e) { alert('Errore: ' + e.message); });
+    });
   }
 
   function _attachKanbanEvents() {

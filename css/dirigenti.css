@@ -507,6 +507,48 @@ input, select, textarea { font-family: inherit; }
   color: var(--dg-text);
 }
 .dg-table-input:focus { border-color: var(--dg-blue); outline: none; }
+
+/* ================================================
+   MATERIALI SPONSOR (pezzi da realizzare)
+================================================ */
+.dg-pezzi-table th:first-child, .dg-pezzi-table td:first-child { position: sticky; left: 0; background: #fff; z-index: 1; }
+.dg-pezzi-table th:first-child { background: #F8FAFC; z-index: 2; }
+.dg-pezzi-th-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--dg-muted);
+  margin-left: 6px;
+  font-size: 11px;
+  line-height: 1;
+  padding: 2px;
+  vertical-align: middle;
+}
+.dg-pezzi-th-remove:hover { color: var(--dg-red); }
+.dg-pezzi-cell {
+  text-align: center;
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--dg-green);
+  font-size: 15px;
+  user-select: none;
+  min-width: 60px;
+}
+.dg-pezzi-cell:hover { background: #F1F5F9; }
+.dg-pezzi-addcol {
+  background: none;
+  border: 1px dashed var(--dg-border);
+  border-radius: 6px;
+  color: var(--dg-blue);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  text-transform: none;
+  letter-spacing: normal;
+}
+.dg-pezzi-addcol:hover { background: #EFF6FF; }
 .dg-iva-link { color: var(--dg-slate); font-weight: 700; margin-right: 4px; }
 
 .dg-diff-pos { color: var(--dg-green); font-weight: 700; }
