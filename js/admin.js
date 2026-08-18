@@ -3766,18 +3766,24 @@
     var season = _seasons.find(function (s) { return s.id === _currentSeasonId; }) || {};
     var pezzi = season.pezziSponsor || [];
     var catalogo = season.catalogoDimensioni || [];
-    var visibili = _sponsorizzazioni.filter(function (s) { return s.seasonId === _currentSeasonId && (s.stato === 'chiuso' || s.includiMateriali); });
-    var rows = visibili.filter(function (s) { return !s.escludiMateriali; })
-      .map(function (s) { return { s: s, azienda: _aziendaById(s.aziendaId) }; })
-      .sort(function (a, b) { return (a.azienda ? a.azienda.ragioneSociale : '').localeCompare(b.azienda ? b.azienda.ragioneSociale : ''); });
-    var esclusi = visibili.filter(function (s) { return s.escludiMateriali; })
-      .map(function (s) { return { s: s, azienda: _aziendaById(s.aziendaId) }; })
-      .sort(function (a, b) { return (a.azienda ? a.azienda.ragioneSociale : '').localeCompare(b.azienda ? b.azienda.ragioneSociale : ''); });
+
+    var sponsorRows = _sponsorizzazioni.filter(function (s) { return s.seasonId === _currentSeasonId && (s.stato === 'chiuso' || s.includiMateriali); })
+      .map(function (s) {
+        var az = _aziendaById(s.aziendaId);
+        return { kind: 'sponsor', id: s.id, nome: az ? az.ragioneSociale : '—', pezzi: s.pezzi || {}, stato: s.stato, escluso: !!s.escludiMateriali };
+      });
+    var extraRows = (season.vociExtra || []).map(function (v) {
+      return { kind: 'extra', id: v.id, nome: v.nome, pezzi: v.pezzi || {}, stato: null, escluso: !!v.escluso };
+    });
+    var tutte = sponsorRows.concat(extraRows);
+    var byNome = function (a, b) { return (a.nome || '').localeCompare(b.nome || ''); };
+    var rows = tutte.filter(function (r) { return !r.escluso; }).sort(byNome);
+    var esclusi = tutte.filter(function (r) { return r.escluso; }).sort(byNome);
 
     _renderPezziEsclusi(esclusi, esclusiEl);
 
     if (!rows.length) {
-      wrap.innerHTML = '<div class="dg-empty">' + (esclusi.length ? 'Tutti gli sponsor sono stati esclusi da questa tabella.' : 'Nessuno sponsor in questa tabella — aggiungine uno con "+ Sponsor".') + '</div>';
+      wrap.innerHTML = '<div class="dg-empty">' + (esclusi.length ? 'Tutte le voci sono state escluse da questa tabella.' : 'Nessuna voce in questa tabella — aggiungine una con "+ Aggiungi".') + '</div>';
       if (riepilogoEl) riepilogoEl.innerHTML = '';
       return;
     }
@@ -3790,17 +3796,23 @@
       '<th><button type="button" class="dg-pezzi-addcol">+ Pezzo</button></th></tr>';
 
     var body = rows.map(function (r) {
-      var nome = r.azienda ? r.azienda.ragioneSociale : '—';
-      var badge = r.s.stato !== 'chiuso' ? ' <span class="dg-badge dg-badge--' + r.s.stato + '" style="margin-left:6px">' + esc(_statoLabel(r.s.stato)) + '</span>' : '';
+      var badge = r.kind === 'sponsor' && r.stato !== 'chiuso' ? ' <span class="dg-badge dg-badge--' + r.stato + '" style="margin-left:6px">' + esc(_statoLabel(r.stato)) + '</span>' : '';
       var cells = pezzi.map(function (p) {
-        var cell = r.s.pezzi && r.s.pezzi[p];
-        var chip = cell && cell.dimensione
-          ? '<span class="dg-pezzi-chip" title="' + esc(cell.dimensione) + '">€' + Number(cell.prezzo || 0).toLocaleString('it-IT', { minimumFractionDigits: 2 }) + '</span>'
-          : '<span class="dg-pezzi-chip dg-pezzi-chip--empty">+</span>';
-        return '<td class="dg-pezzi-cell' + (!catalogo.length ? ' is-disabled' : '') + '" data-id="' + r.s.id + '" data-pezzo="' + esc(p) + '">' + chip + '</td>';
+        var cell = r.pezzi && r.pezzi[p];
+        var q = cell && cell.quantita ? (+cell.quantita || 1) : 1;
+        var chip;
+        if (cell && cell.dimensione) {
+          var unitario = +cell.prezzo || 0;
+          var tooltip = esc(cell.dimensione) + ' — ' + q + ' pz × €' + unitario.toLocaleString('it-IT', { minimumFractionDigits: 2 }) + ' cad.';
+          chip = '<span class="dg-pezzi-chip" title="' + tooltip + '">€' + (unitario * q).toLocaleString('it-IT', { minimumFractionDigits: 2 }) +
+            (q > 1 ? '<sup class="dg-pezzi-qty">×' + q + '</sup>' : '') + '</span>';
+        } else {
+          chip = '<span class="dg-pezzi-chip dg-pezzi-chip--empty">+</span>';
+        }
+        return '<td class="dg-pezzi-cell' + (!catalogo.length ? ' is-disabled' : '') + '" data-kind="' + r.kind + '" data-id="' + r.id + '" data-pezzo="' + esc(p) + '">' + chip + '</td>';
       }).join('');
-      return '<tr><td>' + esc(nome) + badge + '</td>' + cells +
-        '<td><button type="button" class="dg-pezzi-row-remove" data-id="' + r.s.id + '" title="Rimuovi sponsor da questa tabella">✕</button></td></tr>';
+      return '<tr><td>' + esc(r.nome) + badge + '</td>' + cells +
+        '<td><button type="button" class="dg-pezzi-row-remove" data-kind="' + r.kind + '" data-id="' + r.id + '" title="Rimuovi dalla tabella">✕</button></td></tr>';
     }).join('');
 
     wrap.innerHTML = '<table class="dg-table dg-pezzi-table"><thead>' + head + '</thead><tbody>' + body + '</tbody></table>';
@@ -3815,13 +3827,22 @@
     el.innerHTML = '<div class="dg-pezzi-esclusi">' +
       '<span class="dg-pezzi-esclusi-label">Esclusi da questa tabella:</span>' +
       esclusi.map(function (r) {
-        var nome = r.azienda ? r.azienda.ragioneSociale : '—';
-        return '<span class="dg-pezzi-esclusi-chip">' + esc(nome) +
-          '<button type="button" class="dg-pezzi-esclusi-restore" data-id="' + r.s.id + '" title="Rimetti in tabella">↺</button></span>';
+        return '<span class="dg-pezzi-esclusi-chip">' + esc(r.nome) +
+          '<button type="button" class="dg-pezzi-esclusi-restore" data-kind="' + r.kind + '" data-id="' + r.id + '" title="Rimetti in tabella">↺</button></span>';
       }).join('') + '</div>';
     el.querySelectorAll('.dg-pezzi-esclusi-restore').forEach(function (btn) {
-      btn.addEventListener('click', function () { _restoreSponsorPezzi(btn.dataset.id); });
+      btn.addEventListener('click', function () { _restoreRowPezzi(btn.dataset.kind, btn.dataset.id); });
     });
+  }
+
+  function _removeRowFromPezzi(kind, id) {
+    if (kind === 'sponsor') return _removeSponsorFromPezzi(id);
+    return _removeExtraVoce(id);
+  }
+
+  function _restoreRowPezzi(kind, id) {
+    if (kind === 'sponsor') return _restoreSponsorPezzi(id);
+    return _restoreExtraVoce(id);
   }
 
   function _removeSponsorFromPezzi(id) {
@@ -3852,8 +3873,39 @@
       .catch(function (e) { alert('Errore: ' + e.message); });
   }
 
-  /* ---- "+ Sponsor" — aggiunge manualmente alla tabella uno sponsor non ancora chiuso
-     (prospect/contattato/in trattativa/rifiutato), per pianificare i materiali in anticipo. ---- */
+  function _removeExtraVoce(id) {
+    var season = _seasons.find(function (s) { return s.id === _currentSeasonId; });
+    if (!season) return;
+    var arr = (season.vociExtra || []).slice();
+    var idx = arr.findIndex(function (v) { return v.id === id; });
+    if (idx === -1) return;
+    var nome = arr[idx].nome;
+    var haCosti = arr[idx].pezzi && Object.keys(arr[idx].pezzi).some(function (k) { return arr[idx].pezzi[k] && arr[idx].pezzi[k].dimensione; });
+    confirm('Rimuovere "' + nome + '" dalla tabella materiali sponsor?' + (haCosti ? ' Le dimensioni già assegnate restano salvate e continuano a essere conteggiate nella voce di spesa; puoi rimetterla in tabella in qualsiasi momento.' : ''), function () {
+      arr[idx] = Object.assign({}, arr[idx], { escluso: true });
+      season.vociExtra = arr;
+      _renderPezziSponsor();
+      db.collection('budgetSeasons').doc(season.id).update({ vociExtra: arr })
+        .catch(function (e) { alert('Errore: ' + e.message); });
+    });
+  }
+
+  function _restoreExtraVoce(id) {
+    var season = _seasons.find(function (s) { return s.id === _currentSeasonId; });
+    if (!season) return;
+    var arr = (season.vociExtra || []).slice();
+    var idx = arr.findIndex(function (v) { return v.id === id; });
+    if (idx === -1) return;
+    arr[idx] = Object.assign({}, arr[idx], { escluso: false });
+    season.vociExtra = arr;
+    _renderPezziSponsor();
+    db.collection('budgetSeasons').doc(season.id).update({ vociExtra: arr })
+      .catch(function (e) { alert('Errore: ' + e.message); });
+  }
+
+  /* ---- "+ Aggiungi" — inserisce manualmente in tabella uno sponsor non ancora chiuso
+     (prospect/contattato/in trattativa/rifiutato) oppure una voce libera non legata a
+     nessuno sponsor (es. "Magazzino", "Materiale extra"), per pianificare i materiali. ---- */
   function _sponsorPezziCandidati() {
     return _sponsorizzazioni.filter(function (s) {
       return s.seasonId === _currentSeasonId && s.stato !== 'chiuso' && !s.includiMateriali;
@@ -3864,10 +3916,12 @@
   function _openAggiungiSponsorPopover(btn) {
     var candidati = _sponsorPezziCandidati();
     var pop = document.getElementById('dgPezziPopover');
-    pop.innerHTML = candidati.length ? candidati.map(function (r) {
+    var html = '<div class="dg-pezzi-popover-item dg-pezzi-popover-item--new" data-action="new">+ Voce personalizzata…</div>';
+    html += candidati.length ? candidati.map(function (r) {
       var nome = r.azienda ? r.azienda.ragioneSociale : '—';
       return '<div class="dg-pezzi-popover-item" data-id="' + r.s.id + '"><span>' + esc(nome) + '</span><span class="dg-muted" style="font-size:11px">' + esc(_statoLabel(r.s.stato)) + '</span></div>';
     }).join('') : '<div class="dg-pezzi-popover-empty">Nessun altro sponsor disponibile per questa stagione.</div>';
+    pop.innerHTML = html;
 
     var rect = btn.getBoundingClientRect();
     pop.classList.remove('is-hidden');
@@ -3876,6 +3930,10 @@
     pop.style.left = Math.max(4, Math.min(rect.right - popW, window.innerWidth - popW - 4)) + 'px';
     pop.style.top = (spazioSotto > pop.offsetHeight + 8 ? rect.bottom + 4 : rect.top - pop.offsetHeight - 4) + 'px';
 
+    pop.querySelector('[data-action="new"]').addEventListener('click', function () {
+      _closePezzoPopover();
+      _addVoceExtra();
+    });
     pop.querySelectorAll('.dg-pezzi-popover-item[data-id]').forEach(function (it) {
       it.addEventListener('click', function () {
         _addSponsorToPezzi(it.dataset.id);
@@ -3898,19 +3956,38 @@
       .catch(function (e) { alert('Errore: ' + e.message); });
   }
 
+  function _addVoceExtra() {
+    var nome = prompt('Nome della voce (es. Magazzino, Materiale extra, Striscione ingresso):');
+    if (!nome) return;
+    nome = nome.trim();
+    if (!nome) return;
+    var season = _seasons.find(function (s) { return s.id === _currentSeasonId; });
+    if (!season) return;
+    var arr = (season.vociExtra || []).slice();
+    var id = 'extra_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    var entry = { id: id, nome: nome, pezzi: {}, escluso: false };
+    arr.push(entry);
+    season.vociExtra = arr;
+    _renderPezziSponsor();
+    db.collection('budgetSeasons').doc(season.id).update({ vociExtra: arr })
+      .then(function () { return _logWrite('voceMateriali', id, 'Voce materiali — ' + nome, 'create', _diff({}, entry, Object.keys(entry))); })
+      .catch(function (e) { alert('Errore: ' + e.message); });
+  }
+
   function _renderPezziRiepilogo(rows, el) {
     if (!el) return;
     var perDimensione = {};
     var imponibile = 0;
     rows.forEach(function (r) {
-      if (!r.s.pezzi) return;
-      Object.keys(r.s.pezzi).forEach(function (k) {
-        var cell = r.s.pezzi[k];
+      if (!r.pezzi) return;
+      Object.keys(r.pezzi).forEach(function (k) {
+        var cell = r.pezzi[k];
         if (!cell || !cell.dimensione) return;
-        var prezzo = +cell.prezzo || 0;
-        imponibile += prezzo;
+        var q = cell.quantita ? (+cell.quantita || 1) : 1;
+        var subtot = (+cell.prezzo || 0) * q;
+        imponibile += subtot;
         var d = perDimensione[cell.dimensione] || (perDimensione[cell.dimensione] = { count: 0, subtotale: 0 });
-        d.count++; d.subtotale += prezzo;
+        d.count += q; d.subtotale += subtot;
       });
     });
     if (!imponibile) { el.innerHTML = ''; return; }
@@ -3940,13 +4017,53 @@
       btn.addEventListener('click', function (e) { e.stopPropagation(); _removePezzoSponsor(btn.dataset.pezzo); });
     });
     wrap.querySelectorAll('.dg-pezzi-row-remove').forEach(function (btn) {
-      btn.addEventListener('click', function (e) { e.stopPropagation(); _removeSponsorFromPezzi(btn.dataset.id); });
+      btn.addEventListener('click', function (e) { e.stopPropagation(); _removeRowFromPezzi(btn.dataset.kind, btn.dataset.id); });
     });
     var addBtn = wrap.querySelector('.dg-pezzi-addcol');
     if (addBtn) addBtn.addEventListener('click', _addPezzoSponsor);
   }
 
-  /* ---- Popover leggero per assegnare la dimensione a una cella (al posto di una select fissa in ogni cella) ---- */
+  /* ---- Lettura/scrittura pezzi di una riga a prescindere dal tipo (sponsor o voce libera) ---- */
+  function _pezziRowGetPezzi(kind, id) {
+    if (kind === 'sponsor') {
+      var s = _sponsorizzazioni.find(function (x) { return x.id === id; });
+      return s ? (s.pezzi || {}) : {};
+    }
+    var season = _seasons.find(function (x) { return x.id === _currentSeasonId; }) || {};
+    var v = (season.vociExtra || []).find(function (x) { return x.id === id; });
+    return v ? (v.pezzi || {}) : {};
+  }
+
+  function _pezziRowApplyMutation(kind, id, newPezzi) {
+    if (kind === 'sponsor') {
+      var s = _sponsorizzazioni.find(function (x) { return x.id === id; });
+      if (!s) return;
+      var before = s.pezzi || {};
+      s.pezzi = newPezzi;
+      _renderPezziSponsor();
+      var az = _aziendaById(s.aziendaId);
+      var label = 'Sponsorizzazione — ' + (az ? az.ragioneSociale : id);
+      db.collection('sponsorizzazioni').doc(id).update({ pezzi: newPezzi })
+        .then(function () { return _logWrite('sponsorizzazione', id, label, 'update', _diff({ pezzi: before }, { pezzi: newPezzi }, ['pezzi'])); })
+        .catch(function (e) { alert('Errore: ' + e.message); });
+      return;
+    }
+    var season = _seasons.find(function (x) { return x.id === _currentSeasonId; });
+    if (!season) return;
+    var arr = (season.vociExtra || []).slice();
+    var idx = arr.findIndex(function (v) { return v.id === id; });
+    if (idx === -1) return;
+    var before2 = arr[idx].pezzi || {};
+    var nome = arr[idx].nome;
+    arr[idx] = Object.assign({}, arr[idx], { pezzi: newPezzi });
+    season.vociExtra = arr;
+    _renderPezziSponsor();
+    db.collection('budgetSeasons').doc(season.id).update({ vociExtra: arr })
+      .then(function () { return _logWrite('voceMateriali', id, 'Voce materiali — ' + nome, 'update', _diff({ pezzi: before2 }, { pezzi: newPezzi }, ['pezzi'])); })
+      .catch(function (e) { alert('Errore: ' + e.message); });
+  }
+
+  /* ---- Popover leggero per assegnare dimensione/quantità a una cella (al posto di controlli fissi in ogni cella) ---- */
   function _closePezzoPopover() {
     var pop = document.getElementById('dgPezziPopover');
     if (pop) { pop.classList.add('is-hidden'); pop.innerHTML = ''; }
@@ -3963,16 +4080,27 @@
     var catalogo = season.catalogoDimensioni || [];
     if (!catalogo.length) { alert('Crea prima il listino dimensioni (pulsante "Listino dimensioni" in alto a destra).'); return; }
 
-    var id = td.dataset.id, pezzo = td.dataset.pezzo;
-    var s = _sponsorizzazioni.find(function (x) { return x.id === id; });
-    var cur = s && s.pezzi && s.pezzi[pezzo] ? s.pezzi[pezzo].dimensione : '';
+    var kind = td.dataset.kind, id = td.dataset.id, pezzo = td.dataset.pezzo;
+    var pezziCorrenti = _pezziRowGetPezzi(kind, id);
+    var curCell = pezziCorrenti[pezzo];
+    var cur = curCell && curCell.dimensione ? curCell.dimensione : '';
 
     var pop = document.getElementById('dgPezziPopover');
+    var qtyHtml = '';
+    if (cur) {
+      var q = curCell.quantita ? (+curCell.quantita || 1) : 1;
+      qtyHtml = '<div class="dg-pezzi-popover-qty">' +
+        '<label>Quantità (pezzi da realizzare)</label>' +
+        '<div class="dg-pezzi-popover-qty-row">' +
+        '<input type="number" min="1" step="1" value="' + q + '" class="dg-pezzi-qty-input">' +
+        '<button type="button" class="dg-pezzi-qty-apply">Applica</button>' +
+        '</div></div>';
+    }
     var items = catalogo.map(function (d) {
       return '<div class="dg-pezzi-popover-item' + (d.nome === cur ? ' is-active' : '') + '" data-nome="' + esc(d.nome) + '"><span>' + esc(d.nome) + '</span><span>€' + Number(d.prezzo || 0).toLocaleString('it-IT') + '</span></div>';
     }).join('');
     if (cur) items += '<div class="dg-pezzi-popover-item dg-pezzi-popover-item--clear" data-nome="">Rimuovi assegnazione</div>';
-    pop.innerHTML = items;
+    pop.innerHTML = qtyHtml + items;
 
     var rect = td.getBoundingClientRect();
     pop.classList.remove('is-hidden');
@@ -3981,9 +4109,17 @@
     pop.style.left = Math.max(4, Math.min(rect.left, window.innerWidth - popW - 4)) + 'px';
     pop.style.top = (spazioSotto > pop.offsetHeight + 8 ? rect.bottom + 4 : rect.top - pop.offsetHeight - 4) + 'px';
 
-    pop.querySelectorAll('.dg-pezzi-popover-item').forEach(function (it) {
+    if (cur) {
+      var qtyInput = pop.querySelector('.dg-pezzi-qty-input');
+      var applyBtn = pop.querySelector('.dg-pezzi-qty-apply');
+      var applyQty = function () { _setPezzoQuantita(kind, id, pezzo, qtyInput.value); _closePezzoPopover(); };
+      applyBtn.addEventListener('click', applyQty);
+      qtyInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') applyQty(); });
+    }
+
+    pop.querySelectorAll('.dg-pezzi-popover-item[data-nome]').forEach(function (it) {
       it.addEventListener('click', function () {
-        _setPezzoDimensione(id, pezzo, it.dataset.nome);
+        _setPezzoDimensione(kind, id, pezzo, it.dataset.nome);
         _closePezzoPopover();
       });
     });
@@ -3991,25 +4127,27 @@
     setTimeout(function () { document.addEventListener('click', _pezzoPopoverOutsideClick, true); }, 0);
   }
 
-  function _setPezzoDimensione(id, pezzo, nome) {
-    var s = _sponsorizzazioni.find(function (x) { return x.id === id; });
-    if (!s) return;
+  function _setPezzoDimensione(kind, id, pezzo, nome) {
     var season = _seasons.find(function (x) { return x.id === _currentSeasonId; }) || {};
-    var before = s.pezzi || {};
+    var before = _pezziRowGetPezzi(kind, id);
     var after = Object.assign({}, before);
     if (!nome) {
       delete after[pezzo];
     } else {
       var dim = (season.catalogoDimensioni || []).find(function (d) { return d.nome === nome; });
-      after[pezzo] = { dimensione: nome, prezzo: dim ? (+dim.prezzo || 0) : 0 };
+      var quantitaPrec = before[pezzo] && before[pezzo].quantita ? before[pezzo].quantita : 1;
+      after[pezzo] = { dimensione: nome, prezzo: dim ? (+dim.prezzo || 0) : 0, quantita: quantitaPrec };
     }
-    s.pezzi = after;
-    _renderPezziSponsor();
-    var az = _aziendaById(s.aziendaId);
-    var label = 'Sponsorizzazione — ' + (az ? az.ragioneSociale : id);
-    db.collection('sponsorizzazioni').doc(id).update({ pezzi: after })
-      .then(function () { return _logWrite('sponsorizzazione', id, label, 'update', _diff({ pezzi: before }, { pezzi: after }, ['pezzi'])); })
-      .catch(function (e) { alert('Errore: ' + e.message); });
+    _pezziRowApplyMutation(kind, id, after);
+  }
+
+  function _setPezzoQuantita(kind, id, pezzo, quantita) {
+    var before = _pezziRowGetPezzi(kind, id);
+    if (!before[pezzo]) return;
+    var q = Math.max(1, Math.round(+quantita) || 1);
+    var after = Object.assign({}, before);
+    after[pezzo] = Object.assign({}, after[pezzo], { quantita: q });
+    _pezziRowApplyMutation(kind, id, after);
   }
 
   function _addPezzoSponsor() {
@@ -4033,10 +4171,17 @@
     if (!season) return;
     confirm('Rimuovere la colonna "' + pezzo + '"? Le eventuali dimensioni assegnate per questo pezzo andranno perse.', function () {
       var pezzi = (season.pezziSponsor || []).filter(function (p) { return p !== pezzo; });
+      var vociExtra = (season.vociExtra || []).map(function (v) {
+        if (!v.pezzi || !v.pezzi[pezzo]) return v;
+        var np = Object.assign({}, v.pezzi);
+        delete np[pezzo];
+        return Object.assign({}, v, { pezzi: np });
+      });
       season.pezziSponsor = pezzi;
+      season.vociExtra = vociExtra;
       var interessati = _sponsorizzazioni.filter(function (s) { return s.seasonId === _currentSeasonId && s.pezzi && s.pezzi[pezzo]; });
       var batch = db.batch();
-      batch.update(db.collection('budgetSeasons').doc(season.id), { pezziSponsor: pezzi });
+      batch.update(db.collection('budgetSeasons').doc(season.id), { pezziSponsor: pezzi, vociExtra: vociExtra });
       interessati.forEach(function (s) {
         var after = Object.assign({}, s.pezzi);
         delete after[pezzo];
@@ -4106,14 +4251,22 @@
   var _materialiSyncBusy = false;
   function _totaleMaterialiSponsor() {
     var tot = 0;
+    var season = _seasons.find(function (s) { return s.id === _currentSeasonId; }) || {};
     _sponsorizzazioni.filter(function (s) { return s.seasonId === _currentSeasonId && (s.stato === 'chiuso' || s.includiMateriali); })
       .forEach(function (s) {
         if (!s.pezzi) return;
         Object.keys(s.pezzi).forEach(function (k) {
           var cell = s.pezzi[k];
-          if (cell && cell.dimensione) tot += (+cell.prezzo || 0);
+          if (cell && cell.dimensione) tot += (+cell.prezzo || 0) * (cell.quantita ? (+cell.quantita || 1) : 1);
         });
       });
+    (season.vociExtra || []).forEach(function (v) {
+      if (!v.pezzi) return;
+      Object.keys(v.pezzi).forEach(function (k) {
+        var cell = v.pezzi[k];
+        if (cell && cell.dimensione) tot += (+cell.prezzo || 0) * (cell.quantita ? (+cell.quantita || 1) : 1);
+      });
+    });
     return Math.round(tot * 100) / 100;
   }
 

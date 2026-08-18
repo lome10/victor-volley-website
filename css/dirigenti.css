@@ -536,6 +536,7 @@ input, select, textarea { font-family: inherit; }
   padding: 3px 4px;
 }
 .dg-pezzi-chip--empty { color: var(--dg-border); font-weight: 400; font-size: 15px; }
+.dg-pezzi-qty { font-size: 9.5px; font-weight: 700; color: var(--dg-blue); margin-left: 2px; }
 
 .dg-pezzi-popover {
   position: fixed;
@@ -565,6 +566,14 @@ input, select, textarea { font-family: inherit; }
 .dg-pezzi-popover-item:hover { background: #F1F5F9; }
 .dg-pezzi-popover-item.is-active { background: #EFF6FF; color: var(--dg-blue); font-weight: 700; }
 .dg-pezzi-popover-item--clear { color: var(--dg-muted); border-top: 1px solid var(--dg-border); margin-top: 4px; padding-top: 8px; }
+.dg-pezzi-popover-item--new { color: var(--dg-blue); font-weight: 700; border-bottom: 1px solid var(--dg-border); margin-bottom: 4px; padding-bottom: 8px; }
+
+.dg-pezzi-popover-qty { padding: 4px 6px 10px; border-bottom: 1px solid var(--dg-border); margin-bottom: 4px; }
+.dg-pezzi-popover-qty label { display: block; font-size: 10.5px; font-weight: 700; color: var(--dg-muted); text-transform: uppercase; letter-spacing: .02em; margin-bottom: 6px; }
+.dg-pezzi-popover-qty-row { display: flex; gap: 6px; }
+.dg-pezzi-qty-input { width: 60px; padding: 6px 8px; border: 1px solid var(--dg-border); border-radius: 6px; font-size: 13px; color: var(--dg-text); }
+.dg-pezzi-qty-apply { background: var(--dg-blue); color: #fff; border: none; border-radius: 6px; padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.dg-pezzi-qty-apply:hover { opacity: .9; }
 
 .dg-pezzi-row-remove {
   background: none;
