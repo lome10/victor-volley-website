@@ -3788,10 +3788,15 @@
       return;
     }
 
+    var prezziPezzi = season.pezziPrezzi || {};
     var head = '<tr><th>Sponsor</th>' +
       pezzi.map(function (p) {
+        var prezzoPezzo = +prezziPezzi[p] || 0;
         return '<th class="dg-pezzi-th-col">' + esc(p) +
-          '<button type="button" class="dg-pezzi-th-remove" data-pezzo="' + esc(p) + '" title="Rimuovi colonna">✕</button></th>';
+          '<button type="button" class="dg-pezzi-th-remove" data-pezzo="' + esc(p) + '" title="Rimuovi colonna">✕</button>' +
+          '<button type="button" class="dg-pezzi-th-price" data-pezzo="' + esc(p) + '" title="Prezzo del pezzo, IVA 22% esclusa (costo del gadget/supporto prima della stampa) — clicca per modificare">' +
+          (prezzoPezzo ? '€' + prezzoPezzo.toLocaleString('it-IT', { minimumFractionDigits: 2 }) + '/pz' : '+ prezzo pezzo') +
+          '</button></th>';
       }).join('') +
       '<th><button type="button" class="dg-pezzi-addcol">+ Pezzo</button></th></tr>';
 
@@ -3976,8 +3981,12 @@
 
   function _renderPezziRiepilogo(rows, el) {
     if (!el) return;
+    var season = _seasons.find(function (s) { return s.id === _currentSeasonId; }) || {};
+    var prezziPezzi = season.pezziPrezzi || {};
+
     var perDimensione = {};
-    var imponibile = 0;
+    var perPezzo = {};
+    var imponibileStampe = 0;
     rows.forEach(function (r) {
       if (!r.pezzi) return;
       Object.keys(r.pezzi).forEach(function (k) {
@@ -3985,25 +3994,39 @@
         if (!cell || !cell.dimensione) return;
         var q = cell.quantita ? (+cell.quantita || 1) : 1;
         var subtot = (+cell.prezzo || 0) * q;
-        imponibile += subtot;
+        imponibileStampe += subtot;
         var d = perDimensione[cell.dimensione] || (perDimensione[cell.dimensione] = { count: 0, subtotale: 0 });
         d.count += q; d.subtotale += subtot;
+        perPezzo[k] = (perPezzo[k] || 0) + q;
       });
     });
+
+    var imponibileMerce = 0;
+    var fmt = function (n) { return '€' + Number(n).toLocaleString('it-IT', { minimumFractionDigits: 2 }); };
+    var righePezzi = Object.keys(perPezzo).sort().map(function (nome) {
+      var count = perPezzo[nome];
+      var prezzoUnit = +prezziPezzi[nome] || 0;
+      var subtot = prezzoUnit * count;
+      imponibileMerce += subtot;
+      var right = prezzoUnit ? fmt(subtot) : '<span class="dg-muted" style="font-weight:400">prezzo non impostato</span>';
+      return '<div class="dg-pezzi-riepilogo-row"><span>' + esc(nome) + ' × ' + count + '</span><span>' + right + '</span></div>';
+    }).join('');
+
+    var imponibile = imponibileStampe + imponibileMerce;
     if (!imponibile) { el.innerHTML = ''; return; }
 
     var iva = Math.round(imponibile * 22) / 100;
     var totale = Math.round((imponibile + iva) * 100) / 100;
-    var fmt = function (n) { return '€' + Number(n).toLocaleString('it-IT', { minimumFractionDigits: 2 }); };
 
-    var righe = Object.keys(perDimensione).sort().map(function (nome) {
+    var righeStampe = Object.keys(perDimensione).sort().map(function (nome) {
       var d = perDimensione[nome];
       return '<div class="dg-pezzi-riepilogo-row"><span>' + esc(nome) + ' × ' + d.count + '</span><span>' + fmt(d.subtotale) + '</span></div>';
     }).join('');
 
     el.innerHTML = '<div class="dg-pezzi-riepilogo">' +
-      '<div class="dg-pezzi-riepilogo-title">Riepilogo stampe</div>' + righe +
-      '<div class="dg-pezzi-riepilogo-row dg-pezzi-riepilogo-total"><span>Imponibile</span><span>' + fmt(imponibile) + '</span></div>' +
+      '<div class="dg-pezzi-riepilogo-title">Stampe</div>' + righeStampe +
+      '<div class="dg-pezzi-riepilogo-title" style="margin-top:12px">Pezzi da produrre</div>' + righePezzi +
+      '<div class="dg-pezzi-riepilogo-row dg-pezzi-riepilogo-total" style="margin-top:8px"><span>Imponibile</span><span>' + fmt(imponibile) + '</span></div>' +
       '<div class="dg-pezzi-riepilogo-row"><span>IVA 22%</span><span>' + fmt(iva) + '</span></div>' +
       '<div class="dg-pezzi-riepilogo-row dg-pezzi-riepilogo-total"><span>Totale</span><span>' + fmt(totale) + '</span></div>' +
       '</div>';
@@ -4015,6 +4038,9 @@
     });
     wrap.querySelectorAll('.dg-pezzi-th-remove').forEach(function (btn) {
       btn.addEventListener('click', function (e) { e.stopPropagation(); _removePezzoSponsor(btn.dataset.pezzo); });
+    });
+    wrap.querySelectorAll('.dg-pezzi-th-price').forEach(function (btn) {
+      btn.addEventListener('click', function (e) { e.stopPropagation(); _setPrezzoPezzo(btn.dataset.pezzo); });
     });
     wrap.querySelectorAll('.dg-pezzi-row-remove').forEach(function (btn) {
       btn.addEventListener('click', function (e) { e.stopPropagation(); _removeRowFromPezzi(btn.dataset.kind, btn.dataset.id); });
@@ -4166,6 +4192,24 @@
       .catch(function (e) { alert('Errore: ' + e.message); });
   }
 
+  /* ---- Prezzo del pezzo (merce/gadget prima della stampa), impostato sull'intestazione della
+     colonna — si somma al prezzo di stampa scelto per singola cella, non lo sostituisce. ---- */
+  function _setPrezzoPezzo(pezzo) {
+    var season = _seasons.find(function (s) { return s.id === _currentSeasonId; });
+    if (!season) return;
+    var attuale = (season.pezziPrezzi || {})[pezzo] || '';
+    var input = prompt('Prezzo del pezzo "' + pezzo + '" (IVA 22% esclusa — costo del gadget/supporto, non della stampa):', attuale);
+    if (input === null) return;
+    var v = +String(input).replace(',', '.');
+    if (isNaN(v) || v < 0) { alert('Inserisci un numero valido.'); return; }
+    var prezziPezzi = Object.assign({}, season.pezziPrezzi || {});
+    if (v === 0) delete prezziPezzi[pezzo]; else prezziPezzi[pezzo] = v;
+    season.pezziPrezzi = prezziPezzi;
+    _renderPezziSponsor();
+    db.collection('budgetSeasons').doc(season.id).update({ pezziPrezzi: prezziPezzi })
+      .catch(function (e) { alert('Errore: ' + e.message); });
+  }
+
   function _removePezzoSponsor(pezzo) {
     var season = _seasons.find(function (s) { return s.id === _currentSeasonId; });
     if (!season) return;
@@ -4177,11 +4221,14 @@
         delete np[pezzo];
         return Object.assign({}, v, { pezzi: np });
       });
+      var prezziPezzi = Object.assign({}, season.pezziPrezzi || {});
+      delete prezziPezzi[pezzo];
       season.pezziSponsor = pezzi;
       season.vociExtra = vociExtra;
+      season.pezziPrezzi = prezziPezzi;
       var interessati = _sponsorizzazioni.filter(function (s) { return s.seasonId === _currentSeasonId && s.pezzi && s.pezzi[pezzo]; });
       var batch = db.batch();
-      batch.update(db.collection('budgetSeasons').doc(season.id), { pezziSponsor: pezzi, vociExtra: vociExtra });
+      batch.update(db.collection('budgetSeasons').doc(season.id), { pezziSponsor: pezzi, vociExtra: vociExtra, pezziPrezzi: prezziPezzi });
       interessati.forEach(function (s) {
         var after = Object.assign({}, s.pezzi);
         delete after[pezzo];
@@ -4252,21 +4299,26 @@
   function _totaleMaterialiSponsor() {
     var tot = 0;
     var season = _seasons.find(function (s) { return s.id === _currentSeasonId; }) || {};
+    var prezziPezzi = season.pezziPrezzi || {};
+    var perPezzo = {};
+
+    var accumula = function (pezziObj) {
+      if (!pezziObj) return;
+      Object.keys(pezziObj).forEach(function (k) {
+        var cell = pezziObj[k];
+        if (!cell || !cell.dimensione) return;
+        var q = cell.quantita ? (+cell.quantita || 1) : 1;
+        tot += (+cell.prezzo || 0) * q;
+        perPezzo[k] = (perPezzo[k] || 0) + q;
+      });
+    };
+
     _sponsorizzazioni.filter(function (s) { return s.seasonId === _currentSeasonId && (s.stato === 'chiuso' || s.includiMateriali); })
-      .forEach(function (s) {
-        if (!s.pezzi) return;
-        Object.keys(s.pezzi).forEach(function (k) {
-          var cell = s.pezzi[k];
-          if (cell && cell.dimensione) tot += (+cell.prezzo || 0) * (cell.quantita ? (+cell.quantita || 1) : 1);
-        });
-      });
-    (season.vociExtra || []).forEach(function (v) {
-      if (!v.pezzi) return;
-      Object.keys(v.pezzi).forEach(function (k) {
-        var cell = v.pezzi[k];
-        if (cell && cell.dimensione) tot += (+cell.prezzo || 0) * (cell.quantita ? (+cell.quantita || 1) : 1);
-      });
-    });
+      .forEach(function (s) { accumula(s.pezzi); });
+    (season.vociExtra || []).forEach(function (v) { accumula(v.pezzi); });
+
+    Object.keys(perPezzo).forEach(function (nome) { tot += (+prezziPezzi[nome] || 0) * perPezzo[nome]; });
+
     return Math.round(tot * 100) / 100;
   }
 
