@@ -568,6 +568,32 @@ input, select, textarea { font-family: inherit; }
 .dg-pezzi-popover-item.is-active { background: #EFF6FF; color: var(--dg-blue); font-weight: 700; }
 .dg-pezzi-popover-item--clear { color: var(--dg-muted); border-top: 1px solid var(--dg-border); margin-top: 4px; padding-top: 8px; }
 
+.dg-pezzi-row-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--dg-muted);
+  font-size: 12px;
+  line-height: 1;
+  padding: 4px;
+}
+.dg-pezzi-row-remove:hover { color: var(--dg-red); }
+
+.dg-pezzi-esclusi { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 12px; color: var(--dg-muted); }
+.dg-pezzi-esclusi-label { font-weight: 600; }
+.dg-pezzi-esclusi-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #F1F5F9;
+  color: var(--dg-text);
+  border-radius: 20px;
+  padding: 3px 6px 3px 10px;
+  font-size: 12px;
+}
+.dg-pezzi-esclusi-restore { background: none; border: none; cursor: pointer; color: var(--dg-blue); font-size: 13px; padding: 2px; line-height: 1; }
+.dg-pezzi-esclusi-restore:hover { color: var(--dg-navy2); }
+
 .dg-pezzi-riepilogo {
   background: #F8FAFC;
   border: 1px solid var(--dg-border);

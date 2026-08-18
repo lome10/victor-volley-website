@@ -3761,16 +3761,23 @@
   function _renderPezziSponsor() {
     var wrap = document.getElementById('pezziSponsorWrap');
     var riepilogoEl = document.getElementById('pezziSponsorRiepilogo');
+    var esclusiEl = document.getElementById('pezziSponsorEsclusi');
     if (!wrap) return;
     var season = _seasons.find(function (s) { return s.id === _currentSeasonId; }) || {};
     var pezzi = season.pezziSponsor || [];
     var catalogo = season.catalogoDimensioni || [];
-    var rows = _sponsorizzazioni.filter(function (s) { return s.seasonId === _currentSeasonId && s.stato === 'chiuso'; })
+    var chiusi = _sponsorizzazioni.filter(function (s) { return s.seasonId === _currentSeasonId && s.stato === 'chiuso'; });
+    var rows = chiusi.filter(function (s) { return !s.escludiMateriali; })
+      .map(function (s) { return { s: s, azienda: _aziendaById(s.aziendaId) }; })
+      .sort(function (a, b) { return (a.azienda ? a.azienda.ragioneSociale : '').localeCompare(b.azienda ? b.azienda.ragioneSociale : ''); });
+    var esclusi = chiusi.filter(function (s) { return s.escludiMateriali; })
       .map(function (s) { return { s: s, azienda: _aziendaById(s.aziendaId) }; })
       .sort(function (a, b) { return (a.azienda ? a.azienda.ragioneSociale : '').localeCompare(b.azienda ? b.azienda.ragioneSociale : ''); });
 
+    _renderPezziEsclusi(esclusi, esclusiEl);
+
     if (!rows.length) {
-      wrap.innerHTML = '<div class="dg-empty">Nessuno sponsor chiuso in questa stagione.</div>';
+      wrap.innerHTML = '<div class="dg-empty">' + (esclusi.length ? 'Tutti gli sponsor chiusi sono stati esclusi da questa tabella.' : 'Nessuno sponsor chiuso in questa stagione.') + '</div>';
       if (riepilogoEl) riepilogoEl.innerHTML = '';
       return;
     }
@@ -3791,13 +3798,57 @@
           : '<span class="dg-pezzi-chip dg-pezzi-chip--empty">+</span>';
         return '<td class="dg-pezzi-cell' + (!catalogo.length ? ' is-disabled' : '') + '" data-id="' + r.s.id + '" data-pezzo="' + esc(p) + '">' + chip + '</td>';
       }).join('');
-      return '<tr><td>' + esc(nome) + '</td>' + cells + '<td></td></tr>';
+      return '<tr><td>' + esc(nome) + '</td>' + cells +
+        '<td><button type="button" class="dg-pezzi-row-remove" data-id="' + r.s.id + '" title="Rimuovi sponsor da questa tabella">✕</button></td></tr>';
     }).join('');
 
     wrap.innerHTML = '<table class="dg-table dg-pezzi-table"><thead>' + head + '</thead><tbody>' + body + '</tbody></table>';
     _attachPezziSponsorEvents(wrap);
     _renderPezziRiepilogo(rows, riepilogoEl);
     _syncMaterialiSpesa();
+  }
+
+  function _renderPezziEsclusi(esclusi, el) {
+    if (!el) return;
+    if (!esclusi.length) { el.innerHTML = ''; return; }
+    el.innerHTML = '<div class="dg-pezzi-esclusi">' +
+      '<span class="dg-pezzi-esclusi-label">Esclusi da questa tabella:</span>' +
+      esclusi.map(function (r) {
+        var nome = r.azienda ? r.azienda.ragioneSociale : '—';
+        return '<span class="dg-pezzi-esclusi-chip">' + esc(nome) +
+          '<button type="button" class="dg-pezzi-esclusi-restore" data-id="' + r.s.id + '" title="Rimetti in tabella">↺</button></span>';
+      }).join('') + '</div>';
+    el.querySelectorAll('.dg-pezzi-esclusi-restore').forEach(function (btn) {
+      btn.addEventListener('click', function () { _restoreSponsorPezzi(btn.dataset.id); });
+    });
+  }
+
+  function _removeSponsorFromPezzi(id) {
+    var s = _sponsorizzazioni.find(function (x) { return x.id === id; });
+    if (!s) return;
+    var az = _aziendaById(s.aziendaId);
+    var nome = az ? az.ragioneSociale : id;
+    var haCosti = s.pezzi && Object.keys(s.pezzi).some(function (k) { return s.pezzi[k] && s.pezzi[k].dimensione; });
+    confirm('Rimuovere "' + nome + '" dalla tabella materiali sponsor?' + (haCosti ? ' Le dimensioni già assegnate restano salvate e continuano a essere conteggiate nella voce di spesa; puoi rimetterlo in tabella in qualsiasi momento.' : ''), function () {
+      s.escludiMateriali = true;
+      _renderPezziSponsor();
+      var label = 'Sponsorizzazione — ' + nome;
+      db.collection('sponsorizzazioni').doc(id).update({ escludiMateriali: true })
+        .then(function () { return _logWrite('sponsorizzazione', id, label, 'update', [{ campo: 'escludiMateriali', prima: false, dopo: true }]); })
+        .catch(function (e) { alert('Errore: ' + e.message); });
+    });
+  }
+
+  function _restoreSponsorPezzi(id) {
+    var s = _sponsorizzazioni.find(function (x) { return x.id === id; });
+    if (!s) return;
+    var az = _aziendaById(s.aziendaId);
+    var label = 'Sponsorizzazione — ' + (az ? az.ragioneSociale : id);
+    s.escludiMateriali = false;
+    _renderPezziSponsor();
+    db.collection('sponsorizzazioni').doc(id).update({ escludiMateriali: false })
+      .then(function () { return _logWrite('sponsorizzazione', id, label, 'update', [{ campo: 'escludiMateriali', prima: true, dopo: false }]); })
+      .catch(function (e) { alert('Errore: ' + e.message); });
   }
 
   function _renderPezziRiepilogo(rows, el) {
@@ -3840,6 +3891,9 @@
     });
     wrap.querySelectorAll('.dg-pezzi-th-remove').forEach(function (btn) {
       btn.addEventListener('click', function (e) { e.stopPropagation(); _removePezzoSponsor(btn.dataset.pezzo); });
+    });
+    wrap.querySelectorAll('.dg-pezzi-row-remove').forEach(function (btn) {
+      btn.addEventListener('click', function (e) { e.stopPropagation(); _removeSponsorFromPezzi(btn.dataset.id); });
     });
     var addBtn = wrap.querySelector('.dg-pezzi-addcol');
     if (addBtn) addBtn.addEventListener('click', _addPezzoSponsor);
