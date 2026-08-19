@@ -513,48 +513,72 @@ input, select, textarea { font-family: inherit; }
 ================================================ */
 .dg-pezzi-table th:first-child, .dg-pezzi-table td:first-child { position: sticky; left: 0; background: #fff; z-index: 1; }
 .dg-pezzi-table th:first-child { background: #F8FAFC; z-index: 2; }
+
+/* Righe alternate + hover, per non perdersi scorrendo la tabella */
+.dg-pezzi-table tbody tr:nth-child(even) td { background: #FBFCFD; }
+.dg-pezzi-table tbody tr:nth-child(even) td:first-child { background: #FBFCFD; }
+.dg-pezzi-table tbody tr:hover td { background: #F1F5F9; }
+.dg-pezzi-table tbody tr:hover td:first-child { background: #F1F5F9; }
+
+.dg-pezzi-extra-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .02em;
+  color: var(--dg-muted);
+  background: var(--dg-bg);
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.dg-pezzi-th-name { display: flex; align-items: center; gap: 4px; }
 .dg-pezzi-th-remove {
   background: none;
   border: none;
   cursor: pointer;
   color: var(--dg-muted);
-  margin-left: 6px;
   font-size: 11px;
   line-height: 1;
   padding: 2px;
   vertical-align: middle;
 }
 .dg-pezzi-th-remove:hover { color: var(--dg-red); }
+
+/* Prezzo + totale pezzi uniti in un unico badge cliccabile, per non impilare più righe di testo */
 .dg-pezzi-th-price {
-  display: block;
-  margin-top: 4px;
-  background: none;
-  border: none;
-  padding: 0;
-  font-size: 10.5px;
+  display: inline-flex;
+  align-items: baseline;
+  margin-top: 6px;
+  background: #fff;
+  border: 1px dashed var(--dg-border);
+  border-radius: 20px;
+  padding: 3px 9px;
+  font-size: 11px;
   font-weight: 700;
   text-transform: none;
   letter-spacing: normal;
   color: var(--dg-muted);
   cursor: pointer;
-  white-space: normal;
-  max-width: 150px;
+  white-space: nowrap;
 }
-.dg-pezzi-th-price:hover { color: var(--dg-blue); text-decoration: underline; }
-.dg-pezzi-th-total {
-  display: block;
-  margin-top: 2px;
-  font-size: 10.5px;
-  font-weight: 600;
-  text-transform: none;
-  letter-spacing: normal;
-  color: var(--dg-text);
-  white-space: normal;
-  max-width: 150px;
+.dg-pezzi-th-price:hover { border-color: var(--dg-blue); color: var(--dg-blue); }
+.dg-pezzi-th-price.has-price {
+  background: #EFF6FF;
+  border: 1px solid transparent;
+  color: var(--dg-navy2);
 }
+.dg-pezzi-th-price.has-price:hover { background: #DBEAFE; color: var(--dg-navy2); }
+.dg-pezzi-th-price-qty { font-weight: 600; color: var(--dg-muted); margin-left: 2px; }
+.dg-pezzi-th-iva { display: block; margin-top: 3px; font-size: 10px; font-weight: 600; text-transform: none; letter-spacing: normal; color: var(--dg-muted); }
+
 .dg-pezzi-cell { min-width: 44px; text-align: center; cursor: pointer; }
 .dg-pezzi-cell.is-disabled { cursor: not-allowed; }
 .dg-pezzi-cell:hover { background: #F1F5F9; }
+.dg-pezzi-cell--filled { background: #EFF6FF; }
+.dg-pezzi-cell--filled:hover { background: #DBEAFE; }
 .dg-pezzi-chip {
   display: inline-flex;
   font-size: 13px;
@@ -637,11 +661,13 @@ input, select, textarea { font-family: inherit; }
   padding: 14px 16px;
   max-width: 320px;
 }
-.dg-pezzi-riepilogo--grand { max-width: 320px; margin-top: 10px; background: #F1F5F9; }
+.dg-pezzi-riepilogo--grand { max-width: 320px; margin-top: 10px; background: #F1F5F9; padding: 16px 18px; }
 .dg-pezzi-riepilogo-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--dg-muted); margin-bottom: 8px; }
 .dg-pezzi-riepilogo-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13px; padding: 4px 0; color: var(--dg-text); }
 .dg-pezzi-riepilogo-subtotal { border-top: 1px dashed var(--dg-border); padding-top: 8px; }
-.dg-pezzi-riepilogo-total { font-weight: 700; border-top: 1px solid var(--dg-border); margin-top: 4px; padding-top: 8px; }
+.dg-pezzi-riepilogo-total { font-weight: 700; font-size: 14.5px; color: var(--dg-navy1); border-top: 1px solid var(--dg-border); margin-top: 4px; padding-top: 8px; }
+.dg-pezzi-riepilogo-value { font-size: 28px; font-weight: 800; color: var(--dg-navy1); line-height: 1.1; margin: 2px 0 12px; }
+.dg-pezzi-riepilogo-grand-detail { font-size: 12px; color: var(--dg-muted); padding: 3px 0; }
 
 .dg-pezzi-addcol {
   background: none;

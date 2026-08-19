@@ -3821,31 +3821,47 @@
       pezzi.map(function (p) {
         var tiers = _pezzoPrezzoTiers(prezziPezzi[p]);
         var demand = countPerPezzo[p] || 0;
-        var priceLabel;
-        if (tiers.q1 > 0) {
-          priceLabel = '€' + fmtPzz(tiers.p1) + '×' + tiers.q1 + (tiers.p2 ? ' + €' + fmtPzz(tiers.p2) + '×' + tiers.q2 : '');
-        } else if (tiers.p1) {
-          priceLabel = '€' + fmtPzz(tiers.p1) + '/pz';
-        } else {
-          priceLabel = '+ prezzo pezzo';
-        }
         var totaleCol = _totalePezzoColonna(prezziPezzi[p], demand);
         var pezziTotali = tiers.q1 > 0 ? (tiers.q1 + tiers.q2) : demand;
-        var totaleHtml = totaleCol ? '<span class="dg-pezzi-th-total" title="Totale pezzi, IVA 22% esclusa">' + pezziTotali + ' pz · €' + fmtPzz(totaleCol) + '</span>' : '';
-        return '<th class="dg-pezzi-th-col">' + esc(p) +
-          '<button type="button" class="dg-pezzi-th-remove" data-pezzo="' + esc(p) + '" title="Rimuovi colonna">✕</button>' +
-          '<button type="button" class="dg-pezzi-th-price" data-pezzo="' + esc(p) + '" title="Prezzo del pezzo, IVA 22% esclusa (costo del gadget/supporto prima della stampa) — clicca per modificare, anche su due fasce di quantità">' +
-          priceLabel + '</button>' + totaleHtml + '</th>';
+
+        var badgeHtml, badgeTitle, badgeClass;
+        if (totaleCol > 0) {
+          badgeHtml = '€' + fmtPzz(totaleCol) + '<span class="dg-pezzi-th-price-qty"> · ' + pezziTotali + ' pz</span>';
+          badgeTitle = tiers.q1 > 0
+            ? (tiers.p2
+              ? (tiers.q1 + ' pz × €' + fmtPzz(tiers.p1) + ' + ' + tiers.q2 + ' pz × €' + fmtPzz(tiers.p2) + ' (IVA 22% esclusa)')
+              : (tiers.q1 + ' pz × €' + fmtPzz(tiers.p1) + ' (IVA 22% esclusa)'))
+            : ('€' + fmtPzz(tiers.p1) + ' a pezzo, IVA 22% esclusa — clicca per modificare');
+          badgeClass = ' has-price';
+        } else if (tiers.p1) {
+          badgeHtml = '€' + fmtPzz(tiers.p1) + '/pz';
+          badgeTitle = 'Prezzo impostato, nessun pezzo ancora assegnato — clicca per modificare';
+          badgeClass = ' has-price';
+        } else {
+          badgeHtml = '+ prezzo';
+          badgeTitle = 'Imposta il prezzo del pezzo (IVA 22% esclusa), anche su due fasce di quantità';
+          badgeClass = '';
+        }
+        var unitBase = totaleCol > 0 && pezziTotali > 0 ? (totaleCol / pezziTotali) : tiers.p1;
+        var ivaHtml = unitBase ? '<span class="dg-pezzi-th-iva" title="Costo del singolo capo, IVA 22% inclusa">€' +
+          fmtPzz(Math.round(unitBase * 1.22 * 100) / 100) + '/pz IVA compr.</span>' : '';
+        return '<th class="dg-pezzi-th-col">' +
+          '<div class="dg-pezzi-th-name">' + esc(p) +
+          '<button type="button" class="dg-pezzi-th-remove" data-pezzo="' + esc(p) + '" title="Rimuovi colonna">✕</button></div>' +
+          '<button type="button" class="dg-pezzi-th-price' + badgeClass + '" data-pezzo="' + esc(p) + '" title="' + esc(badgeTitle) + '">' +
+          badgeHtml + '</button>' + ivaHtml + '</th>';
       }).join('') +
       '<th><button type="button" class="dg-pezzi-addcol">+ Pezzo</button></th></tr>';
 
     var body = rows.map(function (r) {
       var badge = r.kind === 'sponsor' && r.stato !== 'chiuso' ? ' <span class="dg-badge dg-badge--' + r.stato + '" style="margin-left:6px">' + esc(_statoLabel(r.stato)) + '</span>' : '';
+      var extraTag = r.kind === 'extra' ? ' <span class="dg-pezzi-extra-tag" title="Voce libera aggiunta manualmente, non collegata a uno sponsor">voce libera</span>' : '';
       var cells = pezzi.map(function (p) {
         var cell = r.pezzi && r.pezzi[p];
         var q = cell && cell.quantita ? (+cell.quantita || 1) : 1;
+        var filled = cell && cell.dimensione;
         var chip;
-        if (cell && cell.dimensione) {
+        if (filled) {
           var unitario = +cell.prezzo || 0;
           var tooltip = esc(cell.dimensione) + ' — ' + q + ' pz × €' + unitario.toLocaleString('it-IT', { minimumFractionDigits: 2 }) + ' cad.';
           chip = '<span class="dg-pezzi-chip" title="' + tooltip + '">€' + (unitario * q).toLocaleString('it-IT', { minimumFractionDigits: 2 }) +
@@ -3853,9 +3869,9 @@
         } else {
           chip = '<span class="dg-pezzi-chip dg-pezzi-chip--empty">+</span>';
         }
-        return '<td class="dg-pezzi-cell' + (!catalogo.length ? ' is-disabled' : '') + '" data-kind="' + r.kind + '" data-id="' + r.id + '" data-pezzo="' + esc(p) + '">' + chip + '</td>';
+        return '<td class="dg-pezzi-cell' + (!catalogo.length ? ' is-disabled' : '') + (filled ? ' dg-pezzi-cell--filled' : '') + '" data-kind="' + r.kind + '" data-id="' + r.id + '" data-pezzo="' + esc(p) + '">' + chip + '</td>';
       }).join('');
-      return '<tr><td>' + esc(r.nome) + badge + '</td>' + cells +
+      return '<tr data-kind="' + r.kind + '"><td>' + esc(r.nome) + badge + extraTag + '</td>' + cells +
         '<td><button type="button" class="dg-pezzi-row-remove" data-kind="' + r.kind + '" data-id="' + r.id + '" title="Rimuovi dalla tabella">✕</button></td></tr>';
     }).join('');
 
@@ -4080,9 +4096,10 @@
       '</div>' +
       '</div>' +
       '<div class="dg-pezzi-riepilogo dg-pezzi-riepilogo--grand">' +
-      '<div class="dg-pezzi-riepilogo-row"><span>Imponibile complessivo</span><span>' + fmt(imponibile) + '</span></div>' +
-      '<div class="dg-pezzi-riepilogo-row"><span>IVA 22%</span><span>' + fmt(iva) + '</span></div>' +
-      '<div class="dg-pezzi-riepilogo-row dg-pezzi-riepilogo-total"><span>Totale complessivo</span><span>' + fmt(totale) + '</span></div>' +
+      '<div class="dg-pezzi-riepilogo-title">Totale complessivo</div>' +
+      '<div class="dg-pezzi-riepilogo-value">' + fmt(totale) + '</div>' +
+      '<div class="dg-pezzi-riepilogo-row dg-pezzi-riepilogo-grand-detail"><span>Imponibile</span><span>' + fmt(imponibile) + '</span></div>' +
+      '<div class="dg-pezzi-riepilogo-row dg-pezzi-riepilogo-grand-detail"><span>IVA 22%</span><span>' + fmt(iva) + '</span></div>' +
       '</div>';
   }
 
@@ -4372,12 +4389,14 @@
     });
   }
 
-  /* ---- Voce di spesa "Materiali sponsor" — somma automaticamente il netto delle stampe
-     assegnate (stato chiuso, stagione corrente) e mantiene allineata la voce di spesa
-     tramite _syncSpesaIva (IVA 22% figlia, stesso meccanismo generico usato per ogni voce). ---- */
+  /* ---- Voci di spesa "Materiali sponsor" — il totale delle stampe e quello dei pezzi
+     assegnati (stato chiuso, stagione corrente) confluiscono in DUE voci separate, ciascuna
+     con la propria IVA 22% figlia via _syncSpesaIva (stesso meccanismo generico usato per
+     ogni voce), così il prospetto spese rispecchia la stessa divisione stampe/pezzi mostrata
+     nel riepilogo della tabella "Materiali sponsor". ---- */
   var _materialiSyncBusy = false;
-  function _totaleMaterialiSponsor() {
-    var tot = 0;
+  function _totaliMaterialiSponsor() {
+    var totStampe = 0, totPezzi = 0;
     var season = _seasons.find(function (s) { return s.id === _currentSeasonId; }) || {};
     var prezziPezzi = season.pezziPrezzi || {};
     var perPezzo = {};
@@ -4388,7 +4407,7 @@
         var cell = pezziObj[k];
         if (!cell || !cell.dimensione) return;
         var q = cell.quantita ? (+cell.quantita || 1) : 1;
-        tot += (+cell.prezzo || 0) * q;
+        totStampe += (+cell.prezzo || 0) * q;
         perPezzo[k] = Math.max(perPezzo[k] || 0, q);
       });
     };
@@ -4397,59 +4416,98 @@
       .forEach(function (s) { accumula(s.pezzi); });
     (season.vociExtra || []).forEach(function (v) { accumula(v.pezzi); });
 
-    Object.keys(perPezzo).forEach(function (nome) { tot += _totalePezzoColonna(prezziPezzi[nome], perPezzo[nome]); });
+    Object.keys(perPezzo).forEach(function (nome) { totPezzi += _totalePezzoColonna(prezziPezzi[nome], perPezzo[nome]); });
 
-    return Math.round(tot * 100) / 100;
+    return { stampe: Math.round(totStampe * 100) / 100, pezzi: Math.round(totPezzi * 100) / 100 };
+  }
+
+  /* Crea/aggiorna/rimuove una singola voce di spesa auto-gestita (identificata dal campo
+     season[fieldId]) e la sua IVA 22% figlia, allineandola al totale corrente. */
+  function _syncVoceAutomatica(season, fieldId, totale, categoria, note) {
+    var v = season[fieldId] ? _vociSpesa.find(function (x) { return x.id === season[fieldId]; }) : null;
+    if (!totale && !v) return Promise.resolve();
+    if (v && v.importoSostenuto === totale) return Promise.resolve();
+
+    if (!totale) {
+      var figlia = v.ivaVoceSpesaId ? _vociSpesa.find(function (x) { return x.id === v.ivaVoceSpesaId; }) : null;
+      return db.collection('vociSpesa').doc(v.id).delete()
+        .then(function () { return _logWrite('voceSpesa', v.id, 'Spesa — ' + v.categoria, 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]); })
+        .then(function () { return figlia ? db.collection('vociSpesa').doc(figlia.id).delete()
+          .then(function () { return _logWrite('voceSpesa', figlia.id, 'Spesa — ' + figlia.categoria, 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]); }) : null; })
+        .then(function () {
+          _vociSpesa = _vociSpesa.filter(function (x) { return x.id !== v.id && (!figlia || x.id !== figlia.id); });
+          season[fieldId] = '';
+          var patch = {}; patch[fieldId] = '';
+          return db.collection('budgetSeasons').doc(season.id).update(patch);
+        });
+    }
+    if (v) {
+      var old = { importoSostenuto: v.importoSostenuto || 0 };
+      v.importoSostenuto = totale;
+      return db.collection('vociSpesa').doc(v.id).update({ importoSostenuto: totale })
+        .then(function () { return _logWrite('voceSpesa', v.id, 'Spesa — ' + v.categoria, 'update', _diff(old, { importoSostenuto: totale }, ['importoSostenuto'])); })
+        .then(function () { return _syncSpesaIva(v); });
+    }
+    var data = {
+      seasonId: _currentSeasonId, categoria: categoria, categoriaSpesaId: '',
+      importoPreventivato: 0, importoSostenuto: totale, ivaAliquota: 22, dataSpesa: '',
+      note: note
+    };
+    var ref = db.collection('vociSpesa').doc();
+    return ref.set(data).then(function () {
+      data.id = ref.id;
+      _vociSpesa.push(data);
+      season[fieldId] = ref.id;
+      var patch = {}; patch[fieldId] = ref.id;
+      return db.collection('budgetSeasons').doc(season.id).update(patch);
+    }).then(function () {
+      return _logWrite('voceSpesa', ref.id, 'Spesa — ' + categoria, 'create', _diff({}, data, Object.keys(data)));
+    }).then(function () {
+      return _syncSpesaIva(data);
+    });
   }
 
   function _syncMaterialiSpesa() {
     if (_materialiSyncBusy) return;
     var season = _seasons.find(function (s) { return s.id === _currentSeasonId; });
     if (!season) return;
-    var totale = _totaleMaterialiSponsor();
-    var v = season.materialiVoceSpesaId ? _vociSpesa.find(function (x) { return x.id === season.materialiVoceSpesaId; }) : null;
-    if (!totale && !v) return;
-    if (v && v.importoSostenuto === totale) return;
+    var totali = _totaliMaterialiSponsor();
 
     _materialiSyncBusy = true;
     var release = function () { _materialiSyncBusy = false; _renderSpese(); _renderStatCards(); _renderBilancio(); };
-    var p;
 
-    if (!totale) {
-      var figlia = v.ivaVoceSpesaId ? _vociSpesa.find(function (x) { return x.id === v.ivaVoceSpesaId; }) : null;
-      p = db.collection('vociSpesa').doc(v.id).delete()
-        .then(function () { return _logWrite('voceSpesa', v.id, 'Spesa — ' + v.categoria, 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]); })
-        .then(function () { return figlia ? db.collection('vociSpesa').doc(figlia.id).delete()
-          .then(function () { return _logWrite('voceSpesa', figlia.id, 'Spesa — ' + figlia.categoria, 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]); }) : null; })
-        .then(function () {
-          _vociSpesa = _vociSpesa.filter(function (x) { return x.id !== v.id && (!figlia || x.id !== figlia.id); });
-          season.materialiVoceSpesaId = '';
-          return db.collection('budgetSeasons').doc(season.id).update({ materialiVoceSpesaId: '' });
-        });
-    } else if (v) {
-      var old = { importoSostenuto: v.importoSostenuto || 0 };
-      v.importoSostenuto = totale;
-      p = db.collection('vociSpesa').doc(v.id).update({ importoSostenuto: totale })
-        .then(function () { return _logWrite('voceSpesa', v.id, 'Spesa — ' + v.categoria, 'update', _diff(old, { importoSostenuto: totale }, ['importoSostenuto'])); })
-        .then(function () { return _syncSpesaIva(v); });
-    } else {
-      var data = {
-        seasonId: _currentSeasonId, categoria: 'Materiali sponsor', categoriaSpesaId: '',
-        importoPreventivato: 0, importoSostenuto: totale, ivaAliquota: 22, dataSpesa: '',
-        note: 'Totale automatico delle stampe assegnate agli sponsor chiusi (tabella "Materiali sponsor")'
-      };
-      var ref = db.collection('vociSpesa').doc();
-      p = ref.set(data).then(function () {
-        data.id = ref.id;
-        _vociSpesa.push(data);
-        season.materialiVoceSpesaId = ref.id;
-        return db.collection('budgetSeasons').doc(season.id).update({ materialiVoceSpesaId: ref.id });
-      }).then(function () {
-        return _logWrite('voceSpesa', ref.id, 'Spesa — Materiali sponsor', 'create', _diff({}, data, Object.keys(data)));
-      }).then(function () {
-        return _syncSpesaIva(data);
-      });
+    /* Migrazione una tantum: le stagioni create prima dello split avevano un'unica voce
+       combinata "Materiali sponsor" — la rimuove (con la sua IVA figlia) così il sync sotto
+       ricrea le due voci separate. */
+    var migrazione = Promise.resolve();
+    if (season.materialiVoceSpesaId) {
+      var vecchia = _vociSpesa.find(function (x) { return x.id === season.materialiVoceSpesaId; });
+      if (vecchia) {
+        var figliaVecchia = vecchia.ivaVoceSpesaId ? _vociSpesa.find(function (x) { return x.id === vecchia.ivaVoceSpesaId; }) : null;
+        migrazione = db.collection('vociSpesa').doc(vecchia.id).delete()
+          .then(function () { return _logWrite('voceSpesa', vecchia.id, 'Spesa — ' + vecchia.categoria, 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]); })
+          .then(function () { return figliaVecchia ? db.collection('vociSpesa').doc(figliaVecchia.id).delete()
+            .then(function () { return _logWrite('voceSpesa', figliaVecchia.id, 'Spesa — ' + figliaVecchia.categoria, 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]); }) : null; })
+          .then(function () {
+            _vociSpesa = _vociSpesa.filter(function (x) { return x.id !== vecchia.id && (!figliaVecchia || x.id !== figliaVecchia.id); });
+            season.materialiVoceSpesaId = '';
+            return db.collection('budgetSeasons').doc(season.id).update({ materialiVoceSpesaId: '' });
+          });
+      } else {
+        season.materialiVoceSpesaId = '';
+        migrazione = db.collection('budgetSeasons').doc(season.id).update({ materialiVoceSpesaId: '' });
+      }
     }
+
+    var p = migrazione
+      .then(function () {
+        return _syncVoceAutomatica(season, 'materialiStampeVoceSpesaId', totali.stampe, 'Materiali sponsor — Stampe',
+          'Totale automatico delle stampe assegnate agli sponsor chiusi (tabella "Materiali sponsor")');
+      })
+      .then(function () {
+        return _syncVoceAutomatica(season, 'materialiPezziVoceSpesaId', totali.pezzi, 'Materiali sponsor — Pezzi',
+          'Totale automatico dei pezzi/gadget assegnati agli sponsor chiusi (tabella "Materiali sponsor")');
+      });
 
     p.then(release, function (e) { release(); alert('Errore aggiornamento spesa materiali: ' + e.message); });
   }
