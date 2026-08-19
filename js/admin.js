@@ -3758,6 +3758,23 @@
      così un ritocco successivo del listino non altera le stampe già assegnate.
      Il totale imponibile confluisce in automatico in una voce di spesa "Materiali sponsor"
      con IVA 22% figlia, tramite _syncMaterialiSpesa() — stesso meccanismo IVA già usato per gli sponsor. */
+  /* ---- Prezzo del pezzo con due fasce (es. 30 pz a €11 + 20 pz a €13): se è impostata una
+     quantità sulla prima fascia il totale è quello fisso delle due fasce (p1*q1 + p2*q2),
+     altrimenti (voci "vecchie", un solo prezzo senza quantità) resta il prezzo unitario
+     moltiplicato per i pezzi effettivamente assegnati nelle celle. ---- */
+  function _pezzoPrezzoTiers(entry) {
+    if (entry && typeof entry === 'object') {
+      return { p1: +entry.p1 || 0, q1: +entry.q1 || 0, p2: +entry.p2 || 0, q2: +entry.q2 || 0 };
+    }
+    return { p1: +entry || 0, q1: 0, p2: 0, q2: 0 };
+  }
+
+  function _totalePezzoColonna(entry, demand) {
+    var t = _pezzoPrezzoTiers(entry);
+    if (t.q1 > 0) return Math.round((t.p1 * t.q1 + t.p2 * t.q2) * 100) / 100;
+    return Math.round(t.p1 * (demand || 0) * 100) / 100;
+  }
+
   function _renderPezziSponsor() {
     var wrap = document.getElementById('pezziSponsorWrap');
     var riepilogoEl = document.getElementById('pezziSponsorRiepilogo');
@@ -3799,17 +3816,26 @@
         countPerPezzo[k] = Math.max(countPerPezzo[k] || 0, q);
       });
     });
+    var fmtPzz = function (n) { return Number(n).toLocaleString('it-IT', { minimumFractionDigits: 2 }); };
     var head = '<tr><th>Sponsor</th>' +
       pezzi.map(function (p) {
-        var prezzoPezzo = +prezziPezzi[p] || 0;
-        var count = countPerPezzo[p] || 0;
-        var totaleHtml = count ? '<span class="dg-pezzi-th-total" title="Totale pezzi, IVA 22% esclusa">' + count + ' pz' +
-          (prezzoPezzo ? ' · €' + (prezzoPezzo * count).toLocaleString('it-IT', { minimumFractionDigits: 2 }) : '') + '</span>' : '';
+        var tiers = _pezzoPrezzoTiers(prezziPezzi[p]);
+        var demand = countPerPezzo[p] || 0;
+        var priceLabel;
+        if (tiers.q1 > 0) {
+          priceLabel = '€' + fmtPzz(tiers.p1) + '×' + tiers.q1 + (tiers.p2 ? ' + €' + fmtPzz(tiers.p2) + '×' + tiers.q2 : '');
+        } else if (tiers.p1) {
+          priceLabel = '€' + fmtPzz(tiers.p1) + '/pz';
+        } else {
+          priceLabel = '+ prezzo pezzo';
+        }
+        var totaleCol = _totalePezzoColonna(prezziPezzi[p], demand);
+        var pezziTotali = tiers.q1 > 0 ? (tiers.q1 + tiers.q2) : demand;
+        var totaleHtml = totaleCol ? '<span class="dg-pezzi-th-total" title="Totale pezzi, IVA 22% esclusa">' + pezziTotali + ' pz · €' + fmtPzz(totaleCol) + '</span>' : '';
         return '<th class="dg-pezzi-th-col">' + esc(p) +
           '<button type="button" class="dg-pezzi-th-remove" data-pezzo="' + esc(p) + '" title="Rimuovi colonna">✕</button>' +
-          '<button type="button" class="dg-pezzi-th-price" data-pezzo="' + esc(p) + '" title="Prezzo del pezzo, IVA 22% esclusa (costo del gadget/supporto prima della stampa) — clicca per modificare">' +
-          (prezzoPezzo ? '€' + prezzoPezzo.toLocaleString('it-IT', { minimumFractionDigits: 2 }) + '/pz' : '+ prezzo pezzo') +
-          '</button>' + totaleHtml + '</th>';
+          '<button type="button" class="dg-pezzi-th-price" data-pezzo="' + esc(p) + '" title="Prezzo del pezzo, IVA 22% esclusa (costo del gadget/supporto prima della stampa) — clicca per modificare, anche su due fasce di quantità">' +
+          priceLabel + '</button>' + totaleHtml + '</th>';
       }).join('') +
       '<th><button type="button" class="dg-pezzi-addcol">+ Pezzo</button></th></tr>';
 
@@ -4018,10 +4044,9 @@
     var fmt = function (n) { return '€' + Number(n).toLocaleString('it-IT', { minimumFractionDigits: 2 }); };
     var righePezzi = Object.keys(perPezzo).sort().map(function (nome) {
       var count = perPezzo[nome];
-      var prezzoUnit = +prezziPezzi[nome] || 0;
-      var subtot = prezzoUnit * count;
+      var subtot = _totalePezzoColonna(prezziPezzi[nome], count);
       imponibileMerce += subtot;
-      var right = prezzoUnit ? fmt(subtot) : '<span class="dg-muted" style="font-weight:400">prezzo non impostato</span>';
+      var right = subtot ? fmt(subtot) : '<span class="dg-muted" style="font-weight:400">prezzo non impostato</span>';
       return '<div class="dg-pezzi-riepilogo-row"><span>' + esc(nome) + ' × ' + count + '</span><span>' + right + '</span></div>';
     }).join('');
 
@@ -4222,17 +4247,43 @@
   }
 
   /* ---- Prezzo del pezzo (merce/gadget prima della stampa), impostato sull'intestazione della
-     colonna — si somma al prezzo di stampa scelto per singola cella, non lo sostituisce. ---- */
+     colonna — si somma al prezzo di stampa scelto per singola cella, non lo sostituisce.
+     Supporta due fasce di prezzo/quantità (es. 30 pezzi a €11 + 20 pezzi a €13): se si indica
+     una quantità sulla prima fascia il totale colonna diventa fisso (p1*q1 + p2*q2), altrimenti
+     resta un prezzo unitario moltiplicato per i pezzi assegnati nelle celle (comportamento
+     precedente, per compatibilità con i prezzi già impostati senza fasce). ---- */
   function _setPrezzoPezzo(pezzo) {
     var season = _seasons.find(function (s) { return s.id === _currentSeasonId; });
     if (!season) return;
-    var attuale = (season.pezziPrezzi || {})[pezzo] || '';
-    var input = prompt('Prezzo del pezzo "' + pezzo + '" (IVA 22% esclusa — costo del gadget/supporto, non della stampa):', attuale);
-    if (input === null) return;
-    var v = +String(input).replace(',', '.');
-    if (isNaN(v) || v < 0) { alert('Inserisci un numero valido.'); return; }
+    var attuale = _pezzoPrezzoTiers((season.pezziPrezzi || {})[pezzo]);
+
+    var p1in = prompt('Prezzo del pezzo "' + pezzo + '" (IVA 22% esclusa — costo del gadget/supporto, non della stampa):', attuale.p1 || '');
+    if (p1in === null) return;
+    var p1 = +String(p1in).replace(',', '.');
+    if (isNaN(p1) || p1 < 0) { alert('Inserisci un numero valido.'); return; }
+
+    var q1in = prompt('Quantità a questo prezzo (lascia vuoto o 0 se è un prezzo unico, senza fasce):', attuale.q1 || '');
+    if (q1in === null) return;
+    var q1 = +String(q1in).replace(',', '.') || 0;
+    if (isNaN(q1) || q1 < 0) { alert('Inserisci una quantità valida.'); return; }
+
+    var p2 = 0, q2 = 0;
+    if (q1 > 0) {
+      var p2in = prompt('Prezzo per i pezzi successivi, oltre i primi ' + q1 + ' (lascia vuoto se non serve una seconda fascia):', attuale.p2 || '');
+      if (p2in === null) return;
+      if (String(p2in).trim() !== '') {
+        p2 = +String(p2in).replace(',', '.');
+        if (isNaN(p2) || p2 < 0) { alert('Inserisci un numero valido per il secondo prezzo.'); return; }
+        var q2in = prompt('Quantità a questo secondo prezzo:', attuale.q2 || '');
+        if (q2in === null) return;
+        q2 = +String(q2in).replace(',', '.') || 0;
+        if (isNaN(q2) || q2 < 0) { alert('Inserisci una quantità valida.'); return; }
+      }
+    }
+
     var prezziPezzi = Object.assign({}, season.pezziPrezzi || {});
-    if (v === 0) delete prezziPezzi[pezzo]; else prezziPezzi[pezzo] = v;
+    if (!p1 && !q1 && !p2 && !q2) delete prezziPezzi[pezzo];
+    else prezziPezzi[pezzo] = { p1: p1, q1: q1, p2: p2, q2: q2 };
     season.pezziPrezzi = prezziPezzi;
     _renderPezziSponsor();
     db.collection('budgetSeasons').doc(season.id).update({ pezziPrezzi: prezziPezzi })
@@ -4346,7 +4397,7 @@
       .forEach(function (s) { accumula(s.pezzi); });
     (season.vociExtra || []).forEach(function (v) { accumula(v.pezzi); });
 
-    Object.keys(perPezzo).forEach(function (nome) { tot += (+prezziPezzi[nome] || 0) * perPezzo[nome]; });
+    Object.keys(perPezzo).forEach(function (nome) { tot += _totalePezzoColonna(prezziPezzi[nome], perPezzo[nome]); });
 
     return Math.round(tot * 100) / 100;
   }

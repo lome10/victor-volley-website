@@ -537,6 +537,8 @@ input, select, textarea { font-family: inherit; }
   letter-spacing: normal;
   color: var(--dg-muted);
   cursor: pointer;
+  white-space: normal;
+  max-width: 150px;
 }
 .dg-pezzi-th-price:hover { color: var(--dg-blue); text-decoration: underline; }
 .dg-pezzi-th-total {
@@ -547,6 +549,8 @@ input, select, textarea { font-family: inherit; }
   text-transform: none;
   letter-spacing: normal;
   color: var(--dg-text);
+  white-space: normal;
+  max-width: 150px;
 }
 .dg-pezzi-cell { min-width: 44px; text-align: center; cursor: pointer; }
 .dg-pezzi-cell.is-disabled { cursor: not-allowed; }
