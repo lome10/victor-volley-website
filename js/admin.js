@@ -3796,7 +3796,7 @@
         var cell = r.pezzi[k];
         if (!cell || !cell.dimensione) return;
         var q = cell.quantita ? (+cell.quantita || 1) : 1;
-        countPerPezzo[k] = (countPerPezzo[k] || 0) + q;
+        countPerPezzo[k] = Math.max(countPerPezzo[k] || 0, q);
       });
     });
     var head = '<tr><th>Sponsor</th>' +
@@ -4010,7 +4010,7 @@
         imponibileStampe += subtot;
         var d = perDimensione[cell.dimensione] || (perDimensione[cell.dimensione] = { count: 0, subtotale: 0 });
         d.count += q; d.subtotale += subtot;
-        perPezzo[k] = (perPezzo[k] || 0) + q;
+        perPezzo[k] = Math.max(perPezzo[k] || 0, q);
       });
     });
 
@@ -4338,7 +4338,7 @@
         if (!cell || !cell.dimensione) return;
         var q = cell.quantita ? (+cell.quantita || 1) : 1;
         tot += (+cell.prezzo || 0) * q;
-        perPezzo[k] = (perPezzo[k] || 0) + q;
+        perPezzo[k] = Math.max(perPezzo[k] || 0, q);
       });
     };
 
