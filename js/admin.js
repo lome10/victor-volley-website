@@ -3789,14 +3789,27 @@
     }
 
     var prezziPezzi = season.pezziPrezzi || {};
+    var countPerPezzo = {};
+    rows.forEach(function (r) {
+      if (!r.pezzi) return;
+      Object.keys(r.pezzi).forEach(function (k) {
+        var cell = r.pezzi[k];
+        if (!cell || !cell.dimensione) return;
+        var q = cell.quantita ? (+cell.quantita || 1) : 1;
+        countPerPezzo[k] = (countPerPezzo[k] || 0) + q;
+      });
+    });
     var head = '<tr><th>Sponsor</th>' +
       pezzi.map(function (p) {
         var prezzoPezzo = +prezziPezzi[p] || 0;
+        var count = countPerPezzo[p] || 0;
+        var totaleHtml = count ? '<span class="dg-pezzi-th-total" title="Totale pezzi, IVA 22% esclusa">' + count + ' pz' +
+          (prezzoPezzo ? ' · €' + (prezzoPezzo * count).toLocaleString('it-IT', { minimumFractionDigits: 2 }) : '') + '</span>' : '';
         return '<th class="dg-pezzi-th-col">' + esc(p) +
           '<button type="button" class="dg-pezzi-th-remove" data-pezzo="' + esc(p) + '" title="Rimuovi colonna">✕</button>' +
           '<button type="button" class="dg-pezzi-th-price" data-pezzo="' + esc(p) + '" title="Prezzo del pezzo, IVA 22% esclusa (costo del gadget/supporto prima della stampa) — clicca per modificare">' +
           (prezzoPezzo ? '€' + prezzoPezzo.toLocaleString('it-IT', { minimumFractionDigits: 2 }) + '/pz' : '+ prezzo pezzo') +
-          '</button></th>';
+          '</button>' + totaleHtml + '</th>';
       }).join('') +
       '<th><button type="button" class="dg-pezzi-addcol">+ Pezzo</button></th></tr>';
 

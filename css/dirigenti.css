@@ -539,6 +539,15 @@ input, select, textarea { font-family: inherit; }
   cursor: pointer;
 }
 .dg-pezzi-th-price:hover { color: var(--dg-blue); text-decoration: underline; }
+.dg-pezzi-th-total {
+  display: block;
+  margin-top: 2px;
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--dg-text);
+}
 .dg-pezzi-cell { min-width: 44px; text-align: center; cursor: pointer; }
 .dg-pezzi-cell.is-disabled { cursor: not-allowed; }
 .dg-pezzi-cell:hover { background: #F1F5F9; }
