@@ -5039,8 +5039,8 @@
     }
 
     if (figlia) {
-      var old = { categoria: figlia.categoria, importoPreventivato: figlia.importoPreventivato, importoSostenuto: figlia.importoSostenuto };
-      var patch = { categoria: nome, importoPreventivato: preventivato, importoSostenuto: sostenuto };
+      var old = { categoria: figlia.categoria, importoPreventivato: figlia.importoPreventivato, importoSostenuto: figlia.importoSostenuto, ivaAliquota: figlia.ivaAliquota };
+      var patch = { categoria: nome, importoPreventivato: preventivato, importoSostenuto: sostenuto, ivaAliquota: 11 };
       return db.collection('vociSpesa').doc(figlia.id).update(patch)
         .then(function () { return _logWrite('voceSpesa', figlia.id, 'Spesa — ' + nome, 'update', _diff(old, patch, Object.keys(patch))); })
         .then(function () { Object.assign(figlia, patch); });
@@ -5048,7 +5048,7 @@
 
     var data = {
       seasonId: s.seasonId, categoria: nome, categoriaSpesaId: '',
-      importoPreventivato: preventivato, importoSostenuto: sostenuto, dataSpesa: '',
+      importoPreventivato: preventivato, importoSostenuto: sostenuto, ivaAliquota: 11, dataSpesa: '',
       note: 'IVA 11% generata automaticamente sullo sponsor "' + nome.replace(/^IVA /, '') + '" (preventivo alla chiusura, saldo sulle tranche incassate)',
       isIva: true, pagata: false, ivaTrimestre: '', ivaScadenza: '', ivaScadenzaManuale: false
     };
@@ -5641,7 +5641,7 @@
       v.ivaScadenza = patch.ivaScadenza = auto ? auto.scadenza : '';
       fields.push('ivaTrimestre', 'ivaScadenza');
     }
-    var needsIvaSync = field === 'importoSostenuto' || field === 'ivaAliquota' || field === 'categoria' || field === 'dataSpesa';
+    var needsIvaSync = field === 'importoSostenuto' || field === 'importoPreventivato' || field === 'ivaAliquota' || field === 'categoria' || field === 'dataSpesa';
     db.collection('vociSpesa').doc(id).update(patch)
       .then(function () { return _logWrite('voceSpesa', id, 'Spesa — ' + v.categoria, 'update', _diff(old, patch, fields)); })
       .then(function () { return needsIvaSync ? _syncSpesaIva(v) : null; })
@@ -5688,13 +5688,18 @@
         });
     }
 
+    /* Preventivato e sostenuto si proiettano entrambi sull'aliquota, così la voce IVA
+       permette anche una previsione (non solo il consuntivo) — e porta con sé l'aliquota
+       applicata, per distinguere a colpo d'occhio le voci all'11% (sponsor) da quelle
+       al 22% (es. abbigliamento/materiali) nel Riepilogo IVA. */
     var importoIva = Math.round((+v.importoSostenuto || 0) * aliquota) / 100;
+    var importoIvaPreventivato = Math.round((+v.importoPreventivato || 0) * aliquota) / 100;
     var nome = 'IVA ' + v.categoria;
     var auto = _trimestreIvaDaData(v.dataSpesa);
 
     if (figlia) {
-      var old = { categoria: figlia.categoria, importoSostenuto: figlia.importoSostenuto, dataSpesa: figlia.dataSpesa };
-      var patch = { categoria: nome, importoSostenuto: importoIva, dataSpesa: v.dataSpesa || '' };
+      var old = { categoria: figlia.categoria, importoSostenuto: figlia.importoSostenuto, importoPreventivato: figlia.importoPreventivato, ivaAliquota: figlia.ivaAliquota, dataSpesa: figlia.dataSpesa };
+      var patch = { categoria: nome, importoSostenuto: importoIva, importoPreventivato: importoIvaPreventivato, ivaAliquota: aliquota, dataSpesa: v.dataSpesa || '' };
       /* La scadenza di versamento si ricalcola solo se non è mai stata forzata a mano sulla voce IVA. */
       if (!figlia.ivaScadenzaManuale) {
         old.ivaTrimestre = figlia.ivaTrimestre || ''; old.ivaScadenza = figlia.ivaScadenza || '';
@@ -5703,14 +5708,14 @@
       return db.collection('vociSpesa').doc(figlia.id).update(patch)
         .then(function () { return _logWrite('voceSpesa', figlia.id, 'Spesa — ' + nome, 'update', _diff(old, patch, Object.keys(patch))); })
         .then(function () {
-          figlia.categoria = nome; figlia.importoSostenuto = importoIva; figlia.dataSpesa = v.dataSpesa || '';
+          figlia.categoria = nome; figlia.importoSostenuto = importoIva; figlia.importoPreventivato = importoIvaPreventivato; figlia.ivaAliquota = aliquota; figlia.dataSpesa = v.dataSpesa || '';
           if (patch.ivaTrimestre !== undefined) { figlia.ivaTrimestre = patch.ivaTrimestre; figlia.ivaScadenza = patch.ivaScadenza; }
         });
     }
 
     var data = {
       seasonId: _currentSeasonId, categoria: nome, categoriaSpesaId: v.categoriaSpesaId || '',
-      importoPreventivato: 0, importoSostenuto: importoIva, dataSpesa: v.dataSpesa || '',
+      importoPreventivato: importoIvaPreventivato, importoSostenuto: importoIva, ivaAliquota: aliquota, dataSpesa: v.dataSpesa || '',
       note: 'IVA ' + aliquota + '% generata automaticamente sulla voce "' + v.categoria + '"', isIva: true, pagata: false,
       ivaTrimestre: auto ? auto.trimestre : '', ivaScadenza: auto ? auto.scadenza : '', ivaScadenzaManuale: false
     };
@@ -5753,7 +5758,8 @@
     var righe = _vociSpesa.filter(function (v) { return v.isIva; })
       .slice().sort(function (a, b) { return (+b.importoSostenuto || 0) - (+a.importoSostenuto || 0); });
     var totale = righe.reduce(function (s, v) { return s + (+v.importoSostenuto || 0); }, 0);
-    return { righe: righe, totale: totale };
+    var totalePreventivato = righe.reduce(function (s, v) { return s + (+v.importoPreventivato || 0); }, 0);
+    return { righe: righe, totale: totale, totalePreventivato: totalePreventivato };
   }
 
   DG.setIvaScadenza = function (sel) {
@@ -5794,16 +5800,19 @@
     var bodyEl = document.getElementById('ivaRiepilogoBody');
     if (!statsEl || !bodyEl) return;
     var d = _calcIvaTotale();
-    statsEl.innerHTML = _budgetStatCard('Totale IVA', d.totale, '');
+    statsEl.innerHTML = _budgetStatCard('IVA preventivata', d.totalePreventivato, '') + _budgetStatCard('IVA sostenuta', d.totale, '');
     bodyEl.innerHTML = d.righe.length ? d.righe.map(function (v) {
-      return '<tr><td>' + esc(v.categoria) + '</td><td>' + _eur(+v.importoSostenuto || 0) + '</td>' +
+      return '<tr><td>' + esc(v.categoria) + '</td>' +
+        '<td>' + (v.ivaAliquota ? (+v.ivaAliquota).toLocaleString('it-IT') + '%' : '—') + '</td>' +
+        '<td>' + _eur(+v.importoPreventivato || 0) + '</td>' +
+        '<td>' + _eur(+v.importoSostenuto || 0) + '</td>' +
         '<td>' + (v.dataSpesa ? esc(_fmtDateLong(v.dataSpesa)) : '—') + '</td>' +
         '<td>' + _ivaScadenzaSelectHtml(v) +
         (v.ivaScadenza ? '<div style="font-size:11px;color:var(--dg-muted);margin-top:3px">Scade il ' + esc(_fmtDateLong(v.ivaScadenza)) + '</div>' : '') + '</td>' +
         '<td style="text-align:center"><input type="checkbox" data-id="' + v.id + '"' + (v.pagata ? ' checked' : '') +
           ' title="Segna come versata all\'Erario — solo allora conta come uscita nel Bilancio" onchange="DG.toggleIvaPagata(this.dataset.id, this.checked)"></td>' +
         '</tr>';
-    }).join('') : '<tr><td colspan="5" class="dg-empty">Nessuna voce IVA per questa stagione.</td></tr>';
+    }).join('') : '<tr><td colspan="7" class="dg-empty">Nessuna voce IVA per questa stagione.</td></tr>';
   }
 
   /* La voce IVA è "Sostenuto" (accrual, sempre conteggiata in Spese/Forecasting)
