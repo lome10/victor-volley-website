@@ -5795,10 +5795,34 @@
     return '<select class="dg-table-input" data-id="' + v.id + '" data-refyear="' + refYear + '" onchange="DG.setIvaScadenza(this)">' + opts + '</select>';
   }
 
+  /* Una tantum per sessione: le voci IVA create prima dell'introduzione di aliquota/preventivato
+     sulla voce figlia non li avevano ancora salvati — le individua e le fa ripassare dal sync
+     che già esiste (_syncSpesaIva / _syncSponsorIva), senza toccare quelle già a posto. */
+  var _ivaAliquotaBackfillDone = false;
+  function _backfillIvaAliquote() {
+    if (_ivaAliquotaBackfillDone) return;
+    _ivaAliquotaBackfillDone = true;
+    var jobs = [];
+    _sponsorizzazioni.forEach(function (s) {
+      if (!s.ivaVoceSpesaId) return;
+      var figlia = _vociSpesa.find(function (x) { return x.id === s.ivaVoceSpesaId; });
+      if (figlia && !figlia.ivaAliquota) jobs.push(_syncSponsorIva(s));
+    });
+    _vociSpesa.forEach(function (v) {
+      if (v.isIva || !v.ivaVoceSpesaId) return;
+      var figlia = _vociSpesa.find(function (x) { return x.id === v.ivaVoceSpesaId; });
+      if (figlia && !figlia.ivaAliquota) jobs.push(_syncSpesaIva(v));
+    });
+    if (!jobs.length) return;
+    Promise.all(jobs).then(function () { _renderSpese(); _renderStatCards(); _renderBilancio(); })
+      .catch(function (e) { console.error('[iva] backfill aliquota', e); });
+  }
+
   function _renderIvaRiepilogo() {
     var statsEl = document.getElementById('ivaRiepilogoStats');
     var bodyEl = document.getElementById('ivaRiepilogoBody');
     if (!statsEl || !bodyEl) return;
+    _backfillIvaAliquote();
     var d = _calcIvaTotale();
     statsEl.innerHTML = _budgetStatCard('IVA preventivata', d.totalePreventivato, '') + _budgetStatCard('IVA sostenuta', d.totale, '');
     bodyEl.innerHTML = d.righe.length ? d.righe.map(function (v) {
