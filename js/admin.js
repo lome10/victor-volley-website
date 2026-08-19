@@ -4015,6 +4015,10 @@
     var imponibile = imponibileStampe + imponibileMerce;
     if (!imponibile) { el.innerHTML = ''; return; }
 
+    var ivaStampe = Math.round(imponibileStampe * 22) / 100;
+    var totaleStampe = Math.round((imponibileStampe + ivaStampe) * 100) / 100;
+    var ivaMerce = Math.round(imponibileMerce * 22) / 100;
+    var totaleMerce = Math.round((imponibileMerce + ivaMerce) * 100) / 100;
     var iva = Math.round(imponibile * 22) / 100;
     var totale = Math.round((imponibile + iva) * 100) / 100;
 
@@ -4023,12 +4027,24 @@
       return '<div class="dg-pezzi-riepilogo-row"><span>' + esc(nome) + ' × ' + d.count + '</span><span>' + fmt(d.subtotale) + '</span></div>';
     }).join('');
 
-    el.innerHTML = '<div class="dg-pezzi-riepilogo">' +
-      '<div class="dg-pezzi-riepilogo-title">Stampe</div>' + righeStampe +
-      '<div class="dg-pezzi-riepilogo-title" style="margin-top:12px">Pezzi da produrre</div>' + righePezzi +
-      '<div class="dg-pezzi-riepilogo-row dg-pezzi-riepilogo-total" style="margin-top:8px"><span>Imponibile</span><span>' + fmt(imponibile) + '</span></div>' +
+    el.innerHTML = '<div class="dg-pezzi-riepilogo-group">' +
+      '<div class="dg-pezzi-riepilogo">' +
+      '<div class="dg-pezzi-riepilogo-title">Stampe</div>' + (righeStampe || '<div class="dg-muted" style="font-size:12px">Nessuna stampa assegnata.</div>') +
+      '<div class="dg-pezzi-riepilogo-row dg-pezzi-riepilogo-subtotal" style="margin-top:8px"><span>Imponibile</span><span>' + fmt(imponibileStampe) + '</span></div>' +
+      '<div class="dg-pezzi-riepilogo-row"><span>IVA 22%</span><span>' + fmt(ivaStampe) + '</span></div>' +
+      '<div class="dg-pezzi-riepilogo-row dg-pezzi-riepilogo-total"><span>Totale stampe</span><span>' + fmt(totaleStampe) + '</span></div>' +
+      '</div>' +
+      '<div class="dg-pezzi-riepilogo">' +
+      '<div class="dg-pezzi-riepilogo-title">Pezzi da produrre</div>' + (righePezzi || '<div class="dg-muted" style="font-size:12px">Nessun pezzo assegnato.</div>') +
+      '<div class="dg-pezzi-riepilogo-row dg-pezzi-riepilogo-subtotal" style="margin-top:8px"><span>Imponibile</span><span>' + fmt(imponibileMerce) + '</span></div>' +
+      '<div class="dg-pezzi-riepilogo-row"><span>IVA 22%</span><span>' + fmt(ivaMerce) + '</span></div>' +
+      '<div class="dg-pezzi-riepilogo-row dg-pezzi-riepilogo-total"><span>Totale pezzi</span><span>' + fmt(totaleMerce) + '</span></div>' +
+      '</div>' +
+      '</div>' +
+      '<div class="dg-pezzi-riepilogo dg-pezzi-riepilogo--grand">' +
+      '<div class="dg-pezzi-riepilogo-row"><span>Imponibile complessivo</span><span>' + fmt(imponibile) + '</span></div>' +
       '<div class="dg-pezzi-riepilogo-row"><span>IVA 22%</span><span>' + fmt(iva) + '</span></div>' +
-      '<div class="dg-pezzi-riepilogo-row dg-pezzi-riepilogo-total"><span>Totale</span><span>' + fmt(totale) + '</span></div>' +
+      '<div class="dg-pezzi-riepilogo-row dg-pezzi-riepilogo-total"><span>Totale complessivo</span><span>' + fmt(totale) + '</span></div>' +
       '</div>';
   }
 

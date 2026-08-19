@@ -615,6 +615,8 @@ input, select, textarea { font-family: inherit; }
 .dg-pezzi-esclusi-restore { background: none; border: none; cursor: pointer; color: var(--dg-blue); font-size: 13px; padding: 2px; line-height: 1; }
 .dg-pezzi-esclusi-restore:hover { color: var(--dg-navy2); }
 
+.dg-pezzi-riepilogo-group { display: flex; flex-wrap: wrap; gap: 14px; }
+.dg-pezzi-riepilogo-group .dg-pezzi-riepilogo { flex: 1 1 260px; }
 .dg-pezzi-riepilogo {
   background: #F8FAFC;
   border: 1px solid var(--dg-border);
@@ -622,8 +624,10 @@ input, select, textarea { font-family: inherit; }
   padding: 14px 16px;
   max-width: 320px;
 }
+.dg-pezzi-riepilogo--grand { max-width: 320px; margin-top: 10px; background: #F1F5F9; }
 .dg-pezzi-riepilogo-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--dg-muted); margin-bottom: 8px; }
 .dg-pezzi-riepilogo-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13px; padding: 4px 0; color: var(--dg-text); }
+.dg-pezzi-riepilogo-subtotal { border-top: 1px dashed var(--dg-border); padding-top: 8px; }
 .dg-pezzi-riepilogo-total { font-weight: 700; border-top: 1px solid var(--dg-border); margin-top: 4px; padding-top: 8px; }
 
 .dg-pezzi-addcol {
