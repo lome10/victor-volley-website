@@ -3842,14 +3842,11 @@
           badgeTitle = 'Imposta il prezzo del pezzo (IVA 22% esclusa), anche su due fasce di quantità';
           badgeClass = '';
         }
-        var unitBase = totaleCol > 0 && pezziTotali > 0 ? (totaleCol / pezziTotali) : tiers.p1;
-        var ivaHtml = unitBase ? '<span class="dg-pezzi-th-iva" title="Costo del singolo capo, IVA 22% inclusa">€' +
-          fmtPzz(Math.round(unitBase * 1.22 * 100) / 100) + '/pz IVA compr.</span>' : '';
         return '<th class="dg-pezzi-th-col">' +
           '<div class="dg-pezzi-th-name">' + esc(p) +
           '<button type="button" class="dg-pezzi-th-remove" data-pezzo="' + esc(p) + '" title="Rimuovi colonna">✕</button></div>' +
           '<button type="button" class="dg-pezzi-th-price' + badgeClass + '" data-pezzo="' + esc(p) + '" title="' + esc(badgeTitle) + '">' +
-          badgeHtml + '</button>' + ivaHtml + '</th>';
+          badgeHtml + '</button></th>';
       }).join('') +
       '<th><button type="button" class="dg-pezzi-addcol">+ Pezzo</button></th></tr>';
 
@@ -4063,7 +4060,8 @@
       var subtot = _totalePezzoColonna(prezziPezzi[nome], count);
       imponibileMerce += subtot;
       var right = subtot ? fmt(subtot) : '<span class="dg-muted" style="font-weight:400">prezzo non impostato</span>';
-      return '<div class="dg-pezzi-riepilogo-row"><span>' + esc(nome) + ' × ' + count + '</span><span>' + right + '</span></div>';
+      var ivaLine = subtot ? '<div class="dg-pezzi-riepilogo-subline">' + fmt(Math.round((subtot / count) * 1.22 * 100) / 100) + '/pz IVA compr.</div>' : '';
+      return '<div class="dg-pezzi-riepilogo-row"><span>' + esc(nome) + ' × ' + count + '</span><span>' + right + '</span></div>' + ivaLine;
     }).join('');
 
     var imponibile = imponibileStampe + imponibileMerce;
