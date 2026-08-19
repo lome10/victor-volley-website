@@ -4388,10 +4388,11 @@
   }
 
   /* ---- Voci di spesa "Materiali sponsor" — il totale delle stampe e quello dei pezzi
-     assegnati (stato chiuso, stagione corrente) confluiscono in DUE voci separate, ciascuna
-     con la propria IVA 22% figlia via _syncSpesaIva (stesso meccanismo generico usato per
-     ogni voce), così il prospetto spese rispecchia la stessa divisione stampe/pezzi mostrata
-     nel riepilogo della tabella "Materiali sponsor". ---- */
+     assegnati (stato chiuso, stagione corrente) confluiscono in DUE voci separate come
+     PREVENTIVATO (proiezione dalla tabella), ciascuna con la propria IVA 22% figlia via
+     _syncSpesaIva (stesso meccanismo generico usato per ogni voce). Il Sostenuto (la spesa
+     realmente effettuata) resta interamente a mano nella tabella Spese — vedi il commento
+     su _syncVoceAutomatica per il motivo. ---- */
   var _materialiSyncBusy = false;
   function _totaliMaterialiSponsor() {
     var totStampe = 0, totPezzi = 0;
@@ -4420,13 +4421,19 @@
   }
 
   /* Crea/aggiorna/rimuove una singola voce di spesa auto-gestita (identificata dal campo
-     season[fieldId]) e la sua IVA 22% figlia, allineandola al totale corrente. */
-  function _syncVoceAutomatica(season, fieldId, totale, categoria, note) {
+     season[fieldId]) e la sua IVA 22% figlia, allineandola al totale corrente.
+     Il totale calcolato dalla tabella confluisce SEMPRE e SOLO in "Preventivato": "Sostenuto"
+     (la spesa realmente effettuata) resta interamente a mano dell'utente e il sync non lo
+     tocca mai più dopo la creazione — altrimenti ogni ricalcolo della tabella cancellerebbe
+     un valore inserito manualmente (es. portato a 0 perché non ancora pagato). Per lo stesso
+     motivo la voce viene rimossa in automatico solo se anche il sostenuto è a zero: se l'utente
+     ha già registrato una spesa reale, la voce resta anche a preventivato azzerato. */
+  function _syncVoceAutomatica(season, fieldId, preventivato, categoria, note) {
     var v = season[fieldId] ? _vociSpesa.find(function (x) { return x.id === season[fieldId]; }) : null;
-    if (!totale && !v) return Promise.resolve();
-    if (v && v.importoSostenuto === totale) return Promise.resolve();
+    if (!preventivato && !v) return Promise.resolve();
+    if (v && (+v.importoPreventivato || 0) === preventivato) return Promise.resolve();
 
-    if (!totale) {
+    if (!preventivato && v && !(+v.importoSostenuto || 0)) {
       var figlia = v.ivaVoceSpesaId ? _vociSpesa.find(function (x) { return x.id === v.ivaVoceSpesaId; }) : null;
       return db.collection('vociSpesa').doc(v.id).delete()
         .then(function () { return _logWrite('voceSpesa', v.id, 'Spesa — ' + v.categoria, 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]); })
@@ -4440,15 +4447,15 @@
         });
     }
     if (v) {
-      var old = { importoSostenuto: v.importoSostenuto || 0 };
-      v.importoSostenuto = totale;
-      return db.collection('vociSpesa').doc(v.id).update({ importoSostenuto: totale })
-        .then(function () { return _logWrite('voceSpesa', v.id, 'Spesa — ' + v.categoria, 'update', _diff(old, { importoSostenuto: totale }, ['importoSostenuto'])); })
+      var old = { importoPreventivato: v.importoPreventivato || 0 };
+      v.importoPreventivato = preventivato;
+      return db.collection('vociSpesa').doc(v.id).update({ importoPreventivato: preventivato })
+        .then(function () { return _logWrite('voceSpesa', v.id, 'Spesa — ' + v.categoria, 'update', _diff(old, { importoPreventivato: preventivato }, ['importoPreventivato'])); })
         .then(function () { return _syncSpesaIva(v); });
     }
     var data = {
       seasonId: _currentSeasonId, categoria: categoria, categoriaSpesaId: '',
-      importoPreventivato: 0, importoSostenuto: totale, ivaAliquota: 22, dataSpesa: '',
+      importoPreventivato: preventivato, importoSostenuto: 0, ivaAliquota: 22, dataSpesa: '',
       note: note
     };
     var ref = db.collection('vociSpesa').doc();
@@ -4500,11 +4507,11 @@
     var p = migrazione
       .then(function () {
         return _syncVoceAutomatica(season, 'materialiStampeVoceSpesaId', totali.stampe, 'Materiali sponsor — Stampe',
-          'Totale automatico delle stampe assegnate agli sponsor chiusi (tabella "Materiali sponsor")');
+          'Preventivato automatico dalle stampe assegnate agli sponsor chiusi (tabella "Materiali sponsor") — il Sostenuto va aggiornato a mano qui sotto quando la spesa è effettiva');
       })
       .then(function () {
         return _syncVoceAutomatica(season, 'materialiPezziVoceSpesaId', totali.pezzi, 'Materiali sponsor — Pezzi',
-          'Totale automatico dei pezzi/gadget assegnati agli sponsor chiusi (tabella "Materiali sponsor")');
+          'Preventivato automatico dai pezzi/gadget assegnati agli sponsor chiusi (tabella "Materiali sponsor") — il Sostenuto va aggiornato a mano qui sotto quando la spesa è effettiva');
       });
 
     p.then(release, function (e) { release(); alert('Errore aggiornamento spesa materiali: ' + e.message); });
