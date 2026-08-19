@@ -5050,7 +5050,7 @@
       seasonId: s.seasonId, categoria: nome, categoriaSpesaId: '',
       importoPreventivato: preventivato, importoSostenuto: sostenuto, ivaAliquota: 11, dataSpesa: '',
       note: 'IVA 11% generata automaticamente sullo sponsor "' + nome.replace(/^IVA /, '') + '" (preventivo alla chiusura, saldo sulle tranche incassate)',
-      isIva: true, pagata: false, ivaTrimestre: '', ivaScadenza: '', ivaScadenzaManuale: false
+      isIva: true, pagata: false, ivaEscluso: false, ivaTrimestre: '', ivaScadenza: '', ivaScadenzaManuale: false
     };
     var ref = db.collection('vociSpesa').doc();
     return ref.set(data).then(function () {
@@ -5716,7 +5716,7 @@
     var data = {
       seasonId: _currentSeasonId, categoria: nome, categoriaSpesaId: v.categoriaSpesaId || '',
       importoPreventivato: importoIvaPreventivato, importoSostenuto: importoIva, ivaAliquota: aliquota, dataSpesa: v.dataSpesa || '',
-      note: 'IVA ' + aliquota + '% generata automaticamente sulla voce "' + v.categoria + '"', isIva: true, pagata: false,
+      note: 'IVA ' + aliquota + '% generata automaticamente sulla voce "' + v.categoria + '"', isIva: true, pagata: false, ivaEscluso: false,
       ivaTrimestre: auto ? auto.trimestre : '', ivaScadenza: auto ? auto.scadenza : '', ivaScadenzaManuale: false
     };
     var ref = db.collection('vociSpesa').doc();
@@ -5755,12 +5755,38 @@
   }
 
   function _calcIvaTotale() {
-    var righe = _vociSpesa.filter(function (v) { return v.isIva; })
+    var tutte = _vociSpesa.filter(function (v) { return v.isIva; })
       .slice().sort(function (a, b) { return (+b.importoSostenuto || 0) - (+a.importoSostenuto || 0); });
+    var righe = tutte.filter(function (v) { return !v.ivaEscluso; });
+    var esclusi = tutte.filter(function (v) { return v.ivaEscluso; });
     var totale = righe.reduce(function (s, v) { return s + (+v.importoSostenuto || 0); }, 0);
     var totalePreventivato = righe.reduce(function (s, v) { return s + (+v.importoPreventivato || 0); }, 0);
-    return { righe: righe, totale: totale, totalePreventivato: totalePreventivato };
+    return { righe: righe, esclusi: esclusi, totale: totale, totalePreventivato: totalePreventivato };
   }
+
+  /* Esclude/ripristina una voce IVA dalla sola sezione "Riepilogo IVA": la voce resta salvata
+     e continua ad aggiornarsi in automatico (importi, aliquota), semplicemente non compare più
+     in questa lista né nei suoi totali — stesso principio del "escludi dalla tabella" già usato
+     per i materiali sponsor. Non tocca Spese/Bilancio, che restano invariati. */
+  DG.escludiIva = function (id) {
+    var v = _vociSpesa.find(function (x) { return x.id === id; });
+    if (!v) return;
+    v.ivaEscluso = true;
+    _renderIvaRiepilogo();
+    db.collection('vociSpesa').doc(id).update({ ivaEscluso: true })
+      .then(function () { return _logWrite('voceSpesa', id, 'Spesa — ' + v.categoria, 'update', [{ campo: 'ivaEscluso', prima: false, dopo: true }]); })
+      .catch(function (e) { alert('Errore: ' + e.message); });
+  };
+
+  DG.ripristinaIva = function (id) {
+    var v = _vociSpesa.find(function (x) { return x.id === id; });
+    if (!v) return;
+    v.ivaEscluso = false;
+    _renderIvaRiepilogo();
+    db.collection('vociSpesa').doc(id).update({ ivaEscluso: false })
+      .then(function () { return _logWrite('voceSpesa', id, 'Spesa — ' + v.categoria, 'update', [{ campo: 'ivaEscluso', prima: true, dopo: false }]); })
+      .catch(function (e) { alert('Errore: ' + e.message); });
+  };
 
   DG.setIvaScadenza = function (sel) {
     var id = sel.dataset.id, refYear = +sel.dataset.refyear;
@@ -5821,6 +5847,7 @@
   function _renderIvaRiepilogo() {
     var statsEl = document.getElementById('ivaRiepilogoStats');
     var bodyEl = document.getElementById('ivaRiepilogoBody');
+    var esclusiEl = document.getElementById('ivaRiepilogoEsclusi');
     if (!statsEl || !bodyEl) return;
     _backfillIvaAliquote();
     var d = _calcIvaTotale();
@@ -5835,8 +5862,17 @@
         (v.ivaScadenza ? '<div style="font-size:11px;color:var(--dg-muted);margin-top:3px">Scade il ' + esc(_fmtDateLong(v.ivaScadenza)) + '</div>' : '') + '</td>' +
         '<td style="text-align:center"><input type="checkbox" data-id="' + v.id + '"' + (v.pagata ? ' checked' : '') +
           ' title="Segna come versata all\'Erario — solo allora conta come uscita nel Bilancio" onchange="DG.toggleIvaPagata(this.dataset.id, this.checked)"></td>' +
+        '<td><button type="button" class="dg-pezzi-row-remove" onclick="DG.escludiIva(\'' + v.id + '\')" title="Escludi dalla sezione IVA — resta salvata e continua ad aggiornarsi, la ripristini in qualsiasi momento">✕</button></td>' +
         '</tr>';
-    }).join('') : '<tr><td colspan="7" class="dg-empty">Nessuna voce IVA per questa stagione.</td></tr>';
+    }).join('') : '<tr><td colspan="8" class="dg-empty">Nessuna voce IVA per questa stagione.</td></tr>';
+    if (esclusiEl) {
+      esclusiEl.innerHTML = d.esclusi.length ? '<div class="dg-pezzi-esclusi">' +
+        '<span class="dg-pezzi-esclusi-label">Escluse dal riepilogo IVA:</span>' +
+        d.esclusi.map(function (v) {
+          return '<span class="dg-pezzi-esclusi-chip">' + esc(v.categoria) +
+            '<button type="button" class="dg-pezzi-esclusi-restore" onclick="DG.ripristinaIva(\'' + v.id + '\')" title="Rimetti nel riepilogo IVA">↺</button></span>';
+        }).join('') + '</div>' : '';
+    }
   }
 
   /* La voce IVA è "Sostenuto" (accrual, sempre conteggiata in Spese/Forecasting)
