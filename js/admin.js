@@ -3842,12 +3842,13 @@
         var badgeHtml, badgeTitle, badgeClass, scontoGrossHtml = '';
         if (tiers.scontato > 0) {
           var qtaScontato = tiers.scontatoQta > 0 ? tiers.scontatoQta : demand;
-          var totaleGrezzoScontato = Math.round(tiers.scontato * qtaScontato * 100) / 100;
-          badgeHtml = '€' + fmtPzz(totaleCol) + '<span class="dg-pezzi-th-price-qty"> · ' + qtaScontato + ' pz</span>';
           if (tiers.scontatoIvaInclusa) {
+            var totaleGrezzoScontato = Math.round(tiers.scontato * qtaScontato * 100) / 100;
+            badgeHtml = '€' + fmtPzz(totaleGrezzoScontato) + '<span class="dg-pezzi-th-price-qty"> · ' + qtaScontato + ' pz</span>';
             badgeTitle = qtaScontato + ' pz × €' + fmtPzz(tiers.scontato) + '/capo IVA inclusa = €' + fmtPzz(totaleGrezzoScontato) + ' totale IVA inclusa (imponibile €' + fmtPzz(totaleCol) + ') — prezzo scontato dal fornitore, clicca per modificare';
-            scontoGrossHtml = '<div class="dg-pezzi-th-gross">IVA compr. €' + fmtPzz(totaleGrezzoScontato) + '</div>';
+            scontoGrossHtml = '<div class="dg-pezzi-th-gross">Imponibile €' + fmtPzz(totaleCol) + '</div>';
           } else {
+            badgeHtml = '€' + fmtPzz(totaleCol) + '<span class="dg-pezzi-th-price-qty"> · ' + qtaScontato + ' pz</span>';
             badgeTitle = qtaScontato + ' pz × €' + fmtPzz(tiers.scontato) + '/capo (IVA 22% esclusa) — prezzo scontato dal fornitore, clicca per modificare';
           }
           badgeClass = ' has-price has-sconto';
@@ -4086,8 +4087,15 @@
       var t = _pezzoPrezzoTiers(prezziPezzi[nome]);
       var subtot = _totalePezzoColonna(prezziPezzi[nome], count);
       imponibileMerce += subtot;
-      var right = subtot ? fmt(subtot) : '<span class="dg-muted" style="font-weight:400">prezzo non impostato</span>';
-      var ivaLine = subtot ? '<div class="dg-pezzi-riepilogo-subline">' + (t.scontato > 0 ? 'prezzo scontato · ' : '') + fmt(Math.round((subtot / count) * 1.22 * 100) / 100) + '/pz IVA compr.</div>' : '';
+      var right, ivaLine;
+      if (subtot && t.scontato > 0 && t.scontatoIvaInclusa) {
+        var lordoScontato = Math.round(t.scontato * count * 100) / 100;
+        right = fmt(lordoScontato);
+        ivaLine = '<div class="dg-pezzi-riepilogo-subline">prezzo scontato · imponibile ' + fmt(subtot) + '</div>';
+      } else {
+        right = subtot ? fmt(subtot) : '<span class="dg-muted" style="font-weight:400">prezzo non impostato</span>';
+        ivaLine = subtot ? '<div class="dg-pezzi-riepilogo-subline">' + (t.scontato > 0 ? 'prezzo scontato · ' : '') + fmt(Math.round((subtot / count) * 1.22 * 100) / 100) + '/pz IVA compr.</div>' : '';
+      }
       return '<div class="dg-pezzi-riepilogo-row"><span>' + esc(nome) + ' × ' + count + '</span><span>' + right + '</span></div>' + ivaLine;
     }).join('');
 
@@ -4296,10 +4304,11 @@
      precedente, per compatibilità con i prezzi già impostati senza fasce).
      In alternativa alle fasce, si può impostare un prezzo scontato per capo (un prezzo di favore
      concordato col fornitore su un singolo pezzo di questa colonna): si dichiara se è IVA inclusa
-     o esclusa e la quantità a cui si applica, e viene salvato sempre come imponibile (scontato)
-     per restare coerente con p1/p2. Se presente sostituisce ovunque il calcolo a pezzo/fasce
-     (vedi _totalePezzoColonna); le fasce restano comunque salvate per poterle ripristinare
-     rimuovendo lo sconto. ---- */
+     o esclusa e la quantità a cui si applica; il valore è salvato esattamente come inserito
+     (scontatoIvaInclusa dice come interpretarlo) e mostrato in intestazione/riepilogo con quello
+     stesso taglio (IVA inclusa se inserito tale), scorporando l'IVA solo per l'imponibile interno
+     (vedi _totalePezzoColonna). Se presente sostituisce ovunque il calcolo a pezzo/fasce; le fasce
+     restano comunque salvate per poterle ripristinare rimuovendo lo sconto. ---- */
   function _setPrezzoPezzo(pezzo) {
     var season = _seasons.find(function (s) { return s.id === _currentSeasonId; });
     if (!season) return;
