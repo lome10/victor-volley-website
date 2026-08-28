@@ -88,8 +88,8 @@
       '</div>' +
 
       '<div class="sidebar-bottom">' +
-        '<a href="https://www.facebook.com/share/1EVp57f8nJ/?mibextid=wwXIfr" class="sidebar-social-link" aria-label="Facebook" target="_blank" rel="noopener noreferrer">' + SVG.fb + '</a>' +
-        '<a href="https://www.instagram.com/victorvolleyvita?igsh=MWwyYW94MnV4d2h3Nw==" class="sidebar-social-link" aria-label="Instagram" target="_blank" rel="noopener noreferrer">' + SVG.ig + '</a>' +
+        '<a href="https://www.facebook.com/profile.php?id=61591539390130" class="sidebar-social-link" aria-label="Facebook" target="_blank" rel="noopener noreferrer">' + SVG.fb + '</a>' +
+        '<a href="https://www.instagram.com/asdvictorvolley?igsi=MWwyYW94MnV4d2h3Nw==" class="sidebar-social-link" aria-label="Instagram" target="_blank" rel="noopener noreferrer">' + SVG.ig + '</a>' +
         '<a href="https://www.tiktok.com/@victor.volley?_r=1&_t=ZN-97Yb5Cn2O5j" class="sidebar-social-link" aria-label="TikTok" target="_blank" rel="noopener noreferrer">' + SVG.tt + '</a>' +
       '</div>';
 
@@ -199,8 +199,8 @@
           '<div class="footer-side">' +
             '<a href="mailto:victorvolley@libero.it" class="footer-email">victorvolley@libero.it</a>' +
             '<div class="footer-social">' +
-              '<a href="https://www.facebook.com/share/1EVp57f8nJ/?mibextid=wwXIfr" aria-label="Facebook" target="_blank" rel="noopener noreferrer">' + SVG.fb + '</a>' +
-              '<a href="https://www.instagram.com/victorvolleyvita?igsh=MWwyYW94MnV4d2h3Nw==" aria-label="Instagram" target="_blank" rel="noopener noreferrer">' + SVG.ig + '</a>' +
+              '<a href="https://www.facebook.com/profile.php?id=61591539390130" aria-label="Facebook" target="_blank" rel="noopener noreferrer">' + SVG.fb + '</a>' +
+              '<a href="https://www.instagram.com/asdvictorvolley?igsi=MWwyYW94MnV4d2h3Nw==" aria-label="Instagram" target="_blank" rel="noopener noreferrer">' + SVG.ig + '</a>' +
               '<a href="https://www.tiktok.com/@victor.volley?_r=1&_t=ZN-97Yb5Cn2O5j" aria-label="TikTok" target="_blank" rel="noopener noreferrer">' + SVG.tt + '</a>' +
             '</div>' +
           '</div>' +
