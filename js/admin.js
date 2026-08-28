@@ -3762,19 +3762,23 @@
      quantità sulla prima fascia il totale è quello fisso delle due fasce (p1*q1 + p2*q2),
      altrimenti (voci "vecchie", un solo prezzo senza quantità) resta il prezzo unitario
      moltiplicato per i pezzi effettivamente assegnati nelle celle. Il campo "scontato", se
-     impostato, è un prezzo forfettario finale (IVA 22% esclusa) concordato col fornitore per
-     l'intera colonna e sostituisce il calcolo a pezzo/fasce ovunque venga usato il totale
-     colonna (intestazione, riepilogo, sync della voce di spesa Materiali sponsor). ---- */
+     impostato, è un prezzo di favore per capo (sempre salvato come imponibile, IVA 22% esclusa,
+     indipendentemente da come l'utente l'ha inserito — vedi scontatoIvaInclusa) concordato col
+     fornitore: sostituisce ovunque il calcolo a pezzo/fasce (vedi _totalePezzoColonna),
+     moltiplicato per scontatoQta se impostata, altrimenti per i pezzi assegnati nelle celle. ---- */
   function _pezzoPrezzoTiers(entry) {
     if (entry && typeof entry === 'object') {
-      return { p1: +entry.p1 || 0, q1: +entry.q1 || 0, p2: +entry.p2 || 0, q2: +entry.q2 || 0, scontato: +entry.scontato || 0 };
+      return {
+        p1: +entry.p1 || 0, q1: +entry.q1 || 0, p2: +entry.p2 || 0, q2: +entry.q2 || 0,
+        scontato: +entry.scontato || 0, scontatoQta: +entry.scontatoQta || 0, scontatoIvaInclusa: !!entry.scontatoIvaInclusa
+      };
     }
-    return { p1: +entry || 0, q1: 0, p2: 0, q2: 0, scontato: 0 };
+    return { p1: +entry || 0, q1: 0, p2: 0, q2: 0, scontato: 0, scontatoQta: 0, scontatoIvaInclusa: false };
   }
 
   function _totalePezzoColonna(entry, demand) {
     var t = _pezzoPrezzoTiers(entry);
-    if (t.scontato > 0) return Math.round(t.scontato * 100) / 100;
+    if (t.scontato > 0) return Math.round(t.scontato * (t.scontatoQta > 0 ? t.scontatoQta : (demand || 0)) * 100) / 100;
     if (t.q1 > 0) return Math.round((t.p1 * t.q1 + t.p2 * t.q2) * 100) / 100;
     return Math.round(t.p1 * (demand || 0) * 100) / 100;
   }
@@ -3830,8 +3834,9 @@
 
         var badgeHtml, badgeTitle, badgeClass;
         if (tiers.scontato > 0) {
-          badgeHtml = '€' + fmtPzz(tiers.scontato) + '<span class="dg-pezzi-th-price-qty"> · forfait</span>';
-          badgeTitle = 'Prezzo forfettario scontato dal fornitore per tutta la colonna (IVA 22% esclusa) — clicca per modificare';
+          var qtaScontato = tiers.scontatoQta > 0 ? tiers.scontatoQta : demand;
+          badgeHtml = '€' + fmtPzz(totaleCol) + '<span class="dg-pezzi-th-price-qty"> · ' + qtaScontato + ' pz</span>';
+          badgeTitle = qtaScontato + ' pz × €' + fmtPzz(tiers.scontato) + '/capo (IVA 22% esclusa' + (tiers.scontatoIvaInclusa ? ', inserito IVA inclusa' : '') + ') — prezzo scontato dal fornitore, clicca per modificare';
           badgeClass = ' has-price has-sconto';
         } else if (totaleCol > 0) {
           badgeHtml = '€' + fmtPzz(totaleCol) + '<span class="dg-pezzi-th-price-qty"> · ' + pezziTotali + ' pz</span>';
@@ -4069,7 +4074,7 @@
       var subtot = _totalePezzoColonna(prezziPezzi[nome], count);
       imponibileMerce += subtot;
       var right = subtot ? fmt(subtot) : '<span class="dg-muted" style="font-weight:400">prezzo non impostato</span>';
-      var ivaLine = subtot ? '<div class="dg-pezzi-riepilogo-subline">' + (t.scontato > 0 ? 'forfait scontato · ' : '') + fmt(Math.round((subtot / count) * 1.22 * 100) / 100) + '/pz IVA compr.</div>' : '';
+      var ivaLine = subtot ? '<div class="dg-pezzi-riepilogo-subline">' + (t.scontato > 0 ? 'prezzo scontato · ' : '') + fmt(Math.round((subtot / count) * 1.22 * 100) / 100) + '/pz IVA compr.</div>' : '';
       return '<div class="dg-pezzi-riepilogo-row"><span>' + esc(nome) + ' × ' + count + '</span><span>' + right + '</span></div>' + ivaLine;
     }).join('');
 
@@ -4276,25 +4281,40 @@
      una quantità sulla prima fascia il totale colonna diventa fisso (p1*q1 + p2*q2), altrimenti
      resta un prezzo unitario moltiplicato per i pezzi assegnati nelle celle (comportamento
      precedente, per compatibilità con i prezzi già impostati senza fasce).
-     In alternativa alle fasce, si può impostare un prezzo forfettario scontato (un prezzo di
-     favore concordato nel complesso col fornitore per tutti i pezzi della colonna): se presente
-     sostituisce ovunque il calcolo a pezzo/fasce (vedi _totalePezzoColonna), che resta comunque
-     salvato per poterlo ripristinare rimuovendo lo sconto. ---- */
+     In alternativa alle fasce, si può impostare un prezzo scontato per capo (un prezzo di favore
+     concordato col fornitore su un singolo pezzo di questa colonna): si dichiara se è IVA inclusa
+     o esclusa e la quantità a cui si applica, e viene salvato sempre come imponibile (scontato)
+     per restare coerente con p1/p2. Se presente sostituisce ovunque il calcolo a pezzo/fasce
+     (vedi _totalePezzoColonna); le fasce restano comunque salvate per poterle ripristinare
+     rimuovendo lo sconto. ---- */
   function _setPrezzoPezzo(pezzo) {
     var season = _seasons.find(function (s) { return s.id === _currentSeasonId; });
     if (!season) return;
     var attuale = _pezzoPrezzoTiers((season.pezziPrezzi || {})[pezzo]);
+    var scontatoAttualeIn = attuale.scontato > 0
+      ? (attuale.scontatoIvaInclusa ? Math.round(attuale.scontato * 1.22 * 100) / 100 : attuale.scontato)
+      : '';
 
-    var scontoIn = prompt('Prezzo forfettario scontato dal fornitore per TUTTI i pezzi della colonna "' + pezzo + '" (IVA 22% esclusa) — usalo se il fornitore fa un prezzo di favore complessivo. Lascia vuoto per impostare invece un prezzo a pezzo (eventualmente su due fasce di quantità):', attuale.scontato || '');
+    var scontoIn = prompt('Prezzo scontato per capo/pezzo dal fornitore nella colonna "' + pezzo + '" — usalo se il fornitore ti fa un prezzo di favore sul singolo pezzo. Lascia vuoto per impostare invece un prezzo a pezzo standard (eventualmente su due fasce di quantità):', scontatoAttualeIn);
     if (scontoIn === null) return;
-    var scontato = 0;
+    var scontatoInput = 0;
     if (String(scontoIn).trim() !== '') {
-      scontato = +String(scontoIn).replace(',', '.');
-      if (isNaN(scontato) || scontato < 0) { alert('Inserisci un numero valido.'); return; }
+      scontatoInput = +String(scontoIn).replace(',', '.');
+      if (isNaN(scontatoInput) || scontatoInput < 0) { alert('Inserisci un numero valido.'); return; }
     }
 
     var p1 = attuale.p1, q1 = attuale.q1, p2 = attuale.p2, q2 = attuale.q2;
-    if (!scontato) {
+    var scontato = 0, scontatoQta = 0, scontatoIvaInclusa = false;
+    if (scontatoInput) {
+      var ivaIn = prompt('Il prezzo per capo che hai inserito (€' + scontatoInput.toLocaleString('it-IT', { minimumFractionDigits: 2 }) + ') è IVA inclusa o esclusa? Scrivi "inclusa" o "esclusa":', attuale.scontatoIvaInclusa ? 'inclusa' : 'esclusa');
+      if (ivaIn === null) return;
+      scontatoIvaInclusa = String(ivaIn).trim().toLowerCase().indexOf('incl') === 0;
+      scontato = scontatoIvaInclusa ? Math.round((scontatoInput / 1.22) * 100) / 100 : scontatoInput;
+
+      var qtaIn = prompt('Quantità di pezzi a questo prezzo scontato (lascia vuoto per usare tutti i pezzi assegnati a questa colonna nella tabella):', attuale.scontatoQta || '');
+      if (qtaIn === null) return;
+      scontatoQta = Math.max(0, Math.round(+String(qtaIn).replace(',', '.')) || 0);
+    } else {
       var p1in = prompt('Prezzo del pezzo "' + pezzo + '" (IVA 22% esclusa — costo del gadget/supporto, non della stampa):', attuale.p1 || '');
       if (p1in === null) return;
       p1 = +String(p1in).replace(',', '.');
@@ -4322,7 +4342,7 @@
 
     var prezziPezzi = Object.assign({}, season.pezziPrezzi || {});
     if (!p1 && !q1 && !p2 && !q2 && !scontato) delete prezziPezzi[pezzo];
-    else prezziPezzi[pezzo] = { p1: p1, q1: q1, p2: p2, q2: q2, scontato: scontato };
+    else prezziPezzi[pezzo] = { p1: p1, q1: q1, p2: p2, q2: q2, scontato: scontato, scontatoQta: scontatoQta, scontatoIvaInclusa: scontatoIvaInclusa };
     season.pezziPrezzi = prezziPezzi;
     _renderPezziSponsor();
     db.collection('budgetSeasons').doc(season.id).update({ pezziPrezzi: prezziPezzi })
