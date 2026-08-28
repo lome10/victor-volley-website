@@ -577,6 +577,7 @@ input, select, textarea { font-family: inherit; }
 }
 .dg-pezzi-th-price.has-sconto:hover { background: #D1FAE5; color: var(--dg-green); }
 .dg-pezzi-th-price-qty { font-weight: 600; color: var(--dg-muted); margin-left: 2px; }
+.dg-pezzi-th-gross { font-size: 10px; color: var(--dg-muted); margin-top: 3px; }
 
 .dg-pezzi-cell { min-width: 44px; text-align: center; cursor: pointer; }
 .dg-pezzi-cell.is-disabled { cursor: not-allowed; }

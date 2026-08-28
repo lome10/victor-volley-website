@@ -3762,10 +3762,12 @@
      quantità sulla prima fascia il totale è quello fisso delle due fasce (p1*q1 + p2*q2),
      altrimenti (voci "vecchie", un solo prezzo senza quantità) resta il prezzo unitario
      moltiplicato per i pezzi effettivamente assegnati nelle celle. Il campo "scontato", se
-     impostato, è un prezzo di favore per capo (sempre salvato come imponibile, IVA 22% esclusa,
-     indipendentemente da come l'utente l'ha inserito — vedi scontatoIvaInclusa) concordato col
-     fornitore: sostituisce ovunque il calcolo a pezzo/fasce (vedi _totalePezzoColonna),
-     moltiplicato per scontatoQta se impostata, altrimenti per i pezzi assegnati nelle celle. ---- */
+     impostato, è un prezzo di favore per capo concordato col fornitore, salvato ESATTAMENTE
+     come inserito dall'utente (scontatoIvaInclusa dice se quel numero è IVA inclusa o esclusa):
+     sostituisce ovunque il calcolo a pezzo/fasce. Il totale imponibile si ottiene moltiplicando
+     per la quantità (scontatoQta se impostata, altrimenti i pezzi assegnati nelle celle) e
+     scorporando l'IVA una sola volta alla fine (vedi _totalePezzoColonna), per non accumulare
+     l'arrotondamento del prezzo unitario su tante unità. ---- */
   function _pezzoPrezzoTiers(entry) {
     if (entry && typeof entry === 'object') {
       return {
@@ -3778,7 +3780,12 @@
 
   function _totalePezzoColonna(entry, demand) {
     var t = _pezzoPrezzoTiers(entry);
-    if (t.scontato > 0) return Math.round(t.scontato * (t.scontatoQta > 0 ? t.scontatoQta : (demand || 0)) * 100) / 100;
+    if (t.scontato > 0) {
+      var qta = t.scontatoQta > 0 ? t.scontatoQta : (demand || 0);
+      var totaleGrezzo = t.scontato * qta;
+      var totaleImponibile = t.scontatoIvaInclusa ? (totaleGrezzo / 1.22) : totaleGrezzo;
+      return Math.round(totaleImponibile * 100) / 100;
+    }
     if (t.q1 > 0) return Math.round((t.p1 * t.q1 + t.p2 * t.q2) * 100) / 100;
     return Math.round(t.p1 * (demand || 0) * 100) / 100;
   }
@@ -3832,11 +3839,17 @@
         var totaleCol = _totalePezzoColonna(prezziPezzi[p], demand);
         var pezziTotali = tiers.q1 > 0 ? (tiers.q1 + tiers.q2) : demand;
 
-        var badgeHtml, badgeTitle, badgeClass;
+        var badgeHtml, badgeTitle, badgeClass, scontoGrossHtml = '';
         if (tiers.scontato > 0) {
           var qtaScontato = tiers.scontatoQta > 0 ? tiers.scontatoQta : demand;
+          var totaleGrezzoScontato = Math.round(tiers.scontato * qtaScontato * 100) / 100;
           badgeHtml = '€' + fmtPzz(totaleCol) + '<span class="dg-pezzi-th-price-qty"> · ' + qtaScontato + ' pz</span>';
-          badgeTitle = qtaScontato + ' pz × €' + fmtPzz(tiers.scontato) + '/capo (IVA 22% esclusa' + (tiers.scontatoIvaInclusa ? ', inserito IVA inclusa' : '') + ') — prezzo scontato dal fornitore, clicca per modificare';
+          if (tiers.scontatoIvaInclusa) {
+            badgeTitle = qtaScontato + ' pz × €' + fmtPzz(tiers.scontato) + '/capo IVA inclusa = €' + fmtPzz(totaleGrezzoScontato) + ' totale IVA inclusa (imponibile €' + fmtPzz(totaleCol) + ') — prezzo scontato dal fornitore, clicca per modificare';
+            scontoGrossHtml = '<div class="dg-pezzi-th-gross">IVA compr. €' + fmtPzz(totaleGrezzoScontato) + '</div>';
+          } else {
+            badgeTitle = qtaScontato + ' pz × €' + fmtPzz(tiers.scontato) + '/capo (IVA 22% esclusa) — prezzo scontato dal fornitore, clicca per modificare';
+          }
           badgeClass = ' has-price has-sconto';
         } else if (totaleCol > 0) {
           badgeHtml = '€' + fmtPzz(totaleCol) + '<span class="dg-pezzi-th-price-qty"> · ' + pezziTotali + ' pz</span>';
@@ -3859,7 +3872,7 @@
           '<div class="dg-pezzi-th-name">' + esc(p) +
           '<button type="button" class="dg-pezzi-th-remove" data-pezzo="' + esc(p) + '" title="Rimuovi colonna">✕</button></div>' +
           '<button type="button" class="dg-pezzi-th-price' + badgeClass + '" data-pezzo="' + esc(p) + '" title="' + esc(badgeTitle) + '">' +
-          badgeHtml + '</button></th>';
+          badgeHtml + '</button>' + scontoGrossHtml + '</th>';
       }).join('') +
       '<th><button type="button" class="dg-pezzi-addcol">+ Pezzo</button></th></tr>';
 
@@ -4291,11 +4304,8 @@
     var season = _seasons.find(function (s) { return s.id === _currentSeasonId; });
     if (!season) return;
     var attuale = _pezzoPrezzoTiers((season.pezziPrezzi || {})[pezzo]);
-    var scontatoAttualeIn = attuale.scontato > 0
-      ? (attuale.scontatoIvaInclusa ? Math.round(attuale.scontato * 1.22 * 100) / 100 : attuale.scontato)
-      : '';
 
-    var scontoIn = prompt('Prezzo scontato per capo/pezzo dal fornitore nella colonna "' + pezzo + '" — usalo se il fornitore ti fa un prezzo di favore sul singolo pezzo. Lascia vuoto per impostare invece un prezzo a pezzo standard (eventualmente su due fasce di quantità):', scontatoAttualeIn);
+    var scontoIn = prompt('Prezzo scontato per capo/pezzo dal fornitore nella colonna "' + pezzo + '" — usalo se il fornitore ti fa un prezzo di favore sul singolo pezzo. Lascia vuoto per impostare invece un prezzo a pezzo standard (eventualmente su due fasce di quantità):', attuale.scontato || '');
     if (scontoIn === null) return;
     var scontatoInput = 0;
     if (String(scontoIn).trim() !== '') {
@@ -4309,7 +4319,7 @@
       var ivaIn = prompt('Il prezzo per capo che hai inserito (€' + scontatoInput.toLocaleString('it-IT', { minimumFractionDigits: 2 }) + ') è IVA inclusa o esclusa? Scrivi "inclusa" o "esclusa":', attuale.scontatoIvaInclusa ? 'inclusa' : 'esclusa');
       if (ivaIn === null) return;
       scontatoIvaInclusa = String(ivaIn).trim().toLowerCase().indexOf('incl') === 0;
-      scontato = scontatoIvaInclusa ? Math.round((scontatoInput / 1.22) * 100) / 100 : scontatoInput;
+      scontato = scontatoInput;
 
       var qtaIn = prompt('Quantità di pezzi a questo prezzo scontato (lascia vuoto per usare tutti i pezzi assegnati a questa colonna nella tabella):', attuale.scontatoQta || '');
       if (qtaIn === null) return;
