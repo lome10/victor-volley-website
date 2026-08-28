@@ -4079,6 +4079,30 @@
       return '<div class="dg-pezzi-riepilogo-row"><span>' + esc(nome) + ' × ' + d.count + '</span><span>' + fmt(d.subtotale) + '</span></div>';
     }).join('');
 
+    var scontato = +season.pezziPrezzoScontato || 0;
+    var grandHtml;
+    if (scontato > 0) {
+      var imponibileScontato = Math.round((scontato / 1.22) * 100) / 100;
+      var ivaScontato = Math.round((scontato - imponibileScontato) * 100) / 100;
+      grandHtml = '<div class="dg-pezzi-riepilogo-title">Totale complessivo</div>' +
+        '<div class="dg-pezzi-riepilogo-value">' + fmt(scontato) + '</div>' +
+        '<div class="dg-pezzi-riepilogo-row dg-pezzi-riepilogo-subline" style="text-align:left"><span>Calcolato dalla tabella</span><span style="text-decoration:line-through">' + fmt(totale) + '</span></div>' +
+        '<div class="dg-pezzi-riepilogo-row dg-pezzi-riepilogo-grand-detail"><span>Imponibile</span><span>' + fmt(imponibileScontato) + '</span></div>' +
+        '<div class="dg-pezzi-riepilogo-row dg-pezzi-riepilogo-grand-detail"><span>IVA 22%</span><span>' + fmt(ivaScontato) + '</span></div>' +
+        '<div class="dg-pezzi-sconto-actions">' +
+        '<button type="button" class="dg-pezzi-sconto-btn" id="dgPezziScontoBtn">Modifica prezzo scontato</button>' +
+        '<button type="button" class="dg-pezzi-sconto-clear" id="dgPezziScontoClear">Rimuovi, torna al calcolato</button>' +
+        '</div>';
+    } else {
+      grandHtml = '<div class="dg-pezzi-riepilogo-title">Totale complessivo</div>' +
+        '<div class="dg-pezzi-riepilogo-value">' + fmt(totale) + '</div>' +
+        '<div class="dg-pezzi-riepilogo-row dg-pezzi-riepilogo-grand-detail"><span>Imponibile</span><span>' + fmt(imponibile) + '</span></div>' +
+        '<div class="dg-pezzi-riepilogo-row dg-pezzi-riepilogo-grand-detail"><span>IVA 22%</span><span>' + fmt(iva) + '</span></div>' +
+        '<div class="dg-pezzi-sconto-actions">' +
+        '<button type="button" class="dg-pezzi-sconto-btn" id="dgPezziScontoBtn" title="Sostituisce il totale calcolato (e il Preventivato in Spese) con un prezzo finale unico concordato con il fornitore">Inserisci prezzo finale scontato dal fornitore</button>' +
+        '</div>';
+    }
+
     el.innerHTML = '<div class="dg-pezzi-riepilogo-group">' +
       '<div class="dg-pezzi-riepilogo">' +
       '<div class="dg-pezzi-riepilogo-title">Stampe</div>' + (righeStampe || '<div class="dg-muted" style="font-size:12px">Nessuna stampa assegnata.</div>') +
@@ -4093,12 +4117,40 @@
       '<div class="dg-pezzi-riepilogo-row dg-pezzi-riepilogo-total"><span>Totale pezzi</span><span>' + fmt(totaleMerce) + '</span></div>' +
       '</div>' +
       '</div>' +
-      '<div class="dg-pezzi-riepilogo dg-pezzi-riepilogo--grand">' +
-      '<div class="dg-pezzi-riepilogo-title">Totale complessivo</div>' +
-      '<div class="dg-pezzi-riepilogo-value">' + fmt(totale) + '</div>' +
-      '<div class="dg-pezzi-riepilogo-row dg-pezzi-riepilogo-grand-detail"><span>Imponibile</span><span>' + fmt(imponibile) + '</span></div>' +
-      '<div class="dg-pezzi-riepilogo-row dg-pezzi-riepilogo-grand-detail"><span>IVA 22%</span><span>' + fmt(iva) + '</span></div>' +
-      '</div>';
+      '<div class="dg-pezzi-riepilogo dg-pezzi-riepilogo--grand">' + grandHtml + '</div>';
+
+    var scontoBtn = document.getElementById('dgPezziScontoBtn');
+    if (scontoBtn) scontoBtn.addEventListener('click', _setPrezzoScontatoPezzi);
+    var scontoClear = document.getElementById('dgPezziScontoClear');
+    if (scontoClear) scontoClear.addEventListener('click', _clearPrezzoScontatoPezzi);
+  }
+
+  /* ---- Prezzo finale scontato (fornitore) — sostituisce, quando impostato, sia il totale
+     mostrato nel riepilogo sia il Preventivato sincronizzato in Spese (ripartito proporzionalmente
+     tra le voci "Materiali sponsor — Stampe" e "— Pezzi" in base al peso calcolato dalla tabella).
+     È un prezzo di favore concordato nel complesso col fornitore, IVA inclusa. ---- */
+  function _setPrezzoScontatoPezzi() {
+    var season = _seasons.find(function (s) { return s.id === _currentSeasonId; });
+    if (!season) return;
+    var attuale = +season.pezziPrezzoScontato || 0;
+    var input = prompt('Prezzo finale scontato dal fornitore (IVA inclusa) — sostituisce il totale calcolato dalla tabella. Lascia vuoto per non impostarlo:', attuale || '');
+    if (input === null) return;
+    if (String(input).trim() === '') { _clearPrezzoScontatoPezzi(); return; }
+    var val = +String(input).replace(',', '.');
+    if (isNaN(val) || val < 0) { alert('Inserisci un numero valido.'); return; }
+    season.pezziPrezzoScontato = val;
+    _renderPezziSponsor();
+    db.collection('budgetSeasons').doc(season.id).update({ pezziPrezzoScontato: val })
+      .catch(function (e) { alert('Errore: ' + e.message); });
+  }
+
+  function _clearPrezzoScontatoPezzi() {
+    var season = _seasons.find(function (s) { return s.id === _currentSeasonId; });
+    if (!season) return;
+    season.pezziPrezzoScontato = 0;
+    _renderPezziSponsor();
+    db.collection('budgetSeasons').doc(season.id).update({ pezziPrezzoScontato: 0 })
+      .catch(function (e) { alert('Errore: ' + e.message); });
   }
 
   function _attachPezziSponsorEvents(wrap) {
@@ -4392,7 +4444,9 @@
      PREVENTIVATO (proiezione dalla tabella), ciascuna con la propria IVA 22% figlia via
      _syncSpesaIva (stesso meccanismo generico usato per ogni voce). Il Sostenuto (la spesa
      realmente effettuata) resta interamente a mano nella tabella Spese — vedi il commento
-     su _syncVoceAutomatica per il motivo. ---- */
+     su _syncVoceAutomatica per il motivo. Se è impostato un prezzo finale scontato
+     (season.pezziPrezzoScontato, vedi _setPrezzoScontatoPezzi) l'imponibile di quel prezzo
+     sostituisce il totale calcolato pezzo per pezzo, ripartito proporzionalmente tra le due voci. ---- */
   var _materialiSyncBusy = false;
   function _totaliMaterialiSponsor() {
     var totStampe = 0, totPezzi = 0;
@@ -4416,6 +4470,14 @@
     (season.vociExtra || []).forEach(function (v) { accumula(v.pezzi); });
 
     Object.keys(perPezzo).forEach(function (nome) { totPezzi += _totalePezzoColonna(prezziPezzi[nome], perPezzo[nome]); });
+
+    var scontato = +season.pezziPrezzoScontato || 0;
+    if (scontato > 0 && (totStampe + totPezzi) > 0) {
+      var imponibileScontato = Math.round((scontato / 1.22) * 100) / 100;
+      var quotaStampe = Math.round(imponibileScontato * (totStampe / (totStampe + totPezzi)) * 100) / 100;
+      var quotaPezzi = Math.round((imponibileScontato - quotaStampe) * 100) / 100;
+      return { stampe: quotaStampe, pezzi: quotaPezzi };
+    }
 
     return { stampe: Math.round(totStampe * 100) / 100, pezzi: Math.round(totPezzi * 100) / 100 };
   }

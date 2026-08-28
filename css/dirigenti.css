@@ -669,6 +669,20 @@ input, select, textarea { font-family: inherit; }
 .dg-pezzi-riepilogo-value { font-size: 28px; font-weight: 800; color: var(--dg-navy1); line-height: 1.1; margin: 2px 0 12px; }
 .dg-pezzi-riepilogo-grand-detail { font-size: 12px; color: var(--dg-muted); padding: 3px 0; }
 
+.dg-pezzi-sconto-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.dg-pezzi-sconto-btn, .dg-pezzi-sconto-clear {
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.dg-pezzi-sconto-btn { background: var(--dg-blue); color: #fff; border: none; }
+.dg-pezzi-sconto-btn:hover { opacity: .9; }
+.dg-pezzi-sconto-clear { background: none; border: 1px dashed var(--dg-border); color: var(--dg-muted); }
+.dg-pezzi-sconto-clear:hover { color: var(--dg-red); border-color: var(--dg-red); }
+
 .dg-pezzi-addcol {
   background: none;
   border: 1px dashed var(--dg-border);
