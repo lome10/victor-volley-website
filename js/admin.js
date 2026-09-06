@@ -3217,6 +3217,8 @@
   var _rateAtleti = [];
   var _curAtletaRettaId = null;
   var _vociSpesa = [];
+  var _sottospese = [];
+  var _speseExpanded = {};
   var _categorieSpesa = [];
   var _auditLog = [];
   var _dirigentiList = [];
@@ -3356,12 +3358,43 @@
     return Promise.all([
       db.collection('categorieAtleti').where('seasonId', '==', _currentSeasonId).get(),
       db.collection('vociSpesa').where('seasonId', '==', _currentSeasonId).get(),
-      db.collection('atletiRette').where('seasonId', '==', _currentSeasonId).get()
+      db.collection('atletiRette').where('seasonId', '==', _currentSeasonId).get(),
+      /* Sottospese: come tranchePagamento/rateAtleti, trattamento difensivo finché
+         le regole non sono deployate. */
+      db.collection('sottospese').where('seasonId', '==', _currentSeasonId).get().catch(function (e) {
+        console.error('[budget] sottospese', e);
+        return { docs: [] };
+      })
     ]).then(function (res) {
       _categorieAtleti = res[0].docs.map(_mapDoc);
       _vociSpesa       = res[1].docs.map(_mapDoc);
       _atletiRette     = res[2].docs.map(_mapDoc);
+      _sottospese      = res[3].docs.map(_mapDoc);
     });
+  }
+
+  /* ---- SOTTOSPESE — dettaglio spese reali dentro una singola voce di spesa ---- */
+  function _sottospeseOf(voceId) {
+    return _sottospese.filter(function (x) { return x.voceSpesaId === voceId; });
+  }
+  function _sommaSottospese(voceId) {
+    return _sottospeseOf(voceId).reduce(function (s, x) { return s + (+x.importo || 0); }, 0);
+  }
+  /* Finché una voce ha almeno una sottospesa, il suo "Sostenuto" è calcolato
+     automaticamente dalla somma e non è più modificabile a mano (il Preventivato
+     resta sempre manuale). Se le sottospese vengono azzerate, il campo torna
+     modificabile mantenendo l'ultimo valore noto. */
+  function _syncVoceSostenutoDaSottospese(voceId) {
+    var v = _vociSpesa.find(function (x) { return x.id === voceId; });
+    if (!v) return Promise.resolve();
+    if (!_sottospeseOf(voceId).length) return Promise.resolve();
+    var somma = _sommaSottospese(voceId);
+    if (+v.importoSostenuto === somma) return Promise.resolve();
+    var old = { importoSostenuto: v.importoSostenuto || 0 };
+    v.importoSostenuto = somma;
+    return db.collection('vociSpesa').doc(voceId).update({ importoSostenuto: somma })
+      .then(function () { return _logWrite('voceSpesa', voceId, 'Spesa — ' + v.categoria, 'update', _diff(old, { importoSostenuto: somma }, ['importoSostenuto'])); })
+      .then(function () { return _syncSpesaIva(v); });
   }
 
   function _loadAuditLog() {
@@ -5676,12 +5709,19 @@
     }
     body.innerHTML = items.map(function (v) {
       var linked = v.isIva && isLinkedChild[v.id];
-      return '<tr' + (v.isIva ? ' style="background:#F8FAFC"' : '') + '>' +
-        '<td>' + (linked ? '<span class="dg-iva-link" title="Generata automaticamente dalla voce sopra">↳</span>' : '') +
+      var sub = v.isIva ? [] : _sottospeseOf(v.id);
+      var expanded = !v.isIva && !!_speseExpanded[v.id];
+      var toggleBtn = v.isIva ? '' :
+        '<button type="button" class="dg-btn-icon-only" title="Sottospese' + (sub.length ? ' (' + sub.length + ')' : '') + '" onclick="DG.toggleSpesaDettaglio(\'' + v.id + '\')" style="margin-right:2px;flex-shrink:0;transform:rotate(' + (expanded ? 90 : 0) + 'deg)">' + _chevronIconSm() + '</button>';
+      var sostenutoCell = sub.length
+        ? '<input type="number" class="dg-table-input" value="' + Math.round(v.importoSostenuto || 0) + '" disabled title="Calcolato automaticamente dalla somma di ' + sub.length + ' sottospes' + (sub.length === 1 ? 'a' : 'e') + '">'
+        : '<input type="number" class="dg-table-input" value="' + (v.importoSostenuto || 0) + '" data-id="' + v.id + '" data-field="importoSostenuto" onchange="DG.saveSpesaField(this)">';
+      var row = '<tr' + (v.isIva ? ' style="background:#F8FAFC"' : '') + '>' +
+        '<td style="display:flex;align-items:center">' + toggleBtn + (linked ? '<span class="dg-iva-link" title="Generata automaticamente dalla voce sopra">↳</span>' : '') +
         '<input type="text" class="dg-table-input" style="width:180px" value="' + esc(v.categoria) + '" data-id="' + v.id + '" data-field="categoria" onchange="DG.saveSpesaField(this)"></td>' +
         '<td><select class="dg-table-input" data-id="' + v.id + '" data-field="categoriaSpesaId" onchange="DG.saveSpesaField(this)">' + _categorieSpesaOptionsHtml(v.categoriaSpesaId) + '</select></td>' +
         '<td><input type="number" class="dg-table-input" value="' + (v.importoPreventivato || 0) + '" data-id="' + v.id + '" data-field="importoPreventivato" onchange="DG.saveSpesaField(this)"></td>' +
-        '<td><input type="number" class="dg-table-input" value="' + (v.importoSostenuto || 0) + '" data-id="' + v.id + '" data-field="importoSostenuto" onchange="DG.saveSpesaField(this)"></td>' +
+        '<td>' + sostenutoCell + '</td>' +
         '<td>' + (v.isIva ? '<span class="dg-muted" title="Aliquota applicata sulla voce madre — le voci IVA non generano a loro volta IVA">' +
             (v.ivaAliquota ? (+v.ivaAliquota).toLocaleString('it-IT') + '%' : '—') + '</span>' :
           '<input type="number" class="dg-table-input" style="width:70px" min="0" step="1" value="' + (v.ivaAliquota || '') + '" placeholder="0" data-id="' + v.id + '" data-field="ivaAliquota" onchange="DG.saveSpesaField(this)">') + '</td>' +
@@ -5690,8 +5730,105 @@
         '<td><input type="text" class="dg-table-input" style="width:160px" value="' + esc(v.note || '') + '" data-id="' + v.id + '" data-field="note" onchange="DG.saveSpesaField(this)"></td>' +
         '<td><button class="dg-btn-icon-only" title="Elimina" onclick="DG.deleteSpesa(\'' + v.id + '\')">' + _delIconSm() + '</button></td>' +
         '</tr>';
+      return row + (expanded ? _renderSottospeseRow(v) : '');
     }).join('');
   }
+
+  function _chevronIconSm() { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="9,6 15,12 9,18"/></svg>'; }
+
+  /* Riga espandibile inserita subito sotto una voce di spesa: elenco delle
+     sottospese reali che la compongono + form di aggiunta rapida. */
+  function _renderSottospeseRow(v) {
+    var elenco = _sottospeseOf(v.id).slice().sort(function (a, b) { return (a.data || '') < (b.data || '') ? 1 : -1; });
+    var somma = _sommaSottospese(v.id);
+    var righe = elenco.length ? elenco.map(function (s) {
+      return '<tr>' +
+        '<td><input type="text" class="dg-table-input" value="' + esc(s.descrizione) + '" data-sid="' + s.id + '" data-field="descrizione" onchange="DG.saveSottospesaField(this)"></td>' +
+        '<td><input type="number" class="dg-table-input" value="' + (s.importo || 0) + '" data-sid="' + s.id + '" data-field="importo" onchange="DG.saveSottospesaField(this)"></td>' +
+        '<td><input type="date" class="dg-table-input" value="' + esc(s.data || '') + '" data-sid="' + s.id + '" data-field="data" onchange="DG.saveSottospesaField(this)"></td>' +
+        '<td><input type="text" class="dg-table-input" value="' + esc(s.nota || '') + '" data-sid="' + s.id + '" data-field="nota" onchange="DG.saveSottospesaField(this)"></td>' +
+        '<td><button class="dg-btn-icon-only" title="Elimina" onclick="DG.deleteSottospesa(\'' + s.id + '\')">' + _delIconSm() + '</button></td>' +
+        '</tr>';
+    }).join('') : '<tr><td colspan="5" class="dg-empty">Nessuna sottospesa inserita.</td></tr>';
+
+    return '<tr class="dg-spesa-detail-row"><td colspan="8" style="background:#F8FAFC;padding:12px 16px;border-top:1px dashed var(--dg-border)">' +
+      '<div style="font-size:12px;font-weight:700;color:var(--dg-muted);margin-bottom:8px">' +
+        'Dettaglio spese reali — "' + esc(v.categoria) + '": €' + somma.toLocaleString('it-IT') + ' su €' + Number(v.importoPreventivato || 0).toLocaleString('it-IT') + ' preventivati' +
+      '</div>' +
+      '<table class="dg-table" style="margin-bottom:10px"><thead><tr><th>Descrizione</th><th>Importo</th><th>Data</th><th>Nota</th><th></th></tr></thead><tbody>' + righe + '</tbody></table>' +
+      '<div class="dg-toolbar">' +
+        '<input type="text" class="dg-table-input" id="newSottospesaDesc-' + v.id + '" placeholder="Descrizione" style="width:180px">' +
+        '<input type="number" class="dg-table-input" id="newSottospesaImporto-' + v.id + '" placeholder="Importo" style="width:100px">' +
+        '<input type="date" class="dg-table-input" id="newSottospesaData-' + v.id + '" style="width:140px">' +
+        '<input type="text" class="dg-table-input" id="newSottospesaNota-' + v.id + '" placeholder="Nota" style="width:160px">' +
+        '<button class="dg-btn-primary dg-btn-sm" onclick="DG.addSottospesa(\'' + v.id + '\')">Aggiungi</button>' +
+      '</div>' +
+    '</td></tr>';
+  }
+
+  DG.toggleSpesaDettaglio = function (id) {
+    _speseExpanded[id] = !_speseExpanded[id];
+    _renderSpese();
+  };
+
+  DG.addSottospesa = function (voceId) {
+    var v = _vociSpesa.find(function (x) { return x.id === voceId; });
+    if (!v) return;
+    var descrizione = (val('newSottospesaDesc-' + voceId) || '').trim();
+    var importo = +val('newSottospesaImporto-' + voceId) || 0;
+    if (!descrizione) { alert('Inserisci una descrizione.'); return; }
+    if (!importo) { alert('Inserisci un importo.'); return; }
+    var data = {
+      seasonId: _currentSeasonId, voceSpesaId: voceId, descrizione: descrizione, importo: importo,
+      data: val('newSottospesaData-' + voceId) || '', nota: (val('newSottospesaNota-' + voceId) || '').trim(),
+      createdAt: new Date().toISOString()
+    };
+    var ref = db.collection('sottospese').doc();
+    ref.set(data).then(function () {
+      data.id = ref.id;
+      _sottospese.push(data);
+      return _logWrite('sottospesa', ref.id, 'Sottospesa — ' + v.categoria + ' / ' + descrizione, 'create', _diff({}, data, Object.keys(data)));
+    }).then(function () {
+      _speseExpanded[voceId] = true;
+      return _syncVoceSostenutoDaSottospese(voceId);
+    }).then(function () {
+      _renderSpese(); _renderStatCards(); _renderCharts(); _renderBilancio();
+    }).catch(function (e) { alert('Errore: ' + e.message); });
+  };
+
+  DG.saveSottospesaField = function (el) {
+    var id = el.dataset.sid, field = el.dataset.field;
+    var s = _sottospese.find(function (x) { return x.id === id; });
+    if (!s) return;
+    if (field === 'descrizione' && !el.value.trim()) { alert('La descrizione non può essere vuota.'); el.value = s.descrizione; return; }
+    var isText = field === 'data' || field === 'descrizione' || field === 'nota';
+    var old = {}; old[field] = isText ? (s[field] || '') : (s[field] || 0);
+    var nv = isText ? (field === 'descrizione' || field === 'nota' ? el.value.trim() : el.value) : (+el.value || 0);
+    s[field] = nv;
+    var patch = {}; patch[field] = nv;
+    var v = _vociSpesa.find(function (x) { return x.id === s.voceSpesaId; });
+    db.collection('sottospese').doc(id).update(patch)
+      .then(function () { return _logWrite('sottospesa', id, 'Sottospesa — ' + (v ? v.categoria : '') + ' / ' + s.descrizione, 'update', _diff(old, patch, [field])); })
+      .then(function () { return field === 'importo' ? _syncVoceSostenutoDaSottospese(s.voceSpesaId) : null; })
+      .then(function () { _renderSpese(); _renderStatCards(); _renderCharts(); _renderBilancio(); })
+      .catch(function (e) { alert('Errore: ' + e.message); });
+  };
+
+  DG.deleteSottospesa = function (id) {
+    var s = _sottospese.find(function (x) { return x.id === id; });
+    if (!s) return;
+    var v = _vociSpesa.find(function (x) { return x.id === s.voceSpesaId; });
+    confirm('Eliminare la sottospesa "' + s.descrizione + '"?', function () {
+      db.collection('sottospese').doc(id).delete()
+        .then(function () { return _logWrite('sottospesa', id, 'Sottospesa — ' + (v ? v.categoria : '') + ' / ' + s.descrizione, 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]); })
+        .then(function () {
+          _sottospese = _sottospese.filter(function (x) { return x.id !== id; });
+          return _syncVoceSostenutoDaSottospese(s.voceSpesaId);
+        })
+        .then(function () { _renderSpese(); _renderStatCards(); _renderCharts(); _renderBilancio(); })
+        .catch(function (e) { alert('Errore: ' + e.message); });
+    });
+  };
 
   DG.saveSpesaField = function (el) {
     var id = el.dataset.id, field = el.dataset.field;
@@ -5724,7 +5861,10 @@
   DG.deleteSpesa = function (id) {
     var v = _vociSpesa.find(function (x) { return x.id === id; });
     if (!v) return;
-    confirm('Eliminare la voce "' + v.categoria + '"?' + (v.ivaVoceSpesaId ? ' Verrà eliminata anche la relativa voce IVA.' : ''), function () {
+    var figlieSottospesa = _sottospeseOf(id);
+    confirm('Eliminare la voce "' + v.categoria + '"?' +
+      (v.ivaVoceSpesaId ? ' Verrà eliminata anche la relativa voce IVA.' : '') +
+      (figlieSottospesa.length ? ' Verranno eliminate anche le ' + figlieSottospesa.length + ' sottospese collegate.' : ''), function () {
       var figlia = v.ivaVoceSpesaId ? _vociSpesa.find(function (x) { return x.id === v.ivaVoceSpesaId; }) : null;
       var genitrice = _vociSpesa.find(function (x) { return x.ivaVoceSpesaId === id; });
       db.collection('vociSpesa').doc(id).delete()
@@ -5733,7 +5873,15 @@
           .then(function () { return _logWrite('voceSpesa', figlia.id, 'Spesa — ' + figlia.categoria, 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]); }) : null; })
         .then(function () { return genitrice ? db.collection('vociSpesa').doc(genitrice.id).update({ ivaVoceSpesaId: '' }) : null; })
         .then(function () {
+          return Promise.all(figlieSottospesa.map(function (s) {
+            return db.collection('sottospese').doc(s.id).delete()
+              .then(function () { return _logWrite('sottospesa', s.id, 'Sottospesa — ' + v.categoria + ' / ' + s.descrizione, 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]); });
+          }));
+        })
+        .then(function () {
           _vociSpesa = _vociSpesa.filter(function (x) { return x.id !== id && (!figlia || x.id !== figlia.id); });
+          _sottospese = _sottospese.filter(function (x) { return x.voceSpesaId !== id; });
+          delete _speseExpanded[id];
           if (genitrice) genitrice.ivaVoceSpesaId = '';
           _renderSpese(); _renderStatCards(); _renderCharts(); _renderBilancio();
         })

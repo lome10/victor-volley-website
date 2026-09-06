@@ -44,6 +44,7 @@ service cloud.firestore {
     match /atletiRette/{document=**}      { allow read, write: if isDirigente(); }
     match /rateAtleti/{document=**}       { allow read, write: if isDirigente(); }
     match /vociSpesa/{document=**}        { allow read, write: if isDirigente(); }
+    match /sottospese/{document=**}       { allow read, write: if isDirigente(); }
     match /categorieSpesa/{document=**}   { allow read, write: if isDirigente(); }
 
     // Audit log — append-only: nessun update/delete concesso a nessuno, admin incluso.
