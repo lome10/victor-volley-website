@@ -5762,6 +5762,7 @@
         '<input type="date" class="dg-table-input" id="newSottospesaData-' + v.id + '" style="width:140px">' +
         '<input type="text" class="dg-table-input" id="newSottospesaNota-' + v.id + '" placeholder="Nota" style="width:160px">' +
         '<button class="dg-btn-primary dg-btn-sm" onclick="DG.addSottospesa(\'' + v.id + '\')">Aggiungi</button>' +
+        '<button class="dg-btn-ghost dg-btn-sm" style="margin-left:auto" onclick="DG.exportSottospesePdf(\'' + v.id + '\')">Esporta PDF</button>' +
       '</div>' +
     '</td></tr>';
   }
@@ -6141,6 +6142,53 @@
     var tbody = rows.map(function (r) { return '<tr>' + r.map(function (c) { return '<td>' + c + '</td>'; }).join('') + '</tr>'; }).join('');
     return '<table><thead>' + thead + '</thead><tbody>' + tbody + '</tbody></table>';
   }
+
+  /* Export PDF del dettaglio di una singola voce di spesa (es. "Evento 1500€"):
+     preventivato/sostenuto della voce madre + elenco delle sottospese reali. */
+  DG.exportSottospesePdf = function (voceId) {
+    var v = _vociSpesa.find(function (x) { return x.id === voceId; });
+    if (!v) return;
+    var season = _seasons.find(function (s) { return s.id === _currentSeasonId; }) || {};
+    var cat = v.categoriaSpesaId ? _categoriaSpesaById(v.categoriaSpesaId) : null;
+    var elenco = _sottospeseOf(voceId).slice().sort(function (a, b) { return (a.data || '') < (b.data || '') ? -1 : 1; });
+    var somma = _sommaSottospese(voceId);
+    var oggi = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
+
+    var html = '<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Dettaglio spesa — ' + esc(v.categoria) + '</title>' +
+      '<style>' + _pdfCss() + '</style></head><body>';
+
+    html += '<header><h1>Victor Volley — Dettaglio voce di spesa</h1>' +
+      '<p>Stagione: <strong>' + esc(season.nome || '—') + '</strong> &middot; Generato il ' + oggi + '</p></header>';
+
+    html += '<section><h2>' + esc(v.categoria) + '</h2>' +
+      _pdfStatRow([
+        ['Preventivato', v.importoPreventivato || 0],
+        ['Sostenuto', v.importoSostenuto || 0],
+        ['Totale sottospese', somma]
+      ]) +
+      '<p style="font-size:12px;color:#64748B;margin-top:12px">' +
+        'Categoria: <strong>' + esc(cat ? cat.nome : '—') + '</strong>' +
+        (v.dataSpesa ? ' &middot; Data: <strong>' + esc(_fmtDateLong(v.dataSpesa)) + '</strong>' : '') +
+        (v.note ? ' &middot; Note: ' + esc(v.note) : '') +
+      '</p></section>';
+
+    html += '<section><h2>Sottospese</h2>' +
+      _pdfTableHtml(['Descrizione', 'Importo', 'Data', 'Nota'],
+        elenco.map(function (s) {
+          return [esc(s.descrizione), _eur(s.importo || 0), s.data ? esc(_fmtDateLong(s.data)) : '—', esc(s.nota || '')];
+        }).concat(elenco.length ? [['<strong>Totale</strong>', '<strong>' + _eur(somma) + '</strong>', '', '']] : []),
+        'Nessuna sottospesa inserita per questa voce.') + '</section>';
+
+    html += '<footer>Victor Volley — Area Dirigenti · Documento generato automaticamente</footer>';
+    html += '</body></html>';
+
+    var w = window.open('', '_blank');
+    if (!w) { alert('Il browser ha bloccato la finestra di stampa. Consenti i popup per questo sito e riprova.'); return; }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+    setTimeout(function () { w.focus(); w.print(); }, 300);
+  };
 
   DG.exportSpesePdf = function () {
     var season = _seasons.find(function (s) { return s.id === _currentSeasonId; }) || {};
