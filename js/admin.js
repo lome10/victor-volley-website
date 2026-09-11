@@ -2624,9 +2624,26 @@
     });
   }
 
+  function _peIsMobile() {
+    return window.matchMedia('(max-width: 640px)').matches;
+  }
+
+  function _peDayItems(ymd) {
+    return _peItems.filter(function (it) {
+      return it.data === ymd && (it.piattaforme || []).some(function (p) { return _pePlatformFilter[p]; });
+    }).sort(function (a, b) { return (a.ora || '').localeCompare(b.ora || ''); });
+  }
+
+  function _peItemPlatform(it) {
+    var platKey = (it.piattaforme || [])[0];
+    return PE_PLATFORMS.find(function (p) { return p.key === platKey; }) || PE_PLATFORMS[0];
+  }
+
   function _renderPeGrid() {
     document.getElementById('peMonthLabel').textContent =
       cap(_peMonthCursor.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' }));
+
+    if (_peIsMobile()) { _renderPeAgenda(); return; }
 
     var year  = _peMonthCursor.getFullYear();
     var month = _peMonthCursor.getMonth();
@@ -2635,25 +2652,16 @@
     var gridStart     = new Date(year, month, 1 - startOffset);
     var todayYmd      = _peYmd(new Date());
 
-    var itemsByDate = {};
-    _peItems.forEach(function (item) {
-      if (!item.data) return;
-      (itemsByDate[item.data] = itemsByDate[item.data] || []).push(item);
-    });
-
     var html = PE_WEEKDAYS.map(function (w) { return '<div class="pe-cal-weekday">' + w + '</div>'; }).join('');
 
     for (var i = 0; i < 42; i++) {
       var cellDate = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + i);
       var ymd      = _peYmd(cellDate);
       var inMonth  = cellDate.getMonth() === month;
-      var dayItems = (itemsByDate[ymd] || []).filter(function (it) {
-        return (it.piattaforme || []).some(function (p) { return _pePlatformFilter[p]; });
-      }).sort(function (a, b) { return (a.ora || '').localeCompare(b.ora || ''); });
+      var dayItems = _peDayItems(ymd);
 
       var chipsHtml = dayItems.map(function (it) {
-        var platKey = (it.piattaforme || [])[0];
-        var plat = PE_PLATFORMS.find(function (p) { return p.key === platKey; }) || PE_PLATFORMS[0];
+        var plat = _peItemPlatform(it);
         return '<div class="pe-chip chip ' + plat.chipClass + '" onclick="AdminActions.editPianoEditoriale(\'' + it.id + '\')" title="' + esc(it.titolo) + '">' + esc(it.titolo) + '</div>';
       }).join('');
 
@@ -2666,7 +2674,53 @@
         '</div>';
     }
 
-    document.getElementById('peCalGrid').innerHTML = html;
+    var grid = document.getElementById('peCalGrid');
+    grid.className = 'pe-cal-grid';
+    grid.innerHTML = html;
+  }
+
+  function _renderPeAgenda() {
+    var year  = _peMonthCursor.getFullYear();
+    var month = _peMonthCursor.getMonth();
+    var daysInMonth = new Date(year, month + 1, 0).getDate();
+    var todayYmd = _peYmd(new Date());
+    var weekdaysFull = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
+
+    var rows = [];
+    for (var d = 1; d <= daysInMonth; d++) {
+      var cellDate = new Date(year, month, d);
+      var ymd = _peYmd(cellDate);
+      var dayItems = _peDayItems(ymd);
+      if (!dayItems.length) continue;
+
+      var itemsHtml = dayItems.map(function (it) {
+        var plat = _peItemPlatform(it);
+        return '<div class="pe-agenda-item ' + plat.chipClass + '" onclick="AdminActions.editPianoEditoriale(\'' + it.id + '\')">' +
+          '<div class="pe-agenda-item-top">' +
+            '<span class="pe-agenda-item-title">' + esc(it.titolo) + '</span>' +
+            (it.ora ? '<span class="pe-agenda-item-time">' + esc(it.ora) + '</span>' : '') +
+          '</div>' +
+          '<div class="pe-agenda-item-plat">' + esc(plat.label) + '</div>' +
+        '</div>';
+      }).join('');
+
+      rows.push(
+        '<div class="pe-agenda-day' + (ymd === todayYmd ? ' pe-agenda-day--today' : '') + '">' +
+          '<div class="pe-agenda-day-head">' +
+            '<span>' + weekdaysFull[(cellDate.getDay() + 6) % 7] + ' ' + d + (ymd === todayYmd ? ' <span class="pe-agenda-today-tag">Oggi</span>' : '') + '</span>' +
+            '<button type="button" class="pe-cal-add" onclick="AdminActions.newPianoEditoriale(\'' + ymd + '\')" title="Nuovo contenuto">+</button>' +
+          '</div>' +
+          itemsHtml +
+        '</div>'
+      );
+    }
+
+    var html = rows.length ? rows.join('') :
+      '<div class="pe-agenda-empty">Nessun contenuto pianificato questo mese.</div>';
+
+    var grid = document.getElementById('peCalGrid');
+    grid.className = 'pe-agenda-list';
+    grid.innerHTML = html;
   }
 
   document.getElementById('peMonthPrev').addEventListener('click', function () {
@@ -2682,6 +2736,17 @@
     _peMonthCursor.setDate(1);
     _renderPeGrid();
   });
+  (function () {
+    var _peResizeT = null;
+    window.addEventListener('resize', function () {
+      clearTimeout(_peResizeT);
+      _peResizeT = setTimeout(function () {
+        if (_peLoaded && !document.getElementById('sectionPianoEditoriale').classList.contains('is-hidden')) {
+          _renderPeGrid();
+        }
+      }, 150);
+    });
+  })();
 
   function _renderPePiattaformeCheckboxes(selected) {
     var box = document.getElementById('pePiattaformeBox');
