@@ -1645,8 +1645,12 @@
     document.getElementById('spLogoFile').onchange = function (e) {
       var file = e.target.files[0];
       if (!file) return;
-      _prepareSpLogoSource(file, function (dataUrl, w, h) {
+      var removeBg = document.getElementById('spLogoRemoveBg').checked;
+      _prepareSpLogoSource(file, removeBg, function (dataUrl, w, h) {
         _initSpLogoEditor();
+        document.getElementById('spLogoEditorHint').textContent = removeBg
+          ? 'Lo sfondo quasi bianco è già stato rimosso in automatico. Trascina per posizionare e usa lo slider per zoomare, così ritagli esattamente la parte che ti serve:'
+          : 'Trascina per posizionare e usa lo slider per zoomare, così ritagli esattamente la parte che ti serve:';
         _openSpLogoEditor(dataUrl, w, h);
       });
       e.target.value = '';
@@ -1691,9 +1695,9 @@
     dragging: false, startX: 0, startY: 0, startOffX: 0, startOffY: 0
   };
 
-  /* Carica il file, rimuove lo sfondo quasi-bianco ma NON ritaglia/centra:
-     l'inquadratura finale la sceglie l'admin nell'editor. */
-  function _prepareSpLogoSource(file, cb) {
+  /* Carica il file e, se richiesto, rimuove lo sfondo quasi-bianco (NON ritaglia/centra:
+     l'inquadratura finale la sceglie l'admin nell'editor). */
+  function _prepareSpLogoSource(file, removeBg, cb) {
     var reader = new FileReader();
     reader.onload = function (e) {
       var dataUrl = e.target.result;
@@ -1725,7 +1729,7 @@
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
         ctx.drawImage(img, 0, 0, outW, outH);
-        _removeWhiteBg(ctx, outW, outH);
+        if (removeBg) _removeWhiteBg(ctx, outW, outH);
         cb(canvas.toDataURL('image/png'), outW, outH);
       };
       img.src = dataUrl;
