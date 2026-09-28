@@ -343,7 +343,7 @@
 
       document.getElementById('gallery-preview-title').textContent = album.title || 'Galleria foto';
       document.getElementById('galleryPreviewSubtitle').textContent =
-        [album.date ? VV.formatDateShort(album.date) : '', album.category || '', photos.length + ' foto']
+        [album.date ? VV.formatDateShort(album.date) : '', photos.length + ' foto']
           .filter(Boolean).join(' · ');
       document.getElementById('galleryPreviewLink').href = href;
       document.getElementById('galleryPreviewGrid').innerHTML = picks.map(function (p) {
