@@ -2091,34 +2091,10 @@ main, footer.site-footer {
 ================================================ */
 .maglia-teaser {
   background: linear-gradient(160deg, #0F172A 0%, var(--c-navy) 100%);
+  padding-top: 56px;
   padding-bottom: 56px;
   overflow: hidden;
   position: relative;
-}
-
-.maglia-ticker {
-  overflow: hidden;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 14px 0;
-  margin-bottom: 48px;
-}
-.maglia-ticker-track {
-  display: flex;
-  width: max-content;
-  gap: 10px;
-  animation: maglia-scroll 22s linear infinite;
-  white-space: nowrap;
-  font-family: var(--font-heading);
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.55);
-}
-.maglia-ticker-track span { color: var(--c-magenta); margin: 0 10px; }
-@keyframes maglia-scroll {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
 }
 
 .maglia-teaser-body {
@@ -2268,6 +2244,46 @@ main, footer.site-footer {
 }
 .maglia-video[hidden] { display: none; }
 .maglia-video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
+/* Modalità "sfondo" (autoplay muto): l'iframe è ingrandito quanto basta a coprire il riquadro
+   (come object-fit: cover) e spostato in alto di --pad, così la fascia con titolo e canale di
+   YouTube finisce fuori dal riquadro (overflow hidden). Non riceve il mouse, quindi niente barra
+   al passaggio del cursore; l'audio si attiva con il pulsante dedicato. */
+.maglia-video { container-type: size; }
+.maglia-video--bg iframe {
+  --pad: clamp(48px, 6cqw, 80px);
+  inset: auto;
+  left: 50%;
+  top: calc(var(--pad) * -1);
+  width: calc((max(100cqh, 56.25cqw) + var(--pad)) * 1.7778);
+  height: calc(max(100cqh, 56.25cqw) + var(--pad));
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.maglia-video-audio {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  z-index: 4;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 50%;
+  background: rgba(3, 12, 28, 0.6);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+.maglia-video-audio .ico-on { display: none; }
+.maglia-video-audio.is-on .ico-on { display: block; }
+.maglia-video-audio.is-on .ico-off { display: none; }
+.maglia-video-audio.is-on { background: var(--c-magenta); border-color: var(--c-magenta); }
+.maglia-video-audio:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+@media (hover: hover) { .maglia-video-audio:hover { transform: scale(1.08); } }
 .maglia-video-poster { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
 .maglia-video-play {
   position: relative;
@@ -2305,7 +2321,7 @@ main, footer.site-footer {
 
 /* Variante con video: occupa tutta la sezione, da bordo a bordo (niente riquadro centrato).
    Titolo e sottotitolo sono sovrapposti in alto sul video (su mobile tornano sopra, vedi sotto). */
-.maglia-teaser--video { padding-bottom: 0; }
+.maglia-teaser--video { padding-top: 0; padding-bottom: 0; }
 .maglia-teaser--video > .container { max-width: none; width: 100%; padding: 0; }
 .maglia-teaser--video .maglia-glow { display: none; }
 .maglia-teaser--video .maglia-video {
