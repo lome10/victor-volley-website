@@ -115,6 +115,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
           Vai al sito
         </a>
+        <button id="btnExportBackup" class="admin-footer-link" title="Scarica tutti i dati del sito in un file JSON">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Esporta backup
+        </button>
         <button id="logoutBtn" class="admin-footer-link admin-logout">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
           Esci
@@ -970,6 +974,14 @@
               </div>
               <h4 class="sicurezza-title">Cambia password</h4>
               <p class="sicurezza-desc">Imposta una nuova password per <strong id="sicurezzaEmail"></strong>.</p>
+              <!-- La funzione che cambia la password richiede il piano Blaze (mai attivato):
+                   finché non è pubblicata, il modulo resta visibile ma disattivato, con le
+                   istruzioni per farlo dalla console Firebase (vedi DG._FUNCTIONS_DEPLOYED in admin.js). -->
+              <div id="sicurezzaUnavailable" class="sicurezza-msg is-hidden" style="color:var(--a-muted);margin-bottom:14px">
+                Funzione non ancora attiva su questo progetto (richiede il piano Blaze). Per cambiare la password vai su
+                <a href="https://console.firebase.google.com/project/victor-volley/authentication/users" target="_blank" rel="noopener">Firebase Console → Authentication</a>,
+                cerca <strong id="sicurezzaEmail2"></strong> e usa "Reimposta password".
+              </div>
               <div class="form-grid" style="width:100%">
                 <div class="form-group form-full">
                   <label class="form-label">Nuova password</label>
@@ -1987,7 +1999,7 @@
   <script src="/js/config.js?v=20260928"></script>
   <script src="/js/photodb.js?v=20260929"></script>
   <script src="/js/girone.js?v=20260719"></script>
-  <script src="/js/admin.js?v=20260928e"></script>
+  <script src="/js/admin.js?v=20260928f"></script>
   <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

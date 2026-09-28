@@ -73,6 +73,55 @@
   });
 
   /* ================================================
+     ESPORTA BACKUP — tutte le collezioni Firestore del sito
+     in un unico file JSON scaricato dal browser. Firestore (piano
+     gratuito) non fa backup automatici: questo è il modo più semplice
+     per avere una copia offline dei dati, da rifare ogni tanto.
+     Aggiungere qui una nuova collezione quando se ne crea una.
+  ================================================ */
+  var BACKUP_COLLECTIONS = [
+    'articles', 'partite', 'albums', 'categories', 'players', 'staff',
+    'atleti', 'atletiRette', 'attivita', 'auditLog', 'aziende', 'bacheca',
+    'budgetSeasons', 'categorieAtleti', 'categorieSpesa', 'dirigenti',
+    'pianoEditoriale', 'promemoria', 'rateAtleti', 'sottospese',
+    'sponsorizzazioni', 'tranchePagamento', 'vociSpesa', 'settings', 'siteData'
+  ];
+
+  document.getElementById('btnExportBackup').addEventListener('click', function () {
+    var btn = this, label = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = btn.innerHTML.replace('Esporta backup', 'Esportazione…');
+
+    Promise.all(BACKUP_COLLECTIONS.map(function (name) {
+      return db.collection(name).get().then(function (snap) {
+        var docs = {};
+        snap.forEach(function (d) { docs[d.id] = d.data(); });
+        return [name, docs];
+      }).catch(function (e) {
+        console.error('[backup]', name, e);
+        return [name, { _errore: e.message }];
+      });
+    })).then(function (pairs) {
+      var out = { generatedAt: new Date().toISOString(), collections: {} };
+      pairs.forEach(function (p) { out.collections[p[0]] = p[1]; });
+      var blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
+      var url  = URL.createObjectURL(blob);
+      var a    = document.createElement('a');
+      a.href = url;
+      a.download = 'victor-volley-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }).catch(function (e) {
+      alert('Errore durante l\'esportazione: ' + e.message);
+    }).then(function () {
+      btn.disabled = false;
+      btn.innerHTML = label;
+    });
+  });
+
+  /* ================================================
      CAMBIA LA MIA PASSWORD (self-service dirigente)
      Le email @victorvolley non sono caselle reali: niente
      reset via email, quindi il dirigente cambia la password
@@ -2270,6 +2319,7 @@
     if (modUrl) document.getElementById('moduloPdfLink').href = _driveViewUrl(modUrl);
 
     document.getElementById('sicurezzaEmail').textContent = _editingAtleta.email || '';
+    document.getElementById('sicurezzaEmail2').textContent = _editingAtleta.email || '';
     document.getElementById('sicurezzaMsg').classList.add('is-hidden');
     document.getElementById('sicurezzaMsg').textContent = '';
     document.getElementById('newPassword').value     = '';
@@ -2343,9 +2393,20 @@
       .catch(function (e) { alert('Errore: ' + e.message); });
   });
 
-  /* ---- Cambia password atleta (via Cloud Function) ---- */
+  /* ---- Cambia password atleta (via Cloud Function) ----
+     La function richiede il piano Blaze, non ancora attivo: finché resta a false,
+     il modulo si vede ma non si può inviare, con le istruzioni per farlo dalla
+     console Firebase. Passare a true (e ripubblicare) appena la function è online. */
+  var _FUNCTIONS_DEPLOYED = false;
+  (function () {
+    document.getElementById('sicurezzaUnavailable').classList.toggle('is-hidden', _FUNCTIONS_DEPLOYED);
+    ['newPassword', 'confirmPassword', 'btnCambiaPassword'].forEach(function (id) {
+      document.getElementById(id).disabled = !_FUNCTIONS_DEPLOYED;
+    });
+  })();
+
   document.getElementById('btnCambiaPassword').addEventListener('click', function () {
-    if (!_editingAtleta) return;
+    if (!_editingAtleta || !_FUNCTIONS_DEPLOYED) return;
     var btn     = this;
     var msg     = document.getElementById('sicurezzaMsg');
     var pwd     = document.getElementById('newPassword').value;

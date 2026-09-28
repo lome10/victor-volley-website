@@ -282,6 +282,8 @@ button { font-family: var(--font-body); cursor: pointer; }
   cursor: pointer;
   transition: background var(--a-t);
 }
+.btn-primary:disabled { background: var(--a-border); color: var(--a-muted); cursor: not-allowed; }
+.form-input:disabled { background: var(--a-bg); color: var(--a-muted); cursor: not-allowed; }
 .btn-primary:hover { background: var(--a-blue-dark); }
 
 .btn-ghost {
