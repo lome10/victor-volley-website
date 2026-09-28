@@ -3600,39 +3600,60 @@
     });
   }
 
-  /* ---- SOTTOSPESE — dettaglio spese reali dentro una singola voce di spesa ---- */
+  /* ---- SOTTOSPESE — dettaglio reale dentro una singola voce di spesa ----
+     Due tipi, stesso oggetto: "spesa" (default, storico) e "credito" — per gli
+     eventi che generano anche un incasso (es. biglietti, quote di partecipazione),
+     da non confondere con gli incassi già tracciati altrove (sponsor, rette): qui
+     è solo un dettaglio informativo dentro la voce, non tocca Sostenuto/Preventivato
+     né i totali di Bilancio, per evitare di contare lo stesso incasso due volte. */
   function _sottospeseOf(voceId) {
     return _sottospese.filter(function (x) { return x.voceSpesaId === voceId; });
   }
+  function _isSottospesaCredito(s) { return s.tipo === 'credito'; }
+  function _sottospeseSpesaOf(voceId) {
+    return _sottospeseOf(voceId).filter(function (x) { return !_isSottospesaCredito(x); });
+  }
+  function _sottospeseCreditoOf(voceId) {
+    return _sottospeseOf(voceId).filter(_isSottospesaCredito);
+  }
   /* Ogni sottospesa ha due importi: `importoPreventivato` (quanto era previsto)
-     e `importo` (quanto è stato pagato davvero — nome storico del campo, invariato
-     così le sottospese già inserite restano "pagate"). */
+     e `importo` (quanto è stato pagato/incassato davvero — nome storico del campo,
+     invariato così le sottospese già inserite restano "pagate"). */
   function _sommaSottospese(voceId) {
-    return _sottospeseOf(voceId).reduce(function (s, x) { return s + (+x.importo || 0); }, 0);
+    return _sottospeseSpesaOf(voceId).reduce(function (s, x) { return s + (+x.importo || 0); }, 0);
   }
   function _sommaSottospesePreventivate(voceId) {
-    return _sottospeseOf(voceId).reduce(function (s, x) { return s + (+x.importoPreventivato || 0); }, 0);
+    return _sottospeseSpesaOf(voceId).reduce(function (s, x) { return s + (+x.importoPreventivato || 0); }, 0);
   }
-  /* Il Preventivato della voce segue le sottospese solo se almeno una ne ha uno. */
+  function _sommaSottospeseIncassato(voceId) {
+    return _sottospeseCreditoOf(voceId).reduce(function (s, x) { return s + (+x.importo || 0); }, 0);
+  }
+  function _sommaSottospeseIncassoPrevisto(voceId) {
+    return _sottospeseCreditoOf(voceId).reduce(function (s, x) { return s + (+x.importoPreventivato || 0); }, 0);
+  }
+  /* Il Preventivato della voce segue le sottospese di spesa solo se almeno una ne ha uno
+     (i crediti non c'entrano: tracciare un incasso previsto non deve azzerare il budget). */
   function _voceHaPreventivatoDaSottospese(voceId) {
-    return _sottospeseOf(voceId).some(function (x) { return (+x.importoPreventivato || 0) > 0; });
+    return _sottospeseSpesaOf(voceId).some(function (x) { return (+x.importoPreventivato || 0) > 0; });
   }
-  /* Stato di pagamento di una sottospesa, ricavato dai due importi. */
+  /* Stato di una sottospesa, ricavato dai due importi — vocabolario diverso per i crediti. */
   function _statoSottospesa(s) {
     var prev = +s.importoPreventivato || 0, pagato = +s.importo || 0;
-    if (pagato <= 0) return { key: 'da_pagare', label: 'Da pagare', badge: 'in_trattativa' };
+    var credito = _isSottospesaCredito(s);
+    if (pagato <= 0) return credito ? { key: 'da_incassare', label: 'Da incassare', badge: 'in_trattativa' } : { key: 'da_pagare', label: 'Da pagare', badge: 'in_trattativa' };
     if (prev > 0 && pagato < prev) return { key: 'parziale', label: 'Parziale', badge: 'contattato' };
-    return { key: 'pagata', label: 'Pagata', badge: 'chiuso' };
+    return credito ? { key: 'incassato', label: 'Incassato', badge: 'chiuso' } : { key: 'pagata', label: 'Pagata', badge: 'chiuso' };
   }
-  /* Finché una voce ha almeno una sottospesa, il suo "Sostenuto" è la somma dei
-     pagati e non è più modificabile a mano. Lo stesso vale per il "Preventivato",
-     ma solo se almeno una sottospesa ha un importo preventivato (altrimenti resta
-     manuale, come per le voci create prima di questa distinzione). Se le sottospese
-     vengono azzerate, i campi tornano modificabili mantenendo l'ultimo valore noto. */
+  /* Finché una voce ha almeno una sottospesa DI SPESA, il suo "Sostenuto" è la somma dei
+     pagati e non è più modificabile a mano (i crediti non contano: vedi nota sopra). Lo
+     stesso vale per il "Preventivato", ma solo se almeno una sottospesa di spesa ha un
+     importo preventivato (altrimenti resta manuale, come per le voci create prima di
+     questa distinzione). Se le sottospese di spesa vengono azzerate, i campi tornano
+     modificabili mantenendo l'ultimo valore noto. */
   function _syncVoceDaSottospese(voceId) {
     var v = _vociSpesa.find(function (x) { return x.id === voceId; });
     if (!v) return Promise.resolve();
-    if (!_sottospeseOf(voceId).length) return Promise.resolve();
+    if (!_sottospeseSpesaOf(voceId).length) return Promise.resolve();
     var patch = {}, old = {}, fields = [];
     var sostenuto = _sommaSottospese(voceId);
     if (+v.importoSostenuto !== sostenuto) {
@@ -5963,14 +5984,15 @@
     }
     body.innerHTML = items.map(function (v) {
       var linked = v.isIva && isLinkedChild[v.id];
-      var sub = v.isIva ? [] : _sottospeseOf(v.id);
+      var sub = v.isIva ? [] : _sottospeseOf(v.id);          /* tutte, spese + crediti: solo per l'indicatore "(N)" */
+      var subSpesa = v.isIva ? [] : _sottospeseSpesaOf(v.id); /* solo spese: governano Sostenuto/Preventivato */
       var expanded = !v.isIva && !!_speseExpanded[v.id];
       var toggleBtn = v.isIva ? '' :
         '<button type="button" class="dg-btn-icon-only" title="Sottospese' + (sub.length ? ' (' + sub.length + ')' : '') + '" onclick="DG.toggleSpesaDettaglio(\'' + v.id + '\')" style="margin-right:2px;flex-shrink:0;transform:rotate(' + (expanded ? 90 : 0) + 'deg)">' + _chevronIconSm() + '</button>';
-      var sostenutoCell = sub.length
-        ? '<input type="number" class="dg-table-input" value="' + Math.round(v.importoSostenuto || 0) + '" disabled title="Calcolato automaticamente dalla somma dei pagati di ' + sub.length + ' sottospes' + (sub.length === 1 ? 'a' : 'e') + '">'
+      var sostenutoCell = subSpesa.length
+        ? '<input type="number" class="dg-table-input" value="' + Math.round(v.importoSostenuto || 0) + '" disabled title="Calcolato automaticamente dalla somma dei pagati di ' + subSpesa.length + ' sottospes' + (subSpesa.length === 1 ? 'a' : 'e') + '">'
         : '<input type="number" class="dg-table-input" value="' + (v.importoSostenuto || 0) + '" data-id="' + v.id + '" data-field="importoSostenuto" onchange="DG.saveSpesaField(this)">';
-      var preventivatoCell = (sub.length && _voceHaPreventivatoDaSottospese(v.id))
+      var preventivatoCell = (subSpesa.length && _voceHaPreventivatoDaSottospese(v.id))
         ? '<input type="number" class="dg-table-input" value="' + Math.round(v.importoPreventivato || 0) + '" disabled title="Calcolato automaticamente dalla somma dei preventivati delle sottospese">'
         : '<input type="number" class="dg-table-input" value="' + (v.importoPreventivato || 0) + '" data-id="' + v.id + '" data-field="importoPreventivato" onchange="DG.saveSpesaField(this)">';
       var row = '<tr' + (v.isIva ? ' style="background:#F8FAFC"' : '') + '>' +
@@ -5993,14 +6015,16 @@
 
   function _chevronIconSm() { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="9,6 15,12 9,18"/></svg>'; }
 
-  /* Riga espandibile inserita subito sotto una voce di spesa: elenco delle
-     sottospese reali che la compongono + form di aggiunta rapida. */
-  function _renderSottospeseRow(v) {
-    var elenco = _sottospeseOf(v.id).slice().sort(function (a, b) { return (a.data || '') < (b.data || '') ? 1 : -1; });
-    var somma = _sommaSottospese(v.id);
-    var sommaPrev = _sommaSottospesePreventivate(v.id);
-    var daPagare = elenco.reduce(function (t, s) { return t + Math.max(0, (+s.importoPreventivato || 0) - (+s.importo || 0)); }, 0);
-    var righe = elenco.length ? elenco.map(function (s) {
+  /* Una delle due tabelle (spese o crediti) dentro il dettaglio di una voce: stessa
+     struttura, vocabolario diverso — "Preventivato/Pagato" per le spese, "Incasso
+     previsto/Incassato" per i crediti. Il tipo è deciso da QUALE tabella si aggiunge
+     la riga (nessun campo "tipo" da cambiare dopo: per correggere un errore si elimina
+     e si reinserisce nella tabella giusta). */
+  function _sottospesaTableHtml(v, rows, tipo) {
+    var isCredito = tipo === 'credito';
+    var labelPrev = isCredito ? 'Incasso previsto' : 'Preventivato';
+    var labelEff  = isCredito ? 'Incassato' : 'Pagato';
+    var righe = rows.length ? rows.map(function (s) {
       var st = _statoSottospesa(s);
       return '<tr>' +
         '<td><input type="text" class="dg-table-input" value="' + esc(s.descrizione) + '" data-sid="' + s.id + '" data-field="descrizione" onchange="DG.saveSottospesaField(this)"></td>' +
@@ -6011,23 +6035,50 @@
         '<td><input type="text" class="dg-table-input" value="' + esc(s.nota || '') + '" data-sid="' + s.id + '" data-field="nota" onchange="DG.saveSottospesaField(this)"></td>' +
         '<td><button class="dg-btn-icon-only" title="Elimina" onclick="DG.deleteSottospesa(\'' + s.id + '\')">' + _delIconSm() + '</button></td>' +
         '</tr>';
-    }).join('') : '<tr><td colspan="7" class="dg-empty">Nessuna sottospesa inserita.</td></tr>';
+    }).join('') : '<tr><td colspan="7" class="dg-empty">' + (isCredito ? 'Nessun credito inserito.' : 'Nessuna spesa inserita.') + '</td></tr>';
+
+    return '<div style="font-size:12px;font-weight:700;color:var(--dg-muted);margin:14px 0 6px">' + (isCredito ? 'Crediti / incassi' : 'Spese') + '</div>' +
+      '<table class="dg-table" style="margin-bottom:8px"><thead><tr><th>Descrizione</th><th>' + labelPrev + '</th><th>' + labelEff + '</th><th>Stato</th><th>Data</th><th>Nota</th><th></th></tr></thead><tbody>' + righe + '</tbody></table>' +
+      '<div class="dg-toolbar">' +
+        '<input type="text" class="dg-table-input" id="newSottospesaDesc-' + tipo + '-' + v.id + '" placeholder="Descrizione" style="width:180px">' +
+        '<input type="number" class="dg-table-input" id="newSottospesaPrev-' + tipo + '-' + v.id + '" placeholder="' + labelPrev + '" style="width:130px">' +
+        '<input type="number" class="dg-table-input" id="newSottospesaImporto-' + tipo + '-' + v.id + '" placeholder="' + labelEff + '" style="width:110px">' +
+        '<input type="date" class="dg-table-input" id="newSottospesaData-' + tipo + '-' + v.id + '" style="width:140px">' +
+        '<input type="text" class="dg-table-input" id="newSottospesaNota-' + tipo + '-' + v.id + '" placeholder="Nota" style="width:160px">' +
+        '<button class="dg-btn-primary dg-btn-sm" onclick="DG.addSottospesa(\'' + v.id + '\',\'' + tipo + '\')">Aggiungi ' + (isCredito ? 'credito' : 'spesa') + '</button>' +
+      '</div>';
+  }
+
+  /* Riga espandibile inserita subito sotto una voce di spesa: due tabelle (spese e
+     crediti) con le voci reali che la compongono + form di aggiunta rapida per ciascuna.
+     I crediti sono solo un dettaglio informativo qui dentro: non toccano Sostenuto/
+     Preventivato della voce né i totali di Bilancio (l'incasso, se già tracciato altrove
+     — es. sponsor, rette — non va così contato due volte). */
+  function _renderSottospeseRow(v) {
+    var elenco = _sottospeseOf(v.id).slice().sort(function (a, b) { return (a.data || '') < (b.data || '') ? 1 : -1; });
+    var spese = elenco.filter(function (s) { return !_isSottospesaCredito(s); });
+    var crediti = elenco.filter(_isSottospesaCredito);
+
+    var somma = _sommaSottospese(v.id), sommaPrev = _sommaSottospesePreventivate(v.id);
+    var daPagare = spese.reduce(function (t, s) { return t + Math.max(0, (+s.importoPreventivato || 0) - (+s.importo || 0)); }, 0);
+    var incassato = _sommaSottospeseIncassato(v.id), incassoPrevisto = _sommaSottospeseIncassoPrevisto(v.id);
+    var daIncassare = crediti.reduce(function (t, s) { return t + Math.max(0, (+s.importoPreventivato || 0) - (+s.importo || 0)); }, 0);
+
+    var infoLine = 'Dettaglio — "' + esc(v.categoria) + '": pagato €' + somma.toLocaleString('it-IT') + ' su €' + sommaPrev.toLocaleString('it-IT') + ' preventivati nelle spese' +
+      ' · ancora da pagare €' + daPagare.toLocaleString('it-IT') +
+      ' · preventivato voce €' + Number(v.importoPreventivato || 0).toLocaleString('it-IT');
+    if (crediti.length) {
+      infoLine += ' · incassato €' + incassato.toLocaleString('it-IT') + ' su €' + incassoPrevisto.toLocaleString('it-IT') + ' previsti' +
+        ' · ancora da incassare €' + daIncassare.toLocaleString('it-IT') +
+        ' <span title="I crediti sono solo un dettaglio qui dentro: non modificano Sostenuto/Preventivato della voce né i totali di Bilancio.">ⓘ</span>';
+    }
 
     return '<tr class="dg-spesa-detail-row"><td colspan="8" style="background:#F8FAFC;padding:12px 16px;border-top:1px dashed var(--dg-border)">' +
-      '<div style="font-size:12px;font-weight:700;color:var(--dg-muted);margin-bottom:8px">' +
-        'Dettaglio spese — "' + esc(v.categoria) + '": pagato €' + somma.toLocaleString('it-IT') + ' su €' + sommaPrev.toLocaleString('it-IT') + ' preventivati nelle sottospese' +
-        ' · ancora da pagare €' + daPagare.toLocaleString('it-IT') +
-        ' · preventivato voce €' + Number(v.importoPreventivato || 0).toLocaleString('it-IT') +
-      '</div>' +
-      '<table class="dg-table" style="margin-bottom:10px"><thead><tr><th>Descrizione</th><th>Preventivato</th><th>Pagato</th><th>Stato</th><th>Data</th><th>Nota</th><th></th></tr></thead><tbody>' + righe + '</tbody></table>' +
-      '<div class="dg-toolbar">' +
-        '<input type="text" class="dg-table-input" id="newSottospesaDesc-' + v.id + '" placeholder="Descrizione" style="width:180px">' +
-        '<input type="number" class="dg-table-input" id="newSottospesaPrev-' + v.id + '" placeholder="Preventivato" style="width:110px">' +
-        '<input type="number" class="dg-table-input" id="newSottospesaImporto-' + v.id + '" placeholder="Pagato" style="width:100px">' +
-        '<input type="date" class="dg-table-input" id="newSottospesaData-' + v.id + '" style="width:140px">' +
-        '<input type="text" class="dg-table-input" id="newSottospesaNota-' + v.id + '" placeholder="Nota" style="width:160px">' +
-        '<button class="dg-btn-primary dg-btn-sm" onclick="DG.addSottospesa(\'' + v.id + '\')">Aggiungi</button>' +
-        '<button class="dg-btn-ghost dg-btn-sm" style="margin-left:auto" onclick="DG.exportSottospesePdf(\'' + v.id + '\')">Esporta PDF</button>' +
+      '<div style="font-size:12px;font-weight:700;color:var(--dg-muted)">' + infoLine + '</div>' +
+      _sottospesaTableHtml(v, spese, 'spesa') +
+      _sottospesaTableHtml(v, crediti, 'credito') +
+      '<div class="dg-toolbar" style="margin-top:4px">' +
+        '<button class="dg-btn-ghost dg-btn-sm" onclick="DG.exportSottospesePdf(\'' + v.id + '\')">Esporta PDF</button>' +
       '</div>' +
     '</td></tr>';
   }
@@ -6037,24 +6088,27 @@
     _renderSpese();
   };
 
-  DG.addSottospesa = function (voceId) {
+  DG.addSottospesa = function (voceId, tipo) {
+    tipo = tipo === 'credito' ? 'credito' : 'spesa';
     var v = _vociSpesa.find(function (x) { return x.id === voceId; });
     if (!v) return;
-    var descrizione = (val('newSottospesaDesc-' + voceId) || '').trim();
-    var importo = +val('newSottospesaImporto-' + voceId) || 0;
-    var importoPreventivato = +val('newSottospesaPrev-' + voceId) || 0;
+    var suffix = tipo + '-' + voceId;
+    var descrizione = (val('newSottospesaDesc-' + suffix) || '').trim();
+    var importo = +val('newSottospesaImporto-' + suffix) || 0;
+    var importoPreventivato = +val('newSottospesaPrev-' + suffix) || 0;
     if (!descrizione) { alert('Inserisci una descrizione.'); return; }
-    if (!importo && !importoPreventivato) { alert('Inserisci almeno un importo (preventivato o pagato).'); return; }
+    if (!importo && !importoPreventivato) { alert('Inserisci almeno un importo (' + (tipo === 'credito' ? 'incasso previsto o incassato' : 'preventivato o pagato') + ').'); return; }
     var data = {
-      seasonId: _currentSeasonId, voceSpesaId: voceId, descrizione: descrizione, importo: importo, importoPreventivato: importoPreventivato,
-      data: val('newSottospesaData-' + voceId) || '', nota: (val('newSottospesaNota-' + voceId) || '').trim(),
+      seasonId: _currentSeasonId, voceSpesaId: voceId, tipo: tipo,
+      descrizione: descrizione, importo: importo, importoPreventivato: importoPreventivato,
+      data: val('newSottospesaData-' + suffix) || '', nota: (val('newSottospesaNota-' + suffix) || '').trim(),
       createdAt: new Date().toISOString()
     };
     var ref = db.collection('sottospese').doc();
     ref.set(data).then(function () {
       data.id = ref.id;
       _sottospese.push(data);
-      return _logWrite('sottospesa', ref.id, 'Sottospesa — ' + v.categoria + ' / ' + descrizione, 'create', _diff({}, data, Object.keys(data)));
+      return _logWrite('sottospesa', ref.id, (tipo === 'credito' ? 'Credito' : 'Sottospesa') + ' — ' + v.categoria + ' / ' + descrizione, 'create', _diff({}, data, Object.keys(data)));
     }).then(function () {
       _speseExpanded[voceId] = true;
       return _syncVoceDaSottospese(voceId);
@@ -6075,7 +6129,7 @@
     var patch = {}; patch[field] = nv;
     var v = _vociSpesa.find(function (x) { return x.id === s.voceSpesaId; });
     db.collection('sottospese').doc(id).update(patch)
-      .then(function () { return _logWrite('sottospesa', id, 'Sottospesa — ' + (v ? v.categoria : '') + ' / ' + s.descrizione, 'update', _diff(old, patch, [field])); })
+      .then(function () { return _logWrite('sottospesa', id, (_isSottospesaCredito(s) ? 'Credito' : 'Sottospesa') + ' — ' + (v ? v.categoria : '') + ' / ' + s.descrizione, 'update', _diff(old, patch, [field])); })
       .then(function () { return (field === 'importo' || field === 'importoPreventivato') ? _syncVoceDaSottospese(s.voceSpesaId) : null; })
       .then(function () { _renderSpese(); _renderStatCards(); _renderCharts(); _renderBilancio(); })
       .catch(function (e) { alert('Errore: ' + e.message); });
@@ -6417,9 +6471,13 @@
     var season = _seasons.find(function (s) { return s.id === _currentSeasonId; }) || {};
     var cat = v.categoriaSpesaId ? _categoriaSpesaById(v.categoriaSpesaId) : null;
     var elenco = _sottospeseOf(voceId).slice().sort(function (a, b) { return (a.data || '') < (b.data || '') ? -1 : 1; });
+    var spese = elenco.filter(function (s) { return !_isSottospesaCredito(s); });
+    var crediti = elenco.filter(_isSottospesaCredito);
     var somma = _sommaSottospese(voceId);
     var sommaPrev = _sommaSottospesePreventivate(voceId);
-    var daPagare = elenco.reduce(function (t, s) { return t + Math.max(0, (+s.importoPreventivato || 0) - (+s.importo || 0)); }, 0);
+    var daPagare = spese.reduce(function (t, s) { return t + Math.max(0, (+s.importoPreventivato || 0) - (+s.importo || 0)); }, 0);
+    var incassato = _sommaSottospeseIncassato(voceId);
+    var incassoPrevisto = _sommaSottospeseIncassoPrevisto(voceId);
     var oggi = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
 
     var html = '<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Dettaglio spesa — ' + esc(v.categoria) + '</title>' +
@@ -6432,22 +6490,35 @@
       _pdfStatRow([
         ['Preventivato', v.importoPreventivato || 0],
         ['Sostenuto', v.importoSostenuto || 0],
-        ['Preventivato sottospese', sommaPrev],
-        ['Pagato sottospese', somma],
+        ['Preventivato spese', sommaPrev],
+        ['Pagato spese', somma],
         ['Ancora da pagare', daPagare]
-      ]) +
+      ].concat(crediti.length ? [['Incasso previsto', incassoPrevisto], ['Incassato', incassato]] : [])) +
       '<p style="font-size:12px;color:#64748B;margin-top:12px">' +
         'Categoria: <strong>' + esc(cat ? cat.nome : '—') + '</strong>' +
         (v.dataSpesa ? ' &middot; Data: <strong>' + esc(_fmtDateLong(v.dataSpesa)) + '</strong>' : '') +
         (v.note ? ' &middot; Note: ' + esc(v.note) : '') +
       '</p></section>';
 
-    html += '<section><h2>Sottospese</h2>' +
+    function sottospesaRow(s) {
+      return [esc(s.descrizione), _eur(s.importoPreventivato || 0), _eur(s.importo || 0), _statoSottospesa(s).label, s.data ? esc(_fmtDateLong(s.data)) : '—', esc(s.nota || '')];
+    }
+
+    html += '<section><h2>Spese</h2>' +
       _pdfTableHtml(['Descrizione', 'Preventivato', 'Pagato', 'Stato', 'Data', 'Nota'],
-        elenco.map(function (s) {
-          return [esc(s.descrizione), _eur(s.importoPreventivato || 0), _eur(s.importo || 0), _statoSottospesa(s).label, s.data ? esc(_fmtDateLong(s.data)) : '—', esc(s.nota || '')];
-        }).concat(elenco.length ? [['<strong>Totale</strong>', '<strong>' + _eur(sommaPrev) + '</strong>', '<strong>' + _eur(somma) + '</strong>', '', '', '']] : []),
-        'Nessuna sottospesa inserita per questa voce.') + '</section>';
+        spese.map(sottospesaRow)
+          .concat(spese.length ? [['<strong>Totale</strong>', '<strong>' + _eur(sommaPrev) + '</strong>', '<strong>' + _eur(somma) + '</strong>', '', '', '']] : []),
+        'Nessuna spesa inserita per questa voce.') + '</section>';
+
+    /* I crediti compaiono in stampa solo se ce n'è almeno uno: sono un dettaglio
+       informativo, non fanno parte del costo della voce sopra. */
+    if (crediti.length) {
+      html += '<section><h2>Crediti / incassi</h2>' +
+        _pdfTableHtml(['Descrizione', 'Incasso previsto', 'Incassato', 'Stato', 'Data', 'Nota'],
+          crediti.map(sottospesaRow)
+            .concat([['<strong>Totale</strong>', '<strong>' + _eur(incassoPrevisto) + '</strong>', '<strong>' + _eur(incassato) + '</strong>', '', '', '']]),
+          '') + '</section>';
+    }
 
     html += '<footer>Victor Volley — Area Dirigenti · Documento generato automaticamente</footer>';
     html += '</body></html>';
