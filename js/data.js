@@ -106,7 +106,7 @@
     /* Solo link http(s): scarta "javascript:", "data:" e simili prima di metterli in un href. */
     safeUrl: function (u) {
       u = String(u || '').trim();
-      return /^https?:///i.test(u) ? u : '';
+      return /^https?:\/\//i.test(u) ? u : '';
     },
     slugify: function (text) {
       return String(text || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
