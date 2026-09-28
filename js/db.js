@@ -252,7 +252,7 @@
       var saved  = VV.saveAlbum(album);
       if (cb) cb(saved);
       _upsert('albums', saved).then(function () {
-        _audit('album', String(saved.id), 'Album — ' + saved.title, before ? 'update' : 'create', _diffRecord(before, saved, Object.keys(saved)));
+        _audit('album', String(saved.id), 'Album — ' + saved.title, before ? 'update' : 'create', _diffRecord(before, saved, Object.keys(saved).filter(function (k) { return k !== 'photos'; })));
       }).catch(function (e) { console.error('[DB] saveAlbum', e); });
       return saved;
     },

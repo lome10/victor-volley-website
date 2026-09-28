@@ -97,7 +97,8 @@
   <script src="js/firebase-config.js"></script>
   <script src="js/data.js"></script>
   <script src="js/db.js"></script>
-  <script src="js/photodb.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/photodb.js?v=20260928"></script>
   <script src="js/splash.js"></script>
   <script src="js/components.js"></script>
   <script src="js/animations.js"></script>
@@ -123,7 +124,12 @@
     function showPhoto(idx) {
       lbIdx = idx;
       var p = lbPhotos[idx];
-      lightboxImg.src = p.dataUrl;
+      lightboxImg.src = p.url;
+      /* Precarica le vicine, così scorrere con le frecce è immediato */
+      [1, -1].forEach(function (d) {
+        var n = lbPhotos[(idx + d + lbPhotos.length) % lbPhotos.length];
+        if (n && n !== p) { var pre = new Image(); pre.src = n.url; }
+      });
       lightboxCap.textContent = p.name || '';
       prevBtn.style.display = lbPhotos.length > 1 ? '' : 'none';
       nextBtn.style.display = lbPhotos.length > 1 ? '' : 'none';
@@ -153,7 +159,7 @@
     });
 
     /* ---- Carica dati ---- */
-    /* DB.load carica i metadati album da Firestore; PhotoDB carica le foto binarie da IndexedDB */
+    /* DB.load carica i metadati album da Firestore; PhotoDB ricava le foto (URL Cloudinary) dall'elenco salvato nell'album */
     DB.load(['albums'], function () {
       PhotoDB.init(function () {
         var albums = VV.getAlbums();
@@ -202,7 +208,7 @@
         var photos = allPhotos[album.id];
         var items  = photos.map(function (p, i) {
           return '<div class="gallery-item reveal" data-album-id="' + album.id + '" data-photo-idx="' + i + '" tabindex="0" role="button" aria-label="' + esc(p.name || 'Foto') + '">' +
-            '<img src="' + p.dataUrl + '" alt="' + esc(p.name || '') + '" loading="lazy">' +
+            '<img src="' + p.thumb + '" alt="' + esc(p.name || '') + '" loading="lazy" decoding="async">' +
           '</div>';
         }).join('');
         return '<div class="gallery-album-section" data-cat="' + slug(album.category) + '">' +

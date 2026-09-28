@@ -737,9 +737,9 @@
       }
       grid.innerHTML = photos.map(function (p) {
         return '<div class="photo-item">' +
-          '<img src="' + p.dataUrl + '" alt="' + esc(p.name) + '" loading="lazy">' +
+          '<img src="' + p.thumb + '" alt="' + esc(p.name) + '" loading="lazy" decoding="async">' +
           '<div class="photo-item-overlay">' +
-            '<button class="photo-delete" onclick="AdminActions.deletePhoto(' + p.id + ')">Elimina</button>' +
+            '<button class="photo-delete" data-pid="' + esc(p.id) + '" onclick="AdminActions.deletePhoto(this.dataset.pid)">Elimina</button>' +
           '</div>' +
         '</div>';
       }).join('');
@@ -756,19 +756,29 @@
     progress.classList.remove('is-hidden');
     bar.style.transform = 'scaleX(0)';
 
+    if (!PhotoDB.isConfigured()) {
+      progress.classList.add('is-hidden');
+      alert('Cloudinary non è ancora configurato: imposta CLOUDINARY_CLOUD in js/config.js.');
+      this.value = '';
+      return;
+    }
+
+    var input = this;
     PhotoDB.addPhotos(_currentAlbumId, files,
       function (done, total) {
         var pct = Math.round(done / total * 100);
         bar.style.transform = 'scaleX(' + (pct / 100) + ')';
         text.textContent = done + ' / ' + total + ' foto caricate';
       },
-      function (count) {
-        var album = VV.getAlbum(_currentAlbumId);
-        if (album) { album.photoCount = (album.photoCount || 0) + count; DB.saveAlbum(album); }
+      function (count, failed) {
         setTimeout(function () { progress.classList.add('is-hidden'); }, 800);
         loadPhotos(_currentAlbumId);
-        this.value = '';
-      }.bind(this)
+        input.value = '';
+        if (failed && failed.length) {
+          alert(failed.length + ' foto non caricate (' + count + ' ok):\n' + failed.slice(0, 15).join('\n') +
+            (failed.length > 15 ? '\n…' : '') + '\n\nRiprova a caricare solo queste.');
+        }
+      }
     );
   });
 
@@ -1924,11 +1934,9 @@
         });
       });
     },
-    deletePhoto: function (id) {
+    deletePhoto: function (photoId) {
       confirm('Eliminare questa foto?', function () {
-        PhotoDB.deletePhoto(id, function () {
-          var album = VV.getAlbum(_currentAlbumId);
-          if (album && album.photoCount > 0) { album.photoCount--; DB.saveAlbum(album); }
+        PhotoDB.deletePhoto(_currentAlbumId, photoId, function () {
           loadPhotos(_currentAlbumId);
         });
       });
