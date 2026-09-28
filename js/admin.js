@@ -655,13 +655,27 @@
      GALLERIA
   ================================================ */
   var _currentAlbumId = null;
+  var _albumEditingId = null;   /* id dell'album in modifica; null = nuovo album */
+
+  /* Apre il modulo album: vuoto per un nuovo album, precompilato per modificarne uno esistente. */
+  function openAlbumForm(album) {
+    _albumEditingId = album ? album.id : null;
+    var catSel = document.getElementById('albumCategory');
+    /* Se la categoria dell'album non è più nell'elenco, la mantengo comunque selezionabile. */
+    if (album && album.category && !Array.prototype.some.call(catSel.options, function (o) { return o.value === album.category; })) {
+      catSel.insertAdjacentHTML('beforeend', '<option value="' + esc(album.category) + '">' + esc(album.category) + '</option>');
+    }
+    document.getElementById('albumTitle').value = album ? album.title || '' : '';
+    document.getElementById('albumDate').value  = album ? album.date  || '' : '';
+    if (album && album.category) catSel.value = album.category; else catSel.selectedIndex = 0;
+    document.getElementById('albumSave').textContent = album ? 'Salva modifiche' : 'Crea album';
+    showSubview('galleria', 'form');
+    document.getElementById('topbarActions').innerHTML = '';
+  }
 
   function renderGalleria() {
     showSubview('galleria', 'list');
-    setTopbarBtn('Nuovo album', function () {
-      showSubview('galleria', 'form');
-      document.getElementById('topbarActions').innerHTML = '';
-    });
+    setTopbarBtn('Nuovo album', function () { openAlbumForm(null); });
 
     /* Aggiorna la select categorie con i dati Firestore attuali */
     var catSel = document.getElementById('albumCategory');
@@ -721,9 +735,14 @@
     backBtn.className = 'btn-ghost';
     backBtn.textContent = '← Tutti gli album';
     backBtn.addEventListener('click', renderGalleria);
+    var editBtn = document.createElement('button');
+    editBtn.className = 'btn-ghost';
+    editBtn.textContent = 'Modifica album';
+    editBtn.addEventListener('click', function () { openAlbumForm(VV.getAlbum(albumId)); });
     var actions = document.getElementById('topbarActions');
     actions.innerHTML = '';
     actions.appendChild(backBtn);
+    actions.appendChild(editBtn);
 
     loadPhotos(albumId);
   }
@@ -785,17 +804,24 @@
   document.getElementById('albumSave').addEventListener('click', function () {
     var title = document.getElementById('albumTitle').value.trim();
     if (!title) { alert('Il titolo è obbligatorio.'); return; }
-    var album = {
-      title:      title,
-      date:       document.getElementById('albumDate').value,
-      category:   document.getElementById('albumCategory').value,
-      photoCount: 0
+    var fields = {
+      title:    title,
+      date:     document.getElementById('albumDate').value,
+      category: document.getElementById('albumCategory').value
     };
+    /* In modifica si aggiornano solo questi campi: id, foto e conteggio restano quelli dell'album. */
+    var existing = _albumEditingId !== null ? VV.getAlbum(_albumEditingId) : null;
+    var album = existing ? Object.assign({}, existing, fields) : Object.assign({ photoCount: 0 }, fields);
     var saved = DB.saveAlbum(album);
+    _albumEditingId = null;
     openAlbum(saved.id);
   });
 
-  document.getElementById('albumCancel').addEventListener('click', renderGalleria);
+  document.getElementById('albumCancel').addEventListener('click', function () {
+    var editing = _albumEditingId;
+    _albumEditingId = null;
+    if (editing !== null && VV.getAlbum(editing)) openAlbum(editing); else renderGalleria();
+  });
 
   /* ================================================
      IMMAGINE COPERTINA ARTICOLO — resize
