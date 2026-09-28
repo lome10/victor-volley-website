@@ -2376,6 +2376,11 @@ main, footer.site-footer {
   .maglia-teaser--video .maglia-teaser-body { padding-top: 28px; }
   .maglia-teaser--video .maglia-teaser-body::before { display: none; }
   .maglia-teaser--video .maglia-teaser-text { position: relative; top: auto; padding: 0 16px 18px; pointer-events: auto; }
+  /* Su telefono il titolo non si mostra (resta per gli screen reader): rimane solo il sottotitolo sopra il video. */
+  .maglia-teaser--video .maglia-teaser-title {
+    position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
   .maglia-video { border-radius: 10px; }
   .maglia-video-btn { width: 60px; height: 60px; margin: -30px 0 0 -30px; }
   .maglia-glow { width: 240px; height: 240px; }
