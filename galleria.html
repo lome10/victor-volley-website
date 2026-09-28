@@ -5,13 +5,22 @@
   <link rel="icon" type="image/png" href="/assets/logo.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Galleria — Victor Volley</title>
-  <meta name="description" content="Galleria fotografica della Victor Volley di Melissano: partite, allenamenti, eventi.">
+  <meta name="description" content="Galleria fotografica della Victor Volley: partite, allenamenti, eventi.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Victor Volley">
+  <meta property="og:locale" content="it_IT">
+  <meta property="og:title" content="Galleria — Victor Volley">
+  <meta property="og:description" content="Galleria fotografica della Victor Volley: partite, allenamenti, eventi.">
+  <meta property="og:image" content="https://www.victorvolley.it/assets/og-image.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
   <script>if(sessionStorage.getItem('vv_splash_shown')){document.documentElement.classList.add('no-splash');}</script>
   <noscript><style>#splash-screen{display:none!important}</style></noscript>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preload" href="/assets/fonts/barlow-700-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/manrope-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/css/fonts.css">
   <link rel="stylesheet" href="/css/style.css">
   <style>
     .gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -147,6 +156,24 @@
     function catSlug(s) { return String(s || '').toLowerCase().replace(/\s+/g, '-').replace(/[àáâ]/g,'a').replace(/[èéê]/g,'e').replace(/[ìí]/g,'i').replace(/[òó]/g,'o').replace(/[ùú]/g,'u'); }
     function esc(s)  { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
     function byId(id) { return document.getElementById(id); }
+    var SITE = 'https://www.victorvolley.it';
+    /* Canonical e anteprima si aggiornano da JS perché questa pagina serve più indirizzi (Google esegue il JS). */
+    function setLink(rel, href) {
+      var l = document.querySelector('link[rel="' + rel + '"]');
+      if (!l) { l = document.createElement('link'); l.rel = rel; document.head.appendChild(l); }
+      l.href = href;
+    }
+    function setMeta(attr, key, content) {
+      var m = document.querySelector('meta[' + attr + '="' + key + '"]');
+      if (!m) { m = document.createElement('meta'); m.setAttribute(attr, key); document.head.appendChild(m); }
+      m.setAttribute('content', content);
+    }
+    function setPageMeta(path, title, desc) {
+      setLink('canonical', SITE + path);
+      setMeta('property', 'og:url', SITE + path);
+      if (title) setMeta('property', 'og:title', title);
+      if (desc)  setMeta('property', 'og:description', desc);
+    }
 
     var container   = byId('galleriaContainer');
     var albumNav    = byId('galAlbumNav');
@@ -238,6 +265,7 @@
 
     /* ---- Vista: elenco album ---- */
     function renderIndex(albums) {
+      setPageMeta('/galleria');
       if (!albums.length) {
         container.innerHTML = emptyHtml('Nessun album ancora.');
         return;
@@ -252,8 +280,9 @@
       PhotoDB.getPhotos(album.id, function (r) { photos = r; });
 
       document.title = album.title + ' — Galleria — Victor Volley';
+      setPageMeta('/galleria/' + encodeURIComponent(VV.getAlbumSlug(album)), document.title, 'Foto dell\'album "' + album.title + '" — Victor Volley.');
       var meta = document.querySelector('meta[name="description"]');
-      if (meta) meta.setAttribute('content', 'Foto dell\'album "' + album.title + '" — Victor Volley Melissano.');
+      if (meta) meta.setAttribute('content', 'Foto dell\'album "' + album.title + '" — Victor Volley.');
       byId('galBreadcrumb').innerHTML = '<a href="/">Home</a> / <a href="/galleria">Galleria</a> / ' + esc(album.title);
       byId('galTitle').textContent = album.title;
       byId('galSubtitle').textContent = [album.date ? VV.formatDateShort(album.date) : '', photos.length + ' foto'].filter(Boolean).join(' · ');
@@ -298,6 +327,7 @@
 
     function renderNotFound() {
       document.title = 'Album non trovato — Victor Volley';
+      setMeta('name', 'robots', 'noindex');
       byId('galBreadcrumb').innerHTML = '<a href="/">Home</a> / <a href="/galleria">Galleria</a>';
       byId('galTitle').textContent = 'Album non trovato';
       byId('galSubtitle').textContent = '';

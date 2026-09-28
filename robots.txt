@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /dirigenti
+Disallow: /atleta
+
+Sitemap: https://www.victorvolley.it/sitemap.xml

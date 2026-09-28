@@ -4,13 +4,24 @@
   <meta charset="UTF-8">
   <link rel="icon" type="image/png" href="assets/logo.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Victor Volley — Melissano</title>
+  <title>Victor Volley</title>
   <meta name="description" content="Victor Volley, società di pallavolo di Melissano (LE). Prima Divisione, Under 19, Under 13, Under 12 e Minivolley.">
+  <link rel="canonical" href="https://www.victorvolley.it/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Victor Volley">
+  <meta property="og:locale" content="it_IT">
+  <meta property="og:title" content="Victor Volley">
+  <meta property="og:description" content="Victor Volley, società di pallavolo di Melissano (LE). Prima Divisione, Under 19, Under 13, Under 12 e Minivolley.">
+  <meta property="og:url" content="https://www.victorvolley.it/">
+  <meta property="og:image" content="https://www.victorvolley.it/assets/og-image.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
   <script>if(sessionStorage.getItem('vv_splash_shown')){document.documentElement.classList.add('no-splash');}</script>
   <noscript><style>#splash-screen{display:none!important}</style></noscript>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preload" href="/assets/fonts/barlow-700-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/manrope-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/css/fonts.css">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -29,6 +40,7 @@
   <header class="site-header" role="banner"></header>
 
   <main id="main-content">
+    <h1 class="sr-only">Victor Volley — società di pallavolo</h1>
 
     <!-- 0. PARTITE BAR ======================================== -->
     <div class="partite-bar" id="partiteBar">
@@ -238,7 +250,7 @@
   <script src="js/db.js"></script>
   <script src="js/photodb.js?v=20260929"></script>
   <script src="js/splash.js"></script>
-  <script src="js/components.js"></script>
+  <script src="js/components.js?v=20260929"></script>
   <script src="js/animations.js"></script>
   <script src="js/main.js"></script>
   <script src="js/vendor/supabase-js.min.js"></script>

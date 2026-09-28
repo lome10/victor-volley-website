@@ -206,7 +206,9 @@
         '</div>' +
         '<div class="footer-bottom">' +
           '<p>&copy; ' + year + ' Victor Volley. Tutti i diritti riservati.</p>' +
+          /* Privacy policy nascosta finché non c'è la pagina (2026-09-28).
           '<a href="#">Privacy policy</a>' +
+          */
         '</div>' +
       '</div>';
   }

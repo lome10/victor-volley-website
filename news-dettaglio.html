@@ -5,12 +5,21 @@
   <link rel="icon" type="image/png" href="assets/logo.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Articolo — Victor Volley</title>
-  <meta name="description" content="Leggi le ultime notizie dalla Victor Volley di Melissano.">
+  <meta name="description" content="Leggi le ultime notizie dalla Victor Volley.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Victor Volley">
+  <meta property="og:locale" content="it_IT">
+  <meta property="og:title" content="Articolo — Victor Volley">
+  <meta property="og:description" content="Leggi le ultime notizie dalla Victor Volley.">
+  <meta property="og:image" content="https://www.victorvolley.it/assets/og-image.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
   <script>if(sessionStorage.getItem('vv_splash_shown')){document.documentElement.classList.add('no-splash');}</script>
   <noscript><style>#splash-screen{display:none!important}</style></noscript>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preload" href="/assets/fonts/barlow-700-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/manrope-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/css/fonts.css">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -81,7 +90,7 @@
   <script src="js/data.js?v=20260929"></script>
   <script src="js/db.js"></script>
   <script src="js/splash.js"></script>
-  <script src="js/components.js"></script>
+  <script src="js/components.js?v=20260929"></script>
   <script src="js/animations.js"></script>
   <script src="js/main.js"></script>
 
@@ -148,6 +157,20 @@
     document.getElementById('articleDate').textContent  = VV.formatDate(article.date);
     document.getElementById('articleTitle').textContent = article.title;
     document.title = article.title + ' — Victor Volley';
+    /* Canonical e anteprima dell'articolo (Google esegue il JS; l'immagine solo se è un URL vero, non un base64). */
+    (function () {
+      var SITE = 'https://www.victorvolley.it', url = SITE + '/news-dettaglio?id=' + article.id;
+      function up(tag, attr, key, val, attr2) {
+        var el = document.querySelector(tag + '[' + attr + '="' + key + '"]');
+        if (!el) { el = document.createElement(tag); el.setAttribute(attr, key); document.head.appendChild(el); }
+        el.setAttribute(attr2, val);
+      }
+      up('link', 'rel', 'canonical', url, 'href');
+      up('meta', 'property', 'og:url', url, 'content');
+      up('meta', 'property', 'og:title', document.title, 'content');
+      if (article.excerpt) up('meta', 'property', 'og:description', article.excerpt, 'content');
+      if (/^https?:\/\//.test(article.image || '')) up('meta', 'property', 'og:image', article.image, 'content');
+    })();
 
     /* Corpo */
     var bodyEl = document.getElementById('articleBody');
@@ -165,7 +188,7 @@
         FORBID_TAGS: ['form', 'input', 'button', 'textarea', 'select', 'option', 'svg', 'math', 'style']
       });
     } else {
-      bodyEl.textContent = article.content.replace(/<[^>]*>/g, ' ').replace(/s+/g, ' ').trim();
+      bodyEl.textContent = article.content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
     }
 
     /* Articoli correlati — stessa card 4:5 e stessa animazione hover di hero/news.
