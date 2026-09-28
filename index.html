@@ -103,11 +103,11 @@
       <div class="container">
         <div class="section-heading">
           <h2 id="gallery-preview-title">Galleria foto</h2>
-          <p>Momenti di gioco, allenamento ed eventi</p>
+          <p id="galleryPreviewSubtitle"></p>
         </div>
         <div class="gallery-preview-grid" id="galleryPreviewGrid" style="margin-bottom:28px"></div>
         <div style="text-align:center">
-          <a href="/galleria" class="btn btn--outline">Vedi tutta la galleria</a>
+          <a href="/galleria" id="galleryPreviewLink" class="btn btn--outline">Vedi l'album completo</a>
         </div>
       </div>
     </section>
@@ -234,7 +234,7 @@
   <script src="js/vendor/firebase-firestore-compat.js"></script>
   <script src="js/vendor/firebase-auth-compat.js"></script>
   <script src="js/firebase-config.js"></script>
-  <script src="js/data.js"></script>
+  <script src="js/data.js?v=20260928"></script>
   <script src="js/db.js"></script>
   <script src="js/photodb.js?v=20260928"></script>
   <script src="js/splash.js"></script>
@@ -314,49 +314,41 @@
   })();
   </script>
 
-  <!-- Galleria — anteprima in home: 8 foto sparse dagli album più recenti -->
+  <!-- Galleria — anteprima in home: l'album più recente, con il suo titolo e 8 foto sparse -->
   <script>
   (function () {
-    var MAX = 8, PER_ALBUM = 4;
+    var MAX = 8;
     function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    /* Indici ben distribuiti nell'album (primo, metà, terzi…), così non sono le prime foto in fila. */
+    function spread(n, count) {
+      var out = [], seen = {};
+      for (var k = 1; out.length < count && k <= n; k++) {
+        for (var i = 0; i < k && out.length < count; i++) {
+          var idx = Math.floor(i * n / k);
+          if (!seen[idx]) { seen[idx] = true; out.push(idx); }
+        }
+      }
+      return out;
+    }
     DB.load(['albums'], function () {
       var albums = VV.getAlbums()
         .filter(function (a) { return a.photos && a.photos.length; })
         .sort(function (a, b) { return (b.date || '') < (a.date || '') ? -1 : (b.date || '') > (a.date || '') ? 1 : 0; });
-      /* Indici ben distribuiti nell'album (primo, metà, terzi…), così non sono le prime foto in fila. */
-      function spread(n, count) {
-        var out = [], seen = {};
-        for (var k = 1; out.length < count && k <= n; k++) {
-          for (var i = 0; i < k && out.length < count; i++) {
-            var idx = Math.floor(i * n / k);
-            if (!seen[idx]) { seen[idx] = true; out.push(idx); }
-          }
-        }
-        return out;
-      }
-      /* Primo giro: fino a PER_ALBUM foto per album (i più recenti per primi).
-         Secondo giro: se restano posti, completa con altre foto degli stessi album. */
-      var cands = albums.map(function (album) { return spread(album.photos.length, MAX); });
-      var picks = [];
-      albums.forEach(function (album, ai) {
-        cands[ai].slice(0, PER_ALBUM).forEach(function (idx) {
-          if (picks.length < MAX) picks.push({ album: album, id: album.photos[idx].id });
-        });
-      });
-      for (var round = PER_ALBUM; picks.length < MAX && round < MAX; round++) {
-        albums.forEach(function (album, ai) {
-          if (picks.length < MAX && cands[ai][round] !== undefined) picks.push({ album: album, id: album.photos[cands[ai][round]].id });
-        });
-      }
-      if (!picks.length) return;
-      var byAlbum = {};
-      picks = picks.map(function (p) {
-        var photos = byAlbum[p.album.id] || (PhotoDB.getPhotos(p.album.id, function (r) { byAlbum[p.album.id] = r; }), byAlbum[p.album.id]);
-        return { album: p.album, photo: photos.filter(function (x) { return x.id === p.id; })[0] };
-      }).filter(function (p) { return p.photo; });
+      if (!albums.length) return;
+      var album = albums[0];
+      var photos = [];
+      PhotoDB.getPhotos(album.id, function (r) { photos = r; });
+      var picks = spread(photos.length, MAX).map(function (i) { return photos[i]; });
+      var href = '/galleria/' + encodeURIComponent(VV.getAlbumSlug(album));
+
+      document.getElementById('gallery-preview-title').textContent = album.title || 'Galleria foto';
+      document.getElementById('galleryPreviewSubtitle').textContent =
+        [album.date ? VV.formatDateShort(album.date) : '', album.category || '', photos.length + ' foto']
+          .filter(Boolean).join(' · ');
+      document.getElementById('galleryPreviewLink').href = href;
       document.getElementById('galleryPreviewGrid').innerHTML = picks.map(function (p) {
-        return '<a class="gallery-preview-item" href="/galleria" aria-label="' + esc('Galleria: ' + p.album.title) + '">' +
-          '<img src="' + p.photo.thumb + '" alt="' + esc(p.album.title) + '" loading="lazy" decoding="async">' +
+        return '<a class="gallery-preview-item" href="' + href + '" aria-label="' + esc('Apri album: ' + album.title) + '">' +
+          '<img src="' + p.thumb + '" alt="' + esc(album.title) + '" loading="lazy" decoding="async">' +
         '</a>';
       }).join('');
       document.getElementById('galleryPreviewSection').style.display = '';

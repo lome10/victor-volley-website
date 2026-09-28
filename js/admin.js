@@ -656,6 +656,26 @@
   ================================================ */
   var _currentAlbumId = null;
   var _albumEditingId = null;   /* id dell'album in modifica; null = nuovo album */
+  var _albumSlugTouched = false; /* true se lo slug è stato scritto/modificato a mano */
+
+  function updateAlbumSlugHint() {
+    var slug = document.getElementById('albumSlug').value.trim();
+    document.getElementById('albumSlugHint').textContent =
+      'Pagina pubblica: /galleria/' + (slug || '…') + (_albumEditingId !== null ? ' — cambiarlo dopo la pubblicazione rompe i link già condivisi.' : '');
+  }
+  document.getElementById('albumTitle').addEventListener('input', function () {
+    if (_albumSlugTouched) return;
+    document.getElementById('albumSlug').value = this.value.trim() ? VV.slugify(this.value) : '';
+    updateAlbumSlugHint();
+  });
+  document.getElementById('albumSlug').addEventListener('input', function () {
+    _albumSlugTouched = true;
+    /* Solo minuscole, numeri e trattini: gli spazi diventano trattini mentre scrivi. */
+    var pos = this.selectionStart;
+    var clean = this.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    if (clean !== this.value) { this.value = clean; try { this.setSelectionRange(pos, pos); } catch (e) {} }
+    updateAlbumSlugHint();
+  });
 
   /* Apre il modulo album: vuoto per un nuovo album, precompilato per modificarne uno esistente. */
   function openAlbumForm(album) {
@@ -666,6 +686,10 @@
       catSel.insertAdjacentHTML('beforeend', '<option value="' + esc(album.category) + '">' + esc(album.category) + '</option>');
     }
     document.getElementById('albumTitle').value = album ? album.title || '' : '';
+    /* Slug: nuovo album → si genera dal titolo finché non lo tocchi; album esistente → resta quello (anche se ricavato). */
+    _albumSlugTouched = !!album;
+    document.getElementById('albumSlug').value = album ? VV.getAlbumSlug(album) : '';
+    updateAlbumSlugHint();
     document.getElementById('albumDate').value  = album ? album.date  || '' : '';
     if (album && album.category) catSel.value = album.category; else catSel.selectedIndex = 0;
     document.getElementById('albumSave').textContent = album ? 'Salva modifiche' : 'Crea album';
@@ -804,8 +828,13 @@
   document.getElementById('albumSave').addEventListener('click', function () {
     var title = document.getElementById('albumTitle').value.trim();
     if (!title) { alert('Il titolo è obbligatorio.'); return; }
+    var slug = document.getElementById('albumSlug').value.trim().replace(/^-+|-+$/g, '').replace(/-{2,}/g, '-') || VV.slugify(title);
+    if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) { alert('Lo slug può contenere solo lettere minuscole, numeri e trattini.'); return; }
+    var clash = VV.getAlbums().some(function (o) { return o.id !== _albumEditingId && VV.getAlbumSlug(o) === slug; });
+    if (clash) { alert('Esiste già un album con questo indirizzo: "' + slug + '". Scegline un altro.'); return; }
     var fields = {
       title:    title,
+      slug:     slug,
       date:     document.getElementById('albumDate').value,
       category: document.getElementById('albumCategory').value
     };

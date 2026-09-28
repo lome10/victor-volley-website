@@ -1,8 +1,8 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <link rel="icon" type="image/png" href="assets/logo.png">
+  <link rel="icon" type="image/png" href="/assets/logo.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Galleria — Victor Volley</title>
   <meta name="description" content="Galleria fotografica della Victor Volley di Melissano: partite, allenamenti, eventi.">
@@ -10,16 +10,40 @@
   <noscript><style>#splash-screen{display:none!important}</style></noscript>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="/css/style.css">
   <style>
-    .gallery-album-section { margin-bottom: 56px; }
-    .gallery-album-section + .gallery-album-section { border-top: 1px solid var(--c-gray-light); padding-top: 48px; }
-    .gallery-album-hd { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
-    .gallery-album-hd h3 { font-size: 20px; font-weight: 700; color: var(--c-navy); margin: 0; }
-    .gallery-album-meta { color: #aaa; font-size: 12px; }
     .gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .gallery-empty { text-align: center; padding: 80px 0; color: #aaa; font-size: 16px; line-height: 1.7; }
+    .gallery-empty a { color: var(--c-azzurro); }
+
+    /* ---- Elenco album ---- */
+    .album-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+    .album-card-pub {
+      position: relative; display: block; aspect-ratio: 4 / 3; border-radius: 14px; overflow: hidden;
+      background: linear-gradient(135deg, #053063, #008CFD); color: #fff; text-decoration: none;
+      box-shadow: 0 4px 18px rgba(3, 12, 28, 0.18);
+    }
+    .album-card-pub img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; }
+    .album-card-pub::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(3,12,28,0) 35%, rgba(3,12,28,0.85) 100%); }
+    .album-card-body { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; padding: 16px 18px; display: flex; flex-direction: column; gap: 4px; }
+    .album-card-cat { align-self: flex-start; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; background: var(--c-magenta); padding: 3px 9px; border-radius: 999px; }
+    .album-card-title { font-family: var(--font-heading); font-size: 20px; font-weight: 700; line-height: 1.2; }
+    .album-card-meta { font-size: 12px; color: rgba(255,255,255,0.78); }
+    @media (hover: hover) { .album-card-pub:hover img { transform: scale(1.05); } }
+    .album-card-pub:focus-visible { outline: 3px solid var(--c-azzurro); outline-offset: 3px; }
+
+    /* ---- Pagina di un album ---- */
+    .gal-album-nav { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 24px; }
+    .gal-back { color: var(--c-navy); font-weight: 600; text-decoration: none; }
+    .gal-back:hover { color: var(--c-azzurro); }
+    .gal-switch { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748B; }
+    .gal-switch select { font: inherit; padding: 8px 12px; border: 1px solid var(--c-gray-light); border-radius: 8px; background: #fff; color: var(--c-navy); max-width: min(70vw, 340px); }
+    .gal-others { margin-top: 64px; padding-top: 40px; border-top: 1px solid var(--c-gray-light); }
+    .gal-others-hd { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+    .gal-others-hd h2 { font-size: 22px; margin: 0; }
+    .gal-others-hd a { color: var(--c-azzurro); font-weight: 600; text-decoration: none; }
 
     /* Lightbox: nav arrows */
     .lightbox { position: relative; }
@@ -42,7 +66,7 @@
 
   <div id="splash-screen" role="status" aria-label="Caricamento Victor Volley">
     <div class="splash-top">
-      <img src="assets/logo.png" alt="Victor Volley" class="splash-logo">
+      <img src="/assets/logo.png" alt="Victor Volley" class="splash-logo">
     </div>
     <div class="splash-line" aria-hidden="true"></div>
     <div class="splash-bottom" aria-hidden="true">
@@ -56,15 +80,16 @@
 
     <div class="page-header">
       <div class="container">
-        <p class="breadcrumb"><a href="/">Home</a> / Galleria</p>
-        <h1>Galleria</h1>
-        <p style="color:rgba(255,255,255,0.65);margin-top:8px">Momenti di gioco, allenamento ed eventi</p>
+        <p class="breadcrumb" id="galBreadcrumb"><a href="/">Home</a> / Galleria</p>
+        <h1 id="galTitle">Galleria</h1>
+        <p id="galSubtitle" style="color:rgba(255,255,255,0.65);margin-top:8px">Momenti di gioco, allenamento ed eventi</p>
       </div>
     </div>
 
     <section class="section">
       <div class="container">
 
+        <div id="galAlbumNav" class="gal-album-nav" style="display:none"></div>
         <div class="filter-bar" id="galFilterBar" role="group" aria-label="Filtra per categoria"></div>
 
         <div id="galleriaContainer">
@@ -72,6 +97,8 @@
             <p>&#9203; Caricamento galleria&hellip;</p>
           </div>
         </div>
+
+        <div id="galOthers" class="gal-others" style="display:none"></div>
 
       </div>
     </section>
@@ -92,62 +119,64 @@
   <footer class="site-footer" role="contentinfo"></footer>
 
   <!-- Firebase SDK (compat) -->
-  <script src="js/vendor/firebase-app-compat.js"></script>
-  <script src="js/vendor/firebase-firestore-compat.js"></script>
-  <script src="js/firebase-config.js"></script>
-  <script src="js/data.js"></script>
-  <script src="js/db.js"></script>
-  <script src="js/config.js?v=20260928"></script>
-  <script src="js/photodb.js?v=20260928"></script>
-  <script src="js/splash.js"></script>
-  <script src="js/components.js"></script>
-  <script src="js/animations.js"></script>
-  <script src="js/main.js"></script>
+  <script src="/js/vendor/firebase-app-compat.js"></script>
+  <script src="/js/vendor/firebase-firestore-compat.js"></script>
+  <script src="/js/firebase-config.js"></script>
+  <script src="/js/data.js?v=20260928"></script>
+  <script src="/js/db.js"></script>
+  <script src="/js/config.js?v=20260928"></script>
+  <script src="/js/photodb.js?v=20260928"></script>
+  <script src="/js/splash.js"></script>
+  <script src="/js/components.js?v=20260928"></script>
+  <script src="/js/animations.js"></script>
+  <script src="/js/main.js"></script>
 
   <script>
+  /* /galleria            → elenco degli album (filtrabile per categoria)
+     /galleria/<slug>     → foto di un album (vercel.json riscrive lo slug su questa stessa pagina) */
   (function () {
-    function slug(s) { return s.toLowerCase().replace(/\s+/g, '-').replace(/[àáâ]/g,'a').replace(/[èéê]/g,'e').replace(/[ìí]/g,'i').replace(/[òó]/g,'o').replace(/[ùú]/g,'u'); }
+    function catSlug(s) { return String(s || '').toLowerCase().replace(/\s+/g, '-').replace(/[àáâ]/g,'a').replace(/[èéê]/g,'e').replace(/[ìí]/g,'i').replace(/[òó]/g,'o').replace(/[ùú]/g,'u'); }
     function esc(s)  { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function byId(id) { return document.getElementById(id); }
 
-    var container  = document.getElementById('galleriaContainer');
-    var filterBar  = document.getElementById('galFilterBar');
-    var lightboxEl = document.getElementById('lightbox');
-    var lightboxImg = document.getElementById('lightboxImg');
-    var lightboxCap = document.getElementById('lightboxCaption');
-    var prevBtn    = document.getElementById('lightboxPrev');
-    var nextBtn    = document.getElementById('lightboxNext');
+    var container   = byId('galleriaContainer');
+    var filterBar   = byId('galFilterBar');
+    var albumNav    = byId('galAlbumNav');
+    var others      = byId('galOthers');
+    var lightboxEl  = byId('lightbox');
+    var lightboxImg = byId('lightboxImg');
+    var lightboxCap = byId('lightboxCaption');
+    var prevBtn     = byId('lightboxPrev');
+    var nextBtn     = byId('lightboxNext');
 
-    /* Stato lightbox */
-    var lbPhotos = [];
-    var lbIdx    = 0;
+    /* ---- Lightbox ---- */
+    var lbPhotos = [], lbIdx = 0, lbTitle = '';
 
     function showPhoto(idx) {
       lbIdx = idx;
       var p = lbPhotos[idx];
       lightboxImg.src = p.url;
+      lightboxImg.alt = lbTitle;
+      lightboxCap.textContent = (lbTitle ? lbTitle + ' — ' : '') + (idx + 1) + ' / ' + lbPhotos.length;
+      prevBtn.style.display = lbPhotos.length > 1 ? '' : 'none';
+      nextBtn.style.display = lbPhotos.length > 1 ? '' : 'none';
       /* Precarica le vicine, così scorrere con le frecce è immediato */
       [1, -1].forEach(function (d) {
         var n = lbPhotos[(idx + d + lbPhotos.length) % lbPhotos.length];
         if (n && n !== p) { var pre = new Image(); pre.src = n.url; }
       });
-      lightboxCap.textContent = p.name || '';
-      prevBtn.style.display = lbPhotos.length > 1 ? '' : 'none';
-      nextBtn.style.display = lbPhotos.length > 1 ? '' : 'none';
     }
-
-    function openLightbox(photos, startIdx) {
-      lbPhotos = photos;
+    function openLightbox(photos, startIdx, title) {
+      lbPhotos = photos; lbTitle = title || '';
       showPhoto(startIdx);
       lightboxEl.classList.add('is-open');
       document.body.style.overflow = 'hidden';
     }
-
     function closeLightbox() {
       lightboxEl.classList.remove('is-open');
       document.body.style.overflow = '';
     }
-
-    document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+    byId('lightboxClose').addEventListener('click', closeLightbox);
     lightboxEl.addEventListener('click', function (e) { if (e.target === lightboxEl) closeLightbox(); });
     prevBtn.addEventListener('click', function () { showPhoto((lbIdx - 1 + lbPhotos.length) % lbPhotos.length); });
     nextBtn.addEventListener('click', function () { showPhoto((lbIdx + 1) % lbPhotos.length); });
@@ -158,93 +187,130 @@
       if (e.key === 'ArrowRight')  showPhoto((lbIdx + 1) % lbPhotos.length);
     });
 
-    /* ---- Carica dati ---- */
-    /* DB.load carica i metadati album da Firestore; PhotoDB ricava le foto (URL Cloudinary) dall'elenco salvato nell'album */
-    DB.load(['albums'], function () {
-      PhotoDB.init(function () {
-        var albums = VV.getAlbums();
-
-        if (!albums.length) {
-          container.innerHTML = '<div class="gallery-empty"><p>Nessun album ancora.<br><span style="font-size:12px">Le foto verranno caricate dalla societ&agrave;.</span></p></div>';
-          filterBar.innerHTML = '<button class="filter-btn is-active" data-filter="all">Tutte le foto</button>';
-          return;
-        }
-
-        /* Carica foto di tutti gli album in parallelo */
-        var allPhotos  = {};
-        var remaining  = albums.length;
-
-        albums.forEach(function (album) {
-          PhotoDB.getPhotos(album.id, function (photos) {
-            allPhotos[album.id] = photos;
-            remaining--;
-            if (remaining === 0) render(albums, allPhotos);
-          });
-        });
+    /* ---- Helpers ---- */
+    function hasPhotos(a) { return a.photos && a.photos.length; }
+    function sortAlbums(list) {
+      return list.slice().sort(function (a, b) {
+        var da = a.date || '', db = b.date || '';
+        if (da !== db) return da < db ? 1 : -1;
+        return b.id - a.id;
       });
-    });
+    }
+    function albumHref(a) { return '/galleria/' + encodeURIComponent(VV.getAlbumSlug(a)); }
+    function albumMeta(a) {
+      return [a.date ? VV.formatDateShort(a.date) : '', (a.photos || []).length + ' foto'].filter(Boolean).join(' · ');
+    }
+    function cardsHtml(albums) {
+      var covers = {};
+      PhotoDB.getCovers(albums.map(function (a) { return a.id; }), function (c) { covers = c; });
+      return albums.map(function (a) {
+        return '<a class="album-card-pub" href="' + albumHref(a) + '" data-cat="' + catSlug(a.category) + '" aria-label="' + esc('Apri album: ' + a.title) + '">' +
+          (covers[a.id] ? '<img src="' + covers[a.id] + '" alt="" loading="lazy" decoding="async">' : '') +
+          '<span class="album-card-body">' +
+            (a.category ? '<span class="album-card-cat">' + esc(a.category) + '</span>' : '') +
+            '<span class="album-card-title">' + esc(a.title) + '</span>' +
+            '<span class="album-card-meta">' + esc(albumMeta(a)) + '</span>' +
+          '</span></a>';
+      }).join('');
+    }
+    function emptyHtml(msg) {
+      return '<div class="gallery-empty"><p>' + msg + '<br><span style="font-size:12px">Le foto verranno caricate dalla societ&agrave;.</span></p></div>';
+    }
 
-    function render(albums, allPhotos) {
-      /* Filtra album che hanno almeno una foto */
-      var populated = albums.filter(function (a) { return (allPhotos[a.id] || []).length > 0; });
-
-      if (!populated.length) {
-        container.innerHTML = '<div class="gallery-empty"><p>Nessuna foto ancora.<br><span style="font-size:12px">Le foto verranno caricate dalla societ&agrave;.</span></p></div>';
-        filterBar.innerHTML = '<button class="filter-btn is-active" data-filter="all">Tutte le foto</button>';
+    /* ---- Vista: elenco album ---- */
+    function renderIndex(albums) {
+      if (!albums.length) {
+        container.innerHTML = emptyHtml('Nessun album ancora.');
         return;
       }
-
-      /* Categorie per filtro */
       var cats = [];
-      populated.forEach(function (a) { if (cats.indexOf(a.category) < 0) cats.push(a.category); });
-      filterBar.innerHTML =
-        '<button class="filter-btn is-active" data-filter="all">Tutte le foto</button>' +
-        cats.map(function (c) {
-          return '<button class="filter-btn" data-filter="' + slug(c) + '">' + esc(c) + '</button>';
-        }).join('');
+      albums.forEach(function (a) { if (a.category && cats.indexOf(a.category) < 0) cats.push(a.category); });
+      if (cats.length > 1) {
+        filterBar.innerHTML =
+          '<button class="filter-btn is-active" data-filter="all">Tutti gli album</button>' +
+          cats.map(function (c) { return '<button class="filter-btn" data-filter="' + catSlug(c) + '">' + esc(c) + '</button>'; }).join('');
+      }
+      container.innerHTML = '<div class="album-grid">' + cardsHtml(albums) + '</div>';
 
-      /* Sezioni per album */
-      container.innerHTML = populated.map(function (album) {
-        var photos = allPhotos[album.id];
-        var items  = photos.map(function (p, i) {
-          return '<div class="gallery-item reveal" data-album-id="' + album.id + '" data-photo-idx="' + i + '" tabindex="0" role="button" aria-label="' + esc(p.name || 'Foto') + '">' +
-            '<img src="' + p.thumb + '" alt="' + esc(p.name || '') + '" loading="lazy" decoding="async">' +
-          '</div>';
-        }).join('');
-        return '<div class="gallery-album-section" data-cat="' + slug(album.category) + '">' +
-          '<div class="gallery-album-hd">' +
-            '<h3>' + esc(album.title) + '</h3>' +
-            '<span class="badge badge--azzurro">' + esc(album.category) + '</span>' +
-            '<span class="gallery-album-meta">' + VV.formatDateShort(album.date) + ' &mdash; ' + photos.length + ' foto</span>' +
-          '</div>' +
-          '<div class="gallery-grid">' + items + '</div>' +
-        '</div>';
-      }).join('');
-
-      /* Click sulle foto → apri lightbox con le foto dell'album */
-      container.querySelectorAll('.gallery-item').forEach(function (item) {
-        function open() {
-          var albumId = parseInt(item.getAttribute('data-album-id'));
-          var photoIdx = parseInt(item.getAttribute('data-photo-idx'));
-          var photos  = allPhotos[albumId] || [];
-          openLightbox(photos, photoIdx);
-        }
-        item.addEventListener('click',   open);
-        item.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
-      });
-
-      /* Filtro per categoria */
       filterBar.querySelectorAll('.filter-btn').forEach(function (btn) {
         btn.addEventListener('click', function () {
           filterBar.querySelectorAll('.filter-btn').forEach(function (b) { b.classList.remove('is-active'); });
           btn.classList.add('is-active');
           var f = btn.getAttribute('data-filter');
-          container.querySelectorAll('.gallery-album-section').forEach(function (section) {
-            section.style.display = (f === 'all' || section.getAttribute('data-cat') === f) ? '' : 'none';
+          container.querySelectorAll('.album-card-pub').forEach(function (card) {
+            card.style.display = (f === 'all' || card.getAttribute('data-cat') === f) ? '' : 'none';
           });
         });
       });
     }
+
+    /* ---- Vista: un album ---- */
+    function renderAlbum(album, albums) {
+      var photos = [];
+      PhotoDB.getPhotos(album.id, function (r) { photos = r; });
+
+      document.title = album.title + ' — Galleria — Victor Volley';
+      var meta = document.querySelector('meta[name="description"]');
+      if (meta) meta.setAttribute('content', 'Foto dell\'album "' + album.title + '" — Victor Volley Melissano.');
+      byId('galBreadcrumb').innerHTML = '<a href="/">Home</a> / <a href="/galleria">Galleria</a> / ' + esc(album.title);
+      byId('galTitle').textContent = album.title;
+      byId('galSubtitle').textContent = [album.date ? VV.formatDateShort(album.date) : '', album.category || '', photos.length + ' foto'].filter(Boolean).join(' · ');
+
+      /* Barra di navigazione: torna all'elenco + salto rapido a un altro album */
+      var nav = '<a class="gal-back" href="/galleria">&larr; Tutti gli album</a>';
+      var elsewhere = albums.filter(function (a) { return a.id !== album.id; });
+      if (elsewhere.length) {
+        nav += '<label class="gal-switch">Vai a un altro album ' +
+          '<select id="galSwitch"><option value="">Scegli…</option>' +
+          elsewhere.map(function (a) { return '<option value="' + albumHref(a) + '">' + esc(a.title) + '</option>'; }).join('') +
+          '</select></label>';
+      }
+      albumNav.innerHTML = nav;
+      albumNav.style.display = '';
+      var sel = byId('galSwitch');
+      if (sel) sel.addEventListener('change', function () { if (sel.value) window.location.href = sel.value; });
+
+      if (!photos.length) {
+        container.innerHTML = emptyHtml('Nessuna foto in questo album.');
+      } else {
+        container.innerHTML = '<div class="gallery-grid">' + photos.map(function (p, i) {
+          return '<div class="gallery-item" data-photo-idx="' + i + '" tabindex="0" role="button" aria-label="' + esc(album.title + ' — foto ' + (i + 1)) + '">' +
+            '<img src="' + p.thumb + '" alt="' + esc(album.title) + '" loading="lazy" decoding="async">' +
+          '</div>';
+        }).join('') + '</div>';
+        container.querySelectorAll('.gallery-item').forEach(function (item) {
+          function open() { openLightbox(photos, parseInt(item.getAttribute('data-photo-idx'), 10), album.title); }
+          item.addEventListener('click', open);
+          item.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
+        });
+      }
+
+      /* Altri album in fondo, così si continua a sfogliare senza tornare indietro */
+      if (elsewhere.length) {
+        others.innerHTML =
+          '<div class="gal-others-hd"><h2>Altri album</h2><a href="/galleria">Vedi tutti &rarr;</a></div>' +
+          '<div class="album-grid">' + cardsHtml(elsewhere.slice(0, 6)) + '</div>';
+        others.style.display = '';
+      }
+    }
+
+    function renderNotFound() {
+      document.title = 'Album non trovato — Victor Volley';
+      byId('galBreadcrumb').innerHTML = '<a href="/">Home</a> / <a href="/galleria">Galleria</a>';
+      byId('galTitle').textContent = 'Album non trovato';
+      byId('galSubtitle').textContent = '';
+      container.innerHTML = '<div class="gallery-empty"><p>Questo album non esiste, o non &egrave; pi&ugrave; disponibile.<br>' +
+        '<a href="/galleria">&larr; Torna a tutti gli album</a></p></div>';
+    }
+
+    /* ---- Avvio ---- */
+    DB.load(['albums'], function () {
+      var m = window.location.pathname.match(/^\/galleria\/([^\/]+)\/?$/);
+      var albums = sortAlbums(VV.getAlbums().filter(hasPhotos));
+      if (!m) { renderIndex(albums); return; }
+      var album = VV.getAlbumBySlug(decodeURIComponent(m[1]));
+      if (!album) renderNotFound(); else renderAlbum(album, albums);
+    });
   })();
   </script>
   <script defer src="/_vercel/insights/script.js"></script>

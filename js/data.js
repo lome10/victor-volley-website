@@ -100,6 +100,26 @@
       _write(KEYS.albums, arr);
       return album;
     },
+    /* Slug dell'album = indirizzo della sua pagina (/galleria/<slug>). Se l'album non ne ha uno salvato
+       (creato prima dello slug) lo ricavo dal titolo; in caso di doppioni il più vecchio tiene il nome
+       pulito e gli altri ricevono il proprio id come suffisso. */
+    slugify: function (text) {
+      return String(text || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .replace(/&/g, ' e ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60).replace(/-+$/, '') || 'album';
+    },
+    getAlbumSlug: function (album) {
+      if (!album) return '';
+      if (album.slug) return album.slug;
+      var self = this, base = self.slugify(album.title);
+      var clash = self.getAlbums().some(function (o) {
+        return o.id !== album.id && (o.slug ? o.slug === base : (self.slugify(o.title) === base && o.id < album.id));
+      });
+      return clash ? base + '-' + album.id : base;
+    },
+    getAlbumBySlug: function (slug) {
+      var self = this;
+      return self.getAlbums().find(function (a) { return self.getAlbumSlug(a) === slug; }) || null;
+    },
     deleteAlbum: function (id)  { _write(KEYS.albums, this.getAlbums().filter(function(a){ return a.id !== +id; })); },
 
     /* ---- CATEGORIES ---- */

@@ -5,6 +5,7 @@
     { "source": "/dirigenti", "destination": "/admin", "permanent": false }
   ],
   "rewrites": [
-    { "source": "/admin/:section*", "destination": "/admin" }
+    { "source": "/admin/:section*", "destination": "/admin" },
+    { "source": "/galleria/:slug", "destination": "/galleria" }
   ]
 }

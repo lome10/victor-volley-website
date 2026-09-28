@@ -1,6 +1,7 @@
 /* Victor Volley — sidebar + footer condivisi */
 (function () {
-  var page = window.location.pathname.split('/').pop().replace(/\.html$/, '') || 'index';
+  /* Prima parte del percorso: /galleria/victor-day conta come "galleria" (evidenzia il menu giusto). */
+  var page = (window.location.pathname.split('/').filter(Boolean)[0] || 'index').replace(/\.html$/, '');
 
   var SVG = {
     fb:      '<svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>',
@@ -23,7 +24,7 @@
     el.innerHTML =
       '<div class="sidebar-logo">' +
         '<a href="/" aria-label="Victor Volley — home">' +
-          '<img src="assets/logo.png" alt="Victor Volley">' +
+          '<img src="/assets/logo.png" alt="Victor Volley">' +
         '</a>' +
       '</div>' +
 
@@ -193,7 +194,7 @@
     el.innerHTML =
       '<div class="container">' +
         '<div class="footer-main">' +
-          '<img src="assets/logo.png" alt="Victor Volley" class="footer-logo-img">' +
+          '<img src="/assets/logo.png" alt="Victor Volley" class="footer-logo-img">' +
           '<div class="footer-side">' +
             '<a href="mailto:victorvolley@libero.it" class="footer-email">victorvolley@libero.it</a>' +
             '<div class="footer-social">' +
@@ -227,7 +228,7 @@
           '</span>' +
         '</button>' +
         '<a href="/" class="mtb-identity" aria-label="Victor Volley — home">' +
-          '<img src="assets/logo.png" alt="" class="mtb-logo">' +
+          '<img src="/assets/logo.png" alt="" class="mtb-logo">' +
           '<span class="mtb-name">Victor Volley</span>' +
         '</a>' +
         '<a class="mtb-tv-btn" id="mtbTv" href="/diretta" aria-label="Guarda la diretta">' +
@@ -283,7 +284,7 @@
           var mesi   = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'];
           return giorni[d.getDay()] + ' ' + d.getDate() + ' ' + mesi[d.getMonth()] + (ora ? ' · ' + ora : '');
         }
-        var LOGO_MAP = { 'victor volley': 'assets/logo.png' };
+        var LOGO_MAP = { 'victor volley': '/assets/logo.png' };
         function logoHtml(nome, src) {
           var resolved = src || LOGO_MAP[(nome || '').toLowerCase().trim()];
           return resolved
