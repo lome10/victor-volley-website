@@ -33,8 +33,9 @@
   var DEFAULT_MAGLIA = {
     enabled: true,
     title: 'Nuova maglia 2026/27',
-    subtitle: 'Il reveal si avvicina: presto potrai ruotarla, ingrandirla ed esplorarla in un render 3D interattivo.',
-    revealDate: '2026-08-18T00:00:00'
+    subtitle: 'KIT SHOWDOWN VICTOR VOLLEY - SEASON 26/27',
+    revealDate: '2026-08-18T00:00:00',
+    videoUrl: 'https://www.youtube.com/watch?v=TSGp37hHVJs'
   };
 
   var DEFAULT_LIVELLI_SPONSOR_SUB = {
@@ -210,7 +211,13 @@
 
     /* ---- MAGLIA TEASER (homepage) ---- */
     getMaglia: function () { return _maglia || Object.assign({}, DEFAULT_MAGLIA); },
-    setMaglia: function (obj) { _maglia = obj && typeof obj === 'object' ? obj : null; },
+    /* Il video ha un valore di default anche per il documento Firestore salvato prima
+       che esistesse il campo (videoUrl assente); una stringa vuota salvata dall'admin
+       invece lo disattiva, e torna il countdown. */
+    setMaglia: function (obj) {
+      _maglia = obj && typeof obj === 'object' ? obj : null;
+      if (_maglia && _maglia.videoUrl === undefined) _maglia = Object.assign({}, _maglia, { videoUrl: DEFAULT_MAGLIA.videoUrl });
+    },
 
     /* ---- PARTITE (calendario) — una collection Firestore, un documento
        per partita: niente più sovrascritture dell'intero elenco quando

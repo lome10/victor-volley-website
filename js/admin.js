@@ -1586,17 +1586,23 @@
     document.getElementById('magliaTitle').value = m.title || '';
     document.getElementById('magliaSubtitle').value = m.subtitle || '';
     document.getElementById('magliaRevealDate').value = (m.revealDate || '').slice(0, 16);
+    document.getElementById('magliaVideoUrl').value = m.videoUrl || '';
   }
 
   document.getElementById('magliaSave').addEventListener('click', function () {
     var revealRaw = document.getElementById('magliaRevealDate').value;
     var title = document.getElementById('magliaTitle').value.trim();
     if (!title) { alert('Il titolo è obbligatorio.'); return; }
+    var videoUrl = document.getElementById('magliaVideoUrl').value.trim();
+    if (videoUrl && !/(youtu\.be\/|youtube(-nocookie)?\.com\/)/.test(videoUrl)) {
+      alert('Il link deve essere un video YouTube (youtube.com o youtu.be).'); return;
+    }
     var obj = {
       enabled:    document.getElementById('magliaEnabled').checked,
       title:      title,
       subtitle:   document.getElementById('magliaSubtitle').value.trim(),
-      revealDate: revealRaw ? revealRaw + ':00' : ''
+      revealDate: revealRaw ? revealRaw + ':00' : '',
+      videoUrl:   videoUrl
     };
     DB.saveMaglia(obj, function () { renderMaglia(); });
   });

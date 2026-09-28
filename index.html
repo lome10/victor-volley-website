@@ -75,6 +75,7 @@
           </svg>
           <h2 id="maglia-title" class="maglia-teaser-title"></h2>
           <p class="maglia-teaser-subtitle" id="magliaTeaserSubtitle"></p>
+          <div class="maglia-video" id="magliaVideo" hidden></div>
           <p class="maglia-teaser-badge"><span class="maglia-dot" aria-hidden="true"></span> In arrivo</p>
           <div class="maglia-countdown" id="magliaCountdown" role="timer" aria-label="Conto alla rovescia al reveal della maglia">
             <div class="maglia-countdown-item">
@@ -333,6 +334,66 @@
   <!-- Nuova maglia — teaser gestito da admin (settings/maglia) -->
   <script>
   (function () {
+    /* ID del video da un link YouTube (watch?v=, youtu.be, embed, shorts) o dall'ID stesso. */
+    function youtubeId(url) {
+      var s = String(url || '').trim();
+      if (!s) return '';
+      var m = s.match(/(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/))([\w-]{11})/);
+      if (m) return m[1];
+      return /^[\w-]{11}$/.test(s) ? s : '';
+    }
+
+    /* Video in autoplay senza audio (i browser lo consentono solo se muto), in loop, con i
+       controlli YouTube visibili per attivare l'audio. Il player viene caricato solo quando la
+       sezione sta per entrare nella schermata, e va in pausa quando esce (niente banda sprecata).
+       Con "riduci animazioni" attivo nel sistema non parte da solo: resta la copertina con il play. */
+    function showVideo(id, title) {
+      ['.maglia-silhouette', '.maglia-teaser-badge', '#magliaCountdown'].forEach(function (sel) {
+        var n = document.querySelector('#magliaTeaserContent ' + sel);
+        if (n) n.style.display = 'none';
+      });
+      var box = document.getElementById('magliaVideo');
+      var safeTitle = (title || 'Presentazione maglia').replace(/"/g, '&quot;');
+      var poster = '<img class="maglia-video-poster" src="https://i.ytimg.com/vi/' + id + '/maxresdefault.jpg" alt="" decoding="async" ' +
+        'onerror="this.onerror=null;this.src=\'https://i.ytimg.com/vi/' + id + '/hqdefault.jpg\'">';
+      box.innerHTML = poster;
+      box.hidden = false;
+
+      var iframe = null, pausedByUs = false;
+      function command(func) {
+        if (iframe && iframe.contentWindow) iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: func, args: '' }), '*');
+      }
+      function load(muted) {
+        if (iframe) return;
+        var q = 'autoplay=1&rel=0&playsinline=1&enablejsapi=1&origin=' + encodeURIComponent(location.origin) +
+          (muted ? '&mute=1&loop=1&playlist=' + id : '');
+        box.innerHTML = poster +
+          '<iframe src="https://www.youtube-nocookie.com/embed/' + id + '?' + q + '" title="' + safeTitle + '" ' +
+          'allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>';
+        iframe = box.querySelector('iframe');
+      }
+
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        box.innerHTML = '<button type="button" class="maglia-video-play" aria-label="Guarda il video: ' + safeTitle + '">' + poster +
+          '<span class="maglia-video-btn" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30"><path fill="currentColor" d="M8 5v14l11-7z"/></svg></span></button>';
+        box.querySelector('button').addEventListener('click', function () { load(false); });
+        return;
+      }
+
+      if (!('IntersectionObserver' in window)) { load(true); return; }
+      new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting) {
+            if (!iframe) load(true);
+            else if (pausedByUs) { pausedByUs = false; command('playVideo'); }
+          } else if (iframe) {
+            pausedByUs = true;
+            command('pauseVideo');
+          }
+        });
+      }, { rootMargin: '150px 0px', threshold: 0.25 }).observe(box);
+    }
+
     DB.load(['maglia'], function () {
       var m = VV.getMaglia();
       var section = document.getElementById('magliaTeaserSection');
@@ -346,10 +407,17 @@
          l'animazione CSS (translateX(-50%)) — così il loop è sempre
          perfettamente continuo, senza lo "scatto" che si vedeva con un
          numero di ripetizioni statiche non allineato al -50%. */
-      var tickerUnit = '<span>In arrivo</span> Reveal 3D <span aria-hidden="true">&#9733;</span> ' +
+      var videoId = youtubeId(m.videoUrl);
+      var tickerUnit = (videoId ? '' : '<span>In arrivo</span> Reveal 3D <span aria-hidden="true">&#9733;</span> ') +
         'Nuova maglia <span aria-hidden="true">&#9733;</span> Stagione 2026/27 <span aria-hidden="true">&#9733;</span> ';
       var tickerTrack = document.getElementById('magliaTickerTrack');
       if (tickerTrack) tickerTrack.innerHTML = tickerUnit + tickerUnit;
+
+      /* Video di presentazione: prende il posto di countdown, silhouette e badge "In arrivo". */
+      if (videoId) {
+        showVideo(videoId, m.title);
+        return;
+      }
 
       var el = document.getElementById('magliaCountdown');
       var target = new Date(m.revealDate).getTime();

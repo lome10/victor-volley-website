@@ -2253,7 +2253,59 @@ main, footer.site-footer {
   border-color: var(--c-magenta);
 }
 
+/* Video di presentazione (prende il posto del countdown) */
+.maglia-video {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 860px;
+  aspect-ratio: 16 / 9;
+  margin: 8px auto 0;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #000;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12), 0 18px 60px rgba(203, 33, 104, 0.28);
+}
+.maglia-video[hidden] { display: none; }
+.maglia-video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
+.maglia-video-poster { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.maglia-video-play {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: #000;
+  cursor: pointer;
+  display: block;
+}
+.maglia-video-play .maglia-video-poster { transition: transform 0.4s ease, opacity 0.3s ease; opacity: 0.92; }
+.maglia-video-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 72px;
+  height: 72px;
+  margin: -36px 0 0 -36px;
+  border-radius: 50%;
+  background: var(--c-magenta);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-left: 4px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+  transition: transform 0.2s ease;
+}
+.maglia-video-play:focus-visible { outline: 3px solid #fff; outline-offset: -3px; }
+@media (hover: hover) {
+  .maglia-video-play:hover .maglia-video-poster { transform: scale(1.03); opacity: 1; }
+  .maglia-video-play:hover .maglia-video-btn { transform: scale(1.08); }
+}
+
 @media (max-width: 640px) {
+  .maglia-video { border-radius: 10px; }
+  .maglia-video-btn { width: 60px; height: 60px; margin: -30px 0 0 -30px; }
   .maglia-glow { width: 240px; height: 240px; }
   .maglia-silhouette { width: 100px; height: 100px; }
   .maglia-countdown { gap: 8px; }
