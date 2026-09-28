@@ -6454,9 +6454,16 @@
       'header{border-bottom:3px solid #1E3A5F;padding-bottom:12px;margin-bottom:26px}' +
       'header h1{margin:0 0 4px;font-size:19px;color:#1E3A5F}' +
       'header p{margin:0;font-size:12px;color:#64748B}' +
-      'section{margin-bottom:26px;page-break-inside:avoid}' +
-      'h2{font-size:14px;color:#1E3A5F;border-bottom:1px solid #E2E8F0;padding-bottom:6px;margin:0 0 10px}' +
+      /* Le sezioni possono contenere tabelle lunghe più di una pagina: "avoid" su tutta
+         la section spingerebbe l'intero blocco alla pagina dopo appena non entra più,
+         lasciando un vuoto in fondo a quella precedente. Si evita solo di spezzare una
+         riga a metà (tr) o di lasciare un titolo orfano in fondo pagina (h2); l'intestazione
+         della tabella si ripete da sola a ogni nuova pagina (thead). */
+      'section{margin-bottom:26px}' +
+      'h2{font-size:14px;color:#1E3A5F;border-bottom:1px solid #E2E8F0;padding-bottom:6px;margin:0 0 10px;page-break-after:avoid}' +
       'table{width:100%;border-collapse:collapse;font-size:11px}' +
+      'thead{display:table-header-group}' +
+      'tr{page-break-inside:avoid}' +
       'th,td{padding:6px 8px;border-bottom:1px solid #E2E8F0;text-align:left}' +
       'th{background:#F8FAFC;font-weight:700;color:#1E3A5F}' +
       '.pdf-stat-row{display:flex;gap:10px;flex-wrap:wrap}' +
@@ -6515,14 +6522,20 @@
       '.progress-track{height:8px;background:#E2E8F0;border-radius:999px;overflow:hidden}' +
       '.progress-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#008CFD,#053063)}' +
       '.progress-fill--over{background:linear-gradient(90deg,#F59E0B,#EF4444)}' +
-      '.block{margin-bottom:20px;page-break-inside:avoid}' +
-      '.block-hd{display:flex;align-items:center;gap:8px;margin-bottom:9px}' +
+      /* Niente "avoid" sull'intero .block: con una tabella lunga più di una pagina lo
+         spingerebbe tutto alla pagina dopo, lasciando un vuoto in fondo a quella prima.
+         Si evita solo di spezzare una riga a metà o lasciare il titolo orfano in fondo
+         pagina; l'intestazione della tabella si ripete da sola a ogni pagina nuova. */
+      '.block{margin-bottom:20px}' +
+      '.block-hd{display:flex;align-items:center;gap:8px;margin-bottom:9px;page-break-after:avoid}' +
       '.block-dot{width:9px;height:9px;border-radius:50%;display:inline-block}' +
       '.block-dot--spesa{background:#053063}' +
       '.block-dot--credito{background:#10B981}' +
       '.block-hd h2{font-size:13.5px;color:#0F172A;font-weight:700;text-transform:uppercase;letter-spacing:.03em}' +
       '.block-count{font-size:10.5px;color:#94A3B8;font-weight:600}' +
       '.doc table{width:100%;border-collapse:collapse;font-size:11px}' +
+      '.doc thead{display:table-header-group}' +
+      '.doc tr{page-break-inside:avoid}' +
       '.doc th{background:#0F172A;color:#fff;font-family:"Barlow",sans-serif;font-weight:700;font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;text-align:left;padding:7px 9px}' +
       '.doc th.num,.doc td.num{text-align:right}' +
       '.doc td{padding:6.5px 9px;border-bottom:1px solid #E2E8F0}' +
