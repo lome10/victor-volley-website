@@ -204,6 +204,27 @@ a:hover {
   border: 0;
 }
 
+/* Link "Salta al contenuto": invisibile finché non riceve il focus (tastiera/screen reader),
+   poi appare in alto per saltare menu e header senza doverli attraversare. */
+.skip-link {
+  position: fixed;
+  top: -60px;
+  left: 12px;
+  z-index: 2000;
+  background: var(--c-navy);
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 0 0 8px 8px;
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+  transition: top 0.15s ease;
+}
+.skip-link:focus { top: 0; }
+/* <main tabindex="-1"> riceve il focus quando si segue lo skip-link: niente anello di
+   focus visibile lì (non è comunque interattivo), resta sul link stesso e sui controlli reali. */
+main:focus { outline: none; }
+
 /* --- Badge --- */
 .badge {
   display: inline-block;

@@ -83,6 +83,8 @@
 </head>
 <body>
 
+  <a href="#main-content" class="skip-link">Salta al contenuto</a>
+
   <div id="splash-screen" role="status" aria-label="Caricamento Victor Volley">
     <div class="splash-top">
       <img src="/assets/logo.png" alt="Victor Volley" class="splash-logo">
@@ -95,7 +97,7 @@
 
   <header class="site-header" role="banner"></header>
 
-  <main id="main-content">
+  <main id="main-content" tabindex="-1">
 
     <div class="page-header">
       <div class="container">
@@ -185,7 +187,7 @@
     var nextBtn     = byId('lightboxNext');
 
     /* ---- Lightbox ---- */
-    var lbPhotos = [], lbIdx = 0, lbTitle = '';
+    var lbPhotos = [], lbIdx = 0, lbTitle = '', lbTrigger = null;
 
     function showPhoto(idx) {
       lbIdx = idx;
@@ -201,15 +203,25 @@
         if (n && n !== p) { var pre = new Image(); pre.src = n.url; }
       });
     }
-    function openLightbox(photos, startIdx, title) {
+    /* Focus da tastiera: all'apertura si sposta sul pulsante Chiudi (il modo più rapido per
+       uscire), alla chiusura torna sulla foto/elemento che l'ha aperta invece di perdersi
+       in cima alla pagina. Tab resta intrappolato tra i pulsanti del visualizzatore. */
+    function lbFocusables() {
+      return [prevBtn, nextBtn, byId('lightboxClose')].filter(function (el) { return el.offsetParent !== null; });
+    }
+    function openLightbox(photos, startIdx, title, trigger) {
       lbPhotos = photos; lbTitle = title || '';
+      lbTrigger = trigger || document.activeElement;
       showPhoto(startIdx);
       lightboxEl.classList.add('is-open');
       document.body.style.overflow = 'hidden';
+      byId('lightboxClose').focus();
     }
     function closeLightbox() {
       lightboxEl.classList.remove('is-open');
       document.body.style.overflow = '';
+      if (lbTrigger && document.contains(lbTrigger)) lbTrigger.focus();
+      lbTrigger = null;
     }
     byId('lightboxClose').addEventListener('click', closeLightbox);
     lightboxEl.addEventListener('click', function (e) {
@@ -232,6 +244,14 @@
       if (e.key === 'Escape')      closeLightbox();
       if (e.key === 'ArrowLeft')   showPhoto((lbIdx - 1 + lbPhotos.length) % lbPhotos.length);
       if (e.key === 'ArrowRight')  showPhoto((lbIdx + 1) % lbPhotos.length);
+      if (e.key === 'Tab') {
+        var f = lbFocusables();
+        if (!f.length) return;
+        var i = f.indexOf(document.activeElement);
+        var next = e.shiftKey ? (i <= 0 ? f.length - 1 : i - 1) : (i === f.length - 1 ? 0 : i + 1);
+        e.preventDefault();
+        f[next < 0 ? 0 : next].focus();
+      }
     });
 
     /* ---- Helpers ---- */
@@ -310,7 +330,7 @@
           '</div>';
         }).join('') + '</div>';
         container.querySelectorAll('.gallery-item').forEach(function (item) {
-          function open() { openLightbox(photos, parseInt(item.getAttribute('data-photo-idx'), 10), album.title); }
+          function open() { openLightbox(photos, parseInt(item.getAttribute('data-photo-idx'), 10), album.title, item); }
           item.addEventListener('click', open);
           item.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
         });
