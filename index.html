@@ -30,8 +30,6 @@
 
   <main id="main-content">
 
-    <div class="first-screen">
-
     <!-- 0. PARTITE BAR ======================================== -->
     <div class="partite-bar" id="partiteBar">
       <div class="partite-cols">
@@ -50,12 +48,6 @@
       </div>
     </div>
 
-    <!-- 1. HERO CARDS ========================================= -->
-    <section class="hero-cards" aria-label="Articoli in evidenza">
-      <div class="hero-cards-track" id="heroCardsTrack"></div>
-    </section>
-
-    </div><!-- /first-screen -->
 
     <!-- 3bis. NUOVA MAGLIA — teaser "in arrivo", gestito da admin (sezione
          "Maglia" → Firestore settings/maglia: on/off, titolo, sottotitolo,
@@ -99,6 +91,11 @@
           </div>
         </div>
       </div>
+    </section>
+
+    <!-- 3ter. HERO CARDS (news in evidenza, ora sotto il video) ========================================= -->
+    <section class="hero-cards" aria-label="Articoli in evidenza">
+      <div class="hero-cards-track" id="heroCardsTrack"></div>
     </section>
 
     <!-- 4. PROSSIME PARTITE ==================================== -->
@@ -333,6 +330,16 @@
   <!-- Nuova maglia — teaser gestito da admin (settings/maglia) -->
   <script>
   (function () {
+    /* Altezza reale della barra delle partite → variabile CSS: serve a dimensionare il video
+       (schermo intero meno la barra + un po', così per vederlo tutto si scorre appena). */
+    var bar = document.getElementById('partiteBar');
+    if (bar) {
+      var setBarH = function () { document.documentElement.style.setProperty('--partite-bar-h', bar.offsetHeight + 'px'); };
+      setBarH();
+      if ('ResizeObserver' in window) new ResizeObserver(setBarH).observe(bar);
+      else window.addEventListener('resize', setBarH);
+    }
+
     /* ID del video da un link YouTube (watch?v=, youtu.be, embed, shorts) o dall'ID stesso. */
     function youtubeId(url) {
       var s = String(url || '').trim();

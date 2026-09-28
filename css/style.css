@@ -933,8 +933,8 @@ main, footer.site-footer {
   --card-w: calc(var(--card-h) * 9 / 16);
   --card-gap: 16px;
   background: #020d1a;
-  flex: 1;
-  min-height: 0;
+  flex: none;
+  height: calc(var(--card-h) + 40px);
   position: relative;
   display: flex;
   justify-content: center;
@@ -2341,6 +2341,20 @@ main, footer.site-footer {
   pointer-events: none;
   background: linear-gradient(180deg, rgba(3, 12, 28, 0.78) 0%, rgba(3, 12, 28, 0) 100%);
 }
+/* Su desktop/tablet largo il riquadro è più alto dello spazio rimasto sotto la barra delle partite
+   (di --maglia-extra), così per vederlo tutto bisogna scorrere un po'. Il video riempie il riquadro
+   (ritaglio ai lati); il tetto a 80cqw evita un ritaglio eccessivo su finestre strette.
+   --partite-bar-h è misurata da JS (index.html). Sotto i 901px resta 16:9. */
+.maglia-teaser--video { container-type: inline-size; --maglia-extra: 80px; }
+@media (min-width: 901px) {
+  .maglia-teaser--video .maglia-video {
+    aspect-ratio: auto;
+    max-height: none;
+    height: min(calc(100vh - var(--partite-bar-h, 110px) + var(--maglia-extra)), 80cqw);
+    height: min(calc(100svh - var(--partite-bar-h, 110px) + var(--maglia-extra)), 80cqw);
+  }
+}
+
 .maglia-teaser-text { display: contents; }   /* neutro finché non c'è il video */
 .maglia-teaser--video .maglia-teaser-text {
   display: block;
