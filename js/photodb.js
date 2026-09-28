@@ -21,7 +21,7 @@
 
   var THUMB_TRANSFORM = 'c_fill,g_auto,w_600,h_450,f_auto,q_auto';
   var COVER_TRANSFORM = 'c_fill,g_auto,w_500,h_375,f_auto,q_auto';
-  var FULL_TRANSFORM  = 'c_limit,w_1800,f_auto,q_auto';
+  var FULL_TRANSFORM  = 'c_limit,w_2000,f_auto,q_auto';
 
   function _cloud()  { return global.CLOUDINARY_CLOUD; }
   function _preset() { return global.CLOUDINARY_PRESET; }
