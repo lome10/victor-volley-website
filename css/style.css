@@ -2303,7 +2303,49 @@ main, footer.site-footer {
   .maglia-video-play:hover .maglia-video-btn { transform: scale(1.08); }
 }
 
+/* Variante con video: occupa tutta la sezione, da bordo a bordo (niente riquadro centrato).
+   Titolo e sottotitolo sono sovrapposti in alto sul video (su mobile tornano sopra, vedi sotto). */
+.maglia-teaser--video { padding-bottom: 0; }
+.maglia-teaser--video > .container { max-width: none; width: 100%; padding: 0; }
+.maglia-teaser--video .maglia-glow { display: none; }
+.maglia-teaser--video .maglia-video {
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  border-radius: 0;
+  box-shadow: none;
+  max-height: 88vh;
+}
+.maglia-teaser--video .maglia-teaser-body::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 42%;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(3, 12, 28, 0.78) 0%, rgba(3, 12, 28, 0) 100%);
+}
+.maglia-teaser-text { display: contents; }   /* neutro finché non c'è il video */
+.maglia-teaser--video .maglia-teaser-text {
+  display: block;
+  position: absolute;
+  top: 28px;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  padding: 0 24px;
+  pointer-events: none;   /* i click arrivano al player sotto */
+}
+.maglia-teaser--video .maglia-teaser-title { margin-bottom: 8px; }
+.maglia-teaser--video .maglia-teaser-subtitle { max-width: 720px; margin: 0 auto; color: rgba(255, 255, 255, 0.85); }
+.maglia-teaser--video .maglia-teaser-title:empty,
+.maglia-teaser--video .maglia-teaser-subtitle:empty { display: none; }
+
 @media (max-width: 640px) {
+  /* Su schermi stretti il video sarebbe coperto dal testo: titolo e sottotitolo restano sopra. */
+  .maglia-teaser--video .maglia-teaser-body { padding-top: 28px; }
+  .maglia-teaser--video .maglia-teaser-body::before { display: none; }
+  .maglia-teaser--video .maglia-teaser-text { position: relative; top: auto; padding: 0 16px 18px; pointer-events: auto; }
   .maglia-video { border-radius: 10px; }
   .maglia-video-btn { width: 60px; height: 60px; margin: -30px 0 0 -30px; }
   .maglia-glow { width: 240px; height: 240px; }

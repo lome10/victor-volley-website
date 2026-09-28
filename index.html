@@ -73,8 +73,10 @@
           <svg class="maglia-silhouette" viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true">
             <path d="M40 8 L20 20 L8 40 L22 50 L28 42 L28 108 L92 108 L92 42 L98 50 L112 40 L100 20 L80 8 Q60 22 40 8 Z"/>
           </svg>
-          <h2 id="maglia-title" class="maglia-teaser-title"></h2>
-          <p class="maglia-teaser-subtitle" id="magliaTeaserSubtitle"></p>
+          <div class="maglia-teaser-text">
+            <h2 id="maglia-title" class="maglia-teaser-title"></h2>
+            <p class="maglia-teaser-subtitle" id="magliaTeaserSubtitle"></p>
+          </div>
           <div class="maglia-video" id="magliaVideo" hidden></div>
           <p class="maglia-teaser-badge"><span class="maglia-dot" aria-hidden="true"></span> In arrivo</p>
           <div class="maglia-countdown" id="magliaCountdown" role="timer" aria-label="Conto alla rovescia al reveal della maglia">
@@ -352,6 +354,7 @@
         var n = document.querySelector('#magliaTeaserContent ' + sel);
         if (n) n.style.display = 'none';
       });
+      document.getElementById('magliaTeaserSection').classList.add('maglia-teaser--video');
       var box = document.getElementById('magliaVideo');
       var safeTitle = (title || 'Presentazione maglia').replace(/"/g, '&quot;');
       var poster = '<img class="maglia-video-poster" src="https://i.ytimg.com/vi/' + id + '/maxresdefault.jpg" alt="" decoding="async" ' +
