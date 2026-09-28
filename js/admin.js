@@ -5905,7 +5905,7 @@
         '<td>' + esc(x.nome) + '</td>' +
         '<td>' + _eur(x.preventivato) + '</td>' +
         '<td>' + _eur(x.sostenuto) + '</td>' +
-        '<td style="color:' + (x.scostamento > 0 ? 'var(--dg-red)' : 'var(--dg-green)') + '">' + (x.scostamento > 0 ? '+' : '') + _eur(x.scostamento) + '</td>' +
+        '<td style="color:' + (x.scostamento > 0 ? 'var(--dg-red)' : 'var(--dg-green)') + '">' + (x.scostamento > 0 ? '+' : '') + _eurSigned(x.scostamento) + '</td>' +
         '</tr>';
     }).join('');
     return '<div class="dg-table-wrap"><table class="dg-table"><thead><tr><th>Categoria</th><th>Preventivato</th><th>Sostenuto</th><th>Scostamento</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
@@ -6010,7 +6010,24 @@
         '<td><button class="dg-btn-icon-only" title="Elimina" onclick="DG.deleteSpesa(\'' + v.id + '\')">' + _delIconSm() + '</button></td>' +
         '</tr>';
       return row + (expanded ? _renderSottospeseRow(v) : '');
-    }).join('');
+    }).join('') + _renderSpeseTotaleRow(items);
+  }
+
+  /* Riga finale della tabella Spese: l'esito complessivo delle voci mostrate in quel
+     momento (rispetta il filtro per categoria, comprende le voci IVA come il resto
+     del pannello) — Preventivato, Sostenuto e lo scostamento fra i due, in un colpo
+     d'occhio senza dover sommare le righe a mano. */
+  function _renderSpeseTotaleRow(items) {
+    var totPrev = 0, totSost = 0;
+    items.forEach(function (v) { totPrev += (+v.importoPreventivato || 0); totSost += (+v.importoSostenuto || 0); });
+    var totScost = totSost - totPrev;
+    return '<tr class="dg-total-row">' +
+      '<td colspan="2">Totale' + (_speseFilterCategoriaId ? ' <span class="dg-muted" style="font-weight:400">(categoria filtrata)</span>' : '') + '</td>' +
+      '<td>' + _eur(totPrev) + '</td>' +
+      '<td>' + _eur(totSost) + '</td>' +
+      '<td colspan="3" style="color:' + (totScost > 0 ? 'var(--dg-red)' : 'var(--dg-green)') + '">Scostamento ' + (totScost > 0 ? '+' : '') + _eurSigned(totScost) + '</td>' +
+      '<td></td>' +
+    '</tr>';
   }
 
   function _chevronIconSm() { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="9,6 15,12 9,18"/></svg>'; }
@@ -6463,8 +6480,105 @@
     return '<table><thead>' + thead + '</thead><tbody>' + tbody + '</tbody></table>';
   }
 
-  /* Export PDF del dettaglio di una singola voce di spesa (es. "Evento 1500€"):
-     preventivato/sostenuto della voce madre + elenco delle sottospese con stato di pagamento. */
+  /* ---- PDF "gestionale" — solo per il dettaglio di una voce di spesa (letterhead con
+     logo, card KPI, barra di avanzamento, tabelle con stato colorato). Foglio di stile
+     a sé, separato da _pdfCss/_pdfStatRow/_pdfTableHtml che restano quelli usati da
+     exportSpesePdf, per non cambiargli l'aspetto. */
+  function _pdfCssRicco() {
+    return '@page{size:A4;margin:16mm 14mm}' +
+      '*{box-sizing:border-box}' +
+      'body{font-family:"Manrope",Arial,Helvetica,sans-serif;color:#1E293B;margin:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:12.5px}' +
+      '.doc{max-width:800px;margin:0 auto}' +
+      'h1,h2{font-family:"Barlow","Poppins",Arial,sans-serif;margin:0}' +
+      '.letterhead{display:flex;align-items:center;justify-content:space-between;gap:18px;background:linear-gradient(135deg,#0F172A 0%,#1E3A5F 100%);color:#fff;padding:18px 22px;border-radius:10px;margin-bottom:22px}' +
+      '.letterhead-brand{display:flex;align-items:center;gap:12px}' +
+      '.letterhead-logo{width:42px;height:42px;object-fit:contain;border-radius:8px;background:#fff;padding:3px}' +
+      '.letterhead-club{font-family:"Barlow",sans-serif;font-weight:700;font-size:17px;letter-spacing:.01em}' +
+      '.letterhead-sub{font-size:10.5px;color:rgba(255,255,255,.68);text-transform:uppercase;letter-spacing:.06em;margin-top:1px}' +
+      '.letterhead-meta{text-align:right;font-size:10.5px;color:rgba(255,255,255,.85)}' +
+      '.letterhead-doctype{font-family:"Barlow",sans-serif;font-weight:700;font-size:11.5px;color:#fff;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}' +
+      '.letterhead-metarow strong{color:#fff;font-weight:700;margin-left:4px}' +
+      '.titleblock{margin-bottom:18px;padding-bottom:14px;border-bottom:2px solid #E2E8F0}' +
+      '.titleblock h1{font-size:22px;color:#0F172A;font-weight:700}' +
+      '.titleblock-tags{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap}' +
+      '.tag{font-size:10.5px;background:#F1F5F9;color:#475569;border-radius:999px;padding:3px 11px;font-weight:600}' +
+      '.titleblock-note{margin:8px 0 0;font-size:11.5px;color:#64748B;font-style:italic}' +
+      '.kpis{display:flex;gap:10px;margin-bottom:16px}' +
+      '.kpi{flex:1;background:#F8FAFC;border:1px solid #E2E8F0;border-top:3px solid #94A3B8;border-radius:8px;padding:10px 12px}' +
+      '.kpi-label{font-size:9.5px;color:#64748B;text-transform:uppercase;letter-spacing:.05em;font-weight:700}' +
+      '.kpi-value{font-size:17px;font-weight:700;color:#0F172A;margin-top:3px;font-family:"Barlow",sans-serif}' +
+      '.kpi--accent{border-top-color:#008CFD}' +
+      '.kpi--pos{border-top-color:#EF4444}.kpi--pos .kpi-value{color:#DC2626}' +
+      '.kpi--neg{border-top-color:#10B981}.kpi--neg .kpi-value{color:#059669}' +
+      '.progress{margin:4px 0 22px}' +
+      '.progress-row{display:flex;justify-content:space-between;font-size:10.5px;color:#475569;font-weight:600;margin-bottom:5px}' +
+      '.progress-track{height:8px;background:#E2E8F0;border-radius:999px;overflow:hidden}' +
+      '.progress-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#008CFD,#053063)}' +
+      '.progress-fill--over{background:linear-gradient(90deg,#F59E0B,#EF4444)}' +
+      '.block{margin-bottom:20px;page-break-inside:avoid}' +
+      '.block-hd{display:flex;align-items:center;gap:8px;margin-bottom:9px}' +
+      '.block-dot{width:9px;height:9px;border-radius:50%;display:inline-block}' +
+      '.block-dot--spesa{background:#053063}' +
+      '.block-dot--credito{background:#10B981}' +
+      '.block-hd h2{font-size:13.5px;color:#0F172A;font-weight:700;text-transform:uppercase;letter-spacing:.03em}' +
+      '.block-count{font-size:10.5px;color:#94A3B8;font-weight:600}' +
+      '.doc table{width:100%;border-collapse:collapse;font-size:11px}' +
+      '.doc th{background:#0F172A;color:#fff;font-family:"Barlow",sans-serif;font-weight:700;font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;text-align:left;padding:7px 9px}' +
+      '.doc th.num,.doc td.num{text-align:right}' +
+      '.doc td{padding:6.5px 9px;border-bottom:1px solid #E2E8F0}' +
+      '.doc tbody tr:nth-child(even){background:#F8FAFC}' +
+      '.doc tr.total-row td{border-top:2px solid #0F172A;border-bottom:none;font-weight:700;color:#0F172A;background:#F1F5F9;padding-top:8px;padding-bottom:8px}' +
+      '.empty-row td{text-align:center;color:#94A3B8;font-style:italic;padding:14px}' +
+      '.badge{display:inline-block;font-size:9.5px;font-weight:700;padding:2.5px 9px;border-radius:999px;text-transform:uppercase;letter-spacing:.02em}' +
+      '.badge--ok{background:#ECFDF5;color:#059669}' +
+      '.badge--mid{background:#EFF6FF;color:#2563EB}' +
+      '.badge--warn{background:#FFFBEB;color:#B45309}' +
+      '.recap{margin-top:4px;margin-bottom:20px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:14px 18px;page-break-inside:avoid}' +
+      '.recap-title{font-family:"Barlow",sans-serif;font-weight:700;font-size:12.5px;color:#0F172A;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px}' +
+      '.recap-row{display:flex;justify-content:space-between;font-size:12.5px;padding:5px 0}' +
+      '.recap-row strong{font-family:"Barlow",sans-serif}' +
+      '.recap-row--net{border-top:1px solid #CBD5E1;margin-top:4px;padding-top:9px;font-size:14px}' +
+      '.recap-row--net strong{color:#0F172A;font-size:16px}' +
+      '.recap-caption{margin:8px 0 0;font-size:9.5px;color:#94A3B8}' +
+      '.doc footer{margin-top:18px;padding-top:10px;border-top:1px solid #E2E8F0;display:flex;justify-content:space-between;font-size:9.5px;color:#94A3B8}';
+  }
+
+  /* badge dello stato: stessi 3 colori del pannello (in_trattativa=ambra, contattato=blu, chiuso=verde). */
+  function _pdfBadgeKind(badgeKey) {
+    if (badgeKey === 'chiuso') return 'ok';
+    if (badgeKey === 'contattato') return 'mid';
+    return 'warn';
+  }
+  function _pdfBadgeHtml(label, kind) {
+    var cls = kind === 'ok' ? 'badge--ok' : kind === 'mid' ? 'badge--mid' : 'badge--warn';
+    return '<span class="badge ' + cls + '">' + esc(label) + '</span>';
+  }
+  function _pdfKpiCard(label, value, variant) {
+    return '<div class="kpi' + (variant ? ' kpi--' + variant : '') + '"><div class="kpi-label">' + esc(label) + '</div><div class="kpi-value">' + _eurSigned(value) + '</div></div>';
+  }
+  /* headers = etichette di Preventivato/Pagato (diverse per spese e crediti); rows = righe
+     già pronte da _pdfSottospesaRow(); totalRow = { prev, eff } o null per non stampare il totale. */
+  function _pdfSectionHtml(dotClass, title, count, headers, rows, emptyMsg, totalRow) {
+    var thead = '<tr><th>Descrizione</th><th class="num">' + esc(headers[0]) + '</th><th class="num">' + esc(headers[1]) + '</th><th>Stato</th><th>Data</th><th>Nota</th></tr>';
+    var body;
+    if (!rows.length) {
+      body = '<tr class="empty-row"><td colspan="6">' + esc(emptyMsg) + '</td></tr>';
+    } else {
+      body = rows.map(function (r) {
+        return '<tr><td>' + r.desc + '</td><td class="num">' + r.prev + '</td><td class="num">' + r.eff + '</td><td>' + r.stato + '</td><td>' + r.data + '</td><td>' + r.nota + '</td></tr>';
+      }).join('');
+      if (totalRow) body += '<tr class="total-row"><td>Totale</td><td class="num">' + totalRow.prev + '</td><td class="num">' + totalRow.eff + '</td><td></td><td></td><td></td></tr>';
+    }
+    return '<section class="block">' +
+      '<div class="block-hd"><span class="block-dot ' + dotClass + '"></span><h2>' + esc(title) + '</h2><span class="block-count">' + count + '</span></div>' +
+      '<table><thead>' + thead + '</thead><tbody>' + body + '</tbody></table>' +
+    '</section>';
+  }
+
+  /* Export PDF del dettaglio di una singola voce di spesa (es. "Evento 1500€"): letterhead
+     con logo, KPI (preventivato/sostenuto/scostamento/da pagare), barra di avanzamento,
+     tabella Spese e — se presenti — tabella Crediti/incassi con un riepilogo a parte
+     (il netto qui è solo per la stampa: non tocca Sostenuto/Preventivato né Bilancio). */
   DG.exportSottospesePdf = function (voceId) {
     var v = _vociSpesa.find(function (x) { return x.id === voceId; });
     if (!v) return;
@@ -6480,48 +6594,75 @@
     var incassoPrevisto = _sommaSottospeseIncassoPrevisto(voceId);
     var oggi = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
 
-    var html = '<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Dettaglio spesa — ' + esc(v.categoria) + '</title>' +
-      '<style>' + _pdfCss() + '</style></head><body>';
+    var preventivato = v.importoPreventivato || 0, sostenuto = v.importoSostenuto || 0;
+    var scostamento = sostenuto - preventivato;
+    var pct = preventivato > 0 ? Math.round(sostenuto / preventivato * 100) : (sostenuto > 0 ? 100 : 0);
+    var over = sostenuto > preventivato && preventivato > 0;
 
-    html += '<header><h1>Victor Volley — Dettaglio voce di spesa</h1>' +
-      '<p>Stagione: <strong>' + esc(season.nome || '—') + '</strong> &middot; Generato il ' + oggi + '</p></header>';
-
-    html += '<section><h2>' + esc(v.categoria) + '</h2>' +
-      _pdfStatRow([
-        ['Preventivato', v.importoPreventivato || 0],
-        ['Sostenuto', v.importoSostenuto || 0],
-        ['Preventivato spese', sommaPrev],
-        ['Pagato spese', somma],
-        ['Ancora da pagare', daPagare]
-      ].concat(crediti.length ? [['Incasso previsto', incassoPrevisto], ['Incassato', incassato]] : [])) +
-      '<p style="font-size:12px;color:#64748B;margin-top:12px">' +
-        'Categoria: <strong>' + esc(cat ? cat.nome : '—') + '</strong>' +
-        (v.dataSpesa ? ' &middot; Data: <strong>' + esc(_fmtDateLong(v.dataSpesa)) + '</strong>' : '') +
-        (v.note ? ' &middot; Note: ' + esc(v.note) : '') +
-      '</p></section>';
-
-    function sottospesaRow(s) {
-      return [esc(s.descrizione), _eur(s.importoPreventivato || 0), _eur(s.importo || 0), _statoSottospesa(s).label, s.data ? esc(_fmtDateLong(s.data)) : '—', esc(s.nota || '')];
+    function pdfRow(s) {
+      var st = _statoSottospesa(s);
+      return {
+        desc: esc(s.descrizione),
+        prev: _eur(s.importoPreventivato || 0),
+        eff: _eur(s.importo || 0),
+        stato: _pdfBadgeHtml(st.label, _pdfBadgeKind(st.badge)),
+        data: s.data ? esc(_fmtDateLong(s.data)) : '—',
+        nota: esc(s.nota || '')
+      };
     }
 
-    html += '<section><h2>Spese</h2>' +
-      _pdfTableHtml(['Descrizione', 'Preventivato', 'Pagato', 'Stato', 'Data', 'Nota'],
-        spese.map(sottospesaRow)
-          .concat(spese.length ? [['<strong>Totale</strong>', '<strong>' + _eur(sommaPrev) + '</strong>', '<strong>' + _eur(somma) + '</strong>', '', '', '']] : []),
-        'Nessuna spesa inserita per questa voce.') + '</section>';
+    var logoUrl = location.origin + '/assets/logo.png';
+    var fontsUrl = location.origin + '/css/fonts.css';
+
+    var html = '<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>' + esc(v.categoria) + ' — Report Budget — Victor Volley</title>' +
+      '<link rel="stylesheet" href="' + fontsUrl + '">' +
+      '<style>' + _pdfCssRicco() + '</style></head><body><div class="doc">';
+
+    html += '<header class="letterhead">' +
+      '<div class="letterhead-brand"><img class="letterhead-logo" src="' + logoUrl + '" alt=""><div><div class="letterhead-club">Victor Volley</div><div class="letterhead-sub">Area Dirigenti &middot; Report Budget</div></div></div>' +
+      '<div class="letterhead-meta"><div class="letterhead-doctype">Dettaglio voce di spesa</div>' +
+      '<div class="letterhead-metarow"><span>Stagione</span><strong>' + esc(season.nome || '—') + '</strong></div>' +
+      '<div class="letterhead-metarow"><span>Generato il</span><strong>' + oggi + '</strong></div></div>' +
+    '</header>';
+
+    html += '<div class="titleblock"><h1>' + esc(v.categoria) + '</h1>' +
+      '<div class="titleblock-tags">' +
+        '<span class="tag">Categoria: ' + esc(cat ? cat.nome : '—') + '</span>' +
+        (v.dataSpesa ? '<span class="tag">Data: ' + esc(_fmtDateLong(v.dataSpesa)) + '</span>' : '') +
+      '</div>' +
+      (v.note ? '<p class="titleblock-note">' + esc(v.note) + '</p>' : '') +
+    '</div>';
+
+    html += '<div class="kpis">' +
+      _pdfKpiCard('Preventivato', preventivato) +
+      _pdfKpiCard('Sostenuto', sostenuto, 'accent') +
+      _pdfKpiCard('Scostamento', scostamento, scostamento > 0 ? 'pos' : 'neg') +
+      _pdfKpiCard('Ancora da pagare', daPagare) +
+    '</div>';
+
+    html += '<div class="progress"><div class="progress-row"><span>Avanzamento spesa rispetto al preventivo</span><span>' + pct + '%</span></div>' +
+      '<div class="progress-track"><div class="progress-fill' + (over ? ' progress-fill--over' : '') + '" style="width:' + Math.min(100, pct) + '%"></div></div></div>';
+
+    html += _pdfSectionHtml('block-dot--spesa', 'Spese', spese.length + (spese.length === 1 ? ' voce' : ' voci'),
+      ['Preventivato', 'Pagato'], spese.map(pdfRow), 'Nessuna spesa inserita per questa voce.',
+      spese.length ? { prev: _eur(sommaPrev), eff: _eur(somma) } : null);
 
     /* I crediti compaiono in stampa solo se ce n'è almeno uno: sono un dettaglio
        informativo, non fanno parte del costo della voce sopra. */
     if (crediti.length) {
-      html += '<section><h2>Crediti / incassi</h2>' +
-        _pdfTableHtml(['Descrizione', 'Incasso previsto', 'Incassato', 'Stato', 'Data', 'Nota'],
-          crediti.map(sottospesaRow)
-            .concat([['<strong>Totale</strong>', '<strong>' + _eur(incassoPrevisto) + '</strong>', '<strong>' + _eur(incassato) + '</strong>', '', '', '']]),
-          '') + '</section>';
+      html += _pdfSectionHtml('block-dot--credito', 'Crediti / incassi', crediti.length + (crediti.length === 1 ? ' voce' : ' voci'),
+        ['Incasso previsto', 'Incassato'], crediti.map(pdfRow), '', { prev: _eur(incassoPrevisto), eff: _eur(incassato) });
+
+      var netto = somma - incassato;
+      html += '<div class="recap"><div class="recap-title">Bilancio dell\'evento</div>' +
+        '<div class="recap-row"><span>Speso</span><strong>' + _eur(somma) + '</strong></div>' +
+        '<div class="recap-row"><span>Incassato</span><strong>' + _eur(incassato) + '</strong></div>' +
+        '<div class="recap-row recap-row--net"><span>Netto</span><strong>' + _eur(netto) + '</strong></div>' +
+        '<p class="recap-caption">Solo un riepilogo di questo documento: non modifica Sostenuto/Preventivato della voce né i totali di Bilancio nel gestionale.</p></div>';
     }
 
-    html += '<footer>Victor Volley — Area Dirigenti · Documento generato automaticamente</footer>';
-    html += '</body></html>';
+    html += '<footer><span>Victor Volley &middot; Area Dirigenti</span><span>Documento generato automaticamente</span></footer>';
+    html += '</div></body></html>';
 
     var w = window.open('', '_blank');
     if (!w) { alert('Il browser ha bloccato la finestra di stampa. Consenti i popup per questo sito e riprova.'); return; }
@@ -6583,16 +6724,24 @@
       _pdfTableHtml(['Categoria', 'Preventivato', 'Sostenuto', 'Scostamento'],
         forecast.righe.map(function (x) {
           return [esc(x.nome), _eur(x.preventivato), _eur(x.sostenuto),
-            '<span style="color:' + (x.scostamento > 0 ? '#DC2626' : '#16A34A') + '">' + (x.scostamento > 0 ? '+' : '') + _eur(x.scostamento) + '</span>'];
+            '<span style="color:' + (x.scostamento > 0 ? '#DC2626' : '#16A34A') + '">' + (x.scostamento > 0 ? '+' : '') + _eurSigned(x.scostamento) + '</span>'];
         }), 'Nessuna voce di spesa per questa stagione.') + '</section>';
 
+    /* Riga finale di totale: stessa somma (tutte le voci, comprese quelle IVA) mostrata
+       in fondo alla tabella live "Spese" del pannello — vedi _renderSpese(). Lo
+       scostamento totale è già nella sezione "Spese per categoria" appena sopra. */
+    var totVociPrev = 0, totVociSost = 0;
+    _vociSpesa.forEach(function (v) { totVociPrev += (+v.importoPreventivato || 0); totVociSost += (+v.importoSostenuto || 0); });
     html += '<section><h2>Singole voci di spesa</h2>' +
       _pdfTableHtml(['Voce', 'Categoria', 'Preventivato', 'Sostenuto', 'Data', 'Note'],
         _vociSpesa.map(function (v) {
           var cat = v.categoriaSpesaId ? _categoriaSpesaById(v.categoriaSpesaId) : null;
           return [esc(v.categoria), esc(cat ? cat.nome : '—'), _eur(v.importoPreventivato || 0), _eur(v.importoSostenuto || 0),
             v.dataSpesa ? esc(_fmtDateLong(v.dataSpesa)) : '—', esc(v.note || '')];
-        }), 'Nessuna voce di spesa per questa stagione.') + '</section>';
+        }).concat(_vociSpesa.length ? [[
+          '<strong>Totale</strong>', '', '<strong>' + _eur(totVociPrev) + '</strong>', '<strong>' + _eur(totVociSost) + '</strong>', '', ''
+        ]] : []),
+        'Nessuna voce di spesa per questa stagione.') + '</section>';
 
     html += '<footer>Victor Volley — Area Dirigenti · Documento generato automaticamente</footer>';
     html += '</body></html>';
@@ -6659,6 +6808,9 @@
     return MESI_IT[(+p[1]) - 1] + ' ' + p[0];
   }
   function _eur(n) { return '€' + Math.round(n).toLocaleString('it-IT'); }
+  /* _eur() non gestisce i negativi (darebbe "€-260"): per gli scostamenti, che possono
+     esserlo, il segno va davanti al simbolo — stessa convenzione di _budgetStatCard. */
+  function _eurSigned(n) { return (n < 0 ? '-' : '') + '€' + Math.abs(Math.round(n)).toLocaleString('it-IT'); }
 
   /* Calcolo puro (nessun DOM), condiviso da _renderBilancio() e dall'export PDF. */
   function _calcBilancioMensile() {
