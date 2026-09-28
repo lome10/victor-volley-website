@@ -50,11 +50,9 @@
             '<a href="/news" class="sidebar-nav-link' + isActive('news') + '">News</a>' +
           '</li>' +
 
-          /* Galleria nascosta dalla sidebar su richiesta (2026-07-18), non serve al momento.
           '<li>' +
             '<a href="/galleria" class="sidebar-nav-link' + isActive('galleria') + '">Galleria</a>' +
           '</li>' +
-          */
 
           '<li>' +
             '<a href="/sponsor" class="sidebar-nav-link' + isActive('sponsor') + '">Partner</a>' +
