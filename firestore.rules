@@ -2,33 +2,44 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Un account Firebase qualsiasi NON basta per scrivere: le registrazioni via
+    // client sono aperte (il pannello crea gli account di atleti e dirigenti con
+    // createUserWithEmailAndPassword), quindi ogni permesso passa da qui.
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // Dirigente = esiste il documento dirigenti/{uid}. Il documento può essere
+    // creato solo da un dirigente (vedi la regola su /dirigenti più sotto).
     function isDirigente() {
-      return request.auth != null &&
+      return signedIn() &&
         exists(/databases/$(database)/documents/dirigenti/$(request.auth.uid));
     }
 
-    // Atleti — solo utenti autenticati (né public read né scrittura libera)
-    match /atleti/{document=**} {
-      allow read, write: if request.auth != null;
+    // Atleti — dati personali (in gran parte minorenni): un atleta legge solo il
+    // proprio documento (id = uid), tutto il resto è dei dirigenti.
+    match /atleti/{atletaId} {
+      allow read: if isDirigente() || (signedIn() && request.auth.uid == atletaId);
+      allow write: if isDirigente();
     }
 
-    // Collezioni pubbliche del sito
-    match /articles/{document=**}   { allow read: if true; allow write: if request.auth != null; }
-    match /matches/{document=**}    { allow read: if true; allow write: if request.auth != null; }
-    match /partite/{document=**}    { allow read: if true; allow write: if request.auth != null; }
-    match /albums/{document=**}     { allow read: if true; allow write: if request.auth != null; }
-    match /categories/{document=**} { allow read: if true; allow write: if request.auth != null; }
-    match /players/{document=**}    { allow read: if true; allow write: if request.auth != null; }
-    match /staff/{document=**}      { allow read: if true; allow write: if request.auth != null; }
-    match /settings/{document=**}   { allow read: if true; allow write: if request.auth != null; }
-    match /siteData/{document=**}   { allow read: if true; allow write: if request.auth != null; }
+    // Collezioni pubbliche del sito: lettura libera, scrittura solo dirigenti.
+    match /articles/{document=**}   { allow read: if true; allow write: if isDirigente(); }
+    match /matches/{document=**}    { allow read: if true; allow write: if isDirigente(); }
+    match /partite/{document=**}    { allow read: if true; allow write: if isDirigente(); }
+    match /albums/{document=**}     { allow read: if true; allow write: if isDirigente(); }
+    match /categories/{document=**} { allow read: if true; allow write: if isDirigente(); }
+    match /players/{document=**}    { allow read: if true; allow write: if isDirigente(); }
+    match /staff/{document=**}      { allow read: if true; allow write: if isDirigente(); }
+    match /settings/{document=**}   { allow read: if true; allow write: if isDirigente(); }
+    match /siteData/{document=**}   { allow read: if true; allow write: if isDirigente(); }
 
-    // Area Dirigenti — registro ruoli: esistenza del doc {uid} = ruolo dirigente.
-    // Scrittura affidata a chi ha già accesso all'admin (stesso livello di
-    // fiducia già usato per creare account atleti), lettura autenticata per
-    // permettere il controllo ruolo lato client.
+    // Registro ruoli. Ognuno può leggere solo il proprio documento (serve al
+    // controllo di accesso del pannello); i dirigenti vedono tutti. Scrivere qui
+    // significa promuovere qualcuno a dirigente: solo un dirigente può farlo.
     match /dirigenti/{uid} {
-      allow read, write: if request.auth != null;
+      allow read: if signedIn() && (request.auth.uid == uid || isDirigente());
+      allow write: if isDirigente();
     }
 
     // Area Dirigenti — dati di budget/CRM: solo dirigenti/admin, mai pubblico.

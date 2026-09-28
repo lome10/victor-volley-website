@@ -5,31 +5,40 @@ admin.initializeApp();
 
 /**
  * Cambia la password di un atleta.
- * Callable solo da utenti autenticati che NON sono atleti
- * (cioè non hanno un doc in /atleti/{uid}).
+ *
+ * Chiamabile solo da un DIRIGENTE (esiste dirigenti/{uid}) e solo su un ATLETA
+ * (esiste atleti/{uid}): non si può quindi usare per cambiare la password di
+ * un dirigente né di un account qualsiasi. Le registrazioni via client sono
+ * aperte, per cui "essere loggati" o "non essere un atleta" non è una prova
+ * di autorizzazione.
  */
 exports.setAthletePassword = functions.https.onCall(async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError('unauthenticated', 'Non autenticato.');
   }
 
-  /* Verifica che il chiamante sia un admin (non in collezione atleti) */
-  const callerDoc = await admin.firestore()
-    .collection('atleti').doc(context.auth.uid).get();
-  if (callerDoc.exists) {
+  const db = admin.firestore();
+
+  const callerDoc = await db.collection('dirigenti').doc(context.auth.uid).get();
+  if (!callerDoc.exists) {
     throw new functions.https.HttpsError('permission-denied', 'Accesso negato.');
   }
 
-  const uid      = data.uid;
-  const password = data.password;
+  const uid      = data && data.uid;
+  const password = data && data.password;
 
   if (!uid || typeof uid !== 'string') {
     throw new functions.https.HttpsError('invalid-argument', 'UID mancante.');
   }
-  if (!password || password.length < 6) {
+  if (!password || typeof password !== 'string' || password.length < 6) {
     throw new functions.https.HttpsError(
       'invalid-argument', 'La password deve avere almeno 6 caratteri.'
     );
+  }
+
+  const targetDoc = await db.collection('atleti').doc(uid).get();
+  if (!targetDoc.exists) {
+    throw new functions.https.HttpsError('not-found', 'Atleta non trovato.');
   }
 
   await admin.auth().updateUser(uid, { password });

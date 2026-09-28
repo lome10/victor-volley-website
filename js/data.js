@@ -103,6 +103,11 @@
     /* Slug dell'album = indirizzo della sua pagina (/galleria/<slug>). Se l'album non ne ha uno salvato
        (creato prima dello slug) lo ricavo dal titolo; in caso di doppioni il più vecchio tiene il nome
        pulito e gli altri ricevono il proprio id come suffisso. */
+    /* Solo link http(s): scarta "javascript:", "data:" e simili prima di metterli in un href. */
+    safeUrl: function (u) {
+      u = String(u || '').trim();
+      return /^https?:///i.test(u) ? u : '';
+    },
     slugify: function (text) {
       return String(text || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
         .replace(/&/g, ' e ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60).replace(/-+$/, '') || 'album';

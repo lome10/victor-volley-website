@@ -77,7 +77,8 @@
   <script src="js/vendor/firebase-app-compat.js"></script>
   <script src="js/vendor/firebase-firestore-compat.js"></script>
   <script src="js/firebase-config.js"></script>
-  <script src="js/data.js"></script>
+  <script src="js/vendor/purify.min.js"></script>
+  <script src="js/data.js?v=20260929"></script>
   <script src="js/db.js"></script>
   <script src="js/splash.js"></script>
   <script src="js/components.js"></script>
@@ -128,8 +129,8 @@
 
       sponsorsEl.innerHTML = articleSponsors.map(function (s) {
         var inner = '<img src="' + esc(s.logo) + '" alt="' + esc(s.nome) + '" class="art-sponsors-logo">';
-        return s.url
-          ? '<a href="' + esc(s.url) + '" class="art-sponsors-item" target="_blank" rel="noopener">' + inner + '</a>'
+        return VV.safeUrl(s.url)
+          ? '<a href="' + esc(VV.safeUrl(s.url)) + '" class="art-sponsors-item" target="_blank" rel="noopener">' + inner + '</a>'
           : '<div class="art-sponsors-item">' + inner + '</div>';
       }).join('');
     }
@@ -150,9 +151,22 @@
 
     /* Corpo */
     var bodyEl = document.getElementById('articleBody');
-    bodyEl.innerHTML = article.content
-      ? article.content
-      : '<p style="color:#aaa;font-style:italic">Contenuto non disponibile.</p>';
+    /* Il corpo è HTML scritto in admin: passa da DOMPurify (via script, onclick, iframe, javascript:…).
+       Se la libreria non si carica si mostra solo testo semplice, mai HTML grezzo. */
+    if (!article.content) {
+      bodyEl.innerHTML = '<p style="color:#aaa;font-style:italic">Contenuto non disponibile.</p>';
+    } else if (window.DOMPurify) {
+      DOMPurify.addHook('afterSanitizeAttributes', function (node) {
+        if (node.tagName === 'A' && node.getAttribute('target') === '_blank') node.setAttribute('rel', 'noopener noreferrer');
+      });
+      bodyEl.innerHTML = DOMPurify.sanitize(article.content, {
+        ADD_ATTR: ['target'],
+        /* niente moduli/campi (phishing), SVG/MathML né CSS incorporato: gli articoli non ne hanno bisogno */
+        FORBID_TAGS: ['form', 'input', 'button', 'textarea', 'select', 'option', 'svg', 'math', 'style']
+      });
+    } else {
+      bodyEl.textContent = article.content.replace(/<[^>]*>/g, ' ').replace(/s+/g, ' ').trim();
+    }
 
     /* Articoli correlati — stessa card 4:5 e stessa animazione hover di hero/news.
        Su mobile diventa un carosello scroll-snap (come l'hero) con puntini,

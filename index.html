@@ -234,7 +234,7 @@
   <script src="js/vendor/firebase-firestore-compat.js"></script>
   <script src="js/vendor/firebase-auth-compat.js"></script>
   <script src="js/firebase-config.js"></script>
-  <script src="js/data.js?v=20260928"></script>
+  <script src="js/data.js?v=20260929"></script>
   <script src="js/db.js"></script>
   <script src="js/photodb.js?v=20260929"></script>
   <script src="js/splash.js"></script>
@@ -271,8 +271,8 @@
             ? '<img src="' + esc(s.logo) + '" alt="' + esc(s.nome) + '" class="sponsor-card-logo">'
             : '<div class="sponsor-card-name">' + esc(s.nome) + '</div>';
           var cls = 'sponsor-card sponsor-card--gold reveal';
-          return s.url
-            ? '<a href="' + esc(s.url) + '" target="_blank" rel="noopener" class="' + cls + '">' + inner + '</a>'
+          return VV.safeUrl(s.url)
+            ? '<a href="' + esc(VV.safeUrl(s.url)) + '" target="_blank" rel="noopener" class="' + cls + '">' + inner + '</a>'
             : '<div class="' + cls + '">' + inner + '</div>';
         }).join('');
         goldGrid.style.display = '';
@@ -287,8 +287,8 @@
         var track  = document.getElementById('sponsorTickerTrack');
         function makeItem(s) {
           var inner = '<img src="' + esc(s.logo) + '" alt="' + esc(s.nome) + '" class="spt-logo">';
-          return s.url
-            ? '<a href="' + esc(s.url) + '" class="spt-item" target="_blank" rel="noopener">' + inner + '</a>'
+          return VV.safeUrl(s.url)
+            ? '<a href="' + esc(VV.safeUrl(s.url)) + '" class="spt-item" target="_blank" rel="noopener">' + inner + '</a>'
             : '<div class="spt-item">' + inner + '</div>';
         }
 
