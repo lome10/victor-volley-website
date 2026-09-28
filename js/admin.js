@@ -707,6 +707,26 @@
   var _albumEditingId = null;   /* id dell'album in modifica; null = nuovo album */
   var _albumSlugTouched = false; /* true se lo slug è stato scritto/modificato a mano */
 
+  /* Eliminare una foto/album qui toglie solo il collegamento (Firestore): il file
+     resta su Cloudinary, perché cancellarlo davvero richiede la API Secret, che non
+     può stare nel codice del browser. Un aiuto manuale: copia gli id negli appunti
+     e apre la Media Library, dove si cancellano in due click cercandoli per nome. */
+  function _notifyCloudinaryOrphans(ids) {
+    ids = (ids || []).filter(Boolean);
+    if (!ids.length) return;
+    var list = ids.join(', ');
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(list).catch(function () {});
+    }
+    var shown = ids.slice(0, 15).join('\n') + (ids.length > 15 ? '\n… e altre ' + (ids.length - 15) : '');
+    alert(
+      (ids.length === 1 ? 'Il file è rimasto su Cloudinary.' : 'I ' + ids.length + ' file sono rimasti su Cloudinary.') +
+      ' Per cancellarli: apri la Media Library (si sta aprendo in una nuova scheda), incolla ' +
+      (ids.length === 1 ? 'l\'id' : 'gli id (già copiati negli appunti)') + ' nella ricerca ed elimina.\n\n' + shown
+    );
+    window.open('https://console.cloudinary.com/console/media_library', '_blank', 'noopener');
+  }
+
   function updateAlbumSlugHint() {
     var slug = document.getElementById('albumSlug').value.trim();
     document.getElementById('albumSlugHint').textContent =
@@ -2038,16 +2058,24 @@
       });
     },
     deleteAlbum: function (id) {
+      var album = VV.getAlbum(id);
+      var ids = album && album.photos ? album.photos.map(function (p) { return p.id; }) : [];
       confirm('Eliminare l\'album e tutte le sue foto?', function () {
         PhotoDB.deleteAlbumPhotos(id, function () {
-          DB.deleteAlbum(id, refreshAlbumsGrid);
+          DB.deleteAlbum(id, function () {
+            refreshAlbumsGrid();
+            _notifyCloudinaryOrphans(ids);
+          });
         });
       });
     },
     deletePhoto: function (photoId) {
+      var album = VV.getAlbum(_currentAlbumId);
+      var photo = album && album.photos ? album.photos.find(function (p) { return p.id === photoId; }) : null;
       confirm('Eliminare questa foto?', function () {
         PhotoDB.deletePhoto(_currentAlbumId, photoId, function () {
           loadPhotos(_currentAlbumId);
+          _notifyCloudinaryOrphans(photo ? [photo.id] : []);
         });
       });
     },
