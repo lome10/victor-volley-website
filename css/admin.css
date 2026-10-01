@@ -155,6 +155,35 @@ button { font-family: var(--font-body); cursor: pointer; }
   gap: 2px;
 }
 
+/* Scrollbar sottile: rete di sicurezza solo per schermi molto bassi */
+.admin-nav { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.15) transparent; }
+.admin-nav::-webkit-scrollbar { width: 4px; }
+.admin-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+
+.admin-nav-group { display: flex; flex-direction: column; gap: 2px; margin-top: 10px; }
+
+.admin-nav-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+  transition: color var(--a-t);
+}
+.admin-nav-group-head:hover { color: rgba(255,255,255,0.75); }
+.admin-nav-group-head svg { transition: transform var(--a-t); }
+.admin-nav-group.is-collapsed .admin-nav-group-head svg { transform: rotate(-90deg); }
+
+.admin-nav-group-body { display: flex; flex-direction: column; gap: 2px; }
+.admin-nav-group.is-collapsed .admin-nav-group-body { display: none; }
+
 .admin-nav-item {
   display: flex;
   align-items: center;

@@ -216,6 +216,12 @@
         _closeSidebar();
       });
     });
+    document.querySelectorAll('.admin-nav-group').forEach(function (g) { _setGroupOpen(g, false); });
+    document.querySelectorAll('.admin-nav-group-head').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        _setGroupOpen(btn.parentElement, btn.parentElement.classList.contains('is-collapsed'));
+      });
+    });
     _initSidebarToggle();
     window.addEventListener('popstate', function (e) {
       var section = (e.state && e.state.section) || _sectionFromPath();
@@ -223,6 +229,12 @@
       goTo(section);
       _suppressPush = false;
     });
+  }
+
+  /* ---- Gruppi del menù: comprimibili; quello della sezione attiva si apre da solo ---- */
+  function _setGroupOpen(group, open) {
+    group.classList.toggle('is-collapsed', !open);
+    group.querySelector('.admin-nav-group-head').setAttribute('aria-expanded', open ? 'true' : 'false');
   }
 
   /* ---- Routing: ogni sezione ha il proprio URL (/admin/<sezione>),
@@ -261,6 +273,9 @@
     if (bootLoading) bootLoading.classList.add('is-hidden');
     document.querySelectorAll('.admin-nav-item').forEach(function (el) {
       el.classList.toggle('is-active', el.dataset.section === section);
+    });
+    document.querySelectorAll('.admin-nav-group').forEach(function (g) {
+      if (g.querySelector('.admin-nav-item.is-active')) _setGroupOpen(g, true);
     });
     document.querySelectorAll('.admin-section').forEach(function (el) {
       el.classList.add('is-hidden');
