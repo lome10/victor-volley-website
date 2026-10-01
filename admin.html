@@ -72,6 +72,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
           Allenamenti
         </a>
+        <a href="#" class="admin-nav-item" data-section="comunicazioni">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+          Avvisi
+        </a>
         <a href="#" class="admin-nav-item" data-section="pianoEditoriale">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
           Piano Editoriale
@@ -1051,6 +1055,58 @@
         </div>
       </section>
 
+      <!-- ---- AVVISI (comunicazioni a atleti e genitori) ---- -->
+      <section id="sectionComunicazioni" class="admin-section is-hidden">
+        <div class="ga-info" style="margin-bottom:24px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Gli avvisi compaiono nell'area atleti. Li vedono solo atleti e genitori della squadra scelta, oppure tutti i tesserati se scegli "Tutta la società". Non inserire dati personali: il testo è per tutta la squadra.
+        </div>
+        <div id="comunicazioniList" class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Destinatari</th>
+                <th>Titolo</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="comunicazioniBody"></tbody>
+          </table>
+        </div>
+        <div id="comunicazioniForm" class="is-hidden">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Destinatari *</label>
+              <select id="comDest" class="form-input"></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Importanza</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:14px;padding-top:8px">
+                <input type="checkbox" id="comImportante"> Avviso importante (evidenziato)
+              </label>
+            </div>
+            <div class="form-group form-full">
+              <label class="form-label">Titolo *</label>
+              <input type="text" id="comTitolo" class="form-input" maxlength="120" placeholder="es. Allenamento di giovedì annullato">
+            </div>
+            <div class="form-group form-full">
+              <label class="form-label">Testo *</label>
+              <textarea id="comTesto" class="form-input form-textarea" rows="6" maxlength="3000" placeholder="Scrivi qui il messaggio. I link vengono resi cliccabili."></textarea>
+            </div>
+            <div class="form-group form-full">
+              <label class="form-label">Link allegato (facoltativo)</label>
+              <input type="url" id="comAllegato" class="form-input" placeholder="https://drive.google.com/file/d/…/view?usp=sharing">
+              <p style="font-size:12px;color:var(--a-muted);margin-top:5px">Per moduli o locandine: carica su Drive, imposta <strong>Chiunque con il link</strong> e incolla qui.</p>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button id="comCancel" class="btn-ghost">Annulla</button>
+            <button id="comSave" class="btn-primary">Pubblica</button>
+          </div>
+        </div>
+      </section>
+
       <!-- ---- ALLENAMENTI ---- -->
       <section id="sectionAllenamenti" class="admin-section is-hidden">
         <div class="ga-info" style="margin-bottom:24px">
@@ -1653,6 +1709,7 @@
             <option value="staff">Staff</option>
             <option value="calendario">Calendario</option>
             <option value="allenamento">Allenamento</option>
+            <option value="avviso">Avviso</option>
             <option value="statistiche">Statistiche homepage</option>
             <option value="sponsorSito">Sponsor (vetrina sito)</option>
             <option value="stagioneSito">Stagione sito</option>
@@ -2128,7 +2185,7 @@
   <script src="/js/config.js?v=20260928"></script>
   <script src="/js/photodb.js?v=20260929"></script>
   <script src="/js/girone.js?v=20260719"></script>
-  <script src="/js/admin.js?v=20261001b"></script>
+  <script src="/js/admin.js?v=20261001c"></script>
   <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

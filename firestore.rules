@@ -28,6 +28,33 @@ service cloud.firestore {
       allow write: if isDirigente();
     }
 
+    // Accessi — un documento per account atleta/genitore, id = uid, con le
+    // categorie dei suoi atleti. Lo mantiene il pannello admin (dirigenti); serve
+    // alle regole degli avvisi per sapere cosa può leggere ogni famiglia.
+    match /accessi/{uid} {
+      allow read: if isDirigente() || (signedIn() && request.auth.uid == uid);
+      allow write: if isDirigente();
+    }
+
+    // Avvisi ai tesserati: categoria = nome della squadra oppure 'tutte'. Li
+    // leggono solo gli account con un documento in /accessi (cioè atleti e
+    // genitori veri, non chiunque si registri) e solo per le proprie categorie.
+    // Le query devono filtrare con categoria == X.
+    function haAccessi() {
+      return signedIn() &&
+        exists(/databases/$(database)/documents/accessi/$(request.auth.uid));
+    }
+    function categorieAccesso() {
+      return get(/databases/$(database)/documents/accessi/$(request.auth.uid)).data.categorie;
+    }
+    match /comunicazioni/{id} {
+      allow read: if isDirigente() || (haAccessi() && (
+        resource.data.categoria == 'tutte' ||
+        resource.data.categoria in categorieAccesso()
+      ));
+      allow write: if isDirigente();
+    }
+
     // Collezioni pubbliche del sito: lettura libera, scrittura solo dirigenti.
     match /articles/{document=**}   { allow read: if true; allow write: if isDirigente(); }
     match /matches/{document=**}    { allow read: if true; allow write: if isDirigente(); }

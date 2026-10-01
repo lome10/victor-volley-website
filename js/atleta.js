@@ -9,6 +9,10 @@
   var _atleti  = [];      /* schede visibili a questo account */
   var _current = null;    /* scheda selezionata */
   var _view    = 'home';
+  var _avvisi      = [];  /* avvisi dell'atleta selezionato (sua squadra + tutta la società) */
+  var _avvisiError = false;
+  var _avvisiToken = 0;   /* scarta le risposte di un atleta già deselezionato */
+  var _seenBefore  = '';  /* "ultima lettura" prima di aprire la scheda Avvisi: serve a evidenziare i nuovi */
   var _allenamenti = [];  /* orari settimanali, collezione `allenamenti` */
   var _dataReady   = false;
   var _dataLoading = false;
@@ -45,8 +49,14 @@
       if (btn) _showView(btn.dataset.view);
     });
 
-    document.querySelectorAll('[data-goto]').forEach(function (el) {
-      el.addEventListener('click', function () { _showView(el.dataset.goto); });
+    /* riquadri e voci di "Da fare" che portano a un'altra scheda (anche quelli creati dopo) */
+    document.getElementById('view-home').addEventListener('click', function (e) {
+      var el = e.target.closest('[data-goto]');
+      if (el) _showView(el.dataset.goto);
+    });
+    document.getElementById('todoList').addEventListener('keydown', function (e) {
+      var el = e.target.closest('[data-goto]');
+      if (el && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); _showView(el.dataset.goto); }
     });
 
     document.getElementById('childBarInner').addEventListener('click', function (e) {
@@ -165,6 +175,12 @@
     _renderRate(_current);
     _renderModulo(_current);
     if (_dataReady) _refreshAgendaViews(_current);
+    _avvisi = [];
+    _avvisiError = false;
+    _seenBefore = _getLastSeen(_current);
+    _renderAvvisiBadge();
+    if (_view === 'avvisi') _renderAvvisi(_current);
+    _loadAvvisi(_current);
   }
 
   function _showView(name) {
@@ -175,6 +191,11 @@
     document.querySelectorAll('.al-nav-btn').forEach(function (b) {
       b.classList.toggle('is-active', b.dataset.view === name);
     });
+    if (name === 'avvisi' && _current) {
+      _seenBefore = _getLastSeen(_current);
+      _renderAvvisi(_current);
+      _loadAvvisi(_current);   /* aggiorna in background */
+    }
     if (name === 'squadra' && _current)    _renderSquadra(_current);
     if (name === 'calendario' && _current) _renderCalendario(_current);
     window.scrollTo(0, 0);
@@ -222,13 +243,27 @@
     return items;
   }
 
-  function _renderHome(a) {
+  function _renderTodo(a) {
     var items = _todoItems(a);
+    var n = _unreadAvvisi(a);
+    if (n) {
+      items.unshift({
+        lvl: _avvisi.some(function (v) { return v.importante && _isUnread(a, v); }) ? 'red' : 'orange',
+        text: n === 1 ? 'Hai 1 avviso non letto.' : 'Hai ' + n + ' avvisi non letti.',
+        go: 'avvisi'
+      });
+    }
     document.getElementById('todoList').innerHTML = items.length
       ? items.map(function (it) {
-          return '<li class="al-todo al-todo--' + it.lvl + '"><span class="al-todo-dot"></span><span>' + _esc(it.text) + '</span></li>';
+          return '<li class="al-todo al-todo--' + it.lvl + (it.go ? ' is-link' : '') + '"' +
+            (it.go ? ' data-goto="' + it.go + '" tabindex="0" role="link"' : '') + '>' +
+            '<span class="al-todo-dot"></span><span>' + _esc(it.text) + '</span></li>';
         }).join('')
       : '<li class="al-todo al-todo--ok"><span class="al-todo-dot"></span><span>Tutto in regola, non c\'è niente da fare.</span></li>';
+  }
+
+  function _renderHome(a) {
+    _renderTodo(a);
 
     /* tile certificato */
     var tc = document.getElementById('tileCert'), tcs = document.getElementById('tileCertSub');
@@ -250,6 +285,109 @@
     } else {
       tr.textContent = '—'; tr.className = 'al-tile-value'; trs.textContent = 'Nessuna quota inserita';
     }
+  }
+
+  /* ---------------- avvisi ---------------- */
+
+  var AVVISI_NUOVI_SENZA_LETTURA_GIORNI = 30;
+
+  /* "Ultima lettura" per account + atleta, solo su questo dispositivo. */
+  function _lastSeenKey(a) { return 'vv_avvisi_letti_' + (_user ? _user.uid : '') + '_' + a.uid; }
+  function _getLastSeen(a) {
+    try { return localStorage.getItem(_lastSeenKey(a)) || ''; } catch (e) { return ''; }
+  }
+  function _setLastSeen(a, iso) {
+    try { localStorage.setItem(_lastSeenKey(a), iso); } catch (e) { /* storage non disponibile: pazienza */ }
+  }
+
+  function _isUnread(a, v) {
+    var seen = _getLastSeen(a);
+    if (!seen) {
+      /* primo accesso su questo dispositivo: non segnare come "da leggere" tutto lo storico */
+      seen = new Date(Date.now() - AVVISI_NUOVI_SENZA_LETTURA_GIORNI * 864e5).toISOString();
+    }
+    return (v.createdAt || '') > seen;
+  }
+
+  function _unreadAvvisi(a) {
+    return _avvisi.filter(function (v) { return _isUnread(a, v); }).length;
+  }
+
+  function _renderAvvisiBadge() {
+    var b = document.getElementById('avvisiBadge');
+    var n = _current ? _unreadAvvisi(_current) : 0;
+    b.textContent = n > 9 ? '9+' : String(n);
+    b.classList.toggle('is-hidden', !n);
+  }
+
+  function _loadAvvisi(a) {
+    var token = ++_avvisiToken;
+    var cats = a.categoria ? ['tutte', a.categoria] : ['tutte'];
+
+    db.collection('comunicazioni').where('categoria', 'in', cats).get()
+      .then(function (snap) {
+        if (token !== _avvisiToken) return;
+        _avvisi = [];
+        snap.forEach(function (d) { _avvisi.push(Object.assign({ id: d.id }, d.data())); });
+        _avvisi.sort(function (x, y) { return (y.createdAt || '').localeCompare(x.createdAt || ''); });
+        _avvisiError = false;
+      })
+      .catch(function (e) {
+        if (token !== _avvisiToken) return;
+        console.error('[atleta] avvisi', e);
+        _avvisi = [];
+        _avvisiError = true;
+      })
+      .then(function () {
+        if (token !== _avvisiToken) return;
+        if (_view === 'avvisi') _renderAvvisi(a);   /* segna anche come letti */
+        _renderAvvisiBadge();
+        _renderTodo(a);
+      });
+  }
+
+  function _linkify(text) {
+    return _esc(text)
+      .replace(/(https:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>')
+      .replace(/\n/g, '<br>');
+  }
+
+  function _renderAvvisi(a) {
+    var el = document.getElementById('avvisiList');
+
+    if (_avvisiError) {
+      el.innerHTML = '<div class="al-card"><div class="al-card-body"><p class="al-muted">Non è stato possibile caricare gli avvisi. Riprova più tardi.</p></div></div>';
+      return;
+    }
+    if (!_avvisi.length) {
+      el.innerHTML = '<div class="al-card"><div class="al-card-body"><p class="al-muted">Non ci sono avvisi.</p></div></div>';
+      return;
+    }
+
+    var seen = _seenBefore || new Date(Date.now() - AVVISI_NUOVI_SENZA_LETTURA_GIORNI * 864e5).toISOString();
+
+    el.innerHTML = _avvisi.map(function (v) {
+      var isNew = (v.createdAt || '') > seen;
+      var att = v.allegatoUrl && /^https:\/\//i.test(v.allegatoUrl)
+        ? '<a href="' + _esc(_driveViewUrl(v.allegatoUrl)) + '" target="_blank" rel="noopener" class="al-btn-ghost al-btn-sm">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>Apri allegato</a>'
+        : '';
+      return '<article class="al-card al-avviso' + (v.importante ? ' al-avviso--important' : '') + '">' +
+        '<div class="al-card-body">' +
+          '<div class="al-avviso-head">' +
+            '<h2 class="al-avviso-title">' + _esc(v.titolo) + '</h2>' +
+            (isNew ? '<span class="al-badge al-badge--green">Nuovo</span>' : '') +
+            (v.importante ? '<span class="al-badge al-badge--red">Importante</span>' : '') +
+          '</div>' +
+          '<div class="al-avviso-meta">' + _fmtDate((v.createdAt || '').slice(0, 10)) + ' · ' +
+            (v.categoria === 'tutte' ? 'Tutta la società' : _esc(v.categoria)) + '</div>' +
+          '<div class="al-avviso-text">' + _linkify(v.testo || '') + '</div>' +
+          (att ? '<div class="al-avviso-att">' + att + '</div>' : '') +
+        '</div></article>';
+    }).join('');
+
+    /* l'apertura della scheda li segna come letti (su questo dispositivo) */
+    _setLastSeen(a, _avvisi[0].createdAt || new Date().toISOString());
   }
 
   /* ---------------- calendario: partite + allenamenti ---------------- */

@@ -687,3 +687,38 @@ button { font-family: inherit; cursor: pointer; }
   .al-card-action { margin-left: 0; }
   .al-nav-btn span { font-size: 10px; }
 }
+
+/* ================================================
+   AVVISI
+================================================ */
+.al-nav-btn { position: relative; }
+.al-nav-badge {
+  position: absolute;
+  top: 6px;
+  left: calc(50% + 6px);
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--al-red);
+  color: #fff;
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+@media (min-width: 601px) {
+  .al-nav-badge { position: static; }
+}
+
+.al-todo.is-link { cursor: pointer; border-radius: 6px; margin: -4px -6px; padding: 4px 6px; }
+.al-todo.is-link:hover, .al-todo.is-link:focus-visible { background: var(--al-bg); outline: none; }
+
+#avvisiList { display: flex; flex-direction: column; gap: 16px; }
+.al-avviso--important { border-left: 3px solid var(--al-red); }
+.al-avviso-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.al-avviso-title { font-family: 'Barlow', sans-serif; font-size: 17px; font-weight: 700; margin-right: auto; }
+.al-avviso-meta { font-size: 12px; color: var(--al-muted); margin: 4px 0 12px; }
+.al-avviso-text { font-size: 14px; line-height: 1.55; overflow-wrap: anywhere; }
+.al-avviso-att { margin-top: 14px; }

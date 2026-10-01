@@ -202,7 +202,7 @@
      NAVIGATION
   ================================================ */
   var SECTIONS = {
-    dashboard: 'Dashboard', articoli: 'Articoli', calendario: 'Calendario', allenamenti: 'Allenamenti', pianoEditoriale: 'Piano Editoriale',
+    dashboard: 'Dashboard', articoli: 'Articoli', calendario: 'Calendario', allenamenti: 'Allenamenti', comunicazioni: 'Avvisi', pianoEditoriale: 'Piano Editoriale',
     bacheca: 'Bacheca', galleria: 'Galleria', squadre: 'Squadre',
     sponsor: 'Sponsor', atleti: 'Atleti', dirigenti: 'Dirigenti', girone: 'Girone Prima Divisione', datiJson: 'File JSON',
     log: 'Log', budget: 'Budget & Forecast'
@@ -274,6 +274,7 @@
     if (section === 'articoli')   renderArticoli();
     if (section === 'calendario') renderCalendario();
     if (section === 'allenamenti') renderAllenamenti();
+    if (section === 'comunicazioni') renderComunicazioni();
     if (section === 'pianoEditoriale') renderPianoEditoriale();
     if (section === 'bacheca')    renderBacheca();
     if (section === 'galleria')   renderGalleria();
@@ -2278,6 +2279,7 @@
       });
       _renderAtletiRows();
       _migrateAccessiAtleti();
+      _loadAccessiDocs();
     }).catch(function (err) {
       console.error('[Atleti]', err);
       document.getElementById('atletiBody').innerHTML =
@@ -2319,6 +2321,59 @@
       Object.assign(a, upd);
     });
     batch.commit().catch(function (e) { console.error('[Atleti] migrazione accessi', e); });
+  }
+
+  /* ---- Documenti /accessi: categorie visibili a ogni account ----
+     Un documento per uid (atleta o genitore) con le categorie dei suoi atleti.
+     Le regole Firestore lo usano per decidere chi legge gli avvisi di una squadra.
+     _reconcileAccessi() ricalcola tutto da _atletiCache e scrive solo le differenze,
+     quindi si può chiamare dopo qualunque modifica (e a ogni caricamento dell'elenco). */
+  var _accessiDocs = null;   /* { uid: [categorie] } come sono ora su Firestore */
+
+  function _loadAccessiDocs() {
+    db.collection('accessi').get().then(function (snap) {
+      _accessiDocs = {};
+      snap.forEach(function (d) { _accessiDocs[d.id] = (d.data().categorie || []).slice().sort(); });
+      return _reconcileAccessi();
+    }).catch(function (e) { console.error('[Atleti] accessi', e); });
+  }
+
+  function _reconcileAccessi() {
+    if (!_accessiDocs) return Promise.resolve();
+    var want = {};
+    _atletiCache.forEach(function (a) {
+      _accessiOf(a).forEach(function (x) {
+        var set = want[x.uid] || (want[x.uid] = {});
+        if (a.categoria) set[a.categoria] = true;
+      });
+    });
+
+    var ops = [];
+    Object.keys(want).forEach(function (uid) {
+      var cats = Object.keys(want[uid]).sort();
+      if (!_accessiDocs[uid] || JSON.stringify(_accessiDocs[uid]) !== JSON.stringify(cats)) {
+        ops.push({ uid: uid, cats: cats });
+      }
+    });
+    Object.keys(_accessiDocs).forEach(function (uid) {
+      if (!want[uid]) ops.push({ uid: uid, cats: null });
+    });
+    if (!ops.length) return Promise.resolve();
+
+    var chunks = [];
+    for (var i = 0; i < ops.length; i += 400) chunks.push(ops.slice(i, i + 400));
+    return chunks.reduce(function (chain, chunk) {
+      return chain.then(function () {
+        var batch = db.batch();
+        chunk.forEach(function (op) {
+          var ref = db.collection('accessi').doc(op.uid);
+          if (op.cats) batch.set(ref, { categorie: op.cats }); else batch.delete(ref);
+        });
+        return batch.commit().then(function () {
+          chunk.forEach(function (op) { if (op.cats) _accessiDocs[op.uid] = op.cats; else delete _accessiDocs[op.uid]; });
+        });
+      });
+    }, Promise.resolve()).catch(function (e) { console.error('[Atleti] sync accessi', e); });
   }
 
   /* Crea un account Firebase Auth senza disconnettere l'admin (app secondaria). */
@@ -2374,6 +2429,7 @@
       var upd = { accessi: accessi, accessUids: accessi.map(function (x) { return x.uid; }) };
       return db.collection('atleti').doc(atleta.uid).update(upd).then(function () {
         Object.assign(atleta, upd);
+        _reconcileAccessi();
         return _logWrite('atleta', atleta.uid, _atletaLabel(atleta), 'update', _diff({ accessi: before }, upd, ['accessi']));
       });
     });
@@ -2513,6 +2569,7 @@
         });
       })
       .then(function () {
+        _reconcileAccessi();
         btn.textContent = 'Crea atleta'; btn.disabled = false;
         renderAtleti();
       })
@@ -2602,7 +2659,7 @@
     document.getElementById('atletaDetailNome').textContent =
       _editingAtleta.cognome + ' ' + _editingAtleta.nome;
     db.collection('atleti').doc(_editingAtleta.uid).update(upd)
-      .then(function () { return _logWrite('atleta', _editingAtleta.uid, 'Atleta — ' + _editingAtleta.cognome + ' ' + _editingAtleta.nome, 'update', _diff(before, upd, Object.keys(upd))); })
+      .then(function () { _reconcileAccessi(); return _logWrite('atleta', _editingAtleta.uid, 'Atleta — ' + _editingAtleta.cognome + ' ' + _editingAtleta.nome, 'update', _diff(before, upd, Object.keys(upd))); })
       .catch(function (e) { alert('Errore: ' + e.message); });
   });
 
@@ -2802,6 +2859,7 @@
         db.collection('atleti').doc(_editingAtleta.uid).update(upd)
           .then(function () {
             Object.assign(_editingAtleta, upd);
+            _reconcileAccessi();
             return _logWrite('atleta', _editingAtleta.uid, _atletaLabel(_editingAtleta), 'update', _diff({ accessi: before }, upd, ['accessi']));
           })
           .then(_renderAccessiAdmin)
@@ -2833,6 +2891,7 @@
           })
           .then(function () {
             _atletiCache = _atletiCache.filter(function (a) { return a.uid !== uid; });
+            _reconcileAccessi();
             _renderAtletiRows();
           })
           .catch(function (e) { alert('Errore: ' + e.message); });
@@ -2860,6 +2919,119 @@
       .then(function () { return _logWrite('atleta', _editingAtleta.uid, 'Atleta — ' + _editingAtleta.cognome + ' ' + _editingAtleta.nome, 'update', _diff({ rate: before }, { rate: _editingAtleta.rate }, ['rate'])); })
       .then(_renderRateAdmin)
       .catch(function (e) { alert('Errore: ' + e.message); });
+  };
+
+  /* ================================================
+     AVVISI (collezione `comunicazioni`, letta dall'area atleti)
+     { categoria: nome squadra | 'tutte', titolo, testo, importante, allegatoUrl,
+       createdAt (ISO), autore }
+  ================================================ */
+  var _comunicazioniCache = [];
+  var _editingComunicazione = null;
+
+  function renderComunicazioni() {
+    showSubview('comunicazioni', 'list');
+    setTopbarBtn('Nuovo avviso', function () { _openComunicazioneForm(null); });
+    document.getElementById('comunicazioniBody').innerHTML =
+      '<tr><td colspan="4" style="text-align:center;color:var(--a-muted);padding:20px">Caricamento…</td></tr>';
+
+    db.collection('comunicazioni').get().then(function (snap) {
+      _comunicazioniCache = [];
+      snap.forEach(function (d) { _comunicazioniCache.push(Object.assign({}, d.data(), { id: d.id })); });
+      _comunicazioniCache.sort(function (a, b) { return (b.createdAt || '').localeCompare(a.createdAt || ''); });
+      _renderComunicazioniRows();
+    }).catch(function (err) {
+      console.error('[Avvisi]', err);
+      document.getElementById('comunicazioniBody').innerHTML =
+        '<tr><td colspan="4" style="text-align:center;color:var(--a-red)">Errore nel caricamento.</td></tr>';
+    });
+  }
+
+  function _destLabel(c) { return c === 'tutte' ? 'Tutta la società' : c; }
+
+  function _renderComunicazioniRows() {
+    if (!_comunicazioniCache.length) {
+      document.getElementById('comunicazioniBody').innerHTML =
+        '<tr><td colspan="4"><div class="empty-state"><p>Nessun avviso pubblicato.</p></div></td></tr>';
+      return;
+    }
+    document.getElementById('comunicazioniBody').innerHTML = _comunicazioniCache.map(function (c) {
+      return '<tr>' +
+        '<td style="white-space:nowrap">' + _fmtDate((c.createdAt || '').slice(0, 10)) + '</td>' +
+        '<td><span class="chip ' + (c.categoria === 'tutte' ? 'chip--gray' : 'chip--blue') + '">' + esc(_destLabel(c.categoria)) + '</span></td>' +
+        '<td><div class="table-title">' + (c.importante ? '<span style="color:var(--a-red)">● </span>' : '') + esc(c.titolo) + '</div></td>' +
+        '<td><div class="table-actions">' +
+          '<button class="btn-icon" onclick="AdminActions.editComunicazione(\'' + esc(c.id) + '\')" title="Modifica">' + EDIT_ICON_SM + '</button>' +
+          '<button class="btn-icon btn-icon--danger" onclick="AdminActions.deleteComunicazione(\'' + esc(c.id) + '\')" title="Elimina">' + DEL_ICON_SM + '</button>' +
+        '</div></td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  function _openComunicazioneForm(id) {
+    _editingComunicazione = id ? (_comunicazioniCache.find(function (c) { return c.id === id; }) || null) : null;
+    var c = _editingComunicazione || {};
+    showSubview('comunicazioni', 'form');
+    document.getElementById('topbarActions').innerHTML = '';
+
+    document.getElementById('comDest').innerHTML = '<option value="">Seleziona…</option><option value="tutte">Tutta la società</option>' +
+      VV.getCategories().map(function (cat) {
+        return '<option value="' + esc(cat.name) + '">' + esc(cat.name) + '</option>';
+      }).join('');
+    document.getElementById('comDest').value         = c.categoria || '';
+    document.getElementById('comImportante').checked = !!c.importante;
+    document.getElementById('comTitolo').value       = c.titolo || '';
+    document.getElementById('comTesto').value        = c.testo || '';
+    document.getElementById('comAllegato').value     = c.allegatoUrl || '';
+    document.getElementById('comSave').textContent   = _editingComunicazione ? 'Salva modifiche' : 'Pubblica';
+  }
+
+  document.getElementById('comCancel').addEventListener('click', renderComunicazioni);
+
+  document.getElementById('comSave').addEventListener('click', function () {
+    var before = _editingComunicazione;
+    var data = {
+      categoria:   document.getElementById('comDest').value,
+      titolo:      document.getElementById('comTitolo').value.trim(),
+      testo:       document.getElementById('comTesto').value.trim(),
+      importante:  document.getElementById('comImportante').checked,
+      allegatoUrl: document.getElementById('comAllegato').value.trim(),
+      createdAt:   before ? before.createdAt : new Date().toISOString(),
+      autore:      before ? (before.autore || '') : (_dirigenteNome || '')
+    };
+    if (!data.categoria || !data.titolo || !data.testo) {
+      alert('Destinatari, titolo e testo sono obbligatori.'); return;
+    }
+    if (data.allegatoUrl && !/^https:\/\//i.test(data.allegatoUrl)) {
+      alert('Il link allegato deve iniziare con https://'); return;
+    }
+
+    var ref   = before ? db.collection('comunicazioni').doc(before.id) : db.collection('comunicazioni').doc();
+    var label = 'Avviso — ' + data.titolo;
+    var btn   = this;
+    btn.disabled = true;
+
+    ref.set(data)
+      .then(function () {
+        return _logWrite('avviso', ref.id, label, before ? 'update' : 'create',
+          _diff(before || {}, data, ['categoria', 'titolo', 'testo', 'importante', 'allegatoUrl']));
+      })
+      .then(function () { btn.disabled = false; renderComunicazioni(); })
+      .catch(function (e) { btn.disabled = false; alert('Errore: ' + e.message); });
+  });
+
+  window.AdminActions.editComunicazione = function (id) { _openComunicazioneForm(id); };
+
+  window.AdminActions.deleteComunicazione = function (id) {
+    var target = _comunicazioniCache.find(function (c) { return c.id === id; });
+    confirm('Eliminare questo avviso? Sparirà dall\'area atleti di tutti i destinatari.', function () {
+      db.collection('comunicazioni').doc(id).delete()
+        .then(function () {
+          return _logWrite('avviso', id, 'Avviso — ' + (target ? target.titolo : id), 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]);
+        })
+        .then(renderComunicazioni)
+        .catch(function (e) { alert('Errore: ' + e.message); });
+    });
   };
 
   /* ================================================
