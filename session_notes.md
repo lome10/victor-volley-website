@@ -54,7 +54,10 @@ Piano: file separati caricati in ordine, namespace comune `window.Admin`, nessun
 - [ ] Dati reali da confermare dal piano originale: indirizzo e nome del palazzetto, email e telefono, foto, loghi sponsor, social, dati societari.
 
 ### Opzionale
-- [ ] Attivare il piano Blaze di Firebase e pubblicare la Cloud Function `setAthletePassword` (oggi il cambio password atleta si fa dalla Console; vedi `DG._FUNCTIONS_DEPLOYED` in `admin.js:3195`).
+- [x] Sostituita la Cloud Function: email di reset (client) + funzione Vercel `api/set-athlete-password.js`. Rimossi `functions/`, `firebase-functions-compat.js`, `_FUNCTIONS_DEPLOYED`.
+- [ ] **Configurare `FIREBASE_SERVICE_ACCOUNT` su Vercel** (Firebase Console → Impostazioni progetto → Account di servizio → Genera nuova chiave privata; incollare il JSON intero nella variabile d'ambiente, rifare il deploy, poi cancellare il file scaricato). Senza, la password a mano risponde "Funzione non configurata"; l'email di reset funziona comunque.
+- [ ] Provare in produzione: reset email (atleta e genitore) e password a mano.
+- [ ] `npm audit` segnala 9 vulnerabilità moderate nelle dipendenze indirette di `firebase-admin` (`@google-cloud/storage`, ecc.), non usate dalla funzione: ricontrollare ai prossimi aggiornamenti.
 - [ ] Form per inserire i risultati del girone senza passare dal JSON (proposto, non richiesto).
 
 ---
@@ -73,6 +76,7 @@ Piano: file separati caricati in ordine, namespace comune `window.Admin`, nessun
 - **2026-10-01**: menù laterale admin a gruppi comprimibili (Sport, Comunicazione, Società, Sistema). Dashboard resta fuori dai gruppi. All'avvio resta aperto solo il gruppo della sezione attiva.
 - **2026-10-01**: tab **Girone** rimossa dal pannello admin, perché era un'anteprima in sola lettura già coperta dalla pagina pubblica `calendario.html`. Restano `data/girone.json`, `js/girone.js` e il blocco nella tab File JSON.
 - **2026-10-01**: monolite da spezzare in modo graduale, senza bundler, partendo dal Budget.
+- **2026-10-01**: il piano Blaze di Firebase **non verrà mai attivato** (decisione dell'utente). Alternativa proposta per il cambio password: email di reset via client, gratis. Scelte entrambe le strade: email di reset + funzione Vercel con Admin SDK.
 
 ---
 
@@ -84,3 +88,6 @@ Piano: file separati caricati in ordine, namespace comune `window.Admin`, nessun
 - Audit del progetto: corretti `esc()` senza virgolette in 4 file e `_driveViewUrl()` in `atleta.js` → commit del fix di sicurezza.
 - Analisi di migrazioni e monolite `admin.js`; creato questo file.
 - Spiegata la Cloud Function `setAthletePassword` (richiede piano Blaze, non attiva).
+- Deciso che il piano Blaze non si attiva; proposta l'email di reset al posto della Cloud Function.
+- Confermato dall'utente: nessuna verifica ancora fatta su regole Firestore e migrazioni.
+- Implementate entrambe le alternative alla Cloud Function: email di reset (tab Sicurezza + bottone per ogni genitore in Accessi) e funzione Vercel con controllo dirigente. Provata in locale solo la validazione (405/403/401/500); non provata con Firebase reale.

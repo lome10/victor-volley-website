@@ -1228,6 +1228,11 @@ button { font-family: var(--font-body); cursor: pointer; }
   margin: 0;
 }
 
+.sicurezza-opt { width: 100%; text-align: left; border-top: 1px solid var(--a-border); padding-top: 16px; margin-top: 16px; }
+.sicurezza-opt-title { font-size: 14px; font-weight: 600; color: var(--a-text); margin: 0 0 4px; }
+.sicurezza-opt-tag { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--a-green); margin-left: 6px; }
+.sicurezza-opt-desc { font-size: 13px; color: var(--a-muted); margin: 0 0 12px; }
+
 .sicurezza-msg {
   font-size: 13px;
   font-weight: 500;

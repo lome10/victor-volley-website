@@ -3129,8 +3129,7 @@
     if (modUrl) document.getElementById('moduloPdfLink').href = _driveViewUrl(modUrl);
 
     document.getElementById('sicurezzaEmail').textContent = _editingAtleta.email || '';
-    document.getElementById('sicurezzaEmail2').textContent = _editingAtleta.email || '';
-    /* la password si cambia solo per un login atleta proprio: i genitori si gestiscono dalla console Firebase */
+    /* la scheda Sicurezza vale solo per un login atleta proprio; per i genitori c'è il reset email nella tab Accessi */
     document.querySelector('.atleta-tab[data-tab="sicurezza"]').classList.toggle('is-hidden', !_hasOwnLogin(_editingAtleta));
     document.getElementById('sicurezzaMsg').classList.add('is-hidden');
     document.getElementById('sicurezzaMsg').textContent = '';
@@ -3188,61 +3187,81 @@
       .catch(function (e) { alert('Errore: ' + e.message); });
   });
 
-  /* ---- Cambia password atleta (via Cloud Function) ----
-     La function richiede il piano Blaze, non ancora attivo: finché resta a false,
-     il modulo si vede ma non si può inviare, con le istruzioni per farlo dalla
-     console Firebase. Passare a true (e ripubblicare) appena la function è online. */
-  var _FUNCTIONS_DEPLOYED = false;
-  (function () {
-    document.getElementById('sicurezzaUnavailable').classList.toggle('is-hidden', _FUNCTIONS_DEPLOYED);
-    ['newPassword', 'confirmPassword', 'btnCambiaPassword'].forEach(function (id) {
-      document.getElementById(id).disabled = !_FUNCTIONS_DEPLOYED;
+  /* ---- Password atleta ----
+     1) Email di reset (consigliata): Firebase manda il link, l'utente sceglie la password.
+     2) Password a mano: chiama la funzione serverless /api/set-athlete-password
+        (Vercel + Admin SDK), che verifica che chi chiama sia un dirigente. */
+  function _sicurezzaMsg(text, ok) {
+    var msg = document.getElementById('sicurezzaMsg');
+    msg.textContent = text;
+    msg.style.color = ok ? 'var(--a-green)' : 'var(--a-red)';
+    msg.classList.remove('is-hidden');
+  }
+
+  function _resetErrorText(e) {
+    if (e && e.code === 'auth/user-not-found') return 'Nessun account Firebase con questa email.';
+    if (e && e.code === 'auth/invalid-email') return 'Indirizzo email non valido.';
+    if (e && e.code === 'auth/too-many-requests') return 'Troppi tentativi: riprova tra qualche minuto.';
+    return (e && e.message) || 'riprova più tardi.';
+  }
+
+  /* Invia l'email di reset a un account; restituisce una Promise. */
+  function _sendResetEmail(email, entitaId, entitaLabel) {
+    return auth.sendPasswordResetEmail(email).then(function () {
+      return _logWrite('atleta', entitaId, entitaLabel, 'update', [{ campo: 'password', prima: null, dopo: 'email di reset inviata' }]);
     });
-  })();
+  }
+
+  document.getElementById('btnResetEmail').addEventListener('click', function () {
+    if (!_editingAtleta) return;
+    var btn   = this;
+    var email = (_editingAtleta.email || '').trim();
+    document.getElementById('sicurezzaMsg').classList.add('is-hidden');
+    if (!email) { _sicurezzaMsg('Questo atleta non ha un\x27email.', false); return; }
+    btn.disabled = true;
+    btn.textContent = 'Invio…';
+    _sendResetEmail(email, _editingAtleta.uid, _atletaLabel(_editingAtleta))
+      .then(function () { _sicurezzaMsg('Email di reset inviata a ' + email + '. Se non arriva, controlla lo spam.', true); })
+      .catch(function (e) { _sicurezzaMsg('Errore: ' + _resetErrorText(e), false); })
+      .then(function () { btn.disabled = false; btn.textContent = 'Invia email di reset'; });
+  });
 
   document.getElementById('btnCambiaPassword').addEventListener('click', function () {
-    if (!_editingAtleta || !_FUNCTIONS_DEPLOYED) return;
+    if (!_editingAtleta) return;
     var btn     = this;
-    var msg     = document.getElementById('sicurezzaMsg');
     var pwd     = document.getElementById('newPassword').value;
     var confirm = document.getElementById('confirmPassword').value;
 
-    msg.classList.add('is-hidden');
+    document.getElementById('sicurezzaMsg').classList.add('is-hidden');
 
-    if (pwd.length < 6) {
-      msg.textContent = 'La password deve avere almeno 6 caratteri.';
-      msg.style.color = 'var(--a-red)';
-      msg.classList.remove('is-hidden');
-      return;
-    }
-    if (pwd !== confirm) {
-      msg.textContent = 'Le due password non coincidono.';
-      msg.style.color = 'var(--a-red)';
-      msg.classList.remove('is-hidden');
-      return;
-    }
+    if (pwd.length < 6) { _sicurezzaMsg('La password deve avere almeno 6 caratteri.', false); return; }
+    if (pwd !== confirm) { _sicurezzaMsg('Le due password non coincidono.', false); return; }
 
     btn.disabled = true;
     btn.textContent = 'Salvataggio…';
 
-    var setPassword = firebase.functions().httpsCallable('setAthletePassword');
-    setPassword({ uid: _editingAtleta.uid, password: pwd })
-      .then(function () {
-        msg.textContent = 'Password aggiornata con successo.';
-        msg.style.color = 'var(--a-green)';
-        msg.classList.remove('is-hidden');
-        document.getElementById('newPassword').value    = '';
-        document.getElementById('confirmPassword').value = '';
-        btn.disabled = false;
-        btn.textContent = 'Salva password';
+    var atleta = _editingAtleta;
+    auth.currentUser.getIdToken()
+      .then(function (token) {
+        return fetch('/api/set-athlete-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ uid: atleta.uid, password: pwd })
+        });
       })
-      .catch(function (e) {
-        msg.textContent = 'Errore: ' + (e.message || 'riprova più tardi.');
-        msg.style.color = 'var(--a-red)';
-        msg.classList.remove('is-hidden');
-        btn.disabled = false;
-        btn.textContent = 'Salva password';
-      });
+      .then(function (res) {
+        return res.json().catch(function () { return {}; }).then(function (data) {
+          if (!res.ok) throw new Error(data.error || ('Errore ' + res.status));
+        });
+      })
+      .then(function () {
+        document.getElementById('newPassword').value     = '';
+        document.getElementById('confirmPassword').value = '';
+        _sicurezzaMsg('Password aggiornata con successo.', true);
+        return _logWrite('atleta', atleta.uid, _atletaLabel(atleta), 'update', [{ campo: 'password', prima: null, dopo: 'impostata da un dirigente' }]);
+      })
+      .catch(function (e) { _sicurezzaMsg('Errore: ' + (e.message || 'riprova più tardi.'), false); })
+      .then(function () { btn.disabled = false; btn.textContent = 'Salva password'; });
   });
 
   /* ---- Accessi (atleta + genitori) ---- */
@@ -3262,6 +3281,9 @@
         '</div>' +
         (isOwn ? '' :
           '<div class="atleta-rate-actions">' +
+            '<button class="btn-icon" onclick="AdminActions.resetAccesso(\'' + esc(x.uid) + '\')" title="Invia email di reset password">' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>' +
+            '</button>' +
             '<button class="btn-icon btn-icon--danger" onclick="AdminActions.removeAccesso(\'' + esc(x.uid) + '\')" title="Scollega">' +
               '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>' +
             '</button>' +
@@ -3286,6 +3308,15 @@
       .catch(function (e) { alert('Errore: ' + _authErrorText(e)); })
       .then(function () { btn.disabled = false; btn.textContent = 'Aggiungi'; });
   });
+
+  window.AdminActions.resetAccesso = function (uid) {
+    if (!_editingAtleta) return;
+    var x = _accessiOf(_editingAtleta).filter(function (a) { return a.uid === uid; })[0];
+    if (!x || !x.email) return;
+    _sendResetEmail(x.email, _editingAtleta.uid, _atletaLabel(_editingAtleta))
+      .then(function () { alert('Email di reset inviata a ' + x.email + '. Se non arriva, controlla lo spam.'); })
+      .catch(function (e) { alert('Errore: ' + _resetErrorText(e)); });
+  };
 
   window.AdminActions.removeAccesso = function (uid) {
     if (!_editingAtleta) return;

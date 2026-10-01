@@ -1043,27 +1043,30 @@
               <div class="sicurezza-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="28" height="28"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
               </div>
-              <h4 class="sicurezza-title">Cambia password</h4>
-              <p class="sicurezza-desc">Imposta una nuova password per <strong id="sicurezzaEmail"></strong>.</p>
-              <!-- La funzione che cambia la password richiede il piano Blaze (mai attivato):
-                   finché non è pubblicata, il modulo resta visibile ma disattivato, con le
-                   istruzioni per farlo dalla console Firebase (vedi DG._FUNCTIONS_DEPLOYED in admin.js). -->
-              <div id="sicurezzaUnavailable" class="sicurezza-msg is-hidden" style="color:var(--a-muted);margin-bottom:14px">
-                Funzione non ancora attiva su questo progetto (richiede il piano Blaze). Per cambiare la password vai su
-                <a href="https://console.firebase.google.com/project/victor-volley/authentication/users" target="_blank" rel="noopener">Firebase Console → Authentication</a>,
-                cerca <strong id="sicurezzaEmail2"></strong> e usa "Reimposta password".
+              <h4 class="sicurezza-title">Password di accesso</h4>
+              <p class="sicurezza-desc">Account: <strong id="sicurezzaEmail"></strong></p>
+
+              <div class="sicurezza-opt">
+                <h5 class="sicurezza-opt-title">Invia email di reset <span class="sicurezza-opt-tag">consigliato</span></h5>
+                <p class="sicurezza-opt-desc">L'atleta riceve un link e sceglie da sé la nuova password. Tu non la conosci mai.</p>
+                <button id="btnResetEmail" class="btn-primary">Invia email di reset</button>
               </div>
-              <div class="form-grid" style="width:100%">
-                <div class="form-group form-full">
-                  <label class="form-label">Nuova password</label>
-                  <input type="password" id="newPassword" class="form-input" placeholder="Minimo 6 caratteri" autocomplete="new-password">
+
+              <div class="sicurezza-opt">
+                <h5 class="sicurezza-opt-title">Imposta una password a mano</h5>
+                <p class="sicurezza-opt-desc">Da usare se l'email non arriva. Comunica la password all'atleta in modo sicuro.</p>
+                <div class="form-grid" style="width:100%">
+                  <div class="form-group form-full">
+                    <label class="form-label">Nuova password</label>
+                    <input type="password" id="newPassword" class="form-input" placeholder="Minimo 6 caratteri" autocomplete="new-password">
+                  </div>
+                  <div class="form-group form-full">
+                    <label class="form-label">Conferma password</label>
+                    <input type="password" id="confirmPassword" class="form-input" placeholder="Ripeti la password" autocomplete="new-password">
+                  </div>
                 </div>
-                <div class="form-group form-full">
-                  <label class="form-label">Conferma password</label>
-                  <input type="password" id="confirmPassword" class="form-input" placeholder="Ripeti la password" autocomplete="new-password">
-                </div>
+                <button id="btnCambiaPassword" class="btn-ghost">Salva password</button>
               </div>
-              <button id="btnCambiaPassword" class="btn-primary">Salva password</button>
               <p id="sicurezzaMsg" class="sicurezza-msg is-hidden"></p>
             </div>
           </div>
@@ -2192,13 +2195,12 @@
   <script src="/js/vendor/firebase-app-compat.js"></script>
   <script src="/js/vendor/firebase-firestore-compat.js"></script>
   <script src="/js/vendor/firebase-auth-compat.js"></script>
-  <script src="/js/vendor/firebase-functions-compat.js"></script>
   <script src="/js/firebase-config.js"></script>
   <script src="/js/data.js?v=20260928"></script>
   <script src="/js/db.js?v=20260928"></script>
   <script src="/js/config.js?v=20260928"></script>
   <script src="/js/photodb.js?v=20260929"></script>
-  <script src="/js/admin.js?v=20261001f"></script>
+  <script src="/js/admin.js?v=20261001g"></script>
   <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>
