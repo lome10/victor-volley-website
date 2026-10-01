@@ -726,7 +726,7 @@ button { font-family: inherit; cursor: pointer; }
 /* ================================================
    PRESENZE (ci sarò / non ci sarò)
 ================================================ */
-#presMsg:empty { display: none; }
+#presMsg:empty, #ratePdfMsg:empty { display: none; }
 #presMsg { margin: 0 0 12px; }
 
 .al-ev-resp {

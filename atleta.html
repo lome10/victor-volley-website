@@ -9,7 +9,7 @@
   <link rel="preload" href="/assets/fonts/barlow-700-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/manrope-400-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/fonts.css">
-  <link rel="stylesheet" href="css/atleta.css?v=20261001d">
+  <link rel="stylesheet" href="css/atleta.css?v=20261001e">
 </head>
 <body>
 
@@ -218,8 +218,13 @@
                 <div class="al-card-title">Quote e Pagamenti</div>
                 <div class="al-card-sub" id="rateSub">Stagione corrente</div>
               </div>
+              <button type="button" id="ratePdfBtn" class="al-btn-ghost al-btn-sm al-card-action is-hidden">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Riepilogo PDF
+              </button>
             </div>
             <div class="al-card-body">
+              <p id="ratePdfMsg" class="al-form-msg is-err" role="alert"></p>
               <div id="rateList" class="al-rate-list">
                 <p class="al-muted">Nessuna quota inserita.</p>
               </div>
@@ -286,7 +291,7 @@
   <script src="js/firebase-config.js"></script>
   <script src="js/data.js"></script>
   <script src="js/db.js"></script>
-  <script src="js/atleta.js?v=20261001d"></script>
+  <script src="js/atleta.js?v=20261001e"></script>
   <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>
