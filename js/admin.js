@@ -202,7 +202,7 @@
      NAVIGATION
   ================================================ */
   var SECTIONS = {
-    dashboard: 'Dashboard', articoli: 'Articoli', calendario: 'Calendario', pianoEditoriale: 'Piano Editoriale',
+    dashboard: 'Dashboard', articoli: 'Articoli', calendario: 'Calendario', allenamenti: 'Allenamenti', pianoEditoriale: 'Piano Editoriale',
     bacheca: 'Bacheca', galleria: 'Galleria', squadre: 'Squadre',
     sponsor: 'Sponsor', atleti: 'Atleti', dirigenti: 'Dirigenti', girone: 'Girone Prima Divisione', datiJson: 'File JSON',
     log: 'Log', budget: 'Budget & Forecast'
@@ -273,6 +273,7 @@
     if (section === 'dashboard')  renderDashboard();
     if (section === 'articoli')   renderArticoli();
     if (section === 'calendario') renderCalendario();
+    if (section === 'allenamenti') renderAllenamenti();
     if (section === 'pianoEditoriale') renderPianoEditoriale();
     if (section === 'bacheca')    renderBacheca();
     if (section === 'galleria')   renderGalleria();
@@ -2859,6 +2860,133 @@
       .then(function () { return _logWrite('atleta', _editingAtleta.uid, 'Atleta — ' + _editingAtleta.cognome + ' ' + _editingAtleta.nome, 'update', _diff({ rate: before }, { rate: _editingAtleta.rate }, ['rate'])); })
       .then(_renderRateAdmin)
       .catch(function (e) { alert('Errore: ' + e.message); });
+  };
+
+  /* ================================================
+     ALLENAMENTI (orari settimanali per categoria, letti dall'area atleti)
+     collezione `allenamenti`: { categoria (nome), giorno 1=lun…7=dom,
+     oraInizio, oraFine, luogo, validoFino (data, facoltativa), note }
+  ================================================ */
+  var GIORNI_SETTIMANA = ['', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
+  var _allenamentiCache   = [];
+  var _editingAllenamento = null;
+
+  function renderAllenamenti() {
+    showSubview('allenamenti', 'list');
+    setTopbarBtn('Nuovo allenamento', function () { _openAllenamentoForm(null); });
+    document.getElementById('allenamentiBody').innerHTML =
+      '<tr><td colspan="6" style="text-align:center;color:var(--a-muted);padding:20px">Caricamento…</td></tr>';
+
+    db.collection('allenamenti').get().then(function (snap) {
+      _allenamentiCache = [];
+      snap.forEach(function (d) { _allenamentiCache.push(Object.assign({}, d.data(), { id: d.id })); });
+      _allenamentiCache.sort(function (a, b) {
+        return (a.categoria || '').localeCompare(b.categoria || '', 'it') ||
+               (a.giorno - b.giorno) ||
+               (a.oraInizio || '').localeCompare(b.oraInizio || '');
+      });
+      _renderAllenamentiRows();
+    }).catch(function (err) {
+      console.error('[Allenamenti]', err);
+      document.getElementById('allenamentiBody').innerHTML =
+        '<tr><td colspan="6" style="text-align:center;color:var(--a-red)">Errore nel caricamento.</td></tr>';
+    });
+  }
+
+  function _renderAllenamentiRows() {
+    if (!_allenamentiCache.length) {
+      document.getElementById('allenamentiBody').innerHTML =
+        '<tr><td colspan="6"><div class="empty-state"><p>Nessun allenamento inserito.</p></div></td></tr>';
+      return;
+    }
+    document.getElementById('allenamentiBody').innerHTML = _allenamentiCache.map(function (a) {
+      var scaduto = a.validoFino && _daysDiff(a.validoFino) < 0;
+      return '<tr' + (scaduto ? ' style="opacity:.55"' : '') + '>' +
+        '<td><span class="chip chip--blue">' + esc(a.categoria || '') + '</span></td>' +
+        '<td>' + esc(GIORNI_SETTIMANA[a.giorno] || '—') + '</td>' +
+        '<td style="white-space:nowrap">' + esc(a.oraInizio || '') + (a.oraFine ? ' &ndash; ' + esc(a.oraFine) : '') + '</td>' +
+        '<td style="font-size:12px;color:var(--a-muted)">' + esc(a.luogo || '—') + '</td>' +
+        '<td>' + (a.validoFino ? _fmtDate(a.validoFino) + (scaduto ? ' (concluso)' : '') : '—') + '</td>' +
+        '<td><div class="table-actions">' +
+          '<button class="btn-icon" onclick="AdminActions.editAllenamento(\'' + esc(a.id) + '\')" title="Modifica">' + EDIT_ICON_SM + '</button>' +
+          '<button class="btn-icon btn-icon--danger" onclick="AdminActions.deleteAllenamento(\'' + esc(a.id) + '\')" title="Elimina">' + DEL_ICON_SM + '</button>' +
+        '</div></td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  function _openAllenamentoForm(id) {
+    _editingAllenamento = id ? (_allenamentiCache.find(function (a) { return a.id === id; }) || null) : null;
+    var a = _editingAllenamento || {};
+    showSubview('allenamenti', 'form');
+    document.getElementById('topbarActions').innerHTML = '';
+
+    document.getElementById('allenCat').innerHTML = '<option value="">Seleziona…</option>' +
+      VV.getCategories().map(function (c) {
+        return '<option value="' + esc(c.name) + '">' + esc(c.name) + '</option>';
+      }).join('');
+    document.getElementById('allenGiorno').innerHTML = '<option value="">Seleziona…</option>' +
+      GIORNI_SETTIMANA.slice(1).map(function (g, i) {
+        return '<option value="' + (i + 1) + '">' + g + '</option>';
+      }).join('');
+
+    document.getElementById('allenCat').value    = a.categoria  || '';
+    document.getElementById('allenGiorno').value = a.giorno ? String(a.giorno) : '';
+    document.getElementById('allenInizio').value = a.oraInizio  || '';
+    document.getElementById('allenFine').value   = a.oraFine    || '';
+    document.getElementById('allenLuogo').value  = a.luogo      || '';
+    document.getElementById('allenFino').value   = a.validoFino || '';
+    document.getElementById('allenNote').value   = a.note       || '';
+  }
+
+  document.getElementById('allenCancel').addEventListener('click', renderAllenamenti);
+
+  document.getElementById('allenSave').addEventListener('click', function () {
+    var data = {
+      categoria:  document.getElementById('allenCat').value,
+      giorno:     +document.getElementById('allenGiorno').value || 0,
+      oraInizio:  document.getElementById('allenInizio').value,
+      oraFine:    document.getElementById('allenFine').value,
+      luogo:      document.getElementById('allenLuogo').value.trim(),
+      validoFino: document.getElementById('allenFino').value,
+      note:       document.getElementById('allenNote').value.trim()
+    };
+    if (!data.categoria || !data.giorno || !data.oraInizio) {
+      alert('Categoria, giorno e ora di inizio sono obbligatori.'); return;
+    }
+    if (data.oraFine && data.oraFine <= data.oraInizio) {
+      alert('L\'ora di fine deve essere dopo quella di inizio.'); return;
+    }
+
+    var before = _editingAllenamento;
+    var ref    = before ? db.collection('allenamenti').doc(before.id) : db.collection('allenamenti').doc();
+    var label  = 'Allenamento — ' + data.categoria + ' ' + GIORNI_SETTIMANA[data.giorno] + ' ' + data.oraInizio;
+    var btn    = this;
+    btn.disabled = true;
+
+    ref.set(data)
+      .then(function () {
+        return _logWrite('allenamento', ref.id, label, before ? 'update' : 'create',
+          _diff(before || {}, data, Object.keys(data)));
+      })
+      .then(function () { btn.disabled = false; renderAllenamenti(); })
+      .catch(function (e) { btn.disabled = false; alert('Errore: ' + e.message); });
+  });
+
+  window.AdminActions.editAllenamento = function (id) { _openAllenamentoForm(id); };
+
+  window.AdminActions.deleteAllenamento = function (id) {
+    var target = _allenamentiCache.find(function (a) { return a.id === id; });
+    confirm('Eliminare questo allenamento? Sparirà dal calendario di atleti e genitori.', function () {
+      db.collection('allenamenti').doc(id).delete()
+        .then(function () {
+          return _logWrite('allenamento', id,
+            'Allenamento — ' + (target ? target.categoria + ' ' + GIORNI_SETTIMANA[target.giorno] + ' ' + target.oraInizio : id),
+            'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]);
+        })
+        .then(renderAllenamenti)
+        .catch(function (e) { alert('Errore: ' + e.message); });
+    });
   };
 
   /* ================================================

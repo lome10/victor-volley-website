@@ -9,7 +9,10 @@
   var _atleti  = [];      /* schede visibili a questo account */
   var _current = null;    /* scheda selezionata */
   var _view    = 'home';
-  var _teamsLoaded = false;
+  var _allenamenti = [];  /* orari settimanali, collezione `allenamenti` */
+  var _dataReady   = false;
+  var _dataLoading = false;
+  var _dataWaiters = [];
 
   document.addEventListener('DOMContentLoaded', function () {
 
@@ -52,6 +55,14 @@
     });
 
     document.getElementById('pwdForm').addEventListener('submit', _changePassword);
+
+    document.getElementById('icsAll').addEventListener('click', function () {
+      if (_current) _downloadIcs(_buildIcs(_current, null), _current);
+    });
+    document.getElementById('agendaList').addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-ics]');
+      if (btn && _current) _downloadIcs(_buildIcs(_current, btn.dataset.ics), _current);
+    });
 
   });
 
@@ -97,7 +108,34 @@
       document.getElementById('profiloEmail').textContent = user.email || '';
       _renderChildBar();
       _selectAtleta(_atleti[0].uid);
+      _ensureData(function () { if (_current) _refreshAgendaViews(_current); });
     });
+  }
+
+  /* Partite, squadre e allenamenti si scaricano una volta sola, alla prima necessità. */
+  function _ensureData(cb) {
+    if (_dataReady) { cb(); return; }
+    _dataWaiters.push(cb);
+    if (_dataLoading) return;
+    _dataLoading = true;
+
+    Promise.all([
+      new Promise(function (resolve) { DB.load(['categories', 'seasons', 'players', 'staff', 'partite'], resolve); }),
+      db.collection('allenamenti').get().then(function (snap) {
+        _allenamenti = [];
+        snap.forEach(function (d) { _allenamenti.push(Object.assign({}, d.data(), { id: d.id })); });
+      }).catch(function (e) { console.error('[atleta] allenamenti', e); })
+    ]).then(function () {
+      _dataReady = true;
+      _dataLoading = false;
+      _dataWaiters.splice(0).forEach(function (f) { f(); });
+    });
+  }
+
+  function _refreshAgendaViews(a) {
+    _renderNext(a);
+    if (_view === 'calendario') _renderCalendario(a);
+    if (_view === 'squadra')    _renderSquadra(a);
   }
 
   /* ---------------- selezione atleta ---------------- */
@@ -126,7 +164,7 @@
     _renderCert(_current);
     _renderRate(_current);
     _renderModulo(_current);
-    if (_view === 'squadra') _renderSquadra(_current);
+    if (_dataReady) _refreshAgendaViews(_current);
   }
 
   function _showView(name) {
@@ -137,7 +175,8 @@
     document.querySelectorAll('.al-nav-btn').forEach(function (b) {
       b.classList.toggle('is-active', b.dataset.view === name);
     });
-    if (name === 'squadra' && _current) _renderSquadra(_current);
+    if (name === 'squadra' && _current)    _renderSquadra(_current);
+    if (name === 'calendario' && _current) _renderCalendario(_current);
     window.scrollTo(0, 0);
   }
 
@@ -213,17 +252,227 @@
     }
   }
 
+  /* ---------------- calendario: partite + allenamenti ---------------- */
+
+  var AGENDA_GIORNI_ALLENAMENTI = 14;
+  var MAX_PARTITE_AGENDA = 12;
+
+  function _pad(n) { return (n < 10 ? '0' : '') + n; }
+  function _isoDate(d) { return d.getFullYear() + '-' + _pad(d.getMonth() + 1) + '-' + _pad(d.getDate()); }
+  function _addDays(iso, n) { var d = new Date(iso + 'T00:00:00'); d.setDate(d.getDate() + n); return _isoDate(d); }
+  function _weekday(iso) { return (new Date(iso + 'T00:00:00').getDay() + 6) % 7 + 1; } /* 1=lun … 7=dom */
+
+  function _isHome(p) { return /victor/i.test(p.squadra_casa || ''); }
+
+  /* Eventi futuri della categoria dell'atleta, in ordine cronologico. */
+  function _agenda(a) {
+    if (!a.categoria) return [];
+    var today = _isoDate(new Date());
+    var events = [];
+
+    VV.getPartite()
+      .filter(function (p) { return p.categoria === a.categoria && p.data >= today && p.stato !== 'conclusa'; })
+      .sort(function (x, y) { return (x.data + (x.ora || '')).localeCompare(y.data + (y.ora || '')); })
+      .slice(0, MAX_PARTITE_AGENDA)
+      .forEach(function (p) {
+        events.push({
+          tipo: 'partita', date: p.data, start: p.ora || '', end: '', id: p.id,
+          title: (p.squadra_casa || '') + ' – ' + (p.squadra_ospite || ''),
+          luogo: p.palazzetto || '', home: _isHome(p),
+          diretta: !!(p.spp_code && p.data === today)
+        });
+      });
+
+    _allenamenti.filter(function (t) { return t.categoria === a.categoria; }).forEach(function (t) {
+      for (var i = 0; i < AGENDA_GIORNI_ALLENAMENTI; i++) {
+        var day = _addDays(today, i);
+        if (_weekday(day) !== +t.giorno) continue;
+        if (t.validoFino && day > t.validoFino) break;
+        events.push({
+          tipo: 'allenamento', date: day, start: t.oraInizio || '', end: t.oraFine || '',
+          title: 'Allenamento', luogo: t.luogo || '', note: t.note || ''
+        });
+      }
+    });
+
+    events.sort(function (x, y) { return (x.date + x.start).localeCompare(y.date + y.start); });
+    return events;
+  }
+
+  function _dayLabel(iso) {
+    var today = _isoDate(new Date());
+    var txt = new Date(iso + 'T00:00:00').toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
+    txt = txt.charAt(0).toUpperCase() + txt.slice(1);
+    return iso === today ? 'Oggi · ' + txt : iso === _addDays(today, 1) ? 'Domani · ' + txt : txt;
+  }
+
+  function _mapsLink(luogo) {
+    return '<a class="al-ev-place" href="https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(luogo) +
+      '" target="_blank" rel="noopener">' + _esc(luogo) + '</a>';
+  }
+
+  function _renderNext(a) {
+    var t = document.getElementById('tileNext'), s = document.getElementById('tileNextSub');
+    var next = _agenda(a)[0];
+    if (!a.categoria) { t.textContent = '—'; s.textContent = 'Squadra non ancora assegnata'; return; }
+    if (!next) { t.textContent = 'Nessun impegno'; s.textContent = 'Non ci sono partite o allenamenti in programma'; return; }
+    var d = new Date(next.date + 'T00:00:00').toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' });
+    t.textContent = d.charAt(0).toUpperCase() + d.slice(1) + (next.start ? ' · ' + next.start : '');
+    s.textContent = (next.tipo === 'partita' ? next.title : 'Allenamento') + (next.luogo ? ' — ' + next.luogo : '');
+  }
+
+  function _renderCalendario(a) {
+    var list = document.getElementById('agendaList');
+    var icsBtn = document.getElementById('icsAll');
+    if (!_dataReady) {
+      list.innerHTML = '<p class="al-muted">Caricamento…</p>';
+      _ensureData(function () { if (_view === 'calendario' && _current) _renderCalendario(_current); });
+      return;
+    }
+
+    var events = _agenda(a);
+    icsBtn.classList.toggle('is-hidden', !events.length);
+    document.getElementById('agendaSub').textContent = a.categoria ? a.categoria : 'Partite e allenamenti';
+
+    if (!a.categoria) {
+      list.innerHTML = '<p class="al-muted">La squadra non è ancora stata assegnata.</p>';
+    } else if (!events.length) {
+      list.innerHTML = '<p class="al-muted">Non ci sono partite o allenamenti in programma.</p>';
+    } else {
+      var html = '', lastDay = '';
+      events.forEach(function (ev) {
+        if (ev.date !== lastDay) {
+          html += (lastDay ? '</ul>' : '') + '<h2 class="al-day">' + _esc(_dayLabel(ev.date)) + '</h2><ul class="al-events">';
+          lastDay = ev.date;
+        }
+        var isMatch = ev.tipo === 'partita';
+        html += '<li class="al-event al-event--' + ev.tipo + '">' +
+          '<div class="al-ev-time">' + _esc(ev.start || '—') + (ev.end ? '<span>' + _esc(ev.end) + '</span>' : '') + '</div>' +
+          '<div class="al-ev-body">' +
+            '<div class="al-ev-title">' + _esc(ev.title) + '</div>' +
+            '<div class="al-ev-meta">' +
+              (isMatch ? '<span class="al-badge ' + (ev.home ? 'al-badge--green' : 'al-badge--orange') + '">' + (ev.home ? 'Casa' : 'Trasferta') + '</span> ' : '') +
+              (ev.luogo ? _mapsLink(ev.luogo) : '') +
+            '</div>' +
+            (ev.note ? '<div class="al-ev-note">' + _esc(ev.note) + '</div>' : '') +
+            (isMatch ? '<div class="al-ev-actions">' +
+              (ev.diretta ? '<a class="al-btn-ghost al-btn-sm" href="/diretta">Diretta</a>' : '') +
+              '<button type="button" class="al-btn-ghost al-btn-sm" data-ics="' + _esc(ev.id) + '">Aggiungi al calendario</button></div>' : '') +
+          '</div></li>';
+      });
+      list.innerHTML = html + '</ul>';
+    }
+
+    /* ultimi risultati della categoria */
+    var done = a.categoria ? VV.getPartite()
+      .filter(function (p) { return p.categoria === a.categoria && p.stato === 'conclusa' && p.set_casa != null && p.set_ospite != null; })
+      .sort(function (x, y) { return y.data.localeCompare(x.data); })
+      .slice(0, 3) : [];
+    document.getElementById('risultatiCard').classList.toggle('is-hidden', !done.length);
+    document.getElementById('risultatiList').innerHTML = done.map(function (p) {
+      var home = _isHome(p);
+      var won  = home ? +p.set_casa > +p.set_ospite : +p.set_ospite > +p.set_casa;
+      return '<li class="al-person"><span class="al-badge ' + (won ? 'al-badge--green' : 'al-badge--red') + '">' + (won ? 'Vinta' : 'Persa') + '</span>' +
+        '<span class="al-person-name">' + _esc(p.squadra_casa) + ' – ' + _esc(p.squadra_ospite) + '</span>' +
+        '<span class="al-person-role"><strong>' + _esc(p.set_casa) + '–' + _esc(p.set_ospite) + '</strong> · ' + _fmtDate(p.data) + '</span></li>';
+    }).join('');
+  }
+
+  /* ---------------- export .ics ---------------- */
+
+  function _icsText(s) {
+    return String(s || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+  }
+
+  function _icsFold(line) {
+    var out = [];
+    while (line.length > 73) { out.push(line.slice(0, 73)); line = ' ' + line.slice(73); }
+    out.push(line);
+    return out.join('\r\n');
+  }
+
+  /* orari "floating" (senza fuso): il telefono li legge all'ora locale, cioè quella italiana */
+  function _icsDT(iso, time) { return iso.replace(/-/g, '') + 'T' + (time || '00:00').replace(':', '') + '00'; }
+
+  function _icsPlusMinutes(iso, time, min) {
+    var d = new Date(iso + 'T' + (time || '00:00') + ':00');
+    d.setMinutes(d.getMinutes() + min);
+    return _icsDT(_isoDate(d), _pad(d.getHours()) + ':' + _pad(d.getMinutes()));
+  }
+
+  /* onlyMatchId = null → tutto il calendario (partite future + allenamenti ricorrenti) */
+  function _buildIcs(a, onlyMatchId) {
+    var now = new Date();
+    var stamp = now.toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
+    var today = _isoDate(now);
+    var lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Victor Volley//Area Atleti//IT', 'CALSCALE:GREGORIAN',
+                 'X-WR-CALNAME:' + _icsText('Victor Volley — ' + (a.categoria || ''))];
+
+    VV.getPartite()
+      .filter(function (p) {
+        return p.categoria === a.categoria && p.stato !== 'conclusa' && p.data >= today &&
+               (onlyMatchId == null || String(p.id) === String(onlyMatchId));
+      })
+      .forEach(function (p) {
+        var ora = p.ora || '00:00';
+        lines.push('BEGIN:VEVENT',
+          'UID:partita-' + p.id + '@victorvolley',
+          'DTSTAMP:' + stamp,
+          'DTSTART:' + _icsDT(p.data, ora),
+          'DTEND:' + _icsPlusMinutes(p.data, ora, 120),
+          'SUMMARY:' + _icsText((p.squadra_casa || '') + ' – ' + (p.squadra_ospite || '')),
+          'LOCATION:' + _icsText(p.palazzetto || ''),
+          'DESCRIPTION:' + _icsText('Partita ' + (a.categoria || '') + (_isHome(p) ? ' (in casa)' : ' (in trasferta)')),
+          'END:VEVENT');
+      });
+
+    if (onlyMatchId == null) {
+      _allenamenti.filter(function (t) { return t.categoria === a.categoria; }).forEach(function (t) {
+        var first = null;
+        for (var i = 0; i < 7; i++) {
+          var day = _addDays(today, i);
+          if (_weekday(day) === +t.giorno) { first = day; break; }
+        }
+        if (!first || (t.validoFino && first > t.validoFino)) return;
+        var fine = t.oraFine ? _icsDT(first, t.oraFine) : _icsPlusMinutes(first, t.oraInizio, 90);
+        lines.push('BEGIN:VEVENT',
+          'UID:allenamento-' + t.id + '@victorvolley',
+          'DTSTAMP:' + stamp,
+          'DTSTART:' + _icsDT(first, t.oraInizio),
+          'DTEND:' + fine,
+          'RRULE:FREQ=WEEKLY;' + (t.validoFino ? 'UNTIL=' + t.validoFino.replace(/-/g, '') + 'T235959' : 'COUNT=52'),
+          'SUMMARY:' + _icsText('Allenamento ' + (a.categoria || '')),
+          'LOCATION:' + _icsText(t.luogo || ''),
+          'DESCRIPTION:' + _icsText(t.note || ''),
+          'END:VEVENT');
+      });
+    }
+
+    lines.push('END:VCALENDAR');
+    return lines.map(_icsFold).join('\r\n') + '\r\n';
+  }
+
+  function _downloadIcs(text, a) {
+    var slug = (a.categoria || 'calendario').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    var blob = new Blob([text], { type: 'text/calendar;charset=utf-8' });
+    var url  = URL.createObjectURL(blob);
+    var link = document.createElement('a');
+    link.href = url;
+    link.download = 'victor-volley-' + slug + '.ics';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
   /* ---------------- squadra ---------------- */
 
   function _renderSquadra(a) {
     var el = document.getElementById('squadraContent');
 
-    if (!_teamsLoaded) {
+    if (!_dataReady) {
       el.innerHTML = '<p class="al-muted">Caricamento…</p>';
-      DB.load(['categories', 'seasons', 'players', 'staff'], function () {
-        _teamsLoaded = true;
-        if (_view === 'squadra' && _current) _renderSquadra(_current);
-      });
+      _ensureData(function () { if (_view === 'squadra' && _current) _renderSquadra(_current); });
       return;
     }
 

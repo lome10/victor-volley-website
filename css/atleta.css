@@ -632,3 +632,58 @@ button { font-family: inherit; cursor: pointer; }
   }
   .al-nav-btn.is-active { border-top-color: var(--al-blue); }
 }
+
+/* ================================================
+   CALENDARIO
+================================================ */
+.al-card-action { margin-left: auto; flex-shrink: 0; }
+.al-tile--wide { width: 100%; }
+
+.al-day {
+  font-family: 'Barlow', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--al-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 22px 0 10px;
+}
+.al-day:first-child { margin-top: 0; }
+
+.al-events { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.al-event {
+  display: flex;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--al-border);
+  border-left: 3px solid var(--al-border);
+  border-radius: 8px;
+  background: #FAFAFA;
+}
+.al-event--partita { border-left-color: var(--al-blue); background: #fff; }
+.al-event--allenamento { border-left-color: #94A3B8; }
+
+.al-ev-time {
+  display: flex;
+  flex-direction: column;
+  min-width: 48px;
+  font-family: 'Barlow', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--al-text);
+}
+.al-ev-time span { font-size: 12px; font-weight: 500; color: var(--al-muted); }
+
+.al-ev-body { flex: 1; min-width: 0; }
+.al-ev-title { font-weight: 600; font-size: 14px; }
+.al-ev-meta { margin-top: 4px; font-size: 12px; color: var(--al-muted); display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.al-ev-place { color: var(--al-muted); }
+.al-ev-place:hover { color: var(--al-blue); }
+.al-ev-note { margin-top: 6px; font-size: 12px; color: var(--al-text); }
+.al-ev-actions { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
+
+@media (max-width: 600px) {
+  .al-card-header { flex-wrap: wrap; }
+  .al-card-action { margin-left: 0; }
+  .al-nav-btn span { font-size: 10px; }
+}

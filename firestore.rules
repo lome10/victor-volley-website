@@ -32,6 +32,7 @@ service cloud.firestore {
     match /articles/{document=**}   { allow read: if true; allow write: if isDirigente(); }
     match /matches/{document=**}    { allow read: if true; allow write: if isDirigente(); }
     match /partite/{document=**}    { allow read: if true; allow write: if isDirigente(); }
+    match /allenamenti/{document=**} { allow read: if true; allow write: if isDirigente(); }
     match /albums/{document=**}     { allow read: if true; allow write: if isDirigente(); }
     match /categories/{document=**} { allow read: if true; allow write: if isDirigente(); }
     match /players/{document=**}    { allow read: if true; allow write: if isDirigente(); }
