@@ -55,6 +55,33 @@ service cloud.firestore {
       allow write: if isDirigente();
     }
 
+    // Presenze — la risposta "ci sarò / non ci sarò" di una famiglia a una partita
+    // o a un allenamento. Un documento per evento+atleta (id = eventKey_atletaId),
+    // quindi rispondere di nuovo sovrascrive. Rispondono solo gli account elencati
+    // nelle schede dell'atleta (o l'atleta stesso), e non si può scrivere per altri.
+    match /presenze/{docId} {
+      function possiedeAtleta(atletaId) {
+        return signedIn() && (
+          request.auth.uid == atletaId ||
+          request.auth.uid in get(/databases/$(database)/documents/atleti/$(atletaId)).data.accessUids
+        );
+      }
+      function rispostaValida() {
+        let d = request.resource.data;
+        return d.keys().hasOnly(['eventKey', 'tipo', 'eventoId', 'data', 'categoria', 'atletaId', 'risposta', 'rispostaDa', 'rispostaIl']) &&
+          d.keys().hasAll(['eventKey', 'tipo', 'eventoId', 'data', 'categoria', 'atletaId', 'risposta', 'rispostaDa', 'rispostaIl']) &&
+          d.risposta in ['si', 'no'] &&
+          d.tipo in ['partita', 'allenamento'] &&
+          d.rispostaDa == request.auth.uid &&
+          docId == d.eventKey + '_' + d.atletaId &&
+          possiedeAtleta(d.atletaId) &&
+          d.categoria == get(/databases/$(database)/documents/atleti/$(d.atletaId)).data.categoria;
+      }
+      allow read: if isDirigente() || possiedeAtleta(resource.data.atletaId);
+      allow create, update: if isDirigente() || rispostaValida();
+      allow delete: if isDirigente();
+    }
+
     // Collezioni pubbliche del sito: lettura libera, scrittura solo dirigenti.
     match /articles/{document=**}   { allow read: if true; allow write: if isDirigente(); }
     match /matches/{document=**}    { allow read: if true; allow write: if isDirigente(); }

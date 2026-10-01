@@ -722,3 +722,31 @@ button { font-family: inherit; cursor: pointer; }
 .al-avviso-meta { font-size: 12px; color: var(--al-muted); margin: 4px 0 12px; }
 .al-avviso-text { font-size: 14px; line-height: 1.55; overflow-wrap: anywhere; }
 .al-avviso-att { margin-top: 14px; }
+
+/* ================================================
+   PRESENZE (ci sarò / non ci sarò)
+================================================ */
+#presMsg:empty { display: none; }
+#presMsg { margin: 0 0 12px; }
+
+.al-ev-resp {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.al-resp-label { font-size: 12px; color: var(--al-muted); margin-right: 2px; }
+.al-resp-btn {
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--al-border);
+  background: #fff;
+  color: var(--al-muted);
+  font-size: 12px;
+  font-weight: 600;
+  transition: all var(--al-t);
+}
+.al-resp-btn:hover { color: var(--al-text); border-color: var(--al-text); }
+.al-resp-btn--si.is-active { background: #ECFDF5; border-color: var(--al-green); color: #047857; }
+.al-resp-btn--no.is-active { background: #FEF2F2; border-color: var(--al-red); color: #B91C1C; }

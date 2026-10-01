@@ -9,7 +9,7 @@
   <link rel="preload" href="/assets/fonts/barlow-700-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/manrope-400-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/fonts.css">
-  <link rel="stylesheet" href="/css/admin.css?v=20260929">
+  <link rel="stylesheet" href="/css/admin.css?v=20261001">
   <link rel="stylesheet" href="/css/dirigenti.css?v=20260929">
 </head>
 <body>
@@ -71,6 +71,10 @@
         <a href="#" class="admin-nav-item" data-section="allenamenti">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
           Allenamenti
+        </a>
+        <a href="#" class="admin-nav-item" data-section="presenze">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          Presenze
         </a>
         <a href="#" class="admin-nav-item" data-section="comunicazioni">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
@@ -1053,6 +1057,19 @@
           </div>
 
         </div>
+      </section>
+
+      <!-- ---- PRESENZE (riepilogo risposte per l'allenatore) ---- -->
+      <section id="sectionPresenze" class="admin-section is-hidden">
+        <div class="ga-info" style="margin-bottom:24px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Le risposte "ci sarò / non ci sarò" di atleti e genitori alle partite e agli allenamenti della categoria. Sono solo un'indicazione: chi non ha risposto non è per forza assente.
+        </div>
+        <div class="form-group" style="max-width:280px;margin-bottom:24px">
+          <label class="form-label" for="presCat">Categoria</label>
+          <select id="presCat" class="form-input"></select>
+        </div>
+        <div id="presenzeBody"></div>
       </section>
 
       <!-- ---- AVVISI (comunicazioni a atleti e genitori) ---- -->
@@ -2185,7 +2202,7 @@
   <script src="/js/config.js?v=20260928"></script>
   <script src="/js/photodb.js?v=20260929"></script>
   <script src="/js/girone.js?v=20260719"></script>
-  <script src="/js/admin.js?v=20261001c"></script>
+  <script src="/js/admin.js?v=20261001d"></script>
   <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

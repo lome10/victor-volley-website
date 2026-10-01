@@ -13,6 +13,10 @@
   var _avvisiError = false;
   var _avvisiToken = 0;   /* scarta le risposte di un atleta già deselezionato */
   var _seenBefore  = '';  /* "ultima lettura" prima di aprire la scheda Avvisi: serve a evidenziare i nuovi */
+  var _presenze      = {};  /* risposte dell'atleta selezionato: eventKey → 'si' | 'no' */
+  var _presenzeReady = false;
+  var _presToken     = 0;
+  var _agendaEvents  = {};  /* eventKey → evento mostrato nel calendario */
   var _allenamenti = [];  /* orari settimanali, collezione `allenamenti` */
   var _dataReady   = false;
   var _dataLoading = false;
@@ -70,6 +74,8 @@
       if (_current) _downloadIcs(_buildIcs(_current, null), _current);
     });
     document.getElementById('agendaList').addEventListener('click', function (e) {
+      var resp = e.target.closest('[data-resp]');
+      if (resp && _current) { _setPresenza(_current, resp.dataset.key, resp.dataset.resp); return; }
       var btn = e.target.closest('[data-ics]');
       if (btn && _current) _downloadIcs(_buildIcs(_current, btn.dataset.ics), _current);
     });
@@ -144,6 +150,7 @@
 
   function _refreshAgendaViews(a) {
     _renderNext(a);
+    _renderTodo(a);
     if (_view === 'calendario') _renderCalendario(a);
     if (_view === 'squadra')    _renderSquadra(a);
   }
@@ -175,6 +182,9 @@
     _renderRate(_current);
     _renderModulo(_current);
     if (_dataReady) _refreshAgendaViews(_current);
+    _presenze = {};
+    _presenzeReady = false;
+    _loadPresenze(_current);
     _avvisi = [];
     _avvisiError = false;
     _seenBefore = _getLastSeen(_current);
@@ -251,6 +261,14 @@
         lvl: _avvisi.some(function (v) { return v.importante && _isUnread(a, v); }) ? 'red' : 'orange',
         text: n === 1 ? 'Hai 1 avviso non letto.' : 'Hai ' + n + ' avvisi non letti.',
         go: 'avvisi'
+      });
+    }
+    var daConfermare = _presenzeDaConfermare(a);
+    if (daConfermare) {
+      items.push({
+        lvl: 'orange',
+        text: daConfermare === 1 ? 'Conferma la presenza a 1 impegno dei prossimi 7 giorni.' : 'Conferma la presenza a ' + daConfermare + ' impegni dei prossimi 7 giorni.',
+        go: 'calendario'
       });
     }
     document.getElementById('todoList').innerHTML = items.length
@@ -390,6 +408,72 @@
     _setLastSeen(a, _avvisi[0].createdAt || new Date().toISOString());
   }
 
+  /* ---------------- presenze: "ci sarò / non ci sarò" ---------------- */
+
+  var PRESENZE_PROMEMORIA_GIORNI = 7;
+
+  function _presenzeDaConfermare(a) {
+    if (!_dataReady || !_presenzeReady || !a.categoria) return 0;
+    var limit = _addDays(_isoDate(new Date()), PRESENZE_PROMEMORIA_GIORNI);
+    return _agenda(a).filter(function (ev) { return ev.date <= limit && !_presenze[ev.key]; }).length;
+  }
+
+  function _loadPresenze(a) {
+    var token = ++_presToken;
+    db.collection('presenze').where('atletaId', '==', a.uid).get()
+      .then(function (snap) {
+        if (token !== _presToken) return;
+        _presenze = {};
+        snap.forEach(function (d) { var x = d.data(); _presenze[x.eventKey] = x.risposta; });
+        _presenzeReady = true;
+      })
+      .catch(function (e) {
+        if (token !== _presToken) return;
+        /* senza le risposte non si può dire cosa manca: niente promemoria, ma il calendario funziona */
+        console.error('[atleta] presenze', e);
+        _presenzeReady = false;
+      })
+      .then(function () {
+        if (token !== _presToken) return;
+        if (_view === 'calendario') _renderCalendario(a);
+        _renderTodo(a);
+      });
+  }
+
+  function _respHtml(a, ev) {
+    var r = _presenze[ev.key];
+    return '<div class="al-ev-resp" role="group" aria-label="Presenza di ' + _esc(a.nome || '') + '">' +
+      '<span class="al-resp-label">' + _esc(a.nome || 'Presenza') + ':</span>' +
+      '<button type="button" class="al-resp-btn al-resp-btn--si' + (r === 'si' ? ' is-active' : '') + '" data-resp="si" data-key="' + _esc(ev.key) + '" aria-pressed="' + (r === 'si') + '">Ci sarò</button>' +
+      '<button type="button" class="al-resp-btn al-resp-btn--no' + (r === 'no' ? ' is-active' : '') + '" data-resp="no" data-key="' + _esc(ev.key) + '" aria-pressed="' + (r === 'no') + '">Non ci sarò</button>' +
+    '</div>';
+  }
+
+  function _setPresenza(a, key, risposta) {
+    var ev = _agendaEvents[key];
+    if (!ev || (risposta !== 'si' && risposta !== 'no') || _presenze[key] === risposta) return;
+
+    var prev = _presenze[key];
+    var msg  = document.getElementById('presMsg');
+    msg.textContent = '';
+    _presenze[key] = risposta;
+    _renderCalendario(a);
+    _renderTodo(a);
+
+    db.collection('presenze').doc(key + '_' + a.uid).set({
+      eventKey: key, tipo: ev.tipo, eventoId: ev.eventoId, data: ev.date,
+      categoria: a.categoria, atletaId: a.uid, risposta: risposta,
+      rispostaDa: _user.uid, rispostaIl: new Date().toISOString()
+    }).catch(function (e) {
+      console.error('[atleta] presenza', e);
+      if (_current !== a) return;
+      if (prev) _presenze[key] = prev; else delete _presenze[key];
+      msg.textContent = 'Non sono riuscito a salvare la risposta. Riprova.';
+      _renderCalendario(a);
+      _renderTodo(a);
+    });
+  }
+
   /* ---------------- calendario: partite + allenamenti ---------------- */
 
   var AGENDA_GIORNI_ALLENAMENTI = 14;
@@ -399,6 +483,8 @@
   function _isoDate(d) { return d.getFullYear() + '-' + _pad(d.getMonth() + 1) + '-' + _pad(d.getDate()); }
   function _addDays(iso, n) { var d = new Date(iso + 'T00:00:00'); d.setDate(d.getDate() + n); return _isoDate(d); }
   function _weekday(iso) { return (new Date(iso + 'T00:00:00').getDay() + 6) % 7 + 1; } /* 1=lun … 7=dom */
+
+  function _safeId(s) { return String(s).replace(/\//g, '_'); }
 
   function _isHome(p) { return /victor/i.test(p.squadra_casa || ''); }
 
@@ -415,6 +501,7 @@
       .forEach(function (p) {
         events.push({
           tipo: 'partita', date: p.data, start: p.ora || '', end: '', id: p.id,
+          key: _safeId('p-' + p.id), eventoId: String(p.id),
           title: (p.squadra_casa || '') + ' – ' + (p.squadra_ospite || ''),
           luogo: p.palazzetto || '', home: _isHome(p),
           diretta: !!(p.spp_code && p.data === today)
@@ -428,6 +515,7 @@
         if (t.validoFino && day > t.validoFino) break;
         events.push({
           tipo: 'allenamento', date: day, start: t.oraInizio || '', end: t.oraFine || '',
+          key: _safeId('a-' + t.id + '-' + day), eventoId: String(t.id),
           title: 'Allenamento', luogo: t.luogo || '', note: t.note || ''
         });
       }
@@ -478,7 +566,9 @@
       list.innerHTML = '<p class="al-muted">Non ci sono partite o allenamenti in programma.</p>';
     } else {
       var html = '', lastDay = '';
+      _agendaEvents = {};
       events.forEach(function (ev) {
+        _agendaEvents[ev.key] = ev;
         if (ev.date !== lastDay) {
           html += (lastDay ? '</ul>' : '') + '<h2 class="al-day">' + _esc(_dayLabel(ev.date)) + '</h2><ul class="al-events">';
           lastDay = ev.date;
@@ -493,6 +583,7 @@
               (ev.luogo ? _mapsLink(ev.luogo) : '') +
             '</div>' +
             (ev.note ? '<div class="al-ev-note">' + _esc(ev.note) + '</div>' : '') +
+            _respHtml(a, ev) +
             (isMatch ? '<div class="al-ev-actions">' +
               (ev.diretta ? '<a class="al-btn-ghost al-btn-sm" href="/diretta">Diretta</a>' : '') +
               '<button type="button" class="al-btn-ghost al-btn-sm" data-ics="' + _esc(ev.id) + '">Aggiungi al calendario</button></div>' : '') +
