@@ -2275,6 +2275,7 @@
         _atletiCache.push(Object.assign({}, dati[doc.id] || {}, doc.data(), { uid: doc.id }));
       });
       _renderAtletiRows();
+      if (_pendingOpenAtleta) { var daAprire = _pendingOpenAtleta; _pendingOpenAtleta = null; _openAtletaDetail(daAprire); }
       _migrateAccessiAtleti();
       _loadAccessiDocs();
     }).catch(function (err) {
@@ -2619,6 +2620,7 @@
       Object.assign(a, pub, riservati);
       document.getElementById('atletaDetailNome').textContent = (a.cognome || '') + ' ' + (a.nome || '');
       _reconcileAccessi();
+      (a.categoria ? _ensureIscrizione(a) : _syncIscrizione(a)).catch(function (e) { console.error('[Atleti] iscrizione', e); });
       msg.textContent = 'Salvato.'; msg.className = 'af-msg is-ok';
       var dopo   = Object.assign({}, pub, riservati);
       var campi  = Object.keys(dopo).filter(function (k) {
@@ -2679,9 +2681,9 @@
   }
 
   function _atletaRowHtml(a) {
-    var rate    = a.rate || [];
-    var totale  = rate.reduce(function (s, r) { return s + (+r.importo || 0); }, 0);
-    var saldato = rate.filter(function (r) { return r.pagata; }).reduce(function (s, r) { return s + (+r.importo || 0); }, 0);
+    var tt      = _totaliRateAdmin(a.uid);
+    var totale  = tt.totale;
+    var saldato = tt.saldato;
     var eta     = _atletaEta(a);
     var ruoloNum = [a.ruolo, a.numeroMaglia !== '' && a.numeroMaglia != null ? '#' + a.numeroMaglia : ''].filter(Boolean).join(' · ');
     return '<tr>' +
@@ -2773,6 +2775,235 @@
   }
   document.getElementById('atletiExport').addEventListener('click', _esportaAtletiCsv);
 
+  /* ================================================
+     ISCRIZIONE ALLA STAGIONE E RATE — una sola fonte, il budget
+     La scheda atleta (atleti) è l'anagrafica; per ogni stagione il budget ha una riga
+     "iscrizione" (atletiRette, collegata via atletaId) e le rate (rateAtleti, con
+     atletaId/seasonId/stagione ripetuti per permettere alla famiglia di leggere solo le
+     proprie). Le rate si inseriscono dalla scheda o dal Budget: sono le stesse e
+     alimentano il bilancio; le famiglie le vedono nell'area atleti.
+  ================================================ */
+  function _stagioneCorrenteNome() {
+    var s = _seasons.find(function (x) { return x.id === _currentSeasonId; });
+    return s ? (s.nome || '') : '';
+  }
+
+  function _iscrizioneOf(atletaId) {
+    return _atletiRette.find(function (x) { return x.atletaId === atletaId; }) || null;
+  }
+
+  function _rateOfAtleta(atletaId) {
+    return _rateAtleti.filter(function (r) { return r.atletaId === atletaId; });
+  }
+
+  function _totaliRateAdmin(atletaId) {
+    var rate = _rateOfAtleta(atletaId).filter(function (r) { return r.seasonId === _currentSeasonId; });
+    var totale  = rate.reduce(function (s, r) { return s + (+r.importo || 0); }, 0);
+    var saldato = rate.filter(function (r) { return r.pagata; }).reduce(function (s, r) { return s + (+r.importo || 0); }, 0);
+    return { totale: totale, saldato: saldato };
+  }
+
+  function _refreshBudgetViews() {
+    _renderRette(); _renderStatCards(); _renderCharts(); _renderBilancio();
+  }
+
+  /* Categoria del budget con lo stesso nome di quella dell'atleta; se manca in questa stagione la crea. */
+  function _ensureCategoriaAtleti(nome) {
+    nome = (nome || '').trim();
+    if (!nome) return Promise.resolve('');
+    var key = nome.toLowerCase();
+    var found = _categorieAtleti.find(function (c) { return (c.nome || '').trim().toLowerCase() === key; });
+    if (found) return Promise.resolve(found.id);
+    var data = { seasonId: _currentSeasonId, nome: nome, rettaUnitaria: 0 };
+    var ref  = db.collection('categorieAtleti').doc();
+    return ref.set(data).then(function () {
+      data.id = ref.id;
+      _categorieAtleti.push(data);
+      return _logWrite('categoriaAtleti', ref.id, 'Categoria — ' + nome, 'create', _diff({}, data, Object.keys(data)));
+    }).then(function () { return ref.id; });
+  }
+
+  /* Allinea nome, cognome e categoria dell'iscrizione a quelli della scheda. */
+  function _syncIscrizione(a, quiet) {
+    var isc = _iscrizioneOf(a.uid);
+    if (!isc) return Promise.resolve();
+    return _ensureCategoriaAtleti(a.categoria).then(function (catId) {
+      var patch = {};
+      if ((isc.nome || '') !== (a.nome || ''))         patch.nome = a.nome || '';
+      if ((isc.cognome || '') !== (a.cognome || ''))   patch.cognome = a.cognome || '';
+      if ((isc.categoriaAtletiId || '') !== (catId || '')) patch.categoriaAtletiId = catId || '';
+      var chiavi = Object.keys(patch);
+      if (!chiavi.length) return;
+      var old = {};
+      chiavi.forEach(function (k) { old[k] = isc[k] || ''; });
+      Object.assign(isc, patch);
+      return db.collection('atletiRette').doc(isc.id).update(patch)
+        .then(function () { return _logWrite('atletaRetta', isc.id, 'Atleta — ' + (a.cognome || '') + ' ' + (a.nome || ''), 'update', _diff(old, patch, chiavi)); })
+        .then(function () { if (!quiet) _refreshBudgetViews(); });
+    });
+  }
+
+  /* Iscrive l'atleta alla stagione corrente (se non lo è già) e ne restituisce la riga. */
+  function _ensureIscrizione(a, quiet) {
+    var esistente = _iscrizioneOf(a.uid);
+    if (esistente) return _syncIscrizione(a, quiet).then(function () { return esistente; });
+    return _ensureCategoriaAtleti(a.categoria).then(function (catId) {
+      var data = {
+        seasonId: _currentSeasonId, nome: a.nome || '', cognome: a.cognome || '',
+        categoriaAtletiId: catId || '', atletaId: a.uid, createdAt: new Date().toISOString()
+      };
+      var ref = db.collection('atletiRette').doc();
+      return ref.set(data).then(function () {
+        data.id = ref.id;
+        _atletiRette.push(data);
+        return _logWrite('atletaRetta', ref.id, 'Atleta — ' + data.cognome + ' ' + data.nome, 'create', _diff({}, data, Object.keys(data)));
+      }).then(function () {
+        if (!quiet) _refreshBudgetViews();
+        return data;
+      });
+    });
+  }
+
+  /* ---- Tab "Rate & Quote" della scheda ---- */
+  function _renderRateAdmin() {
+    var el = document.getElementById('rateAdminList');
+    var a  = _editingAtleta;
+    var rate = a ? _rateOfAtleta(a.uid).slice().sort(function (x, y) {
+      return (x.scadenza || '9999-12-31').localeCompare(y.scadenza || '9999-12-31');
+    }) : [];
+
+    if (!rate.length) {
+      el.innerHTML = '<p style="color:var(--a-muted);font-size:13px">Nessuna quota inserita per ' + esc(_stagioneCorrenteNome() || 'questa stagione') + '.</p>';
+      return;
+    }
+    el.innerHTML = rate.map(function (r) {
+      return '<div class="atleta-rate-item">' +
+        '<div class="atleta-rate-info">' +
+          '<div class="atleta-rate-desc">' + esc(r.note || 'Quota') + '</div>' +
+          '<div class="atleta-rate-meta">Scadenza: ' + _fmtDate(r.scadenza) +
+            ' &nbsp;·&nbsp; €' + (+r.importo || 0).toFixed(2) +
+            (r.stagione ? ' &nbsp;·&nbsp; ' + esc(r.stagione) : '') +
+            (r.pagata && r.dataPagamento ? ' &nbsp;·&nbsp; pagata il ' + _fmtDate(r.dataPagamento) : '') + '</div>' +
+        '</div>' +
+        '<div class="atleta-rate-actions">' +
+          '<button class="btn-ghost" style="font-size:12px;padding:5px 10px;color:' +
+            (r.pagata ? 'var(--a-green)' : 'var(--a-text)') +
+            '" onclick="AdminActions.toggleRataScheda(\'' + esc(r.id) + '\')">' +
+            (r.pagata ? '✓ Pagata' : 'Segna pagata') +
+          '</button>' +
+          '<button class="btn-icon btn-icon--danger" onclick="AdminActions.deleteRataScheda(\'' + esc(r.id) + '\')" title="Rimuovi">' + DEL_ICON_SM + '</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  document.getElementById('rataAdd').addEventListener('click', function () {
+    var a = _editingAtleta;
+    if (!a) return;
+    var desc    = document.getElementById('rataDesc').value.trim();
+    var importo = parseFloat(document.getElementById('rataImporto').value) || 0;
+    var scad    = document.getElementById('rataScadenza').value;
+    if (!desc)    { alert('Inserisci una descrizione.'); return; }
+    if (!importo) { alert('Inserisci un importo.'); return; }
+
+    var btn = this;
+    btn.disabled = true;
+    _ensureIscrizione(a, true).then(function (isc) {
+      var data = {
+        atletaRettaId: isc.id, atletaId: a.uid, seasonId: _currentSeasonId, stagione: _stagioneCorrenteNome(),
+        importo: importo, scadenza: scad, note: desc, pagata: false, dataPagamento: null,
+        createdAt: new Date().toISOString()
+      };
+      var ref = db.collection('rateAtleti').doc();
+      return ref.set(data).then(function () {
+        data.id = ref.id;
+        _rateAtleti.push(data);
+        return _logWrite('rataAtleti', ref.id, 'Rata — ' + (a.cognome || '') + ' ' + (a.nome || ''), 'create', _diff({}, data, Object.keys(data)));
+      });
+    }).then(function () {
+      ['rataDesc', 'rataImporto', 'rataScadenza'].forEach(function (id) { document.getElementById(id).value = ''; });
+      _renderRateAdmin();
+      _renderAtletiRows();
+      _refreshBudgetViews();
+    }).catch(function (e) { alert('Errore: ' + e.message); })
+      .then(function () { btn.disabled = false; });
+  });
+
+  window.AdminActions.toggleRataScheda = function (id) {
+    var r = _rateAtleti.find(function (x) { return x.id === id; });
+    if (r) window.AdminActions.toggleRataAtleta(id, !r.pagata);
+  };
+  window.AdminActions.deleteRataScheda = function (id) { window.AdminActions.deleteRataAtleta(id); };
+
+  /* ---- Eliminazione atleta: scheda, anagrafica riservata, iscrizioni e rate di ogni stagione ---- */
+  window.AdminActions.deleteAtleta = function (uid) {
+    var target = _atletiCache.find(function (a) { return a.uid === uid; });
+    var rate   = _rateOfAtleta(uid);
+    var pagato = rate.filter(function (r) { return r.pagata; }).reduce(function (s, r) { return s + (+r.importo || 0); }, 0);
+    var testo  = 'Eliminare l\'atleta dal gestionale? Le credenziali Firebase resteranno attive.';
+    if (rate.length) {
+      testo += ' Verranno eliminate anche ' + rate.length + (rate.length === 1 ? ' rata' : ' rate') +
+        (pagato ? ' (già incassati €' + pagato.toFixed(2) + ': spariranno dal bilancio)' : '') + '.';
+    }
+    confirm(testo, function () {
+      Promise.all([
+        db.collection('atletiRette').where('atletaId', '==', uid).get(),
+        db.collection('rateAtleti').where('atletaId', '==', uid).get()
+      ]).then(function (res) {
+        var batch = db.batch();
+        batch.delete(db.collection('atleti').doc(uid));
+        batch.delete(db.collection('atletiDati').doc(uid));
+        res[0].forEach(function (d) { batch.delete(d.ref); });
+        res[1].forEach(function (d) { batch.delete(d.ref); });
+        return batch.commit();
+      }).then(function () {
+        return _logWrite('atleta', uid, 'Atleta — ' + (target ? target.cognome + ' ' + target.nome : uid), 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]);
+      }).then(function () {
+        _atletiCache = _atletiCache.filter(function (a) { return a.uid !== uid; });
+        _atletiRette = _atletiRette.filter(function (x) { return x.atletaId !== uid; });
+        _rateAtleti  = _rateAtleti.filter(function (r) { return r.atletaId !== uid; });
+        _reconcileAccessi();
+        _renderAtletiRows();
+        _refreshBudgetViews();
+      }).catch(function (e) { alert('Errore: ' + e.message); });
+    });
+  };
+
+  /* ---- Dal Budget: apri la scheda, nuovo atleta, iscrizione di massa ---- */
+  var _pendingOpenAtleta = null;
+
+  window.AdminActions.apriSchedaAtleta = function (atletaId) {
+    _pendingOpenAtleta = atletaId;
+    goTo('atleti');
+  };
+
+  window.AdminActions.nuovoAtletaDaBudget = function () {
+    goTo('atleti');
+    _openAtletaForm();
+  };
+
+  document.getElementById('iscriviAtletiBtn').addEventListener('click', function () {
+    var btn = this;
+    btn.disabled = true;
+    Promise.all([db.collection('atleti').get(), db.collection('atletiDati').get()]).then(function (res) {
+      var dati = {};
+      res[1].forEach(function (d) { dati[d.id] = d.data(); });
+      var tutti = [];
+      res[0].forEach(function (d) { tutti.push(Object.assign({}, dati[d.id] || {}, d.data(), { uid: d.id })); });
+      var daIscrivere = tutti.filter(function (a) { return a.categoria && !_iscrizioneOf(a.uid); });
+      if (!daIscrivere.length) { alert('Tutti gli atleti con una categoria sono già iscritti a questa stagione.'); return; }
+
+      confirm('Iscrivere ' + daIscrivere.length + (daIscrivere.length === 1 ? ' atleta' : ' atleti') + ' alla stagione ' +
+              (_stagioneCorrenteNome() || 'corrente') + '? Le categorie mancanti verranno create con retta 0.', function () {
+        daIscrivere.reduce(function (chain, a) {
+          return chain.then(function () { return _ensureIscrizione(a, true); });
+        }, Promise.resolve()).then(_refreshBudgetViews)
+          .catch(function (e) { alert('Errore: ' + e.message); });
+      });
+    }).catch(function (e) { alert('Errore: ' + e.message); })
+      .then(function () { btn.disabled = false; });
+  });
+
   /* ---- Nuovo atleta form ---- */
 
   function _openAtletaForm() {
@@ -2833,6 +3064,9 @@
           atleta = data;
           _atletiCache.push(data);
           return _logWrite('atleta', ref.id, _atletaLabel(data), 'create', _diff({}, data, Object.keys(data)));
+        }).then(function () {
+          /* l'atleta è già salvato: un problema sul budget non deve far fallire la creazione */
+          return data.categoria ? _ensureIscrizione(data).catch(function (e) { console.error('[Atleti] iscrizione', e); }) : null;
         });
       })
       .then(function () {
@@ -2996,62 +3230,6 @@
       });
   });
 
-  /* ---- Rate / Quote ---- */
-  function _renderRateAdmin() {
-    var rate = (_editingAtleta && _editingAtleta.rate) || [];
-    var el   = document.getElementById('rateAdminList');
-
-    if (!rate.length) {
-      el.innerHTML = '<p style="color:var(--a-muted);font-size:13px">Nessuna quota inserita.</p>';
-      return;
-    }
-
-    el.innerHTML = rate.map(function (r, i) {
-      return '<div class="atleta-rate-item">' +
-        '<div class="atleta-rate-info">' +
-          '<div class="atleta-rate-desc">' + esc(r.descrizione || 'Quota') + '</div>' +
-          '<div class="atleta-rate-meta">Scadenza: ' + _fmtDate(r.scadenza) +
-            ' &nbsp;·&nbsp; €' + (+r.importo || 0).toFixed(2) + '</div>' +
-        '</div>' +
-        '<div class="atleta-rate-actions">' +
-          '<button class="btn-ghost" style="font-size:12px;padding:5px 10px;color:' +
-            (r.pagata ? 'var(--a-green)' : 'var(--a-text)') +
-            '" onclick="AdminActions.toggleRata(' + i + ')">' +
-            (r.pagata ? '✓ Pagata' : 'Segna pagata') +
-          '</button>' +
-          '<button class="btn-icon btn-icon--danger" onclick="AdminActions.deleteRata(' + i + ')" title="Rimuovi">' +
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>' +
-          '</button>' +
-        '</div>' +
-      '</div>';
-    }).join('');
-  }
-
-  document.getElementById('rataAdd').addEventListener('click', function () {
-    if (!_editingAtleta) return;
-    var desc    = document.getElementById('rataDesc').value.trim();
-    var importo = parseFloat(document.getElementById('rataImporto').value) || 0;
-    var scad    = document.getElementById('rataScadenza').value;
-    if (!desc) { alert('Inserisci una descrizione.'); return; }
-
-    if (!_editingAtleta.rate) _editingAtleta.rate = [];
-    var before = _editingAtleta.rate.map(function (r) { return Object.assign({}, r); });
-    _editingAtleta.rate.push({
-      id: Date.now().toString(), descrizione: desc,
-      importo: importo, scadenza: scad, pagata: false, dataPagamento: null
-    });
-
-    db.collection('atleti').doc(_editingAtleta.uid).update({ rate: _editingAtleta.rate })
-      .then(function () { return _logWrite('atleta', _editingAtleta.uid, 'Atleta — ' + _editingAtleta.cognome + ' ' + _editingAtleta.nome, 'update', _diff({ rate: before }, { rate: _editingAtleta.rate }, ['rate'])); })
-      .then(function () {
-        document.getElementById('rataDesc').value    = '';
-        document.getElementById('rataImporto').value = '';
-        document.getElementById('rataScadenza').value = '';
-        _renderRateAdmin();
-      })
-      .catch(function (e) { alert('Errore: ' + e.message); });
-  });
-
   /* ---- Accessi (atleta + genitori) ---- */
   function _renderAccessiAdmin() {
     var el  = document.getElementById('accessiList');
@@ -3125,47 +3303,6 @@
 
   /* ---- AdminActions: atleti ---- */
   window.AdminActions.editAtleta = function (uid) { _openAtletaDetail(uid); };
-
-  window.AdminActions.deleteAtleta = function (uid) {
-    var target = _atletiCache.find(function (a) { return a.uid === uid; });
-    confirm(
-      'Eliminare l\'atleta dal gestionale? Le credenziali Firebase resteranno attive.',
-      function () {
-        db.batch().delete(db.collection('atleti').doc(uid)).delete(db.collection('atletiDati').doc(uid)).commit()
-          .then(function () {
-            return _logWrite('atleta', uid, 'Atleta — ' + (target ? target.cognome + ' ' + target.nome : uid), 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]);
-          })
-          .then(function () {
-            _atletiCache = _atletiCache.filter(function (a) { return a.uid !== uid; });
-            _reconcileAccessi();
-            _renderAtletiRows();
-          })
-          .catch(function (e) { alert('Errore: ' + e.message); });
-      }
-    );
-  };
-
-  window.AdminActions.toggleRata = function (idx) {
-    if (!_editingAtleta || !_editingAtleta.rate) return;
-    var before = _editingAtleta.rate.map(function (r) { return Object.assign({}, r); });
-    var r = _editingAtleta.rate[idx];
-    r.pagata = !r.pagata;
-    r.dataPagamento = r.pagata ? new Date().toISOString().slice(0, 10) : null;
-    db.collection('atleti').doc(_editingAtleta.uid).update({ rate: _editingAtleta.rate })
-      .then(function () { return _logWrite('atleta', _editingAtleta.uid, 'Atleta — ' + _editingAtleta.cognome + ' ' + _editingAtleta.nome, 'update', _diff({ rate: before }, { rate: _editingAtleta.rate }, ['rate'])); })
-      .then(_renderRateAdmin)
-      .catch(function (e) { alert('Errore: ' + e.message); });
-  };
-
-  window.AdminActions.deleteRata = function (idx) {
-    if (!_editingAtleta || !_editingAtleta.rate) return;
-    var before = _editingAtleta.rate.map(function (r) { return Object.assign({}, r); });
-    _editingAtleta.rate.splice(idx, 1);
-    db.collection('atleti').doc(_editingAtleta.uid).update({ rate: _editingAtleta.rate })
-      .then(function () { return _logWrite('atleta', _editingAtleta.uid, 'Atleta — ' + _editingAtleta.cognome + ' ' + _editingAtleta.nome, 'update', _diff({ rate: before }, { rate: _editingAtleta.rate }, ['rate'])); })
-      .then(_renderRateAdmin)
-      .catch(function (e) { alert('Errore: ' + e.message); });
-  };
 
   /* ================================================
      AVVISI (collezione `comunicazioni`, letta dall'area atleti)
@@ -6767,7 +6904,7 @@
   function _renderAtletiRette() {
     var body = document.getElementById('atletiRetteBody');
     if (!body) return;
-    if (!_atletiRette.length) { body.innerHTML = '<tr><td colspan="6" class="dg-empty">Nessun atleta per questa stagione.</td></tr>'; return; }
+    if (!_atletiRette.length) { body.innerHTML = '<tr><td colspan="6" class="dg-empty">Nessun atleta iscritto a questa stagione. Aggiungili dalla sezione Atleti.</td></tr>'; return; }
     var list = _atletiRette.slice().sort(function (a, b) { return (a.cognome || '').localeCompare(b.cognome || ''); });
     body.innerHTML = list.map(function (a) {
       var cat = _categorieAtleti.find(function (c) { return c.id === a.categoriaAtletiId; });
@@ -6775,16 +6912,20 @@
       var pagate = rate.filter(function (r) { return r.pagata; });
       var incassato = pagate.reduce(function (s, r) { return s + (+r.importo || 0); }, 0);
       var totale = rate.reduce(function (s, r) { return s + (+r.importo || 0); }, 0);
-      return '<tr>' +
-        '<td><input type="text" class="dg-table-input" value="' + esc(a.nome) + '" data-id="' + a.id + '" data-field="nome" onchange="DG.saveAtletaRettaField(this)"></td>' +
-        '<td><input type="text" class="dg-table-input" value="' + esc(a.cognome) + '" data-id="' + a.id + '" data-field="cognome" onchange="DG.saveAtletaRettaField(this)"></td>' +
-        '<td><select class="dg-table-input" data-id="' + a.id + '" data-field="categoriaAtletiId" onchange="DG.saveAtletaRettaField(this)">' + _categoriaAtletiOptionsHtml(a.categoriaAtletiId) + '</select></td>' +
+      var collegato = !!a.atletaId;
+      var celle = collegato
+        ? '<td>' + esc(a.nome) + '</td><td>' + esc(a.cognome) + '</td><td>' + esc(cat ? cat.nome : '—') + '</td>'
+        : '<td><input type="text" class="dg-table-input" value="' + esc(a.nome) + '" data-id="' + a.id + '" data-field="nome" onchange="DG.saveAtletaRettaField(this)"></td>' +
+          '<td><input type="text" class="dg-table-input" value="' + esc(a.cognome) + '" data-id="' + a.id + '" data-field="cognome" onchange="DG.saveAtletaRettaField(this)"></td>' +
+          '<td><select class="dg-table-input" data-id="' + a.id + '" data-field="categoriaAtletiId" onchange="DG.saveAtletaRettaField(this)">' + _categoriaAtletiOptionsHtml(a.categoriaAtletiId) + '</select></td>';
+      var azioni = '<button class="dg-btn-ghost dg-btn-sm" onclick="DG.manageRateAtleta(\'' + a.id + '\')">Gestisci rate</button> ' +
+        (collegato
+          ? '<button class="dg-btn-ghost dg-btn-sm" title="Modifica anagrafica, categoria e accessi" onclick="DG.apriSchedaAtleta(\'' + esc(a.atletaId) + '\')">Scheda</button>'
+          : '<button class="dg-btn-icon-only" title="Elimina" onclick="DG.deleteAtletaRetta(\'' + a.id + '\')">' + _delIconSm() + '</button>');
+      return '<tr>' + celle +
         '<td>' + pagate.length + '/' + rate.length + ' pagate' + (rate.length ? ' — €' + Math.round(totale).toLocaleString('it-IT') : '') + '</td>' +
         '<td>€' + Math.round(incassato).toLocaleString('it-IT') + '</td>' +
-        '<td>' +
-          '<button class="dg-btn-ghost dg-btn-sm" onclick="DG.manageRateAtleta(\'' + a.id + '\')">Gestisci rate</button> ' +
-          '<button class="dg-btn-icon-only" title="Elimina" onclick="DG.deleteAtletaRetta(\'' + a.id + '\')">' + _delIconSm() + '</button>' +
-        '</td>' +
+        '<td>' + azioni + '</td>' +
         '</tr>';
     }).join('');
   }
@@ -6878,12 +7019,13 @@
     var importo = +val('rataAtletaImporto') || 0;
     var scadenza = val('rataAtletaScadenza');
     if (!importo) { alert('Inserisci un importo.'); return; }
+    var a = _atletiRette.find(function (x) { return x.id === _curAtletaRettaId; });
     var data = {
-      atletaRettaId: _curAtletaRettaId, importo: importo, scadenza: scadenza,
-      note: val('rataAtletaNote').trim(), pagata: false, createdAt: new Date().toISOString()
+      atletaRettaId: _curAtletaRettaId, atletaId: (a && a.atletaId) || '', seasonId: _currentSeasonId, stagione: _stagioneCorrenteNome(),
+      importo: importo, scadenza: scadenza,
+      note: val('rataAtletaNote').trim(), pagata: false, dataPagamento: null, createdAt: new Date().toISOString()
     };
     var ref = db.collection('rateAtleti').doc();
-    var a = _atletiRette.find(function (x) { return x.id === _curAtletaRettaId; });
     ref.set(data).then(function () {
       data.id = ref.id;
       _rateAtleti.push(data);
@@ -6894,6 +7036,7 @@
       document.getElementById('rataAtletaNote').value = '';
       _renderRateAtletaModal();
       _renderRette(); _renderStatCards(); _renderCharts();
+      _renderRateAdmin(); _renderAtletiRows();
     }).catch(function (e) { alert('Errore: ' + e.message); });
   }
 
@@ -6901,12 +7044,13 @@
     var r = _rateAtleti.find(function (x) { return x.id === id; });
     if (!r) return;
     var old = { pagata: !!r.pagata };
-    var patch = { pagata: checked };
+    var patch = { pagata: checked, dataPagamento: checked ? new Date().toISOString().slice(0, 10) : null };
     r.pagata = checked;
+    r.dataPagamento = patch.dataPagamento;
     var a = _atletiRette.find(function (x) { return x.id === r.atletaRettaId; });
     db.collection('rateAtleti').doc(id).update(patch)
       .then(function () { return _logWrite('rataAtleti', id, 'Rata — ' + (a ? a.cognome + ' ' + a.nome : ''), 'update', _diff(old, patch, ['pagata'])); })
-      .then(function () { _renderRateAtletaModal(); _renderRette(); _renderStatCards(); _renderCharts(); _renderBilancio(); })
+      .then(function () { _renderRateAtletaModal(); _renderRette(); _renderStatCards(); _renderCharts(); _renderBilancio(); _renderRateAdmin(); _renderAtletiRows(); })
       .catch(function (e) { alert('Errore: ' + e.message); });
   };
 
@@ -6914,12 +7058,13 @@
     var r = _rateAtleti.find(function (x) { return x.id === id; });
     if (!r) return;
     var a = _atletiRette.find(function (x) { return x.id === r.atletaRettaId; });
-    confirm('Eliminare questa rata?', function () {
+    confirm(r.pagata ? 'Questa rata risulta pagata: eliminandola l\'incassato del bilancio diminuisce. Eliminarla?' : 'Eliminare questa rata?', function () {
       db.collection('rateAtleti').doc(id).delete()
         .then(function () { return _logWrite('rataAtleti', id, 'Rata — ' + (a ? a.cognome + ' ' + a.nome : ''), 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]); })
         .then(function () {
           _rateAtleti = _rateAtleti.filter(function (x) { return x.id !== id; });
           _renderRateAtletaModal(); _renderRette(); _renderStatCards(); _renderCharts();
+          _renderRateAdmin(); _renderAtletiRows();
         })
         .catch(function (e) { alert('Errore: ' + e.message); });
     });
@@ -8311,12 +8456,7 @@
     document.getElementById('newCategoriaCancel').addEventListener('click', function () { _closeBudgetModal('newCategoriaModal'); });
     document.getElementById('newCategoriaSave').addEventListener('click', _saveNewCategoria);
 
-    document.getElementById('newAtletaRettaBtn').addEventListener('click', function () {
-      document.getElementById('atletaRettaNomeInput').value = '';
-      document.getElementById('atletaRettaCognomeInput').value = '';
-      document.getElementById('atletaRettaCategoriaSelect').innerHTML = _categoriaAtletiOptionsHtml('');
-      _openBudgetModal('newAtletaRettaModal');
-    });
+    document.getElementById('newAtletaRettaBtn').addEventListener('click', function () { window.AdminActions.nuovoAtletaDaBudget(); });
     document.getElementById('newAtletaRettaClose').addEventListener('click', function () { _closeBudgetModal('newAtletaRettaModal'); });
     document.getElementById('newAtletaRettaCancel').addEventListener('click', function () { _closeBudgetModal('newAtletaRettaModal'); });
     document.getElementById('newAtletaRettaSave').addEventListener('click', _saveNewAtletaRetta);

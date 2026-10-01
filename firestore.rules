@@ -16,6 +16,15 @@ service cloud.firestore {
         exists(/databases/$(database)/documents/dirigenti/$(request.auth.uid));
     }
 
+    // Vero se l'account è l'atleta stesso (id = uid) o è elencato nei suoi accessUids
+    // (genitori compresi). Serve a presenze e rate: non basta essere loggati.
+    function possiedeAtleta(atletaId) {
+      return signedIn() && (
+        request.auth.uid == atletaId ||
+        request.auth.uid in get(/databases/$(database)/documents/atleti/$(atletaId)).data.accessUids
+      );
+    }
+
     // Atleti — dati personali (in gran parte minorenni). Un documento lo leggono
     // gli account elencati in accessUids (l'atleta e/o i genitori); i documenti
     // vecchi, senza accessUids, restano leggibili dall'atleta con id = uid finché
@@ -67,12 +76,6 @@ service cloud.firestore {
     // quindi rispondere di nuovo sovrascrive. Rispondono solo gli account elencati
     // nelle schede dell'atleta (o l'atleta stesso), e non si può scrivere per altri.
     match /presenze/{docId} {
-      function possiedeAtleta(atletaId) {
-        return signedIn() && (
-          request.auth.uid == atletaId ||
-          request.auth.uid in get(/databases/$(database)/documents/atleti/$(atletaId)).data.accessUids
-        );
-      }
       function rispostaValida() {
         let d = request.resource.data;
         return d.keys().hasOnly(['eventKey', 'tipo', 'eventoId', 'data', 'categoria', 'atletaId', 'risposta', 'rispostaDa', 'rispostaIl']) &&
@@ -120,7 +123,12 @@ service cloud.firestore {
     match /bacheca/{document=**}          { allow read, write: if isDirigente(); }
     match /categorieAtleti/{document=**}  { allow read, write: if isDirigente(); }
     match /atletiRette/{document=**}      { allow read, write: if isDirigente(); }
-    match /rateAtleti/{document=**}       { allow read, write: if isDirigente(); }
+    // Rate degli atleti: le scrivono solo i dirigenti; la famiglia legge solo quelle
+    // dei propri atleti (campo atletaId, scritto dal pannello admin).
+    match /rateAtleti/{rataId} {
+      allow read: if isDirigente() || ('atletaId' in resource.data && possiedeAtleta(resource.data.atletaId));
+      allow write: if isDirigente();
+    }
     match /vociSpesa/{document=**}        { allow read, write: if isDirigente(); }
     match /sottospese/{document=**}       { allow read, write: if isDirigente(); }
     match /categorieSpesa/{document=**}   { allow read, write: if isDirigente(); }

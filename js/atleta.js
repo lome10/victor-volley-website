@@ -189,6 +189,7 @@
     _presenze = {};
     _presenzeReady = false;
     _loadPresenze(_current);
+    _loadRate(_current);
     _avvisi = [];
     _avvisiError = false;
     _seenBefore = _getLastSeen(_current);
@@ -410,6 +411,41 @@
 
     /* l'apertura della scheda li segna come letti (su questo dispositivo) */
     _setLastSeen(a, _avvisi[0].createdAt || new Date().toISOString());
+  }
+
+  /* ---------------- quote: arrivano dal budget (rateAtleti), non dalla scheda ---------------- */
+
+  var _rateToken = 0;
+
+  function _loadRate(a) {
+    var token = ++_rateToken;
+    a.rate = [];
+    a.rateErrore = false;
+
+    db.collection('rateAtleti').where('atletaId', '==', a.uid).get()
+      .then(function (snap) {
+        if (token !== _rateToken) return;
+        var rows = [], stagioni = {};
+        snap.forEach(function (d) { var r = d.data(); rows.push(r); if (r.stagione) stagioni[r.stagione] = true; });
+        var piuStagioni = Object.keys(stagioni).length > 1;
+        rows.sort(function (x, y) { return (x.scadenza || '9999-12-31').localeCompare(y.scadenza || '9999-12-31'); });
+        a.rate = rows.map(function (r) {
+          return {
+            descrizione: (r.note || 'Quota') + (piuStagioni && r.stagione ? ' (' + r.stagione + ')' : ''),
+            importo: r.importo, scadenza: r.scadenza, pagata: !!r.pagata, dataPagamento: r.dataPagamento || null
+          };
+        });
+      })
+      .catch(function (e) {
+        if (token !== _rateToken) return;
+        console.error('[atleta] rate', e);
+        a.rateErrore = true;
+      })
+      .then(function () {
+        if (token !== _rateToken || _current !== a) return;
+        _renderRate(a);
+        _renderHome(a);
+      });
   }
 
   /* ---------------- presenze: "ci sarò / non ci sarò" ---------------- */
@@ -801,7 +837,8 @@
       : 'Stagione corrente';
 
     if (!rate.length) {
-      document.getElementById('rateList').innerHTML = '<p class="al-muted">Nessuna quota inserita.</p>';
+      document.getElementById('rateList').innerHTML = '<p class="al-muted">' +
+        (data.rateErrore ? 'Non è stato possibile caricare le quote. Riprova più tardi.' : 'Nessuna quota inserita.') + '</p>';
       return;
     }
 
