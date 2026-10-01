@@ -55,8 +55,8 @@ Piano: file separati caricati in ordine, namespace comune `window.Admin`, nessun
 
 ### Opzionale
 - [x] Sostituita la Cloud Function: email di reset (client) + funzione Vercel `api/set-athlete-password.js`. Rimossi `functions/`, `firebase-functions-compat.js`, `_FUNCTIONS_DEPLOYED`.
-- [ ] **Configurare `FIREBASE_SERVICE_ACCOUNT` su Vercel** (Firebase Console → Impostazioni progetto → Account di servizio → Genera nuova chiave privata; incollare il JSON intero nella variabile d'ambiente, rifare il deploy, poi cancellare il file scaricato). Senza, la password a mano risponde "Funzione non configurata"; l'email di reset funziona comunque.
-- [ ] Provare in produzione: reset email (atleta e genitore) e password a mano.
+- [x] **Configurata `FIREBASE_SERVICE_ACCOUNT` su Vercel** (verificato da fuori: la funzione risponde 405/401 e non 500, quindi vede la chiave; file della chiave cancellato dall'utente) (Firebase Console → Impostazioni progetto → Account di servizio → Genera nuova chiave privata; incollare il JSON intero nella variabile d'ambiente, rifare il deploy, poi cancellare il file scaricato). Senza, la password a mano risponde "Funzione non configurata"; l'email di reset funziona comunque.
+- [x] Provato in produzione dall'utente: reset email (atleta e genitore) e password a mano funzionano.
 - [ ] `npm audit` segnala 9 vulnerabilità moderate nelle dipendenze indirette di `firebase-admin` (`@google-cloud/storage`, ecc.), non usate dalla funzione: ricontrollare ai prossimi aggiornamenti.
 - [ ] Form per inserire i risultati del girone senza passare dal JSON (proposto, non richiesto).
 
@@ -91,3 +91,4 @@ Piano: file separati caricati in ordine, namespace comune `window.Admin`, nessun
 - Deciso che il piano Blaze non si attiva; proposta l'email di reset al posto della Cloud Function.
 - Confermato dall'utente: nessuna verifica ancora fatta su regole Firestore e migrazioni.
 - Implementate entrambe le alternative alla Cloud Function: email di reset (tab Sicurezza + bottone per ogni genitore in Accessi) e funzione Vercel con controllo dirigente. Provata in locale solo la validazione (405/403/401/500); non provata con Firebase reale.
+- L'utente ha creato la chiave e la variabile su Vercel e rifatto il deploy; controllo esterno di `/api/set-athlete-password` su vercel.app e victorvolley.it: funzione attiva e configurata. Provato dall'utente dal pannello: funziona tutto.
