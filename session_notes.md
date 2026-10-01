@@ -9,11 +9,14 @@ Ultimo aggiornamento: 2026-10-01
 
 ## Stato attuale
 
-- Branch `main`, allineato con `origin`.
-- Fix dell'audit del 2026-10-01 (committati):
-  - `js/diretta.js`, `js/girone.js`, `js/partite-live.js`, `js/components.js`: `esc()` ora converte anche `"` in `&quot;`.
-  - `js/atleta.js`: `_driveViewUrl()` accetta solo URL `https://`, altrimenti `#`.
-- Controllata solo la sintassi (`node --check`); non provato nel browser.
+- Branch `main`, allineato con `origin` dopo l'ultimo commit della sessione del 2026-10-01.
+- Regole Firestore pubblicate e uguali al repository; funzione Vercel `api/set-athlete-password` configurata e provata; pulizia del codice morto fatta.
+- Controllo automatico `node scripts/check-admin.js`: OK. Checklist manuale `docs/SMOKE_TEST_ADMIN.md`: **non ancora eseguita** dall'utente.
+
+### Da dove ripartire (prossima sessione)
+1. L'utente esegue la checklist (almeno il giro rapido) e annota l'esito.
+2. Lanciare `node scripts/check-admin.js`, poi iniziare l'estrazione del **Budget & Forecast** da `js/admin.js` (righe 4645+), una sola sezione per volta, definendo prima l'interfaccia condivisa.
+3. Restano da decidere/fare: migrazioni a bottone (immagini Cloudinary, IVA sponsor), cancellazione dei 4 documenti di `matches`, CSP, Supabase, `esc()` centralizzata.
 
 ---
 
@@ -23,7 +26,9 @@ Legenda: `[ ]` aperto · `[x]` fatto · `[~]` in corso
 
 ### Priorità alta
 - [x] Committare e pubblicare i fix dell'audit (vedi sopra).
-- [ ] Scrivere una checklist di smoke test per ogni sezione dell'admin (prerequisito per spezzare il monolite).
+- [x] Checklist di smoke test scritta: `docs/SMOKE_TEST_ADMIN.md` (giro rapido da 5 minuti + sezione per sezione) e controllo automatico `node scripts/check-admin.js` (sintassi, onclick→funzioni, menu→sezioni, id usati dal JS).
+- [ ] **Eseguire una volta la checklist per avere il punto di partenza** (tutto ✔) e annotare l'esito qui, prima di iniziare l'estrazione dal monolite.
+- [ ] Capire quali account usano email `@victorvolley` non reali (atleti/dirigenti): per loro l'email di reset non arriva, serve la password a mano. Il testo in tab Sicurezza ora lo spiega.
 
 ### Monolite `js/admin.js` (8.526 righe, 452 KB)
 Piano: file separati caricati in ordine, namespace comune `window.Admin`, nessun bundler.
@@ -39,7 +44,8 @@ Piano: file separati caricati in ordine, namespace comune `window.Admin`, nessun
 - [x] Eliminato `data/giocatori.json` (nessun riferimento).
 - [x] Eliminato `data/partite.json`; aggiornati commento e messaggio di errore in `partite-live.js` (leggeva già da Firestore).
 - [x] Rimossi `migrateFromLocalStorage` e `migratePartiteToCollection` da `js/db.js` e `setPartite` da `js/data.js` (la raccolta `partite` esiste già; nessun altro uso).
-- [~] Regola `matches` rimossa da `firestore.rules` nel repository, **da pubblicare** (Console → Firestore → Regole, oppure `firebase deploy --only firestore:rules`). da `firestore.rules` (nessuna corrispondenza nel codice). **Nota:** la raccolta `matches` esiste ancora in Firestore con 4 documenti vecchi (logo in base64, schema precedente a `partite`); il codice non la legge. Decidere se cancellare i dati dalla Console prima di togliere la regola.
+- [x] Regola `matches` rimossa dal repository e **pubblicata** sulla Console il 2026-10-01 (17:51). Verificato da fuori: `partite` e `articles` rispondono 200 (letture pubbliche ok); `matches`, `atletiDati`, `atleti`, `budgetSeasons` rispondono 403.
+- [ ] Decidere se cancellare dalla Console i 4 documenti vecchi della raccolta `matches` (logo in base64, non letti dal codice).
 
 ### Sicurezza e infrastruttura
 - [ ] Riscrivere la CSP (oggi `Content-Security-Policy-Report-Only` in `vercel.json`): `script-src 'self'` blocca i 7 script inline di `index.html` e `frame-src` non ammette `maps.google.com`. Non attivarla com'è.
@@ -94,4 +100,5 @@ Piano: file separati caricati in ordine, namespace comune `window.Admin`, nessun
 - L'utente ha creato la chiave e la variabile su Vercel e rifatto il deploy; controllo esterno di `/api/set-athlete-password` su vercel.app e victorvolley.it: funzione attiva e configurata. Provato dall'utente dal pannello: funziona tutto.
 - Verificate le regole Firestore dalla Console: pubblicate e identiche al repository. Nella raccolta `accessi` ci sono già documenti, quindi l'area famiglie è in uso.
 - Verificato che `atleti` (1 documento) ha già `accessUids`/`accessi`. Trovata la raccolta legacy `matches` (4 documenti con immagini base64) non usata dal codice.
-- Pulizia codice morto: eliminati `data/giocatori.json` e `data/partite.json`, rimossi gli helper di migrazione da `db.js`, `setPartite` da `data.js`, regola `matches` da `firestore.rules` (da pubblicare). Controllata solo la sintassi.
+- Pulizia codice morto: eliminati `data/giocatori.json` e `data/partite.json`, rimossi gli helper di migrazione da `db.js`, `setPartite` da `data.js`, regola `matches` da `firestore.rules` (da pubblicare). Controllata solo la sintassi. Regola `matches` pubblicata sulla Console e verificata con richieste non autenticate.
+- Smoke test: creati `docs/SMOKE_TEST_ADMIN.md` e `scripts/check-admin.js` (esito attuale: OK, 72 handler, 16 voci di menu, 388 id; verificato che trovi errori inseriti apposta). Scoperto che le email `@victorvolley` non sono caselle reali: aggiunta la precisazione sul bottone di reset email.
