@@ -27,7 +27,7 @@
      Helpers HTML
   ------------------------------------------------------- */
   function esc(s) {
-    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
   function catCls(cat) { return cat === 'Prima Divisione' ? 'partite-card-cat--magenta' : ''; }

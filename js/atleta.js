@@ -1014,7 +1014,7 @@
     if (!url) return '#';
     var m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
     if (m) return 'https://drive.google.com/file/d/' + m[1] + '/view';
-    return url;
+    return /^https:\/\//i.test(url) ? url : '#';
   }
 
   function _fullName(a) { return ((a.nome || '') + ' ' + (a.cognome || '')).trim(); }
