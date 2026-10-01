@@ -16,10 +16,15 @@ service cloud.firestore {
         exists(/databases/$(database)/documents/dirigenti/$(request.auth.uid));
     }
 
-    // Atleti — dati personali (in gran parte minorenni): un atleta legge solo il
-    // proprio documento (id = uid), tutto il resto è dei dirigenti.
+    // Atleti — dati personali (in gran parte minorenni). Un documento lo leggono
+    // gli account elencati in accessUids (l'atleta e/o i genitori); i documenti
+    // vecchi, senza accessUids, restano leggibili dall'atleta con id = uid finché
+    // il pannello admin non li migra. Tutto il resto è dei dirigenti.
     match /atleti/{atletaId} {
-      allow read: if isDirigente() || (signedIn() && request.auth.uid == atletaId);
+      allow read: if isDirigente() || (signedIn() && (
+        request.auth.uid == atletaId ||
+        ('accessUids' in resource.data && request.auth.uid in resource.data.accessUids)
+      ));
       allow write: if isDirigente();
     }
 

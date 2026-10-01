@@ -2276,10 +2276,105 @@
         return da < db_ ? -1 : da > db_ ? 1 : 0;
       });
       _renderAtletiRows();
+      _migrateAccessiAtleti();
     }).catch(function (err) {
       console.error('[Atleti]', err);
       document.getElementById('atletiBody').innerHTML =
         '<tr><td colspan="6" style="text-align:center;color:var(--a-red)">Errore nel caricamento.</td></tr>';
+    });
+  }
+
+  /* ---- Accessi: atleta e/o genitori che vedono la scheda ----
+     Ogni atleta ha `accessi` [{uid,email,ruolo:'atleta'|'genitore',nome}] e
+     `accessUids` (solo gli uid, serve alle regole Firestore e alla query lato
+     atleta). I documenti creati prima di questa funzione hanno solo email + id=uid:
+     _accessiOf() li legge comunque, _migrateAccessiAtleti() li aggiorna. */
+  function _accessiOf(a) {
+    if (Array.isArray(a.accessi)) return a.accessi;
+    return a.email ? [{ uid: a.uid, email: a.email, ruolo: 'atleta', nome: '' }] : [];
+  }
+
+  function _hasOwnLogin(a) {
+    return _accessiOf(a).some(function (x) { return x.ruolo === 'atleta'; });
+  }
+
+  function _accessiSummary(a) {
+    var acc  = _accessiOf(a);
+    var gen  = acc.filter(function (x) { return x.ruolo === 'genitore'; }).length;
+    var parts = [];
+    if (_hasOwnLogin(a)) parts.push('atleta');
+    if (gen) parts.push(gen === 1 ? '1 genitore' : gen + ' genitori');
+    return parts.length ? 'Accessi: ' + parts.join(' + ') : 'Nessun accesso';
+  }
+
+  function _migrateAccessiAtleti() {
+    var legacy = _atletiCache.filter(function (a) { return !Array.isArray(a.accessUids) && a.email; });
+    if (!legacy.length) return;
+    var batch = db.batch();
+    legacy.forEach(function (a) {
+      var accessi = _accessiOf(a);
+      var upd = { accessi: accessi, accessUids: accessi.map(function (x) { return x.uid; }) };
+      batch.update(db.collection('atleti').doc(a.uid), upd);
+      Object.assign(a, upd);
+    });
+    batch.commit().catch(function (e) { console.error('[Atleti] migrazione accessi', e); });
+  }
+
+  /* Crea un account Firebase Auth senza disconnettere l'admin (app secondaria). */
+  function _createAuthAccount(email, pwd) {
+    var existing  = firebase.apps.find(function (a) { return a.name === 'atleta-creator'; });
+    var secondary = existing || firebase.initializeApp(firebase.app().options, 'atleta-creator');
+    var secAuth   = secondary.auth();
+    return secAuth.createUserWithEmailAndPassword(email, pwd).then(function (cred) {
+      var uid = cred.user.uid;
+      return secAuth.signOut().then(function () { return uid; });
+    });
+  }
+
+  /* uid di un genitore già collegato a un altro atleta (stessa email), o null. */
+  function _findParentUid(email) {
+    var e = email.toLowerCase();
+    for (var i = 0; i < _atletiCache.length; i++) {
+      var acc = _accessiOf(_atletiCache[i]);
+      for (var j = 0; j < acc.length; j++) {
+        if (acc[j].ruolo === 'genitore' && String(acc[j].email).toLowerCase() === e) return acc[j].uid;
+      }
+    }
+    return null;
+  }
+
+  function _authErrorText(err) {
+    return err && err.code === 'auth/email-already-in-use'
+      ? 'Email già registrata su Firebase e non collegata a un genitore esistente: usane un\'altra.'
+      : (err && err.message) || 'errore sconosciuto';
+  }
+
+  function _atletaLabel(a) { return 'Atleta — ' + (a.cognome || '') + ' ' + (a.nome || ''); }
+
+  /* Collega un genitore all'atleta: riusa l'account se l'email è già di un genitore. */
+  function _linkParent(atleta, nome, email, pwd) {
+    email = email.trim().toLowerCase();
+    var current = _accessiOf(atleta);
+    if (current.some(function (x) { return String(x.email).toLowerCase() === email; })) {
+      return Promise.reject(new Error('Questa email è già collegata all\'atleta.'));
+    }
+    var known = _findParentUid(email);
+    var getUid;
+    if (known) {
+      getUid = Promise.resolve(known);
+    } else if (!pwd || pwd.length < 6) {
+      return Promise.reject(new Error('Nuovo account: la password deve avere almeno 6 caratteri.'));
+    } else {
+      getUid = _createAuthAccount(email, pwd);
+    }
+    return getUid.then(function (uid) {
+      var before  = current.map(function (x) { return Object.assign({}, x); });
+      var accessi = current.concat([{ uid: uid, email: email, ruolo: 'genitore', nome: nome || '' }]);
+      var upd = { accessi: accessi, accessUids: accessi.map(function (x) { return x.uid; }) };
+      return db.collection('atleti').doc(atleta.uid).update(upd).then(function () {
+        Object.assign(atleta, upd);
+        return _logWrite('atleta', atleta.uid, _atletaLabel(atleta), 'update', _diff({ accessi: before }, upd, ['accessi']));
+      });
     });
   }
 
@@ -2296,7 +2391,8 @@
                         .reduce(function (s, r) { return s + (+r.importo || 0); }, 0);
       return '<tr>' +
         '<td><div class="table-title">' + esc(a.cognome) + ' ' + esc(a.nome) + '</div>' +
-          '<div class="table-sub">' + esc(a.email) + '</div></td>' +
+          '<div class="table-sub">' + esc(_accessiSummary(a)) +
+            (a.privacyFirmataIl ? '' : ' &nbsp;·&nbsp; <span style="color:#B45309">privacy da ritirare</span>') + '</div></td>' +
         '<td>' + (a.categoria
           ? '<span class="chip chip--blue">' + esc(a.categoria) + '</span>'
           : '<span class="chip chip--gray">—</span>') + '</td>' +
@@ -2355,7 +2451,8 @@
       VV.getCategories().map(function (c) {
         return '<option value="' + esc(c.name) + '">' + esc(c.name) + '</option>';
       }).join('');
-    ['atletaNome', 'atletaCognome', 'atletaEmail', 'atletaPassword'].forEach(function (id) {
+    ['atletaNome', 'atletaCognome', 'atletaEmail', 'atletaPassword',
+     'genitoreNome', 'genitoreEmail', 'genitorePassword'].forEach(function (id) {
       document.getElementById(id).value = '';
     });
     document.getElementById('atletaCertScadenza').value = '';
@@ -2366,44 +2463,60 @@
   document.getElementById('atletaFormSave').addEventListener('click', function () {
     var nome    = document.getElementById('atletaNome').value.trim();
     var cognome = document.getElementById('atletaCognome').value.trim();
-    var email   = document.getElementById('atletaEmail').value.trim();
+    var email   = document.getElementById('atletaEmail').value.trim().toLowerCase();
     var pwd     = document.getElementById('atletaPassword').value;
+    var gNome   = document.getElementById('genitoreNome').value.trim();
+    var gEmail  = document.getElementById('genitoreEmail').value.trim().toLowerCase();
+    var gPwd    = document.getElementById('genitorePassword').value;
     var categ   = document.getElementById('atletaCategoria').value;
     var certSc  = document.getElementById('atletaCertScadenza').value;
 
-    if (!nome || !cognome || !email || !pwd) {
-      alert('Nome, cognome, email e password sono obbligatori.'); return;
+    if (!nome || !cognome) { alert('Nome e cognome sono obbligatori.'); return; }
+    if (!email && !gEmail) { alert('Serve almeno un accesso: atleta o genitore.'); return; }
+    if (email && pwd.length < 6) { alert('Accesso atleta: la password deve avere almeno 6 caratteri.'); return; }
+    if (gEmail && !_findParentUid(gEmail) && gPwd.length < 6) {
+      alert('Accesso genitore: è un nuovo account, la password deve avere almeno 6 caratteri.'); return;
     }
-    if (pwd.length < 6) { alert('La password deve avere almeno 6 caratteri.'); return; }
 
     var btn = document.getElementById('atletaFormSave');
     btn.textContent = 'Creazione…'; btn.disabled = true;
 
-    /* secondary app per non disconnettere l'admin */
-    var existing  = firebase.apps.find(function (a) { return a.name === 'atleta-creator'; });
-    var secondary = existing || firebase.initializeApp(firebase.app().options, 'atleta-creator');
-    var secAuth   = secondary.auth();
+    var atleta = null;
 
-    secAuth.createUserWithEmailAndPassword(email, pwd)
-      .then(function (cred) {
-        var uid = cred.user.uid;
-        return secAuth.signOut().then(function () {
-          var data = {
-            uid: uid, nome: nome, cognome: cognome, email: email,
-            categoria: categ, certMedicoScadenza: certSc,
-            certMedicoUrl: '', moduloIscrizioneUrl: '',
-            rate: [], note: '', createdAt: new Date().toISOString()
-          };
-          return db.collection('atleti').doc(uid).set(data).then(function () {
-            return _logWrite('atleta', uid, 'Atleta — ' + cognome + ' ' + nome, 'create', _diff({}, data, Object.keys(data)));
-          });
+    /* 1) account atleta (facoltativo) */
+    (email ? _createAuthAccount(email, pwd) : Promise.resolve(null))
+      .then(function (athleteUid) {
+        /* 2) scheda: con login proprio l'id è il suo uid, altrimenti è automatico */
+        var ref = athleteUid ? db.collection('atleti').doc(athleteUid) : db.collection('atleti').doc();
+        var accessi = athleteUid ? [{ uid: athleteUid, email: email, ruolo: 'atleta', nome: '' }] : [];
+        var data = {
+          uid: ref.id, nome: nome, cognome: cognome, email: email,
+          categoria: categ, certMedicoScadenza: certSc,
+          certMedicoUrl: '', moduloIscrizioneUrl: '',
+          accessi: accessi, accessUids: accessi.map(function (x) { return x.uid; }),
+          privacyFirmataIl: '',
+          rate: [], note: '', createdAt: new Date().toISOString()
+        };
+        return ref.set(data).then(function () {
+          atleta = data;
+          _atletiCache.push(data);
+          return _logWrite('atleta', ref.id, _atletaLabel(data), 'create', _diff({}, data, Object.keys(data)));
         });
       })
-      .then(renderAtleti)
+      .then(function () {
+        /* 3) accesso genitore (facoltativo): se fallisce, la scheda esiste già */
+        if (!gEmail) return null;
+        return _linkParent(atleta, gNome, gEmail, gPwd).catch(function (err) {
+          alert('Atleta creato, ma l\'accesso genitore non è stato aggiunto: ' + _authErrorText(err) +
+                '\nPuoi riprovare dalla scheda dell\'atleta, tab "Accessi".');
+        });
+      })
+      .then(function () {
+        btn.textContent = 'Crea atleta'; btn.disabled = false;
+        renderAtleti();
+      })
       .catch(function (err) {
-        var msg = err.code === 'auth/email-already-in-use'
-          ? 'Email già registrata.' : err.message;
-        alert('Errore: ' + msg);
+        alert('Errore: ' + _authErrorText(err));
         btn.textContent = 'Crea atleta'; btn.disabled = false;
       });
   });
@@ -2427,7 +2540,8 @@
 
     document.getElementById('detNome').value      = _editingAtleta.nome     || '';
     document.getElementById('detCognome').value   = _editingAtleta.cognome  || '';
-    document.getElementById('detEmail').value     = _editingAtleta.email    || '';
+    document.getElementById('detEmail').value     = _accessiOf(_editingAtleta).map(function (x) { return x.email; }).join(', ');
+    document.getElementById('detPrivacy').value   = _editingAtleta.privacyFirmataIl || '';
     document.getElementById('detCategoria').value = _editingAtleta.categoria || '';
     document.getElementById('detNote').value      = _editingAtleta.note     || '';
 
@@ -2444,6 +2558,8 @@
 
     document.getElementById('sicurezzaEmail').textContent = _editingAtleta.email || '';
     document.getElementById('sicurezzaEmail2').textContent = _editingAtleta.email || '';
+    /* la password si cambia solo per un login atleta proprio: i genitori si gestiscono dalla console Firebase */
+    document.querySelector('.atleta-tab[data-tab="sicurezza"]').classList.toggle('is-hidden', !_hasOwnLogin(_editingAtleta));
     document.getElementById('sicurezzaMsg').classList.add('is-hidden');
     document.getElementById('sicurezzaMsg').textContent = '';
     document.getElementById('newPassword').value     = '';
@@ -2451,13 +2567,14 @@
 
     _switchAtletaTab('anagrafica');
     _renderRateAdmin();
+    _renderAccessiAdmin();
   }
 
   function _switchAtletaTab(tab) {
     document.querySelectorAll('.atleta-tab').forEach(function (btn) {
       btn.classList.toggle('is-active', btn.dataset.tab === tab);
     });
-    ['tabAnagrafica', 'tabCertmedico', 'tabRate', 'tabModulo', 'tabSicurezza'].forEach(function (id) {
+    ['tabAnagrafica', 'tabCertmedico', 'tabRate', 'tabModulo', 'tabAccessi', 'tabSicurezza'].forEach(function (id) {
       document.getElementById(id).classList.add('is-hidden');
     });
     document.getElementById('tab' + cap(tab)).classList.remove('is-hidden');
@@ -2477,6 +2594,7 @@
       nome:      document.getElementById('detNome').value.trim(),
       cognome:   document.getElementById('detCognome').value.trim(),
       categoria: document.getElementById('detCategoria').value,
+      privacyFirmataIl: document.getElementById('detPrivacy').value,
       note:      document.getElementById('detNote').value.trim()
     };
     Object.assign(_editingAtleta, upd);
@@ -2629,6 +2747,67 @@
       })
       .catch(function (e) { alert('Errore: ' + e.message); });
   });
+
+  /* ---- Accessi (atleta + genitori) ---- */
+  function _renderAccessiAdmin() {
+    var el  = document.getElementById('accessiList');
+    var acc = _accessiOf(_editingAtleta);
+    if (!acc.length) {
+      el.innerHTML = '<p style="color:var(--a-muted);font-size:13px">Nessun accesso: nessuno può vedere questa scheda dall\'area atleti.</p>';
+      return;
+    }
+    el.innerHTML = acc.map(function (x) {
+      var isOwn = x.ruolo === 'atleta';
+      return '<div class="atleta-rate-item">' +
+        '<div class="atleta-rate-info">' +
+          '<div class="atleta-rate-desc">' + esc(isOwn ? 'Atleta' : ('Genitore' + (x.nome ? ' — ' + x.nome : ''))) + '</div>' +
+          '<div class="atleta-rate-meta">' + esc(x.email) + '</div>' +
+        '</div>' +
+        (isOwn ? '' :
+          '<div class="atleta-rate-actions">' +
+            '<button class="btn-icon btn-icon--danger" onclick="AdminActions.removeAccesso(\'' + esc(x.uid) + '\')" title="Scollega">' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>' +
+            '</button>' +
+          '</div>') +
+      '</div>';
+    }).join('');
+  }
+
+  document.getElementById('accAdd').addEventListener('click', function () {
+    if (!_editingAtleta) return;
+    var nome  = document.getElementById('accNome').value.trim();
+    var email = document.getElementById('accEmail').value.trim();
+    var pwd   = document.getElementById('accPassword').value;
+    if (!email) { alert('Inserisci l\'email del genitore.'); return; }
+    var btn = this;
+    btn.disabled = true; btn.textContent = 'Aggiunta…';
+    _linkParent(_editingAtleta, nome, email, pwd)
+      .then(function () {
+        ['accNome', 'accEmail', 'accPassword'].forEach(function (id) { document.getElementById(id).value = ''; });
+        _renderAccessiAdmin();
+      })
+      .catch(function (e) { alert('Errore: ' + _authErrorText(e)); })
+      .then(function () { btn.disabled = false; btn.textContent = 'Aggiungi'; });
+  });
+
+  window.AdminActions.removeAccesso = function (uid) {
+    if (!_editingAtleta) return;
+    confirm(
+      'Scollegare questo genitore dall\'atleta? Non vedrà più la sua scheda. L\'account resta su Firebase e le altre schede collegate non cambiano.',
+      function () {
+        var before  = _accessiOf(_editingAtleta).map(function (x) { return Object.assign({}, x); });
+        var accessi = before.filter(function (x) { return x.uid !== uid; });
+        var upd = { accessi: accessi, accessUids: accessi.map(function (x) { return x.uid; }) };
+        db.collection('atleti').doc(_editingAtleta.uid).update(upd)
+          .then(function () {
+            Object.assign(_editingAtleta, upd);
+            return _logWrite('atleta', _editingAtleta.uid, _atletaLabel(_editingAtleta), 'update', _diff({ accessi: before }, upd, ['accessi']));
+          })
+          .then(_renderAccessiAdmin)
+          .catch(function (e) { alert('Errore: ' + e.message); });
+      }
+    );
+  };
 
   /* ---- Google Drive URL helper ---- */
   function _driveViewUrl(url) {

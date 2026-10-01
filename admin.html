@@ -834,20 +834,35 @@
               <input type="text" id="atletaCognome" class="form-input" placeholder="Cognome">
             </div>
             <div class="form-group">
-              <label class="form-label">Email *</label>
-              <input type="email" id="atletaEmail" class="form-input" placeholder="Email per il login">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Password iniziale *</label>
-              <input type="text" id="atletaPassword" class="form-input" placeholder="Minimo 6 caratteri">
-            </div>
-            <div class="form-group">
               <label class="form-label">Categoria</label>
               <select id="atletaCategoria" class="form-input"><option value="">Nessuna</option></select>
             </div>
             <div class="form-group">
               <label class="form-label">Scad. Cert. Medico</label>
               <input type="date" id="atletaCertScadenza" class="form-input">
+            </div>
+            <div class="form-group form-full">
+              <p style="font-size:12px;color:var(--a-muted)">Serve <strong>almeno un accesso</strong> tra atleta e genitore. Per i più piccoli basta il genitore. Un genitore con più figli usa lo stesso login: basta ripetere la sua email, e se esiste già viene collegato senza creare un nuovo account.</p>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Accesso atleta &mdash; email</label>
+              <input type="email" id="atletaEmail" class="form-input" placeholder="Facoltativo">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Accesso atleta &mdash; password iniziale</label>
+              <input type="text" id="atletaPassword" class="form-input" placeholder="Minimo 6 caratteri">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Accesso genitore &mdash; nome</label>
+              <input type="text" id="genitoreNome" class="form-input" placeholder="Facoltativo (es. Mario Rossi)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Accesso genitore &mdash; email</label>
+              <input type="email" id="genitoreEmail" class="form-input" placeholder="Facoltativo">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Accesso genitore &mdash; password iniziale</label>
+              <input type="text" id="genitorePassword" class="form-input" placeholder="Solo se è un nuovo account">
             </div>
           </div>
           <div class="form-actions">
@@ -871,6 +886,7 @@
             <button class="atleta-tab" data-tab="certmedico">Cert. Medico</button>
             <button class="atleta-tab" data-tab="rate">Rate &amp; Quote</button>
             <button class="atleta-tab" data-tab="modulo">Modulo Iscrizione</button>
+            <button class="atleta-tab" data-tab="accessi">Accessi</button>
             <button class="atleta-tab" data-tab="sicurezza">Sicurezza</button>
           </div>
 
@@ -892,6 +908,11 @@
               <div class="form-group">
                 <label class="form-label">Categoria</label>
                 <select id="detCategoria" class="form-input"><option value="">Nessuna</option></select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Informativa privacy firmata il</label>
+                <input type="date" id="detPrivacy" class="form-input">
+                <p style="font-size:12px;color:var(--a-muted);margin-top:5px">Data di consegna del foglio cartaceo. Vuoto = non ancora consegnato.</p>
               </div>
               <div class="form-group form-full">
                 <label class="form-label">Note interne</label>
@@ -963,6 +984,32 @@
             </div>
             <div class="form-actions">
               <button id="detModuloSave" class="btn-primary">Salva</button>
+            </div>
+          </div>
+
+          <!-- Tab: Accessi (atleta e genitori che vedono questa scheda) -->
+          <div id="tabAccessi" class="atleta-tab-pane is-hidden">
+            <div id="accessiList" style="margin-bottom:24px"></div>
+            <div class="atleta-add-rata">
+              <div class="atleta-add-rata-title">Aggiungi accesso genitore</div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label">Nome</label>
+                  <input type="text" id="accNome" class="form-input" placeholder="es. Mario Rossi">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Email</label>
+                  <input type="email" id="accEmail" class="form-input" placeholder="Email per il login">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Password iniziale</label>
+                  <input type="text" id="accPassword" class="form-input" placeholder="Solo se è un nuovo account">
+                </div>
+              </div>
+              <p style="font-size:12px;color:var(--a-muted);margin:-4px 0 12px">Se l'email appartiene già a un genitore di un altro atleta, viene collegata allo stesso login e la password non serve.</p>
+              <div class="form-actions">
+                <button id="accAdd" class="btn-primary">Aggiungi</button>
+              </div>
             </div>
           </div>
 
@@ -2016,7 +2063,7 @@
   <script src="/js/config.js?v=20260928"></script>
   <script src="/js/photodb.js?v=20260929"></script>
   <script src="/js/girone.js?v=20260719"></script>
-  <script src="/js/admin.js?v=20260929b"></script>
+  <script src="/js/admin.js?v=20261001"></script>
   <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>
