@@ -204,7 +204,7 @@
   var SECTIONS = {
     dashboard: 'Dashboard', articoli: 'Articoli', calendario: 'Calendario', allenamenti: 'Allenamenti', presenze: 'Presenze', comunicazioni: 'Avvisi', pianoEditoriale: 'Piano Editoriale',
     bacheca: 'Bacheca', galleria: 'Galleria', squadre: 'Squadre',
-    sponsor: 'Sponsor', atleti: 'Atleti', dirigenti: 'Dirigenti', girone: 'Girone Prima Divisione', datiJson: 'File JSON',
+    sponsor: 'Sponsor', atleti: 'Atleti', dirigenti: 'Dirigenti', datiJson: 'File JSON',
     log: 'Log', budget: 'Budget & Forecast'
   };
 

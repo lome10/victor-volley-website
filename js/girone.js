@@ -2,7 +2,6 @@
  * Victor Volley — Girone Prima Divisione
  * Carica data/girone.json, calcola la classifica e popola:
  *   - homepage: featured card + pannello classifica
- *   - admin:    tabella classifica + lista partite
  */
 (function (global) {
   'use strict';
@@ -118,7 +117,7 @@
   }
 
   /* ----------------------------------------------------------------
-     Pannello classifica (homepage + admin)
+     Pannello classifica (homepage + calendario)
   ---------------------------------------------------------------- */
   function renderClassifica(classifica, squadre, girone, homeId) {
     var rows = classifica.map(function (r, i) {
@@ -154,51 +153,6 @@
       '</table>' +
       '<div class="gc-footer">' + esc(girone.stagione || '') + '</div>' +
     '</div>';
-  }
-
-  /* ----------------------------------------------------------------
-     Sezione admin: classifica + partite
-  ---------------------------------------------------------------- */
-  function renderAdmin(girone, classifica, homeId) {
-    var elCl = document.getElementById('gironeAdminClassifica');
-    var elPt = document.getElementById('gironeAdminPartite');
-
-    if (elCl) elCl.innerHTML = renderClassifica(classifica, girone.squadre, girone, homeId);
-
-    if (elPt) {
-      var today    = new Date().toISOString().slice(0, 10);
-      var giocate  = girone.partite.filter(function (p) { return p.set_casa != null; });
-      var upcoming = girone.partite.filter(function (p) { return p.set_casa == null && p.data >= today; });
-
-      function row(p, played) {
-        var c = squadraById(girone.squadre, p.squadra_casa);
-        var o = squadraById(girone.squadre, p.squadra_ospite);
-        var casaWins = played && +p.set_casa > +p.set_ospite;
-        return '<tr>' +
-          '<td>' + esc(formatData(p.data, p.ora)) + '</td>' +
-          '<td>' + (casaWins ? '<strong>' + esc(c.nome) + '</strong>' : esc(c.nome)) + '</td>' +
-          '<td class="ga-vs">–</td>' +
-          '<td>' + (played && !casaWins ? '<strong>' + esc(o.nome) + '</strong>' : esc(o.nome)) + '</td>' +
-          (played
-            ? '<td class="ga-result">' + p.set_casa + '&ndash;' + p.set_ospite + '</td>'
-            : '<td class="ga-result ga-result--empty">—</td>') +
-        '</tr>';
-      }
-
-      var html = '';
-      if (giocate.length) {
-        html += '<p class="ga-label">Risultati</p>' +
-          '<table class="admin-table"><thead><tr><th>Data</th><th>Casa</th><th></th><th>Ospite</th><th>Set</th></tr></thead>' +
-          '<tbody>' + giocate.map(function (p) { return row(p, true); }).join('') + '</tbody></table>';
-      }
-      if (upcoming.length) {
-        html += '<p class="ga-label" style="margin-top:28px">Prossime partite</p>' +
-          '<table class="admin-table"><thead><tr><th>Data</th><th>Casa</th><th></th><th>Ospite</th><th>Set</th></tr></thead>' +
-          '<tbody>' + upcoming.map(function (p) { return row(p, false); }).join('') + '</tbody></table>';
-      }
-      if (!html) html = '<p style="color:var(--a-muted)">Nessuna partita inserita.</p>';
-      elPt.innerHTML = html;
-    }
   }
 
   /* ----------------------------------------------------------------
@@ -242,9 +196,7 @@
   function init() {
     var elFeat = document.getElementById('gironeFeatured');
     var elCl   = document.getElementById('gironeClassifica');
-    var elAdCl = document.getElementById('gironeAdminClassifica');
-    var elAdPt = document.getElementById('gironeAdminPartite');
-    if (!elFeat && !elCl && !elAdCl && !elAdPt) return;
+    if (!elFeat && !elCl) return;
 
     loadGirone()
       .then(function (girone) {
@@ -280,8 +232,6 @@
           });
         }
 
-        /* Admin */
-        renderAdmin(girone, classifica, homeId);
       })
       .catch(function (e) { console.warn('[girone] fetch failed:', e); });
   }
