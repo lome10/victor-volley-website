@@ -1796,3 +1796,33 @@ button { font-family: var(--font-body); cursor: pointer; }
   .pres-cols { grid-template-columns: 1fr; gap: 0; }
   .pres-counts { margin-left: 0; width: 100%; }
 }
+
+/* ================================================
+   ATLETI — lista per categoria e scheda
+================================================ */
+.atleti-toolbar { display: flex; gap: 10px; margin-bottom: 14px; }
+.atleti-toolbar .form-input { flex: 1; max-width: 360px; }
+.atleti-cats { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.atleti-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 999px;
+  border: 1px solid var(--a-border); background: var(--a-card);
+  font: inherit; font-size: 13px; font-weight: 600; color: var(--a-muted); cursor: pointer;
+  transition: all var(--a-t);
+}
+.atleti-pill span { font-size: 11px; background: var(--a-bg); border-radius: 999px; padding: 1px 7px; }
+.atleti-pill:hover { border-color: var(--a-blue); color: var(--a-blue); }
+.atleti-pill.is-active { background: var(--a-blue); border-color: var(--a-blue); color: #fff; }
+.atleti-pill.is-active span { background: rgba(255,255,255,.25); color: #fff; }
+.atleti-summary { font-size: 12.5px; color: var(--a-muted); margin-bottom: 12px; min-height: 18px; }
+.admin-table tr.atleti-group td { background: var(--a-bg); border-bottom: 1px solid var(--a-border); padding: 10px 14px; }
+.admin-table tr.atleti-group td strong { font-family: var(--font-head); font-size: 14px; margin-right: 12px; }
+.admin-table tr.atleti-group td span { font-size: 12px; color: var(--a-muted); }
+.af-section {
+  font-family: var(--font-head); font-size: 13px; font-weight: 700; color: var(--a-text);
+  text-transform: uppercase; letter-spacing: .05em;
+  padding-bottom: 6px; margin-top: 10px; border-bottom: 1px solid var(--a-border);
+}
+.af-msg { font-size: 13px; margin-right: auto; align-self: center; }
+.af-msg.is-ok { color: #059669; }
+.af-msg.is-err { color: var(--a-red); }

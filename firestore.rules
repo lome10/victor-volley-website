@@ -28,6 +28,13 @@ service cloud.firestore {
       allow write: if isDirigente();
     }
 
+    // Anagrafica completa degli atleti (codice fiscale, indirizzo, telefoni, tutori,
+    // info mediche, note): dati personali di minori, SOLO dirigenti. Le famiglie
+    // leggono unicamente la scheda /atleti, che ne contiene una parte minima.
+    match /atletiDati/{atletaId} {
+      allow read, write: if isDirigente();
+    }
+
     // Accessi — un documento per account atleta/genitore, id = uid, con le
     // categorie dei suoi atleti. Lo mantiene il pannello admin (dirigenti); serve
     // alle regole degli avvisi per sapere cosa può leggere ogni famiglia.

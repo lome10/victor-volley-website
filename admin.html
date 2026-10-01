@@ -9,7 +9,7 @@
   <link rel="preload" href="/assets/fonts/barlow-700-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/manrope-400-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/fonts.css">
-  <link rel="stylesheet" href="/css/admin.css?v=20261001">
+  <link rel="stylesheet" href="/css/admin.css?v=20261001b">
   <link rel="stylesheet" href="/css/dirigenti.css?v=20260929">
 </head>
 <body>
@@ -816,22 +816,30 @@
       <section id="sectionAtleti" class="admin-section is-hidden">
 
         <!-- List -->
-        <div id="atletiList" class="admin-table-wrap">
-          <table class="admin-table">
-            <thead>
-              <tr>
-                <th>Atleta</th>
-                <th>Categoria</th>
-                <th>Cert. Medico (scadenza)</th>
-                <th>Quota totale</th>
-                <th>Saldato</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="atletiBody">
-              <tr><td colspan="6" style="text-align:center;color:var(--a-muted);padding:20px">—</td></tr>
-            </tbody>
-          </table>
+        <div id="atletiList">
+          <div class="atleti-toolbar">
+            <input type="search" id="atletiSearch" class="form-input" placeholder="Cerca per nome o codice fiscale…" autocomplete="off">
+            <button type="button" id="atletiExport" class="btn-ghost" title="Scarica l'elenco mostrato in CSV (Excel)">Esporta CSV</button>
+          </div>
+          <div id="atletiCatBar" class="atleti-cats" role="tablist" aria-label="Categoria"></div>
+          <p id="atletiSummary" class="atleti-summary"></p>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Atleta</th>
+                  <th>Nato il</th>
+                  <th>Ruolo · maglia</th>
+                  <th>Cert. medico</th>
+                  <th>Quote (saldato / totale)</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="atletiBody">
+                <tr><td colspan="6" style="text-align:center;color:var(--a-muted);padding:20px">—</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <!-- Nuovo atleta form -->
@@ -902,37 +910,12 @@
             <button class="atleta-tab" data-tab="sicurezza">Sicurezza</button>
           </div>
 
-          <!-- Tab: Anagrafica -->
+          <!-- Tab: Anagrafica (campi generati da ATLETA_SEZIONI in admin.js) -->
           <div id="tabAnagrafica" class="atleta-tab-pane">
-            <div class="form-grid">
-              <div class="form-group">
-                <label class="form-label">Nome</label>
-                <input type="text" id="detNome" class="form-input">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Cognome</label>
-                <input type="text" id="detCognome" class="form-input">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Email (non modificabile)</label>
-                <input type="email" id="detEmail" class="form-input" disabled style="opacity:.6">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Categoria</label>
-                <select id="detCategoria" class="form-input"><option value="">Nessuna</option></select>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Informativa privacy firmata il</label>
-                <input type="date" id="detPrivacy" class="form-input">
-                <p style="font-size:12px;color:var(--a-muted);margin-top:5px">Data di consegna del foglio cartaceo. Vuoto = non ancora consegnato.</p>
-              </div>
-              <div class="form-group form-full">
-                <label class="form-label">Note interne</label>
-                <textarea id="detNote" class="form-input form-textarea" rows="3" placeholder="Annotazioni visibili solo agli admin…"></textarea>
-              </div>
-            </div>
+            <div id="detAnagraficaFields" class="form-grid"></div>
             <div class="form-actions">
-              <button id="detAnagraficaSave" class="btn-primary">Salva anagrafica</button>
+              <span id="detAnagraficaMsg" class="af-msg" role="status"></span>
+              <button id="detAnagraficaSave" class="btn-primary">Salva scheda</button>
             </div>
           </div>
 
@@ -2202,7 +2185,7 @@
   <script src="/js/config.js?v=20260928"></script>
   <script src="/js/photodb.js?v=20260929"></script>
   <script src="/js/girone.js?v=20260719"></script>
-  <script src="/js/admin.js?v=20261001d"></script>
+  <script src="/js/admin.js?v=20261001e"></script>
   <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

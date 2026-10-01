@@ -2267,16 +2267,12 @@
     document.getElementById('atletiBody').innerHTML =
       '<tr><td colspan="6" style="text-align:center;color:var(--a-muted);padding:20px">Caricamento…</td></tr>';
 
-    db.collection('atleti').get().then(function (snap) {
+    Promise.all([db.collection('atleti').get(), db.collection('atletiDati').get()]).then(function (res) {
+      var dati = {};
+      res[1].forEach(function (d) { dati[d.id] = d.data(); });
       _atletiCache = [];
-      snap.forEach(function (doc) {
-        _atletiCache.push(Object.assign({ uid: doc.id }, doc.data()));
-      });
-      /* ordina per scadenza cert. medico più imminente */
-      _atletiCache.sort(function (a, b) {
-        var da = a.certMedicoScadenza || '9999-12-31';
-        var db_ = b.certMedicoScadenza || '9999-12-31';
-        return da < db_ ? -1 : da > db_ ? 1 : 0;
+      res[0].forEach(function (doc) {
+        _atletiCache.push(Object.assign({}, dati[doc.id] || {}, doc.data(), { uid: doc.id }));
       });
       _renderAtletiRows();
       _migrateAccessiAtleti();
@@ -2436,41 +2432,6 @@
     });
   }
 
-  function _renderAtletiRows() {
-    if (!_atletiCache.length) {
-      document.getElementById('atletiBody').innerHTML =
-        '<tr><td colspan="6"><div class="empty-state"><p>Nessun atleta registrato.</p></div></td></tr>';
-      return;
-    }
-    document.getElementById('atletiBody').innerHTML = _atletiCache.map(function (a) {
-      var rate    = a.rate || [];
-      var totale  = rate.reduce(function (s, r) { return s + (+r.importo || 0); }, 0);
-      var saldato = rate.filter(function (r) { return r.pagata; })
-                        .reduce(function (s, r) { return s + (+r.importo || 0); }, 0);
-      return '<tr>' +
-        '<td><div class="table-title">' + esc(a.cognome) + ' ' + esc(a.nome) + '</div>' +
-          '<div class="table-sub">' + esc(_accessiSummary(a)) +
-            (a.privacyFirmataIl ? '' : ' &nbsp;·&nbsp; <span style="color:#B45309">privacy da ritirare</span>') + '</div></td>' +
-        '<td>' + (a.categoria
-          ? '<span class="chip chip--blue">' + esc(a.categoria) + '</span>'
-          : '<span class="chip chip--gray">—</span>') + '</td>' +
-        '<td>' + _certChip(a.certMedicoScadenza) + '</td>' +
-        '<td style="font-weight:600">€' + totale.toFixed(2) + '</td>' +
-        '<td>' + (saldato > 0
-          ? '<span style="color:var(--a-green);font-weight:600">€' + saldato.toFixed(2) + '</span>'
-          : '—') + '</td>' +
-        '<td><div class="table-actions">' +
-          '<button class="btn-icon" onclick="AdminActions.editAtleta(\'' + a.uid + '\')" title="Gestisci">' +
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' +
-          '</button>' +
-          '<button class="btn-icon btn-icon--danger" onclick="AdminActions.deleteAtleta(\'' + a.uid + '\')" title="Elimina">' +
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>' +
-          '</button>' +
-        '</div></td>' +
-      '</tr>';
-    }).join('');
-  }
-
   function _certChip(scadenza) {
     if (!scadenza) return '<span class="chip chip--gray">Non inserita</span>';
     var days  = _daysDiff(scadenza);
@@ -2498,6 +2459,319 @@
     var p = str.split('-');
     return (+p[2]) + ' ' + MESI_IT_MIN[(+p[1]) - 1] + ' ' + p[0];
   }
+
+  /* ================================================
+     SCHEDA ATLETA — schema dei campi, lista per categoria, esportazione
+     Due documenti per atleta:
+       atleti/{id}      → ciò che vedono le famiglie nell'area atleti (nome, categoria,
+                          certificato, quote, accessi, data privacy);
+       atletiDati/{id}  → anagrafica completa, contatti, tutori, consensi, note:
+                          leggibile SOLO dai dirigenti (dati personali di minori).
+     Per aggiungere un campo basta una riga in ATLETA_SEZIONI: pub:true lo salva nella
+     scheda delle famiglie, altrimenti resta riservato; sens:true lo esclude dal log
+     delle modifiche (si traccia solo che è cambiato, non il valore).
+  ================================================ */
+  var RUOLI_ATLETA  = [['', '—'], ['Palleggiatore', 'Palleggiatore/trice'], ['Laterale', 'Laterale'], ['Opposto', 'Opposto'],
+                       ['Centrale', 'Centrale'], ['Libero', 'Libero'], ['Universale', 'Universale']];
+  var TAGLIE_ATLETA = ['', '6 anni', '8 anni', '10 anni', '12 anni', '14 anni', 'XS', 'S', 'M', 'L', 'XL', 'XXL']
+                        .map(function (t) { return [t, t || '—']; });
+  var PARENTELE     = [['', '—'], ['Madre', 'Madre'], ['Padre', 'Padre'], ['Tutore', 'Tutore/trice'], ['Altro', 'Altro']];
+
+  var ATLETA_SEZIONI = [
+    { titolo: 'Dati anagrafici', campi: [
+      { k: 'nome',          l: 'Nome *',            t: 'text', pub: true },
+      { k: 'cognome',       l: 'Cognome *',         t: 'text', pub: true },
+      { k: 'sesso',         l: 'Sesso',             t: 'select', o: [['', '—'], ['F', 'Femmina'], ['M', 'Maschio']] },
+      { k: 'dataNascita',   l: 'Data di nascita',   t: 'date', sens: true },
+      { k: 'luogoNascita',  l: 'Luogo di nascita',  t: 'text', sens: true },
+      { k: 'codiceFiscale', l: 'Codice fiscale',    t: 'text', upper: true, max: 16, sens: true }
+    ] },
+    { titolo: 'Residenza', campi: [
+      { k: 'indirizzo',     l: 'Indirizzo',         t: 'text', full: true, sens: true },
+      { k: 'cap',           l: 'CAP',               t: 'text', max: 5, sens: true },
+      { k: 'citta',         l: 'Città',             t: 'text', sens: true },
+      { k: 'provincia',     l: 'Provincia (sigla)', t: 'text', upper: true, max: 2, sens: true }
+    ] },
+    { titolo: 'Contatti dell\'atleta', campi: [
+      { k: 'telefono',      l: 'Telefono',          t: 'tel', sens: true },
+      { k: 'emailContatto', l: 'Email di contatto', t: 'email', sens: true }
+    ] },
+    { titolo: 'Sport e tesseramento', campi: [
+      { k: 'categoria',     l: 'Categoria',         t: 'categoria', pub: true },
+      { k: 'ruolo',         l: 'Ruolo',             t: 'select', o: RUOLI_ATLETA },
+      { k: 'numeroMaglia',  l: 'Numero di maglia',  t: 'number' },
+      { k: 'tagliaDivisa',  l: 'Taglia divisa',     t: 'select', o: TAGLIE_ATLETA },
+      { k: 'tesseraFipav',  l: 'N. tessera FIPAV',  t: 'text' },
+      { k: 'dataIscrizione', l: 'Data di iscrizione', t: 'date' }
+    ] },
+    { titolo: 'Genitore / tutore 1', campi: [
+      { k: 'tutore1Nome',     l: 'Cognome e nome',  t: 'text', sens: true },
+      { k: 'tutore1Parentela', l: 'Parentela',      t: 'select', o: PARENTELE },
+      { k: 'tutore1Telefono', l: 'Telefono',        t: 'tel', sens: true },
+      { k: 'tutore1Email',    l: 'Email',           t: 'email', sens: true },
+      { k: 'tutore1CodiceFiscale', l: 'Codice fiscale', t: 'text', upper: true, max: 16, sens: true }
+    ] },
+    { titolo: 'Genitore / tutore 2', campi: [
+      { k: 'tutore2Nome',     l: 'Cognome e nome',  t: 'text', sens: true },
+      { k: 'tutore2Parentela', l: 'Parentela',      t: 'select', o: PARENTELE },
+      { k: 'tutore2Telefono', l: 'Telefono',        t: 'tel', sens: true },
+      { k: 'tutore2Email',    l: 'Email',           t: 'email', sens: true }
+    ] },
+    { titolo: 'Contatto di emergenza', campi: [
+      { k: 'emergenzaNome',     l: 'Nome e parentela', t: 'text', sens: true },
+      { k: 'emergenzaTelefono', l: 'Telefono',         t: 'tel', sens: true }
+    ] },
+    { titolo: 'Consensi', campi: [
+      { k: 'privacyFirmataIl', l: 'Informativa privacy firmata il', t: 'date', pub: true },
+      { k: 'consensoFotoIl',   l: 'Liberatoria foto/video firmata il', t: 'date' }
+    ] },
+    { titolo: 'Riservato ai dirigenti (le famiglie non lo vedono)', campi: [
+      { k: 'infoMediche', l: 'Info utili in emergenza (allergie, intolleranze…)', t: 'textarea', full: true, sens: true },
+      { k: 'note',        l: 'Note interne', t: 'textarea', full: true, sens: true }
+    ] }
+  ];
+
+  var ATLETA_CAMPI = [];
+  ATLETA_SEZIONI.forEach(function (s) { s.campi.forEach(function (f) { ATLETA_CAMPI.push(f); }); });
+  var ATLETA_SENSIBILI = ATLETA_CAMPI.filter(function (f) { return f.sens; }).map(function (f) { return f.k; });
+
+  function _campoHtml(f, v) {
+    var id = 'af_' + f.k;
+    var input;
+    if (f.t === 'select' || f.t === 'categoria') {
+      var opts = f.t === 'categoria'
+        ? [['', 'Nessuna']].concat(VV.getCategories().map(function (c) { return [c.name, c.name]; }))
+        : f.o;
+      if (v && !opts.some(function (o) { return o[0] === v; })) opts = opts.concat([[v, v]]);
+      input = '<select id="' + id + '" class="form-input">' + opts.map(function (o) {
+        return '<option value="' + esc(o[0]) + '"' + (o[0] === v ? ' selected' : '') + '>' + esc(o[1]) + '</option>';
+      }).join('') + '</select>';
+    } else if (f.t === 'textarea') {
+      input = '<textarea id="' + id + '" class="form-input form-textarea" rows="3">' + esc(v) + '</textarea>';
+    } else {
+      input = '<input type="' + f.t + '" id="' + id + '" class="form-input" value="' + esc(v == null ? '' : String(v)) + '"' +
+        (f.max ? ' maxlength="' + f.max + '"' : '') +
+        (f.t === 'number' ? ' min="0" max="999"' : '') +
+        (f.upper ? ' style="text-transform:uppercase"' : '') + '>';
+    }
+    return '<div class="form-group' + (f.full ? ' form-full' : '') + '"><label class="form-label" for="' + id + '">' + esc(f.l) + '</label>' + input + '</div>';
+  }
+
+  function _atletaFormHtml(a) {
+    return ATLETA_SEZIONI.map(function (s) {
+      return '<div class="form-group form-full"><h4 class="af-section">' + esc(s.titolo) + '</h4></div>' +
+        s.campi.map(function (f) { return _campoHtml(f, a[f.k]); }).join('');
+    }).join('');
+  }
+
+  function _leggiCampo(f) {
+    var v = document.getElementById('af_' + f.k).value;
+    if (f.t === 'number') return v === '' ? '' : Number(v);
+    v = v.trim();
+    return f.upper ? v.toUpperCase() : v;
+  }
+
+  function _validaAtleta(v) {
+    var oggi = new Date().toISOString().slice(0, 10);
+    var cf = /^[A-Z0-9]{16}$/;
+    var email = /^\S+@\S+\.\S+$/;
+    if (!v.nome || !v.cognome) return 'Nome e cognome sono obbligatori.';
+    if (v.dataNascita && (v.dataNascita > oggi || v.dataNascita < '1920-01-01')) return 'La data di nascita non è valida.';
+    if (v.codiceFiscale && !cf.test(v.codiceFiscale)) return 'Il codice fiscale dell\'atleta deve avere 16 caratteri.';
+    if (v.tutore1CodiceFiscale && !cf.test(v.tutore1CodiceFiscale)) return 'Il codice fiscale del tutore 1 deve avere 16 caratteri.';
+    if (v.cap && !/^\d{5}$/.test(v.cap)) return 'Il CAP deve avere 5 cifre.';
+    if (v.provincia && !/^[A-Z]{2}$/.test(v.provincia)) return 'La provincia va indicata con la sigla (2 lettere).';
+    var mail = ['emailContatto', 'tutore1Email', 'tutore2Email'].filter(function (k) { return v[k] && !email.test(v[k]); })[0];
+    if (mail) return 'L\'indirizzo email non è valido: ' + v[mail];
+    return '';
+  }
+
+  function _atletaEta(a) {
+    if (!a.dataNascita) return null;
+    var n = new Date(a.dataNascita + 'T00:00:00'), t = new Date();
+    var e = t.getFullYear() - n.getFullYear();
+    if (t.getMonth() < n.getMonth() || (t.getMonth() === n.getMonth() && t.getDate() < n.getDate())) e--;
+    return e;
+  }
+
+  /* ---- Salva scheda: la parte "famiglie" su atleti, il resto su atletiDati ---- */
+  document.getElementById('detAnagraficaSave').addEventListener('click', function () {
+    var a = _editingAtleta;
+    if (!a) return;
+    var vals = {};
+    ATLETA_CAMPI.forEach(function (f) { vals[f.k] = _leggiCampo(f); });
+    var err = _validaAtleta(vals);
+    var msg = document.getElementById('detAnagraficaMsg');
+    if (err) { msg.textContent = err; msg.className = 'af-msg is-err'; return; }
+
+    var pub = {}, riservati = {};
+    ATLETA_CAMPI.forEach(function (f) { (f.pub ? pub : riservati)[f.k] = vals[f.k]; });
+
+    var before = Object.assign({}, a);
+    var btn = this;
+    btn.disabled = true;
+    msg.textContent = '';
+
+    Promise.all([
+      db.collection('atleti').doc(a.uid).update(pub),
+      db.collection('atletiDati').doc(a.uid).set(riservati, { merge: true })
+    ]).then(function () {
+      Object.assign(a, pub, riservati);
+      document.getElementById('atletaDetailNome').textContent = (a.cognome || '') + ' ' + (a.nome || '');
+      _reconcileAccessi();
+      msg.textContent = 'Salvato.'; msg.className = 'af-msg is-ok';
+      var dopo   = Object.assign({}, pub, riservati);
+      var campi  = Object.keys(dopo).filter(function (k) {
+        return String(before[k] == null ? '' : before[k]) !== String(dopo[k] == null ? '' : dopo[k]);
+      });
+      return _logWrite('atleta', a.uid, _atletaLabel(a), 'update', _diff(before, dopo, campi));
+    }).catch(function (e) {
+      msg.textContent = 'Errore: ' + e.message; msg.className = 'af-msg is-err';
+    }).then(function () { btn.disabled = false; });
+  });
+
+  /* ---- Lista per categoria ---- */
+  var _atletiCat   = '';   /* '' = tutte, '__none__' = senza categoria, altrimenti il nome */
+  var _atletiQuery = '';
+
+  function _categorieElenco() {
+    var names = VV.getCategories(true).map(function (c) { return c.name; });
+    _atletiCache.forEach(function (a) {
+      if (a.categoria && names.indexOf(a.categoria) === -1) names.push(a.categoria);
+    });
+    return names;
+  }
+
+  function _atletiFiltrati() {
+    var q = _atletiQuery.trim().toLowerCase();
+    return _atletiCache.filter(function (a) {
+      if (_atletiCat === '__none__') { if (a.categoria) return false; }
+      else if (_atletiCat && a.categoria !== _atletiCat) return false;
+      if (!q) return true;
+      return ((a.cognome || '') + ' ' + (a.nome || '') + ' ' + (a.codiceFiscale || '')).toLowerCase().indexOf(q) !== -1;
+    }).sort(function (x, y) {
+      return ((x.cognome || '') + ' ' + (x.nome || '')).localeCompare((y.cognome || '') + ' ' + (y.nome || ''), 'it');
+    });
+  }
+
+  function _renderAtletiCats() {
+    var counts = {}, none = 0;
+    _atletiCache.forEach(function (a) { if (a.categoria) counts[a.categoria] = (counts[a.categoria] || 0) + 1; else none++; });
+    function pill(cat, label, n) {
+      return '<button type="button" class="atleti-pill' + (_atletiCat === cat ? ' is-active' : '') + '" data-cat="' + esc(cat) + '">' +
+        esc(label) + ' <span>' + n + '</span></button>';
+    }
+    document.getElementById('atletiCatBar').innerHTML =
+      pill('', 'Tutte', _atletiCache.length) +
+      _categorieElenco().map(function (n) { return pill(n, n, counts[n] || 0); }).join('') +
+      (none ? pill('__none__', 'Senza categoria', none) : '');
+  }
+
+  function _atletiAvvisi(list) {
+    var certKo = list.filter(function (a) { return !a.certMedicoScadenza || _daysDiff(a.certMedicoScadenza) < 0; }).length;
+    var privKo = list.filter(function (a) { return !a.privacyFirmataIl; }).length;
+    var senzaAccessi = list.filter(function (a) { return !_accessiOf(a).length; }).length;
+    var parts = [list.length + (list.length === 1 ? ' atleta' : ' atleti')];
+    if (certKo)       parts.push(certKo + ' con certificato scaduto o mancante');
+    if (privKo)       parts.push(privKo + ' con privacy da ritirare');
+    if (senzaAccessi) parts.push(senzaAccessi + ' senza accessi');
+    return parts.join(' · ');
+  }
+
+  function _atletaRowHtml(a) {
+    var rate    = a.rate || [];
+    var totale  = rate.reduce(function (s, r) { return s + (+r.importo || 0); }, 0);
+    var saldato = rate.filter(function (r) { return r.pagata; }).reduce(function (s, r) { return s + (+r.importo || 0); }, 0);
+    var eta     = _atletaEta(a);
+    var ruoloNum = [a.ruolo, a.numeroMaglia !== '' && a.numeroMaglia != null ? '#' + a.numeroMaglia : ''].filter(Boolean).join(' · ');
+    return '<tr>' +
+      '<td><div class="table-title">' + esc(a.cognome) + ' ' + esc(a.nome) + '</div>' +
+        '<div class="table-sub">' + esc(_accessiSummary(a)) +
+          (a.privacyFirmataIl ? '' : ' &nbsp;·&nbsp; <span style="color:#B45309">privacy da ritirare</span>') + '</div></td>' +
+      '<td>' + (a.dataNascita ? esc(_fmtDate(a.dataNascita)) + '<div class="table-sub">' + eta + ' anni</div>' : '<span class="chip chip--gray">—</span>') + '</td>' +
+      '<td>' + (ruoloNum ? esc(ruoloNum) : '—') + '</td>' +
+      '<td>' + _certChip(a.certMedicoScadenza) + '</td>' +
+      '<td>' + (totale > 0
+        ? '<span style="font-weight:600">€' + saldato.toFixed(0) + '</span><span style="color:var(--a-muted)"> / €' + totale.toFixed(0) + '</span>'
+        : '—') + '</td>' +
+      '<td><div class="table-actions">' +
+        '<button class="btn-icon" onclick="AdminActions.editAtleta(\'' + esc(a.uid) + '\')" title="Apri scheda">' + EDIT_ICON_SM + '</button>' +
+        '<button class="btn-icon btn-icon--danger" onclick="AdminActions.deleteAtleta(\'' + esc(a.uid) + '\')" title="Elimina">' + DEL_ICON_SM + '</button>' +
+      '</div></td>' +
+    '</tr>';
+  }
+
+  function _renderAtletiRows() {
+    var body = document.getElementById('atletiBody');
+    _renderAtletiCats();
+    if (!_atletiCache.length) {
+      document.getElementById('atletiSummary').textContent = '';
+      body.innerHTML = '<tr><td colspan="6"><div class="empty-state"><p>Nessun atleta registrato.</p></div></td></tr>';
+      return;
+    }
+    var list = _atletiFiltrati();
+    document.getElementById('atletiSummary').textContent = _atletiAvvisi(list);
+    if (!list.length) {
+      body.innerHTML = '<tr><td colspan="6"><div class="empty-state"><p>Nessun atleta corrisponde ai filtri.</p></div></td></tr>';
+      return;
+    }
+
+    if (_atletiCat) {
+      body.innerHTML = list.map(_atletaRowHtml).join('');
+      return;
+    }
+    /* "Tutte": elenco diviso per categoria, ciascuna con il proprio riepilogo */
+    var gruppi = _categorieElenco().concat(['__none__']);
+    body.innerHTML = gruppi.map(function (cat) {
+      var membri = list.filter(function (a) { return cat === '__none__' ? !a.categoria : a.categoria === cat; });
+      if (!membri.length) return '';
+      return '<tr class="atleti-group"><td colspan="6"><strong>' + esc(cat === '__none__' ? 'Senza categoria' : cat) + '</strong>' +
+        '<span>' + esc(_atletiAvvisi(membri)) + '</span></td></tr>' + membri.map(_atletaRowHtml).join('');
+    }).join('');
+  }
+
+  document.getElementById('atletiSearch').addEventListener('input', function () {
+    _atletiQuery = this.value;
+    _renderAtletiRows();
+  });
+  document.getElementById('atletiCatBar').addEventListener('click', function (e) {
+    var b = e.target.closest('.atleti-pill');
+    if (!b) return;
+    _atletiCat = b.dataset.cat;
+    _renderAtletiRows();
+  });
+
+  /* ---- Esporta l'elenco filtrato in CSV (apribile con Excel) ---- */
+  function _csvCell(v) {
+    var s = v == null ? '' : String(v);
+    return /[";\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+
+  function _esportaAtletiCsv() {
+    var list = _atletiFiltrati();
+    if (!list.length) { alert('Nessun atleta da esportare.'); return; }
+    confirm('Il file contiene dati personali di minori (codice fiscale, indirizzo, telefoni). Conservalo in un posto sicuro e cancellalo quando non serve più. Scaricare?', function () {
+      var cols = [{ k: 'cognome', l: 'Cognome' }, { k: 'nome', l: 'Nome' }];
+      ATLETA_CAMPI.forEach(function (f) {
+        if (['nome', 'cognome', 'note', 'infoMediche'].indexOf(f.k) === -1) cols.push({ k: f.k, l: f.l.replace(' *', '') });
+      });
+      cols.push({ k: 'certMedicoScadenza', l: 'Scadenza certificato medico' });
+      var righe = [cols.map(function (c) { return _csvCell(c.l); }).join(';')].concat(list.map(function (a) {
+        return cols.map(function (c) { return _csvCell(a[c.k]); }).join(';');
+      }));
+      var blob = new Blob(['﻿' + righe.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+      var url  = URL.createObjectURL(blob);
+      var link = document.createElement('a');
+      var slug = (_atletiCat && _atletiCat !== '__none__' ? _atletiCat : 'tutti').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      link.href = url;
+      link.download = 'atleti-' + slug + '-' + new Date().toISOString().slice(0, 10) + '.csv';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    });
+  }
+  document.getElementById('atletiExport').addEventListener('click', _esportaAtletiCsv);
 
   /* ---- Nuovo atleta form ---- */
 
@@ -2553,7 +2827,7 @@
           certMedicoUrl: '', moduloIscrizioneUrl: '',
           accessi: accessi, accessUids: accessi.map(function (x) { return x.uid; }),
           privacyFirmataIl: '',
-          rate: [], note: '', createdAt: new Date().toISOString()
+          rate: [], createdAt: new Date().toISOString()
         };
         return ref.set(data).then(function () {
           atleta = data;
@@ -2591,18 +2865,8 @@
     document.getElementById('atletaDetailNome').textContent =
       (_editingAtleta.cognome || '') + ' ' + (_editingAtleta.nome || '');
 
-    var catSel = document.getElementById('detCategoria');
-    catSel.innerHTML = '<option value="">Nessuna</option>' +
-      VV.getCategories().map(function (c) {
-        return '<option value="' + esc(c.name) + '">' + esc(c.name) + '</option>';
-      }).join('');
-
-    document.getElementById('detNome').value      = _editingAtleta.nome     || '';
-    document.getElementById('detCognome').value   = _editingAtleta.cognome  || '';
-    document.getElementById('detEmail').value     = _accessiOf(_editingAtleta).map(function (x) { return x.email; }).join(', ');
-    document.getElementById('detPrivacy').value   = _editingAtleta.privacyFirmataIl || '';
-    document.getElementById('detCategoria').value = _editingAtleta.categoria || '';
-    document.getElementById('detNote').value      = _editingAtleta.note     || '';
+    document.getElementById('detAnagraficaFields').innerHTML = _atletaFormHtml(_editingAtleta);
+    document.getElementById('detAnagraficaMsg').textContent = '';
 
     document.getElementById('detCertScadenza').value = _editingAtleta.certMedicoScadenza || '';
     var certUrl = _editingAtleta.certMedicoUrl || '';
@@ -2644,25 +2908,6 @@
   });
 
   document.getElementById('atletaBackBtn').addEventListener('click', renderAtleti);
-
-  /* ---- Salva anagrafica ---- */
-  document.getElementById('detAnagraficaSave').addEventListener('click', function () {
-    if (!_editingAtleta) return;
-    var before = Object.assign({}, _editingAtleta);
-    var upd = {
-      nome:      document.getElementById('detNome').value.trim(),
-      cognome:   document.getElementById('detCognome').value.trim(),
-      categoria: document.getElementById('detCategoria').value,
-      privacyFirmataIl: document.getElementById('detPrivacy').value,
-      note:      document.getElementById('detNote').value.trim()
-    };
-    Object.assign(_editingAtleta, upd);
-    document.getElementById('atletaDetailNome').textContent =
-      _editingAtleta.cognome + ' ' + _editingAtleta.nome;
-    db.collection('atleti').doc(_editingAtleta.uid).update(upd)
-      .then(function () { _reconcileAccessi(); return _logWrite('atleta', _editingAtleta.uid, 'Atleta — ' + _editingAtleta.cognome + ' ' + _editingAtleta.nome, 'update', _diff(before, upd, Object.keys(upd))); })
-      .catch(function (e) { alert('Errore: ' + e.message); });
-  });
 
   /* ---- Salva cert. medico ---- */
   document.getElementById('detCertSave').addEventListener('click', function () {
@@ -2886,7 +3131,7 @@
     confirm(
       'Eliminare l\'atleta dal gestionale? Le credenziali Firebase resteranno attive.',
       function () {
-        db.collection('atleti').doc(uid).delete()
+        db.batch().delete(db.collection('atleti').doc(uid)).delete(db.collection('atletiDati').doc(uid)).commit()
           .then(function () {
             return _logWrite('atleta', uid, 'Atleta — ' + (target ? target.cognome + ' ' + target.nome : uid), 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]);
           })
@@ -4330,7 +4575,7 @@
       entitaLabel: entitaLabel,
       azione: azione,
       campi: changes.map(function (ch) {
-        if (OPEN_FIELDS.indexOf(ch.campo) !== -1) return { campo: ch.campo, aperto: true };
+        if (OPEN_FIELDS.indexOf(ch.campo) !== -1 || (entita === 'atleta' && (ATLETA_SENSIBILI || []).indexOf(ch.campo) !== -1)) return { campo: ch.campo, aperto: true };
         return { campo: ch.campo, prima: ch.prima, dopo: ch.dopo };
       })
     };
