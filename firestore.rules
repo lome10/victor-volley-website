@@ -94,7 +94,6 @@ service cloud.firestore {
 
     // Collezioni pubbliche del sito: lettura libera, scrittura solo dirigenti.
     match /articles/{document=**}   { allow read: if true; allow write: if isDirigente(); }
-    match /matches/{document=**}    { allow read: if true; allow write: if isDirigente(); }
     match /partite/{document=**}    { allow read: if true; allow write: if isDirigente(); }
     match /allenamenti/{document=**} { allow read: if true; allow write: if isDirigente(); }
     match /albums/{document=**}     { allow read: if true; allow write: if isDirigente(); }

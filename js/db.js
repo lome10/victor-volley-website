@@ -12,8 +12,6 @@
    da chi ha fatto login (vedi DB.setAuditHook — usato da admin.js) invece di
    duplicare la logica di log in ogni singolo metodo.
 
-   Migrazione da localStorage (da console, dopo il primo login):
-     DB.migrateFromLocalStorage(function(){ location.reload(); });
 */
 (function (global) {
   'use strict';
@@ -116,7 +114,7 @@
   /* Collection "partite": un documento per partita (id partita = id doc),
      upsert/delete indipendenti — niente più sovrascritture dell'intero
      elenco quando più persone lavorano in admin insieme (vedi il vecchio
-     schema a doc unico rimpiazzato da migratePartiteToCollection). */
+     schema a doc unico, ormai migrato). */
   function _loadOnePartite() {
     return _col('partite').get().then(function (snap) {
       var items = [];
@@ -417,87 +415,6 @@
           _audit('stagioneSito', String(id), 'Stagione sito attiva', 'update', [{ campo: 'current', prima: null, dopo: id }]);
         })
         .catch(function (e) { console.error('[DB] setCurrentSeason', e); });
-    },
-
-    /* ---- MIGRATION HELPER ------------------------------------ */
-    /*
-      Da usare UNA VOLTA dalla console del browser dopo il primo login,
-      per importare i dati esistenti da localStorage in Firestore:
-
-        DB.migrateFromLocalStorage(function(){ location.reload(); });
-    */
-    migrateFromLocalStorage: function (done) {
-      var LS_KEYS = {
-        articles:   'vv_articles',
-        albums:     'vv_albums',
-        categories: 'vv_categories',
-        players:    'vv_players',
-        staff:      'vv_staff'
-      };
-      var ops = [];
-      Object.keys(LS_KEYS).forEach(function (col) {
-        try {
-          var raw = localStorage.getItem(LS_KEYS[col]);
-          if (!raw) return;
-          var items = JSON.parse(raw);
-          if (!Array.isArray(items) || !items.length) return;
-          items.forEach(function (item) {
-            if (!item || !item.id) return;
-            ops.push(
-              _col(col).add(item).then(function (ref) {
-                _ids[col][+item.id] = ref.id;
-              })
-            );
-          });
-        } catch (e) { console.error('[DB] migrate ' + col, e); }
-      });
-      Promise.all(ops)
-        .then(function () {
-          console.log('[DB] Migrazione completata: ' + ops.length + ' documenti importati.');
-          if (done) done();
-        })
-        .catch(function (e) {
-          console.error('[DB] Migrazione fallita:', e);
-          if (done) done();
-        });
-    },
-
-    /* ---- MIGRAZIONE PARTITE: da doc unico a collection ---------- */
-    /* Il vecchio schema (siteData/partite, un doc con l'intero elenco in
-       JSON) veniva riscritto per intero ad ogni salvataggio: se due
-       persone lavoravano in admin contemporaneamente, l'ultima a salvare
-       cancellava silenziosamente le partite aggiunte dall'altra. Il nuovo
-       schema usa una collection "partite" con un documento per partita.
-       Da eseguire una sola volta dalla console, da loggata in admin:
-         DB.migratePartiteToCollection(function(){ location.reload(); });
-       Sicura da rilanciare più volte: ogni partita viene semplicemente
-       riscritta con lo stesso id, nessun duplicato. Non recupera partite
-       già perse per sovrascritture avvenute prima di questa migrazione:
-       per quelle serve controllare i backup/point-in-time recovery di
-       Firestore, se abilitati. */
-    migratePartiteToCollection: function (done) {
-      function fromStatic() {
-        return fetch('/data/partite.json').then(function (r) { return r.json(); });
-      }
-      global.db.collection('siteData').doc('partite').get()
-        .then(function (doc) {
-          if (doc.exists && doc.data() && doc.data().json) return JSON.parse(doc.data().json);
-          return fromStatic();
-        })
-        .catch(function () { return fromStatic(); })
-        .then(function (items) {
-          items = Array.isArray(items) ? items : [];
-          var validItems = items.filter(function (p) { return p && p.id; });
-          var ops = validItems.map(function (p) { return _col('partite').doc(String(p.id)).set(p); });
-          return Promise.all(ops).then(function () {
-            console.log('[DB] Migrazione partite completata: ' + validItems.length + ' partite importate nella collection "partite".');
-            if (done) done();
-          });
-        })
-        .catch(function (e) {
-          console.error('[DB] migratePartiteToCollection fallita:', e);
-          if (done) done();
-        });
     }
 
   };

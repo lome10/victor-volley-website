@@ -262,8 +262,6 @@
     deletePartita: function (id) {
       _write(KEYS.partite, this.getPartite().filter(function (p) { return p.id !== id; }));
     },
-    /* Bulk-set usato solo dalla migrazione una tantum (vedi DB.migratePartiteToCollection) */
-    setPartite: function (items) { _write(KEYS.partite, Array.isArray(items) ? items : []); },
 
     /* ---- SEASONS ---- */
     getSeasons: function () {

@@ -36,10 +36,10 @@ Piano: file separati caricati in ordine, namespace comune `window.Admin`, nessun
 - [ ] Valutare uno strato dati: oggi ci sono 143 chiamate dirette a `db.collection()`.
 
 ### Pulizia codice morto
-- [ ] Eliminare `data/giocatori.json` (nessun riferimento).
-- [ ] Eliminare `data/partite.json` (serve solo alla vecchia migrazione) e il commento correlato in `partite-live.js`.
-- [ ] Rimuovere gli helper `migrateFromLocalStorage` e `migratePartiteToCollection` da `js/db.js`, dopo aver confermato che sono già stati eseguiti.
-- [ ] Rimuovere la regola `matches` da `firestore.rules` (nessuna corrispondenza nel codice).
+- [x] Eliminato `data/giocatori.json` (nessun riferimento).
+- [x] Eliminato `data/partite.json`; aggiornati commento e messaggio di errore in `partite-live.js` (leggeva già da Firestore).
+- [x] Rimossi `migrateFromLocalStorage` e `migratePartiteToCollection` da `js/db.js` e `setPartite` da `js/data.js` (la raccolta `partite` esiste già; nessun altro uso).
+- [~] Regola `matches` rimossa da `firestore.rules` nel repository, **da pubblicare** (Console → Firestore → Regole, oppure `firebase deploy --only firestore:rules`). da `firestore.rules` (nessuna corrispondenza nel codice). **Nota:** la raccolta `matches` esiste ancora in Firestore con 4 documenti vecchi (logo in base64, schema precedente a `partite`); il codice non la legge. Decidere se cancellare i dati dalla Console prima di togliere la regola.
 
 ### Sicurezza e infrastruttura
 - [ ] Riscrivere la CSP (oggi `Content-Security-Policy-Report-Only` in `vercel.json`): `script-src 'self'` blocca i 7 script inline di `index.html` e `frame-src` non ammette `maps.google.com`. Non attivarla com'è.
@@ -64,10 +64,10 @@ Piano: file separati caricati in ordine, namespace comune `window.Admin`, nessun
 
 ## Da verificare (serve controllo sui dati di produzione)
 
-- [ ] **Regole Firestore pubblicate?** Firebase Console → Firestore → Regole: la data deve essere recente. Se no: `firebase deploy --only firestore:rules`.
+- [x] **Regole Firestore pubblicate**: verificato dalla Console il 2026-10-01, il testo pubblicato (143 righe) coincide con `firestore.rules`; cronologia con 3 pubblicazioni di oggi (11:23, 13:10, 13:22).
 - [ ] **Migrazione immagini base64 → Cloudinary**: lanciata dal bottone nella tab File JSON? (idempotente)
 - [ ] **Migrazione IVA sponsor** (`DG.migraIvaSponsor`, bottone in Riepilogo IVA): lanciata per ogni stagione con sponsor chiusi?
-- [ ] **Migrazione `accessUids` degli atleti**: parte da sola aprendo la sezione Atleti. Controllare che i vecchi atleti abbiano il campo, altrimenti i genitori non vedono la scheda.
+- [x] **Migrazione `accessUids` degli atleti**: verificato dalla Console il 2026-10-01; la raccolta `atleti` ha un solo documento e ha già `accessUids` e `accessi`.
 
 ---
 
@@ -92,3 +92,6 @@ Piano: file separati caricati in ordine, namespace comune `window.Admin`, nessun
 - Confermato dall'utente: nessuna verifica ancora fatta su regole Firestore e migrazioni.
 - Implementate entrambe le alternative alla Cloud Function: email di reset (tab Sicurezza + bottone per ogni genitore in Accessi) e funzione Vercel con controllo dirigente. Provata in locale solo la validazione (405/403/401/500); non provata con Firebase reale.
 - L'utente ha creato la chiave e la variabile su Vercel e rifatto il deploy; controllo esterno di `/api/set-athlete-password` su vercel.app e victorvolley.it: funzione attiva e configurata. Provato dall'utente dal pannello: funziona tutto.
+- Verificate le regole Firestore dalla Console: pubblicate e identiche al repository. Nella raccolta `accessi` ci sono già documenti, quindi l'area famiglie è in uso.
+- Verificato che `atleti` (1 documento) ha già `accessUids`/`accessi`. Trovata la raccolta legacy `matches` (4 documenti con immagini base64) non usata dal codice.
+- Pulizia codice morto: eliminati `data/giocatori.json` e `data/partite.json`, rimossi gli helper di migrazione da `db.js`, `setPartite` da `data.js`, regola `matches` da `firestore.rules` (da pubblicare). Controllata solo la sintassi.

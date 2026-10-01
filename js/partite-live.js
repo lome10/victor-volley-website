@@ -1,6 +1,6 @@
 /**
  * Victor Volley — Partite Live
- * Carica data/partite.json, arricchisce con dati Supabase (live/conclusa)
+ * Carica le partite dalla collection Firestore "partite" (via DB/VV), arricchisce con dati Supabase (live/conclusa)
  * e popola la partite-bar della home con aggiornamenti realtime.
  */
 (function () {
@@ -366,7 +366,7 @@
 
       })
       .catch(function (e) {
-        console.warn('[partite-live] fetch partite.json error:', e);
+        console.warn('[partite-live] caricamento partite fallito:', e);
       });
   }
 
