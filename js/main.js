@@ -30,3 +30,20 @@ document.addEventListener('DOMContentLoaded', function () {
   yearEls.forEach(function (el) { el.textContent = new Date().getFullYear(); });
 
 });
+
+/* Gestori delegati al posto degli attributi inline (onclick/onerror), che la Content-Security-Policy non ammette. */
+(function () {
+  /* Link "Leggi →": ricorda quale articolo si sta aprendo (data-nav-id). */
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[data-nav-id]');
+    if (!a) return;
+    try { sessionStorage.setItem('vv_nav_id', a.getAttribute('data-nav-id')); } catch (err) { /* storage non disponibile */ }
+  });
+  /* Immagini con data-fallback: se la prima fonte non carica, prova la seconda, una volta sola. */
+  document.addEventListener('error', function (e) {
+    var img = e.target;
+    if (!img || img.tagName !== 'IMG' || !img.getAttribute('data-fallback') || img.getAttribute('data-fallback-used')) return;
+    img.setAttribute('data-fallback-used', '1');
+    img.src = img.getAttribute('data-fallback');
+  }, true);
+})();

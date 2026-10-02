@@ -3697,3 +3697,6 @@ main, footer.site-footer {
     height: 120px;
   }
 }
+
+/* Pulsanti social nella pagina Contatti: attenuazione al passaggio del mouse (prima era un onmouseover inline). */
+.social-btn:hover { opacity: .8; }
