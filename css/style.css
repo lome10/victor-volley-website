@@ -45,7 +45,7 @@
      l'immagine di sfondo della sezione hero / first-screen.
      Percorso relativo a css/style.css (es. ../assets/foto.webp)
   ------------------------------------------------------- */
-  --hero-bg: url('../assets/team-bg.webp');
+  --hero-bg: url('../assets/team-bg-2.webp');
 
   /* -------------------------------------------------------
      DARK SPORT THEME — usato dalle pagine "immersive" (Squadre,
