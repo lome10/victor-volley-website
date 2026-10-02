@@ -278,7 +278,6 @@
           .sort(function (a, b) { return a.data > b.data ? 1 : -1; })[0];
         if (!next || !matchEl) return;
 
-        function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
         function catCls(c) { return c === 'Prima Divisione' ? 'partite-card-cat--magenta' : ''; }
         function formatData(dateStr, ora) {
           var d = new Date(dateStr);

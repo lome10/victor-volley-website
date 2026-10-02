@@ -412,11 +412,6 @@
     document.getElementById('topbarActions').appendChild(btn);
   }
 
-  function esc(str) {
-    if (!str) return '';
-    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
-
   /* ---- Date: usate da Atleti e dal Budget ---- */
   function _daysDiff(dateStr) {
     var t = new Date(); t.setHours(0, 0, 0, 0);

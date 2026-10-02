@@ -50,10 +50,11 @@ Piano: file separati caricati in ordine, namespace comune `window.Admin`, nessun
 
 ### Sicurezza e infrastruttura
 - [ ] Riscrivere la CSP (oggi `Content-Security-Policy-Report-Only` in `vercel.json`): `script-src 'self'` blocca i 7 script inline di `index.html` e `frame-src` non ammette `maps.google.com`. Non attivarla com'è.
-- [ ] Centralizzare `esc()`: è ridefinita circa 17 volte tra pagine e file JS.
+- [x] `esc()` centralizzata in `js/esc.js` (2026-10-02): tolte 15 copie (8 pagine HTML, `components.js`, `diretta.js`, `girone.js`, `partite-live.js`, `admin.js`), caricata prima di `components.js` in 11 pagine e prima di `data.js` in `admin.html`. Comportamento identico (verificato su 14 valori). Controllo permanente: `node scripts/check-esc.js`. **Eccezione voluta:** `_esc()` in `js/atleta.js` resta separata perché con `String(s)` dà `"0"`/`"null"` invece di vuoto; unificarla cambierebbe l'output dell'area atleti (35 usi). Nessuna delle due escapa l'apostrofo (`'`).
 - [ ] Decidere su Supabase: `js/config.js` ha ancora i placeholder, ma `index.html` scarica `supabase-js.min.js` (circa 200 KB) senza usarlo. Rimuoverlo oppure configurare la diretta live.
 - [ ] Rivedere ogni punto con `innerHTML` in `admin.js` (138 occorrenze): verificato solo che il suo `esc` escapa le virgolette.
-- [ ] Aggiungere test e CI (oggi non esistono).
+- [ ] Aggiungere test e CI (oggi non esistono; esistono `scripts/check-admin.js` e `scripts/check-esc.js`, da lanciare a mano).
+- [ ] (minore, già presente prima) `js/firebase-config.js` riga 14: `firebase.auth()` lancia `TypeError` nelle 6 pagine che non caricano l'SDK auth (calendario, diretta, galleria, news, sponsor, squadre). Innocuo (`window.db` è già impostato), ma sporca la console: basta proteggerlo con `if (firebase.auth)`.
 
 ### SEO e contenuti
 - [ ] Sitemap: aggiungere articoli e album (oggi solo le 9 pagine statiche).
@@ -116,3 +117,4 @@ Piano: file separati caricati in ordine, namespace comune `window.Admin`, nessun
 - Push su `origin/main` (dea4161..5462c16): 5 commit di refactor del monolite.
 - Estratti `js/admin/pianoeditoriale.js` (332 righe) e `js/admin/bacheca.js` (276) con `Admin.pianoEditoriale.render` / `Admin.bacheca.render`; `admin.js` scende a 854 righe. Decisione: Dirigenti e File JSON non si estraggono. Migliorato il DOM finto di prova (Firestore finto con Promise): ora girano senza errori anche Avvisi, Allenamenti, Piano editoriale e Bacheca. ESLint `no-undef` e `check-admin.js` OK.
 - Push su `origin/main` (5100c90..6860c8a): estrazione di Piano editoriale e Bacheca.
+- `esc()` centralizzata: `js/esc.js` + `scripts/check-esc.js`. Verificato con ESLint, equivalenza sui valori, test di caricamento dell'admin e, nel browser su `npx serve`, 10 pagine pubbliche (esc è una funzione, contenuti disegnati). Trovato un errore già presente in console (firebase.auth, vedi sopra).

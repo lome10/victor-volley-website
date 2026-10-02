@@ -87,12 +87,13 @@
   <script src="js/data.js"></script>
   <script src="js/db.js"></script>
   <script src="js/splash.js"></script>
-  <script src="js/components.js?v=20260929"></script>
+  <script src="js/esc.js?v=20261002f"></script>
+  <script src="js/components.js?v=20261002f"></script>
   <script src="js/animations.js"></script>
   <script src="js/main.js"></script>
 
   <script src="js/config.js"></script>
-  <script src="js/diretta.js"></script>
+  <script src="js/diretta.js?v=20261002f"></script>
 
   <!-- Sponsor di prova, solo in locale: caricato SOLO su localhost/127.0.0.1 (vedi
        js/dev-sponsor-fixture.js), così in produzione il file non viene nemmeno richiesto. -->
@@ -117,7 +118,6 @@
         .sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
       if (!sponsors.length) return;
 
-      function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
       var gold = sponsors.filter(function (s) { return (s.livello || 'silver') === 'gold'; });
       var rest = sponsors.filter(function (s) { return (s.livello || 'silver') !== 'gold'; });

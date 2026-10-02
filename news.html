@@ -73,7 +73,8 @@
   <script src="js/data.js"></script>
   <script src="js/db.js"></script>
   <script src="js/splash.js"></script>
-  <script src="js/components.js?v=20260929"></script>
+  <script src="js/esc.js?v=20261002f"></script>
+  <script src="js/components.js?v=20261002f"></script>
   <script src="js/animations.js"></script>
   <script src="js/main.js"></script>
 
@@ -92,7 +93,6 @@
     ];
 
     function slug(s) { return s.toLowerCase().replace(/\s+/g,'-').replace(/[àáâ]/g,'a').replace(/[èéê]/g,'e').replace(/[ìí]/g,'i').replace(/[òó]/g,'o').replace(/[ùú]/g,'u'); }
-    function esc(s)  { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
     function badgeCls(cat) { return cat === 'Prima Divisione' ? 'hero-card-cat--magenta' : 'hero-card-cat--azzurro'; }
     function catBadges(cats) {
       if (!cats.length) return '';

@@ -252,13 +252,14 @@
   <script src="js/db.js"></script>
   <script src="js/photodb.js?v=20260929"></script>
   <script src="js/splash.js"></script>
-  <script src="js/components.js?v=20260929"></script>
+  <script src="js/esc.js?v=20261002f"></script>
+  <script src="js/components.js?v=20261002f"></script>
   <script src="js/animations.js"></script>
   <script src="js/main.js"></script>
   <script src="js/vendor/supabase-js.min.js"></script>
   <script src="js/config.js"></script>
-  <script src="js/partite-live.js"></script>
-  <script src="js/girone.js"></script>
+  <script src="js/partite-live.js?v=20261002f"></script>
+  <script src="js/girone.js?v=20261002f"></script>
 
   <!-- Sponsor di prova, solo in locale: caricato SOLO su localhost/127.0.0.1 (vedi
        js/dev-sponsor-fixture.js), così in produzione il file non viene nemmeno richiesto. -->
@@ -273,7 +274,6 @@
   <!-- Sponsor: Gold in evidenza (statici) + Silver/Bronze nel ticker scorrevole -->
   <script>
   (function () {
-    function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
     DB.load(['sponsors'], function () {
       var sponsorSection = document.getElementById('sponsorSection');
@@ -339,7 +339,6 @@
   <script>
   (function () {
     var MAX = 8;
-    function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
     /* Indici ben distribuiti nell'album (primo, metà, terzi…), così non sono le prime foto in fila. */
     function spread(n, count) {
       var out = [], seen = {};
@@ -528,7 +527,6 @@
       'linear-gradient(180deg,#0d2a04 0%,#1a4a0e 55%,#2d7a1f 100%)',
       'linear-gradient(180deg,#2a0d04 0%,#5a1a0e 55%,#9a2f1f 100%)'
     ];
-    function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
     function badgeCls(cat) { return cat === 'Prima Divisione' ? 'hero-card-cat--magenta' : 'hero-card-cat--azzurro'; }
     function catBadges(cats) {
       if (!cats.length) return '';
@@ -641,7 +639,6 @@
       'linear-gradient(180deg,#1a0533 0%,#3d0b72 55%,#CB2168 100%)'
     ];
 
-    function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
     function badgeCls(cat) { return cat === 'Prima Divisione' ? 'hero-card-cat--magenta' : 'hero-card-cat--azzurro'; }
     function catBadges(cats) {
       if (!cats.length) return '';

@@ -79,15 +79,15 @@
   <script src="js/data.js"></script>
   <script src="js/db.js"></script>
   <script src="js/splash.js"></script>
-  <script src="js/components.js?v=20260929"></script>
+  <script src="js/esc.js?v=20261002f"></script>
+  <script src="js/components.js?v=20261002f"></script>
   <script src="js/animations.js"></script>
   <script src="js/main.js"></script>
-  <script src="js/girone.js"></script>
+  <script src="js/girone.js?v=20261002f"></script>
 
   <script>
   (function () {
     function slug(s) { return s.toLowerCase().replace(/\s+/g, '-').replace(/[àáâ]/g,'a').replace(/[èéê]/g,'e').replace(/[ìí]/g,'i').replace(/[òó]/g,'o').replace(/[ùú]/g,'u'); }
-    function esc(s)  { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
     function isVV(nome) { return (nome || '').toLowerCase().indexOf('victor') !== -1; }
 
     var PIN_ICON = '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>';

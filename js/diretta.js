@@ -8,10 +8,6 @@
   /* -------------------------------------------------------
      Helpers
   ------------------------------------------------------- */
-  function esc(s) {
-    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  }
-
   var CAT_ABBREV = {
     'prima divisione': 'Prima Divisione',
     'under 18': 'Under 18', 'under 13': 'Under 13', 'under 12': 'Under 12',
