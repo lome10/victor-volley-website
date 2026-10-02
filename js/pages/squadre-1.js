@@ -28,7 +28,7 @@
 
   function personPhotoHtml(p) {
     if (p.photo) {
-      return '<img src="' + esc(p.photo) + '" alt="" style="object-position:' + esc(p.photoFocus || '50% 25%') + '">';
+      return '<img loading="lazy" decoding="async" src="' + esc(p.photo) + '" alt="" style="object-position:' + esc(p.photoFocus || '50% 25%') + '">';
     }
     return '<span class="sq-initial">' + esc(initials(p.name)) + '</span>';
   }

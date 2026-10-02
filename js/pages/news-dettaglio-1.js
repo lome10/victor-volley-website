@@ -40,7 +40,7 @@
       .slice(0, 3);
 
     sponsorsEl.innerHTML = articleSponsors.map(function (s) {
-      var inner = '<img src="' + esc(s.logo) + '" alt="' + esc(s.nome) + '" class="art-sponsors-logo">';
+      var inner = '<img loading="lazy" decoding="async" src="' + esc(s.logo) + '" alt="' + esc(s.nome) + '" class="art-sponsors-logo">';
       return VV.safeUrl(s.url)
         ? '<a href="' + esc(VV.safeUrl(s.url)) + '" class="art-sponsors-item" target="_blank" rel="noopener">' + inner + '</a>'
         : '<div class="art-sponsors-item">' + inner + '</div>';
@@ -51,7 +51,7 @@
   var cover = document.getElementById('articleCover');
   cover.style.aspectRatio = article.coverRatio === '9:16' ? '9 / 16' : '4 / 5';
   cover.innerHTML = article.image
-    ? '<img src="' + esc(article.image) + '" alt="' + esc(article.title) + '"' + (article.imageFocus ? ' style="object-position:' + esc(article.imageFocus) + '"' : '') + '>'
+    ? '<img fetchpriority="high" decoding="async" src="' + esc(article.image) + '" alt="' + esc(article.title) + '"' + (article.imageFocus ? ' style="object-position:' + esc(article.imageFocus) + '"' : '') + '>'
     : '<div class="article-cover-placeholder">&#127944;</div>';
 
   /* Metadati */
@@ -103,11 +103,9 @@
     var relatedDots = document.getElementById('relatedDotsMobile');
     document.getElementById('relatedSection').style.display = '';
     relatedGrid.innerHTML = others.map(function (a) {
-      var bgStyle = a.image
-        ? 'background-image:url(' + esc(a.image) + ')' + (a.imageFocus ? ';background-position:' + esc(a.imageFocus) : '')
-        : 'background:linear-gradient(135deg,#053063,#008CFD)';
+      var bgHtml = VV.cardBgHtml(a, 'linear-gradient(135deg,#053063,#008CFD)');
       return '<article class="hero-card" data-id="' + a.id + '">' +
-        '<div class="hero-card-bg" style="' + bgStyle + '"></div>' +
+        bgHtml +
         '<div class="hero-card-overlay"></div>' +
         '<div class="hero-card-content">' +
           heroCatBadges(VV.getArticleCategories(a)) +

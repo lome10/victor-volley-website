@@ -19,7 +19,7 @@
   function logoHtml(nome, logoSrc) {
     var src = logoSrc || LOGO_MAP[(nome || '').toLowerCase().trim()];
     return src
-      ? '<img src="' + esc(src) + '" alt="">'
+      ? '<img loading="lazy" decoding="async" src="' + esc(src) + '" alt="">'
       : '<span class="dt-team-logo-init">' + esc((nome || '?').charAt(0).toUpperCase()) + '</span>';
   }
 

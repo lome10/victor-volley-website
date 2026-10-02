@@ -60,12 +60,10 @@
         grid.innerHTML = '<p style="color:#888;text-align:center;padding:48px 0;width:100%">Nessun articolo pubblicato.</p>';
       } else {
         grid.innerHTML = page.map(function (a, i) {
-          var bgStyle = a.image
-            ? 'background-image:url(' + esc(a.image) + ')' + (a.imageFocus ? ';background-position:' + esc(a.imageFocus) : '')
-            : 'background:' + GRADIENTS[(start + i) % GRADIENTS.length];
+          var bgHtml = VV.cardBgHtml(a, GRADIENTS[(start + i) % GRADIENTS.length], i === 0);
           var aCats = VV.getArticleCategories(a);
           return '<article class="hero-card" data-cat="' + aCats.map(slug).join(' ') + '" data-id="' + esc(a.id) + '">' +
-            '<div class="hero-card-bg" style="' + bgStyle + '"></div>' +
+            bgHtml +
             '<div class="hero-card-overlay"></div>' +
             '<div class="hero-card-content">' +
               catBadges(aCats) +

@@ -214,6 +214,15 @@
     /* ---- CATEGORIE ARTICOLI (separate dalle categorie squadra) ---- */
     getCategorieArticoli: function () { return _categorieArticoli || DEFAULT_CATEGORIE_ARTICOLI.slice(); },
     setCategorieArticoli: function (items) { _categorieArticoli = Array.isArray(items) ? items : null; },
+    /* Sfondo di una hero-card: <img> con lazy loading (o sfumatura se manca l'immagine).
+       eager=true per la prima card, visibile subito. */
+    cardBgHtml: function (article, gradient, eager) {
+      var e = function (v) { return String(v || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); };
+      if (!article.image) return '<div class="hero-card-bg" style="background:' + gradient + '"></div>';
+      return '<div class="hero-card-bg"><img src="' + e(article.image) + '" alt=""' +
+        (eager ? ' fetchpriority="high"' : ' loading="lazy"') + ' decoding="async"' +
+        (article.imageFocus ? ' style="object-position:' + e(article.imageFocus) + '"' : '') + '></div>';
+    },
     getArticleCategories: function (article) {
       if (!article) return [];
       if (Array.isArray(article.categories) && article.categories.length) return article.categories;

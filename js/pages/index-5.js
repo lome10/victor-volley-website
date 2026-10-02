@@ -25,14 +25,13 @@
     var prevBtn  = document.getElementById('newsCardsPrev');
     var nextBtn  = document.getElementById('newsCardsNext');
     var dotsWrap = document.getElementById('newsDotsMobile');
+    if (track && !articles.length) track.innerHTML = '';
     if (!track || !articles.length) return;
 
     track.innerHTML = articles.map(function (a, i) {
-      var bgStyle = a.image
-        ? 'background-image:url(' + esc(a.image) + ')' + (a.imageFocus ? ';background-position:' + esc(a.imageFocus) : '')
-        : 'background:' + GRADIENTS[i % GRADIENTS.length];
+      var bgHtml = VV.cardBgHtml(a, GRADIENTS[i % GRADIENTS.length], i === 0);
       return '<article class="hero-card" data-id="' + a.id + '">' +
-        '<div class="hero-card-bg" style="' + bgStyle + '"></div>' +
+        bgHtml +
         '<div class="hero-card-overlay"></div>' +
         '<div class="hero-card-content">' +
           catBadges(VV.getArticleCategories(a)) +

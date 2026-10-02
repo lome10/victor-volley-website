@@ -9,7 +9,7 @@
 
   function card(s, tierKey) {
     var inner = s.logo
-      ? '<img src="' + esc(s.logo) + '" alt="' + esc(s.nome) + '" class="sponsor-card-logo">'
+      ? '<img loading="lazy" decoding="async" src="' + esc(s.logo) + '" alt="' + esc(s.nome) + '" class="sponsor-card-logo">'
       : '<div class="sponsor-card-name">' + esc(s.nome) + '</div>';
     var cls = 'sponsor-card sponsor-card--' + tierKey + ' reveal';
     return VV.safeUrl(s.url)

@@ -22,15 +22,14 @@
   var articles = (ordered.length ? ordered : all).slice(0, 3);
 
   var track = document.getElementById('heroCardsTrack');
+  if (track && !articles.length) track.innerHTML = '';
   if (!track || !articles.length) return;
 
   /* Costruisce le card */
   track.innerHTML = articles.map(function (a, i) {
-    var bgStyle = a.image
-      ? 'background-image:url(' + esc(a.image) + ')' + (a.imageFocus ? ';background-position:' + esc(a.imageFocus) : '')
-      : 'background:' + GRADIENTS[i % GRADIENTS.length];
+    var bgHtml = VV.cardBgHtml(a, GRADIENTS[i % GRADIENTS.length], i === 0);
     return '<article class="hero-card" data-id="' + a.id + '">' +
-      '<div class="hero-card-bg" style="' + bgStyle + '"></div>' +
+      bgHtml +
       '<div class="hero-card-overlay"></div>' +
       '<div class="hero-card-content">' +
         catBadges(VV.getArticleCategories(a)) +

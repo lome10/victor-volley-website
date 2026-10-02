@@ -16,7 +16,7 @@
     var albums = VV.getAlbums()
       .filter(function (a) { return a.photos && a.photos.length; })
       .sort(function (a, b) { return (b.date || '') < (a.date || '') ? -1 : (b.date || '') > (a.date || '') ? 1 : 0; });
-    if (!albums.length) return;
+    if (!albums.length) { document.getElementById('galleryPreviewGrid').innerHTML = ''; return; }
     var album = albums[0];
     var photos = [];
     PhotoDB.getPhotos(album.id, function (r) { photos = r; });

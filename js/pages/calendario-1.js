@@ -79,7 +79,7 @@
     var s = Girone.squadraById(squadre, r.id);
     var isHome = r.id === homeId;
     var logo = s.logo
-      ? '<img src="' + esc(s.logo) + '" class="stand-logo" alt="">'
+      ? '<img loading="lazy" decoding="async" src="' + esc(s.logo) + '" class="stand-logo" alt="">'
       : '<span class="stand-logo-init">' + esc((s.nome || '?').charAt(0)) + '</span>';
     return '<tr' + (isHome ? ' class="stand-row--vv"' : '') + '>' +
       '<td class="stand-pos">' + (r._pos) + '</td>' +
@@ -194,7 +194,7 @@
 
   function teamLogo(src, nome) {
     return src
-      ? '<img src="' + esc(src) + '" alt="" class="fixture-team-logo">'
+      ? '<img loading="lazy" decoding="async" src="' + esc(src) + '" alt="" class="fixture-team-logo">'
       : '<span class="fixture-team-logo-init">' + esc((nome || '?').charAt(0).toUpperCase()) + '</span>';
   }
 

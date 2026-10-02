@@ -16,7 +16,7 @@
 
     if (gold.length) {
       var goldHtml = gold.map(function (s) {
-        var inner = '<img src="' + esc(s.logo) + '" alt="' + esc(s.nome) + '" class="dt-sponsors-gold-logo">';
+        var inner = '<img loading="lazy" decoding="async" src="' + esc(s.logo) + '" alt="' + esc(s.nome) + '" class="dt-sponsors-gold-logo">';
         return s.url
           ? '<a href="' + esc(s.url) + '" class="dt-sponsors-gold-item" target="_blank" rel="noopener">' + inner + '</a>'
           : '<div class="dt-sponsors-gold-item">' + inner + '</div>';
@@ -37,7 +37,7 @@
 
     if (rest.length) {
       function makeItem(s) {
-        var inner = '<img src="' + esc(s.logo) + '" alt="' + esc(s.nome) + '" class="spt-logo">';
+        var inner = '<img loading="lazy" decoding="async" src="' + esc(s.logo) + '" alt="' + esc(s.nome) + '" class="spt-logo">';
         return s.url
           ? '<a href="' + esc(s.url) + '" class="spt-item" target="_blank" rel="noopener">' + inner + '</a>'
           : '<div class="spt-item">' + inner + '</div>';

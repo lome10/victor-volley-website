@@ -1001,6 +1001,14 @@ main, footer.site-footer {
   transition: transform 0.55s ease;
 }
 
+.hero-card-bg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+}
+
 .hero-card-overlay {
   position: absolute;
   inset: 0;
@@ -3700,3 +3708,42 @@ main, footer.site-footer {
 
 /* Pulsanti social nella pagina Contatti: attenuazione al passaggio del mouse (prima era un onmouseover inline). */
 .social-btn:hover { opacity: .8; }
+
+/* ---- Skeleton di caricamento ----
+   Markup statico negli HTML dentro i contenitori riempiti da JS: sparisce da solo
+   quando lo script scrive con innerHTML. Colori neutri (vanno bene su sfondo chiaro e scuro). */
+.skel {
+  --skel-a: rgba(128, 128, 128, 0.14);
+  --skel-b: rgba(128, 128, 128, 0.26);
+  background: linear-gradient(100deg, var(--skel-a) 30%, var(--skel-b) 50%, var(--skel-a) 70%) 0 0 / 300% 100%;
+  animation: skel-shimmer 1.4s ease-in-out infinite;
+  border-radius: 12px;
+  pointer-events: none;
+}
+.partite-bar .skel,
+#squadreMain .skel,
+#calCatPanels .skel {
+  --skel-a: rgba(255, 255, 255, 0.06);
+  --skel-b: rgba(255, 255, 255, 0.13);
+}
+@keyframes skel-shimmer {
+  from { background-position: 100% 0; }
+  to   { background-position: 0 0; }
+}
+@media (prefers-reduced-motion: reduce) { .skel { animation: none; } }
+
+.hero-card.skel { cursor: default; border-radius: 16px; }
+.hero-card.skel:hover { transform: none; box-shadow: none; }
+.partite-card.skel { height: 56px; background-color: transparent; border-color: transparent; }
+.skel-gallery { aspect-ratio: 1 / 1; }
+.skel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  padding: 32px 0;
+}
+.skel-card { aspect-ratio: 3 / 4; border-radius: 16px; }
+.skel-rows { display: grid; gap: 10px; padding: 8px 0; }
+.skel-row { height: 76px; }
+.skel-logos { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 16px; padding: 16px 0; }
+.skel-logo { aspect-ratio: 16 / 9; }
