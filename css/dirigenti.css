@@ -347,6 +347,11 @@ input, select, textarea { font-family: inherit; }
 
 .tessera-nome { width: 100%; min-width: 180px; }
 
+/* Bilancio → Per categoria: righe cliccabili che filtrano il saldo mensile */
+.bil-cat-row { cursor: pointer; }
+.bil-cat-row:hover td { background: rgba(0, 140, 253, .06); }
+.bil-cat-row.is-active td { background: rgba(0, 140, 253, .12); font-weight: 600; }
+
 .dg-select-sm {
   padding: 8px 10px;
   border: 1px solid var(--dg-border);

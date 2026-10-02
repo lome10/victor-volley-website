@@ -10,7 +10,7 @@
   <link rel="preload" href="/assets/fonts/manrope-400-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/fonts.css">
   <link rel="stylesheet" href="/css/admin.css?v=20261001b">
-  <link rel="stylesheet" href="/css/dirigenti.css?v=20261002g">
+  <link rel="stylesheet" href="/css/dirigenti.css?v=20261002i">
 </head>
 <body>
 
@@ -1696,9 +1696,34 @@
 
         <!-- ---- Bilancio (entrate vs uscite, per mese) ---- -->
         <div id="budgetPaneBilancio" class="dg-section is-hidden">
-          <div class="dg-card">
-            <div class="dg-card-title">Saldo mensile</div>
-            <div class="dg-card-sub">Entrate = tranche sponsor, rate atleti e tessere segnate come pagate. Uscite = spese con data indicata; quelle senza data sono raggruppate a parte.</div>
+          <div id="bilancioPerCategoria" class="dg-card">
+            <div class="dg-card-title">Per categoria</div>
+            <div class="dg-card-sub">Da dove arrivano le entrate e dove vanno le uscite in questa stagione. «Incassato» conta solo ciò che è già pagato; «Da incassare» è il previsto non ancora pagato. Clicca una riga per vedere nel saldo mensile solo quella voce.</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px;margin-top:14px">
+              <div class="dg-table-wrap">
+                <table class="dg-table">
+                  <thead><tr><th>Entrate per fonte</th><th>Incassato</th><th>Da incassare</th><th>Quota</th></tr></thead>
+                  <tbody id="bilancioCatEntrateBody"><tr><td colspan="4" class="dg-empty">—</td></tr></tbody>
+                </table>
+              </div>
+              <div class="dg-table-wrap">
+                <table class="dg-table">
+                  <thead><tr><th>Uscite per categoria</th><th>Sostenuto</th><th>Quota</th></tr></thead>
+                  <tbody id="bilancioCatUsciteBody"><tr><td colspan="3" class="dg-empty">—</td></tr></tbody>
+                </table>
+              </div>
+            </div>
+            <div id="bilancioCatSaldo" class="dg-muted" style="margin-top:12px"></div>
+          </div>
+
+          <div class="dg-card" style="margin-top:14px">
+            <div class="dg-toolbar">
+              <div>
+                <div class="dg-card-title">Saldo mensile</div>
+                <div class="dg-card-sub">Entrate = tranche sponsor, rate atleti e tessere segnate come pagate. Uscite = spese con data indicata; quelle senza data sono raggruppate a parte.</div>
+              </div>
+              <select id="bilancioFiltro" class="dg-select-sm" aria-label="Filtra il saldo mensile per fonte o categoria"><option value="">Tutto</option></select>
+            </div>
             <div class="dg-table-wrap" style="margin-top:14px">
               <table class="dg-table">
                 <thead>
@@ -2232,23 +2257,23 @@
   <script src="/js/db.js?v=20260928"></script>
   <script src="/js/config.js?v=20260928"></script>
   <script src="/js/photodb.js?v=20260929"></script>
-  <script src="/js/admin.js?v=20261002g"></script>
-  <script src="/js/admin/atleti.js?v=20261002g"></script>
-  <script src="/js/admin/cms.js?v=20261002g"></script>
-  <script src="/js/admin/pianoeditoriale.js?v=20261002g"></script>
-  <script src="/js/admin/bacheca.js?v=20261002g"></script>
-  <script src="/js/admin/budget/state.js?v=20261002g"></script>
-  <script src="/js/admin/budget/riepilogo.js?v=20261002g"></script>
-  <script src="/js/admin/budget/sponsor.js?v=20261002g"></script>
-  <script src="/js/admin/budget/materiali.js?v=20261002g"></script>
-  <script src="/js/admin/budget/rette.js?v=20261002g"></script>
-  <script src="/js/admin/budget/tessere.js?v=20261002g"></script>
-  <script src="/js/admin/budget/spese.js?v=20261002g"></script>
-  <script src="/js/admin/budget/iva.js?v=20261002g"></script>
-  <script src="/js/admin/budget/exportpdf.js?v=20261002g"></script>
-  <script src="/js/admin/budget/bilancio.js?v=20261002g"></script>
-  <script src="/js/admin/budget/log.js?v=20261002g"></script>
-  <script src="/js/admin/budget/main.js?v=20261002g"></script>
+  <script src="/js/admin.js?v=20261002i"></script>
+  <script src="/js/admin/atleti.js?v=20261002i"></script>
+  <script src="/js/admin/cms.js?v=20261002i"></script>
+  <script src="/js/admin/pianoeditoriale.js?v=20261002i"></script>
+  <script src="/js/admin/bacheca.js?v=20261002i"></script>
+  <script src="/js/admin/budget/state.js?v=20261002i"></script>
+  <script src="/js/admin/budget/riepilogo.js?v=20261002i"></script>
+  <script src="/js/admin/budget/sponsor.js?v=20261002i"></script>
+  <script src="/js/admin/budget/materiali.js?v=20261002i"></script>
+  <script src="/js/admin/budget/rette.js?v=20261002i"></script>
+  <script src="/js/admin/budget/tessere.js?v=20261002i"></script>
+  <script src="/js/admin/budget/spese.js?v=20261002i"></script>
+  <script src="/js/admin/budget/iva.js?v=20261002i"></script>
+  <script src="/js/admin/budget/exportpdf.js?v=20261002i"></script>
+  <script src="/js/admin/budget/bilancio.js?v=20261002i"></script>
+  <script src="/js/admin/budget/log.js?v=20261002i"></script>
+  <script src="/js/admin/budget/main.js?v=20261002i"></script>
   <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>
