@@ -9,7 +9,7 @@ Ultimo aggiornamento: 2026-10-02
 
 ## Stato attuale
 
-- Branch `main`. **Modifiche della sessione 2026-10-02 NON ancora committate**: estrazione del Budget da `js/admin.js` in `js/admin/budget.js` (vedi registro). Verificata solo in modo statico e con un caricamento simulato: **va provata nel browser** (giro rapido della checklist) prima di committare.
+- Branch `main`, commit `5fd8e6c` (estrazione del Budget in `js/admin/budget.js`) **non ancora pubblicato con push**. Provato in locale dall'utente (`npx serve .`): nessun errore JS in console, solo `ERR_BLOCKED_BY_CLIENT` dell'ad blocker su `/_vercel/insights`. Da confermare: rate dalla scheda atleta e sezione Log.
 - Regole Firestore pubblicate e uguali al repository; funzione Vercel `api/set-athlete-password` configurata e provata; pulizia del codice morto fatta.
 - Controllo automatico `node scripts/check-admin.js`: OK. Checklist manuale `docs/SMOKE_TEST_ADMIN.md`: **non ancora eseguita** dall'utente.
 
@@ -108,3 +108,4 @@ Piano: file separati caricati in ordine, namespace comune `window.Admin`, nessun
 - `node scripts/check-admin.js`: OK prima di iniziare. Analisi dei punti di contatto tra Budget e resto di `admin.js`: ~21 nomi esportati, ~17 importati, stato condiviso (stagioni, rette, rate) toccato dalla sezione "Iscrizione alla stagione e rate".
 - Estratto il Budget (ex righe 4675–8555) in `js/admin/budget.js` con uno script ripetibile; `admin.js` scende a ~4.760 righe e pubblica `window.Admin`. Helper generici (audit log, `_diff`, `_mapDoc`, `val`, modali) riportati nel nucleo. `admin.html` carica `budget.js` dopo `admin.js` (cache-busting `?v=20261002a`).
 - Controlli: `node --check` OK; `check-admin.js` OK (72 handler, 16 menu, 388 id); ESLint `no-undef` pulito su entrambi i file (installato fuori dal progetto, non è una dipendenza); caricamento simulato in `vm` con DOM finto: nessun errore all'avvio. **Non provato con Firebase reale né nel browser.**
+- Commit `5fd8e6c`. Prova locale con `npx serve .` (porta 3000): unico messaggio in console `ERR_BLOCKED_BY_CLIENT` (ad blocker su script Vercel insights), nessun errore JS.
