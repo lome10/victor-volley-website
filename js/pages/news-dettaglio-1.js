@@ -45,6 +45,56 @@
         ? '<a href="' + esc(VV.safeUrl(s.url)) + '" class="art-sponsors-item" target="_blank" rel="noopener">' + inner + '</a>'
         : '<div class="art-sponsors-item">' + inner + '</div>';
     }).join('');
+
+    /* Con 1 o 2 sponsor i loghi occupano tutto lo spazio: si ritagliano i margini vuoti del PNG
+       (altrimenti il logo, centrato in un quadrato, resterebbe piccolo) e la fascia si adatta al numero. */
+    sponsorsEl.setAttribute('data-count', String(articleSponsors.length));
+    if (articleSponsors.length < 3) {
+      Array.prototype.forEach.call(sponsorsEl.querySelectorAll('.art-sponsors-logo'), trimSponsorLogo);
+    }
+  }
+
+  /* Ritaglia lo sfondo trasparente/bianco attorno al logo; se non riesce (CORS, immagine piena) lo mostra com'è. */
+  function trimSponsorLogo(img) {
+    var src = img.getAttribute('src');
+    var probe = new Image();
+    if (/^https?:/i.test(src)) probe.crossOrigin = 'anonymous';
+    probe.onload = function () {
+      try {
+        var scale = Math.min(1, 900 / Math.max(probe.naturalWidth, probe.naturalHeight));
+        var w = Math.max(1, Math.round(probe.naturalWidth * scale));
+        var h = Math.max(1, Math.round(probe.naturalHeight * scale));
+        var c = document.createElement('canvas');
+        c.width = w; c.height = h;
+        var ctx = c.getContext('2d');
+        ctx.drawImage(probe, 0, 0, w, h);
+        var d = ctx.getImageData(0, 0, w, h).data;
+        var x0 = w, y0 = h, x1 = -1, y1 = -1;
+        for (var y = 0; y < h; y++) {
+          for (var x = 0; x < w; x++) {
+            var i = (y * w + x) * 4;
+            var empty = d[i + 3] < 12 || (d[i] > 245 && d[i + 1] > 245 && d[i + 2] > 245);
+            if (!empty) {
+              if (x < x0) x0 = x; if (x > x1) x1 = x;
+              if (y < y0) y0 = y; if (y > y1) y1 = y;
+            }
+          }
+        }
+        if (x1 < 0 || ((x1 - x0 + 1) > w * 0.96 && (y1 - y0 + 1) > h * 0.96)) throw new Error('no-trim');
+        var pad = Math.round(Math.max(w, h) * 0.01);
+        x0 = Math.max(0, x0 - pad); y0 = Math.max(0, y0 - pad);
+        x1 = Math.min(w - 1, x1 + pad); y1 = Math.min(h - 1, y1 + pad);
+        var out = document.createElement('canvas');
+        out.width = x1 - x0 + 1; out.height = y1 - y0 + 1;
+        out.getContext('2d').drawImage(c, x0, y0, out.width, out.height, 0, 0, out.width, out.height);
+        img.src = out.toDataURL('image/png');
+        img.classList.add('is-trimmed');
+      } catch (e) {
+        img.classList.add('is-raw');
+      }
+    };
+    probe.onerror = function () { img.classList.add('is-raw'); };
+    probe.src = src;
   }
 
   /* Cover — formato scelto in admin (default 4:5), coerente con hero/news card per il focus point */
