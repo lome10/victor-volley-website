@@ -73,8 +73,9 @@ Piano: file separati caricati in ordine, namespace comune `window.Admin`, nessun
 ## Da verificare (serve controllo sui dati di produzione)
 
 - [x] **Regole Firestore pubblicate**: verificato dalla Console il 2026-10-01, il testo pubblicato (143 righe) coincide con `firestore.rules`; cronologia con 3 pubblicazioni di oggi (11:23, 13:10, 13:22).
-- [ ] **Migrazione immagini base64 → Cloudinary**: lanciata dal bottone nella tab File JSON? (idempotente)
-- [ ] **Migrazione IVA sponsor** (`DG.migraIvaSponsor`, bottone in Riepilogo IVA): lanciata per ogni stagione con sponsor chiusi?
+- [ ] **Migrazione immagini base64 → Cloudinary** (tab File JSON, bottone «Migra immagini»; codice riletto il 2026-10-02): controlla articoli, giocatori, staff, loghi delle partite e loghi sponsor; salta ciò che è già un URL e salva solo se cambia → si può rilanciare. Non tocca la galleria foto. **Da lanciare dall'utente** dopo un «Esporta backup».
+- [ ] **Migrazione IVA sponsor** (`DG.migraIvaSponsor`, bottone «Ricalcola IVA sponsor» in Riepilogo IVA; codice riletto il 2026-10-02): agisce **solo sulla stagione selezionata** e solo sugli sponsor «chiusi». **Elimina** le vecchie voci IVA create una per tranche pagata e le sostituisce con un'unica voce per sponsor (IVA 11%); ogni modifica finisce nel Log. Va lanciata una stagione alla volta, dopo il backup, e il Riepilogo IVA va confrontato prima/dopo.
+- [ ] **Backup incompleto**: `BACKUP_COLLECTIONS` in `admin.js` non include `atletiDati` (anagrafica riservata), `accessi`, `comunicazioni`, `presenze`, `allenamenti`. Aggiungerle è una riga, ma `atletiDati` contiene dati personali dei minori: decisione dell'utente.
 - [x] **Migrazione `accessUids` degli atleti**: verificato dalla Console il 2026-10-01; la raccolta `atleti` ha un solo documento e ha già `accessUids` e `accessi`.
 
 ---
@@ -118,3 +119,4 @@ Piano: file separati caricati in ordine, namespace comune `window.Admin`, nessun
 - Estratti `js/admin/pianoeditoriale.js` (332 righe) e `js/admin/bacheca.js` (276) con `Admin.pianoEditoriale.render` / `Admin.bacheca.render`; `admin.js` scende a 854 righe. Decisione: Dirigenti e File JSON non si estraggono. Migliorato il DOM finto di prova (Firestore finto con Promise): ora girano senza errori anche Avvisi, Allenamenti, Piano editoriale e Bacheca. ESLint `no-undef` e `check-admin.js` OK.
 - Push su `origin/main` (5100c90..6860c8a): estrazione di Piano editoriale e Bacheca.
 - `esc()` centralizzata: `js/esc.js` + `scripts/check-esc.js`. Verificato con ESLint, equivalenza sui valori, test di caricamento dell'admin e, nel browser su `npx serve`, 10 pagine pubbliche (esc è una funzione, contenuti disegnati). Trovato un errore già presente in console (firebase.auth, vedi sopra).
+- Riletto il codice delle due migrazioni (nessuna modifica) e confrontate le raccolte usate dal codice con quelle del backup: mancano 5 raccolte (vedi «Da verificare»). Le migrazioni toccano solo raccolte già nel backup.
