@@ -56,7 +56,7 @@ Piano: file separati caricati in ordine, namespace comune `window.Admin`, nessun
 - [ ] Decidere su Supabase: `js/config.js` ha ancora i placeholder, ma `index.html` scarica `supabase-js.min.js` (circa 200 KB) senza usarlo. Rimuoverlo oppure configurare la diretta live.
 - [ ] Rivedere ogni punto con `innerHTML` in `admin.js` (138 occorrenze): verificato solo che il suo `esc` escapa le virgolette.
 - [ ] Aggiungere test e CI (oggi non esistono; esistono `scripts/check-admin.js` e `scripts/check-esc.js`, da lanciare a mano).
-- [ ] (minore, già presente prima) `js/firebase-config.js` riga 14: `firebase.auth()` lancia `TypeError` nelle 6 pagine che non caricano l'SDK auth (calendario, diretta, galleria, news, sponsor, squadre). Innocuo (`window.db` è già impostato), ma sporca la console: basta proteggerlo con `if (firebase.auth)`.
+- [x] (corretto 2026-10-02) `js/firebase-config.js` riga 14: `firebase.auth()` lancia `TypeError` nelle 6 pagine che non caricano l'SDK auth (calendario, diretta, galleria, news, sponsor, squadre). Innocuo (`window.db` è già impostato), ma sporca la console: basta proteggerlo con `if (firebase.auth)`.
 
 ### SEO e contenuti
 - [ ] Sitemap: aggiungere articoli e album (oggi solo le 9 pagine statiche).

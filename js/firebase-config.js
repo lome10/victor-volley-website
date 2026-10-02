@@ -12,5 +12,6 @@
   };
   firebase.initializeApp(config);
   window.db   = firebase.firestore();
-  window.auth = firebase.auth();
+  /* L'SDK di autenticazione è caricato solo da admin e area atleti: sulle altre pagine non esiste. */
+  if (typeof firebase.auth === 'function') window.auth = firebase.auth();
 })();
