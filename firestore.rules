@@ -128,6 +128,7 @@ service cloud.firestore {
       allow read: if isDirigente() || ('atletaId' in resource.data && possiedeAtleta(resource.data.atletaId));
       allow write: if isDirigente();
     }
+    match /tessere/{document=**}          { allow read, write: if isDirigente(); }
     match /vociSpesa/{document=**}        { allow read, write: if isDirigente(); }
     match /sottospese/{document=**}       { allow read, write: if isDirigente(); }
     match /categorieSpesa/{document=**}   { allow read, write: if isDirigente(); }

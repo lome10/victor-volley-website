@@ -24,6 +24,7 @@
     if (B._activeBudgetTab === 'sponsor')   B._renderKanban();
     if (B._activeBudgetTab === 'rette')     B._renderRette();
     if (B._activeBudgetTab === 'spese')     B._renderSpese();
+    if (B._activeBudgetTab === 'tessere')   B._renderTessere();
     if (B._activeBudgetTab === 'bilancio')  { B._renderBilancio(); B._renderSpeseForecast(); }
   }
 
@@ -103,12 +104,18 @@
       db.collection('sottospese').where('seasonId', '==', B._currentSeasonId).get().catch(function (e) {
         console.error('[budget] sottospese', e);
         return { docs: [] };
+      }),
+      /* Tessere: stesso trattamento difensivo (regola da pubblicare per la nuova raccolta). */
+      db.collection('tessere').where('seasonId', '==', B._currentSeasonId).get().catch(function (e) {
+        console.error('[budget] tessere', e);
+        return { docs: [] };
       })
     ]).then(function (res) {
       B._categorieAtleti = res[0].docs.map(_mapDoc);
       B._vociSpesa       = res[1].docs.map(_mapDoc);
       B._atletiRette     = res[2].docs.map(_mapDoc);
       B._sottospese      = res[3].docs.map(_mapDoc);
+      B._tessere         = res[4].docs.map(_mapDoc);
     });
   }
 
@@ -180,7 +187,7 @@
       B._currentSeasonId = this.value;
       _loadSeasonScoped().then(function () {
         B._renderObiettivo(); B._renderPromemoriaWidget(); B._renderStatCards();
-        B._renderCharts(); B._renderCashflow(); B._renderKanban(); B._renderRette(); B._renderSpese(); B._renderBilancio();
+        B._renderCharts(); B._renderCashflow(); B._renderKanban(); B._renderRette(); B._renderSpese(); B._renderBilancio(); B._renderTessere();
       });
     });
 

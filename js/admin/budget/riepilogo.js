@@ -19,20 +19,21 @@
     var sponsorPotenziali = cur.filter(function (s) { return s.stato !== 'chiuso' && s.stato !== 'rifiutato'; })
       .reduce(function (s, x) { return s + (+x.importoStimato || 0) * (+x.probabilitaChiusura || 0); }, 0);
     var rette = B._calcRetteAtleti().totIncassato;
+    var tessere = B._calcTessere().incassato;
     var uscite = B._vociSpesa.reduce(function (s, v) { return s + (+v.importoSostenuto || 0); }, 0);
-    var entrateConfermate = sponsorChiusi + rette;
+    var entrateConfermate = sponsorChiusi + rette + tessere;
     var saldo = entrateConfermate - uscite;
     var season = B._seasons.find(function (s) { return s.id === B._currentSeasonId; }) || {};
     var obiettivo = +season.obiettivoSaldo || 0;
     var differenza = saldo - obiettivo;
     var pct = obiettivo > 0 ? Math.round(saldo / obiettivo * 100) : 0;
     return {
-      sponsorChiusi: sponsorChiusi, sponsorDaIncassare: sponsorDaIncassare, sponsorPotenziali: sponsorPotenziali, rette: rette, uscite: uscite,
+      sponsorChiusi: sponsorChiusi, sponsorDaIncassare: sponsorDaIncassare, sponsorPotenziali: sponsorPotenziali, rette: rette, tessere: tessere, uscite: uscite,
       entrateConfermate: entrateConfermate, saldo: saldo, obiettivo: obiettivo, differenza: differenza, pct: pct
     };
   }
 
-  /* Scompone "entrate confermate" nelle singole fonti (sponsor chiusi + categorie rette), condiviso da UI e export PDF. */
+  /* Scompone "entrate confermate" nelle singole fonti (sponsor chiusi + categorie rette + tessere), condiviso da UI e export PDF. */
   function _calcEntrateConfermateDettaglio() {
     var cur = B._sponsorizzazioni.filter(function (s) { return s.seasonId === B._currentSeasonId && s.stato === 'chiuso'; });
     var righe = cur.map(function (s) {
@@ -40,7 +41,10 @@
       return { tipo: 'Sponsor', nome: az ? az.ragioneSociale : '—', importo: B._sponsorIncassato(s) };
     }).concat(B._calcRetteAtleti().righe.map(function (r) {
       return { tipo: 'Retta atleti', nome: r.nome, importo: r.incassato };
-    })).filter(function (r) { return r.importo > 0; });
+    })).concat((function () {
+      var t = B._calcTessere();
+      return [{ tipo: 'Tessere', nome: t.pagate + (t.pagate === 1 ? ' tessera pagata' : ' tessere pagate') + ' (€' + t.prezzo + ' ciascuna)', importo: t.incassato }];
+    })()).filter(function (r) { return r.importo > 0; });
     righe.sort(function (a, b) { return b.importo - a.importo; });
     var totale = righe.reduce(function (s, r) { return s + r.importo; }, 0);
     return { righe: righe, totale: totale };
@@ -246,6 +250,7 @@
        stima di forecast, mescolarlo qui confondeva "quanto ho" con "quanto spero". */
     document.getElementById('chartDonutEntrate').innerHTML = _svgDonut([
       { label: 'Rette atleti', value: r.rette, color: '#008CFD' },
+      { label: 'Tessere', value: r.tessere, color: '#F59E0B' },
       { label: 'Sponsor chiusi', value: r.sponsorChiusi, color: '#10B981' }
     ], 'Composizione entrate confermate');
 

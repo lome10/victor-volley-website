@@ -345,6 +345,8 @@ input, select, textarea { font-family: inherit; }
 .dg-check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--dg-muted); font-weight: 500; }
 .dg-check input { width: 16px; height: 16px; accent-color: var(--dg-blue); }
 
+.tessera-nome { width: 100%; min-width: 180px; }
+
 .dg-select-sm {
   padding: 8px 10px;
   border: 1px solid var(--dg-border);

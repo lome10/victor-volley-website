@@ -31,6 +31,7 @@
   B._categorieAtleti = [];
   B._atletiRette = [];
   B._rateAtleti = [];
+  B._tessere = [];
   B._curAtletaRettaId = null;
   B._vociSpesa = [];
   B._sottospese = [];

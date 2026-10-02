@@ -25,6 +25,7 @@ Ultimo aggiornamento: 2026-10-02
 Legenda: `[ ]` aperto · `[x]` fatto · `[~]` in corso
 
 ### Priorità alta
+- [~] **Tessere (nuova funzione, 2026-10-02)**: sotto-tab «Tessere» nel Budget, tabella 1–100 con nome, casella «Pagata» e data; 20 € a tessera. Scelte dell'utente: è un'**entrata**, conta a bilancio **solo se «Pagata»** (con data, default oggi), **per stagione**. Dati nella raccolta `tessere` (id `<seasonId>_<numero>`). Entra in: Entrate confermate e grafico a torta del Riepilogo, Bilancio mensile e «Entrate incassate», export PDF, backup, Log (entità «Tessera»). Codice: `js/admin/budget/tessere.js`. **Prima di usarla in produzione bisogna pubblicare `firestore.rules` dalla Console Firebase** (nuova regola `tessere`, solo dirigenti): senza, la tab si apre vuota e salvare dà errore di permessi.
 - [x] Committare e pubblicare i fix dell'audit (vedi sopra).
 - [x] Checklist di smoke test scritta: `docs/SMOKE_TEST_ADMIN.md` (giro rapido da 5 minuti + sezione per sezione) e controllo automatico `node scripts/check-admin.js` (sintassi, onclick→funzioni, menu→sezioni, id usati dal JS).
 - [ ] **Eseguire una volta la checklist per avere il punto di partenza** (tutto ✔) e annotare l'esito qui, prima di iniziare l'estrazione dal monolite.
@@ -120,3 +121,4 @@ Piano: file separati caricati in ordine, namespace comune `window.Admin`, nessun
 - Push su `origin/main` (5100c90..6860c8a): estrazione di Piano editoriale e Bacheca.
 - `esc()` centralizzata: `js/esc.js` + `scripts/check-esc.js`. Verificato con ESLint, equivalenza sui valori, test di caricamento dell'admin e, nel browser su `npx serve`, 10 pagine pubbliche (esc è una funzione, contenuti disegnati). Trovato un errore già presente in console (firebase.auth, vedi sopra).
 - Riletto il codice delle due migrazioni (nessuna modifica) e confrontate le raccolte usate dal codice con quelle del backup: mancano 5 raccolte (vedi «Da verificare»). Le migrazioni toccano solo raccolte già nel backup.
+- Nuova sotto-tab Budget «Tessere» (`js/admin/budget/tessere.js`): tabella 1–100, nome per numero, «Pagata» + data, 20 € l'una, per stagione; entrata a bilancio solo se pagata. Integrata in `_calcRiepilogo`, dettaglio entrate, grafico, Bilancio mensile, backup, regole Firestore (da pubblicare), filtro del Log. Controlli: `node --check`, ESLint, `check-admin.js` (75 handler), test di logica con dati finti (17 verifiche: assegna/paga/data/libera/100 tessere = 2000 €), controllo visivo nel browser con dati finti. **Non provato con Firebase reale.**

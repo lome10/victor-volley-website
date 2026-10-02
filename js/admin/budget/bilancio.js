@@ -39,7 +39,11 @@
         var a = B._atletaRettaById(r.atletaRettaId);
         return { scadenza: r.scadenza, importo: +r.importo || 0, tipo: 'Retta atleti', nome: a ? (a.nome + ' ' + a.cognome) : '—', note: r.note || '' };
       });
-    var entrate = entrateSponsor.concat(entrateRette);
+    /* Tessere pagate: la data di pagamento sceglie il mese (la tabella la imposta sempre). */
+    var entrateTessere = B._calcTessere().righe.map(function (r) {
+      return { scadenza: r.dataPagamento, importo: r.importo, tipo: 'Tessere', nome: 'Tessera n. ' + r.numero + ' — ' + r.nome, note: '' };
+    });
+    var entrate = entrateSponsor.concat(entrateRette, entrateTessere);
     /* Le voci IVA sono "sostenute" ma non ancora un'uscita di cassa reale finché
        non vengono marcate come versate (v.pagata) nel Riepilogo IVA. */
     var uscite = B._vociSpesa.filter(function (v) { return +v.importoSostenuto > 0 && (!v.isIva || v.pagata); });

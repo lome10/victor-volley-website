@@ -10,7 +10,7 @@
   <link rel="preload" href="/assets/fonts/manrope-400-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/fonts.css">
   <link rel="stylesheet" href="/css/admin.css?v=20261001b">
-  <link rel="stylesheet" href="/css/dirigenti.css?v=20260929">
+  <link rel="stylesheet" href="/css/dirigenti.css?v=20261002g">
 </head>
 <body>
 
@@ -1409,6 +1409,7 @@
           <button class="budget-subtab is-active" data-btab="riepilogo">Riepilogo</button>
           <button class="budget-subtab" data-btab="sponsor">Pipeline Sponsor</button>
           <button class="budget-subtab" data-btab="rette">Rette Atleti</button>
+          <button class="budget-subtab" data-btab="tessere">Tessere</button>
           <button class="budget-subtab" data-btab="spese">Spese</button>
           <button class="budget-subtab" data-btab="bilancio">Bilancio</button>
         </nav>
@@ -1604,6 +1605,35 @@
           </div>
         </div>
 
+        <!-- ---- Tessere ---- -->
+        <div id="budgetPaneTessere" class="dg-section is-hidden">
+          <div id="tessereSommario" class="dg-stat-row"></div>
+
+          <div class="dg-card" style="margin-top:14px">
+            <div class="dg-toolbar">
+              <div>
+                <div class="dg-card-title">Tessere</div>
+                <div class="dg-card-sub">Scrivi il nome accanto al numero per assegnare la tessera. Ogni tessera costa 20 €: spuntando «Pagata» (con la data) i 20 € contano come entrata nel Riepilogo e nel Bilancio di questa stagione.</div>
+              </div>
+              <input type="search" id="tessereFiltro" class="dg-select-sm" placeholder="Cerca numero o nome" aria-label="Cerca una tessera">
+            </div>
+            <div class="dg-table-wrap" style="margin-top:14px">
+              <table class="dg-table">
+                <thead>
+                  <tr>
+                    <th>N.</th>
+                    <th>Nome</th>
+                    <th style="text-align:center">Pagata</th>
+                    <th>Data pagamento</th>
+                    <th>Importo</th>
+                  </tr>
+                </thead>
+                <tbody id="tessereBody"><tr><td colspan="5" class="dg-empty">—</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
         <!-- ---- Spese ---- -->
         <div id="budgetPaneSpese" class="dg-section is-hidden">
           <div class="dg-card">
@@ -1668,7 +1698,7 @@
         <div id="budgetPaneBilancio" class="dg-section is-hidden">
           <div class="dg-card">
             <div class="dg-card-title">Saldo mensile</div>
-            <div class="dg-card-sub">Entrate = tranche sponsor e rate atleti segnate come pagate. Uscite = spese con data indicata; quelle senza data sono raggruppate a parte.</div>
+            <div class="dg-card-sub">Entrate = tranche sponsor, rate atleti e tessere segnate come pagate. Uscite = spese con data indicata; quelle senza data sono raggruppate a parte.</div>
             <div class="dg-table-wrap" style="margin-top:14px">
               <table class="dg-table">
                 <thead>
@@ -1687,7 +1717,7 @@
 
           <div class="dg-card" style="margin-top:14px">
             <div class="dg-card-title">Entrate incassate</div>
-            <div class="dg-card-sub">Tranche sponsor e rate atleti segnate come pagate, per questa stagione.</div>
+            <div class="dg-card-sub">Tranche sponsor, rate atleti e tessere segnate come pagate, per questa stagione.</div>
             <div class="dg-table-wrap" style="margin-top:14px">
               <table class="dg-table">
                 <thead>
@@ -1731,6 +1761,7 @@
             <option value="sponsorSito">Sponsor (vetrina sito)</option>
             <option value="stagioneSito">Stagione sito</option>
             <option value="atleta">Atleta</option>
+            <option value="tessera">Tessera</option>
             <option value="dirigente">Dirigente</option>
             <option value="azienda">Azienda (CRM)</option>
             <option value="sponsorizzazione">Sponsorizzazione</option>
@@ -2201,22 +2232,23 @@
   <script src="/js/db.js?v=20260928"></script>
   <script src="/js/config.js?v=20260928"></script>
   <script src="/js/photodb.js?v=20260929"></script>
-  <script src="/js/admin.js?v=20261002f"></script>
-  <script src="/js/admin/atleti.js?v=20261002f"></script>
-  <script src="/js/admin/cms.js?v=20261002f"></script>
-  <script src="/js/admin/pianoeditoriale.js?v=20261002f"></script>
-  <script src="/js/admin/bacheca.js?v=20261002f"></script>
-  <script src="/js/admin/budget/state.js?v=20261002f"></script>
-  <script src="/js/admin/budget/riepilogo.js?v=20261002f"></script>
-  <script src="/js/admin/budget/sponsor.js?v=20261002f"></script>
-  <script src="/js/admin/budget/materiali.js?v=20261002f"></script>
-  <script src="/js/admin/budget/rette.js?v=20261002f"></script>
-  <script src="/js/admin/budget/spese.js?v=20261002f"></script>
-  <script src="/js/admin/budget/iva.js?v=20261002f"></script>
-  <script src="/js/admin/budget/exportpdf.js?v=20261002f"></script>
-  <script src="/js/admin/budget/bilancio.js?v=20261002f"></script>
-  <script src="/js/admin/budget/log.js?v=20261002f"></script>
-  <script src="/js/admin/budget/main.js?v=20261002f"></script>
+  <script src="/js/admin.js?v=20261002g"></script>
+  <script src="/js/admin/atleti.js?v=20261002g"></script>
+  <script src="/js/admin/cms.js?v=20261002g"></script>
+  <script src="/js/admin/pianoeditoriale.js?v=20261002g"></script>
+  <script src="/js/admin/bacheca.js?v=20261002g"></script>
+  <script src="/js/admin/budget/state.js?v=20261002g"></script>
+  <script src="/js/admin/budget/riepilogo.js?v=20261002g"></script>
+  <script src="/js/admin/budget/sponsor.js?v=20261002g"></script>
+  <script src="/js/admin/budget/materiali.js?v=20261002g"></script>
+  <script src="/js/admin/budget/rette.js?v=20261002g"></script>
+  <script src="/js/admin/budget/tessere.js?v=20261002g"></script>
+  <script src="/js/admin/budget/spese.js?v=20261002g"></script>
+  <script src="/js/admin/budget/iva.js?v=20261002g"></script>
+  <script src="/js/admin/budget/exportpdf.js?v=20261002g"></script>
+  <script src="/js/admin/budget/bilancio.js?v=20261002g"></script>
+  <script src="/js/admin/budget/log.js?v=20261002g"></script>
+  <script src="/js/admin/budget/main.js?v=20261002g"></script>
   <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>
