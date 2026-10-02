@@ -9,13 +9,14 @@ Ultimo aggiornamento: 2026-10-02
 
 ## Stato attuale
 
-- Branch `main`. `admin.js` ora è ~1.435 righe (era 8.557). File estratti: `js/admin/budget/*.js` (11 file, provato dall'utente), `js/admin/atleti.js` e `js/admin/cms.js` (**entrambi da provare nel browser**, committati ma non verificati dall'utente). **Pubblicato con push su `origin/main` (5462c16)**: Atleti e CMS in produzione senza prova manuale dell'utente; se qualcosa non va, `git revert` dei commit f46095b..5462c16 o correzione puntuale.
+- Branch `main`. `admin.js` ora è ~854 righe (era 8.557). File in `js/admin/`: `budget/*.js` (11 file), `atleti.js`, `cms.js`, `pianoeditoriale.js`, `bacheca.js`. Su `origin/main` fino a `5100c90` (Atleti e CMS pubblicati **senza prova manuale dell'utente**). L'estrazione di Piano editoriale e Bacheca è committata ma **non ancora pubblicata**.
 - Regole Firestore pubblicate e uguali al repository; funzione Vercel `api/set-athlete-password` configurata e provata; pulizia del codice morto fatta.
 - Controllo automatico `node scripts/check-admin.js`: OK. Checklist manuale `docs/SMOKE_TEST_ADMIN.md`: **non ancora eseguita** dall'utente.
 
 ### Da dove ripartire (prossima sessione)
-1. L'utente prova nel browser (`npx serve .`) Atleti (lista, scheda, accessi, rate, password, nuovo atleta, CSV, Avvisi, Presenze, Allenamenti, Budget → Rette → scheda) e CMS (Articoli con copertina e categorie, Calendario/partite con logo, Galleria album/foto, Squadre con staff e giocatori, Stagioni, Maglia, Sponsor del sito).
-2. Se tutto ✔: estrarre le sezioni rimaste (Dirigenti, Piano editoriale, Bacheca, File JSON + migrazione immagini, Backup, cambio password) o lasciarle in `admin.js`: è il nucleo (bootstrap, navigazione, dashboard, utility, audit log, modali). Poi push.
+1. L'utente prova nel pannello (locale con `npx serve .` o produzione) Atleti, CMS, Piano editoriale e Bacheca; riferisce eventuali errori in console (ignorare `ERR_BLOCKED_BY_CLIENT`).
+2. Decisione presa: **Dirigenti e File JSON restano in `admin.js`** (piccoli; File JSON legato alle migrazioni). Il nucleo è bootstrap, backup, password, navigazione, dashboard, dirigenti, file JSON, audit log, modali.
+3. Push dell'ultimo commit (Piano editoriale e Bacheca) quando l'utente lo autorizza.
 3. Restano da decidere/fare: migrazioni a bottone (immagini Cloudinary, IVA sponsor), cancellazione dei 4 documenti di `matches`, CSP, Supabase, `esc()` centralizzata.
 
 ---
@@ -114,3 +115,4 @@ Piano: file separati caricati in ordine, namespace comune `window.Admin`, nessun
 - Estratto `js/admin/atleti.js` (ex righe 2263–3730) con script ripetibile; `admin.js` scende a ~3.310 righe. Helper di data (`_daysDiff`, `_fmtDate`, `_fmtDateLong`) restati nel nucleo. `Admin.renderAtletiRows`/`renderRateAdmin`/`stagioneCorrenteNome` diventano wrapper ritardati verso `Admin.atleti`. Controlli: `node --check`, ESLint `no-undef`, `check-admin.js` OK; render simulato di atleti/righe/rate/presenze OK (avvisi e allenamenti non eseguibili con il DOM finto, per via di Firestore finto).
 - Estratto `js/admin/cms.js` (ex righe 363–1809, 1833–2234, 3191–3224); `admin.js` scende a ~1.435 righe. Icone `EDIT_ICON_SM`/`DEL_ICON_SM` restano nel nucleo. Controlli: `node --check`, ESLint `no-undef`, `check-admin.js` (aggiornato; verificato che segnali un handler mancante), render simulato di tutte le sezioni CMS OK, 78 metodi di `AdminActions` presenti a runtime.
 - Push su `origin/main` (dea4161..5462c16): 5 commit di refactor del monolite.
+- Estratti `js/admin/pianoeditoriale.js` (332 righe) e `js/admin/bacheca.js` (276) con `Admin.pianoEditoriale.render` / `Admin.bacheca.render`; `admin.js` scende a 854 righe. Decisione: Dirigenti e File JSON non si estraggono. Migliorato il DOM finto di prova (Firestore finto con Promise): ora girano senza errori anche Avvisi, Allenamenti, Piano editoriale e Bacheca. ESLint `no-undef` e `check-admin.js` OK.
