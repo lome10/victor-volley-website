@@ -131,6 +131,9 @@ a:hover {
   padding: var(--section-gap) 0;
 }
 
+/* Pagina articolo: meno aria sopra, la fascia sponsor parte vicino al bordo */
+.section--article { padding-top: 28px; }
+
 .section--alt {
   background-color: var(--c-gray-light);
 }
