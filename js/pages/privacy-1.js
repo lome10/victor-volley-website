@@ -5,6 +5,6 @@
   if (!btn) return;
   btn.addEventListener('click', function () {
     VVConsent.revoke();
-    if (status) status.textContent = '✓ Consenso revocato: Maps e YouTube torneranno a chiederti il permesso.';
+    if (status) status.textContent = '✓ Consenso revocato: la mappa tornerà a chiederti il permesso.';
   });
 })();
