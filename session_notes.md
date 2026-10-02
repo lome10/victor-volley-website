@@ -9,7 +9,7 @@ Ultimo aggiornamento: 2026-10-02
 
 ## Stato attuale
 
-- Branch `main`. `admin.js` ora è ~1.435 righe (era 8.557). File estratti: `js/admin/budget/*.js` (11 file, provato dall'utente), `js/admin/atleti.js` e `js/admin/cms.js` (**entrambi da provare nel browser**, committati ma non verificati dall'utente). Nessun push ancora.
+- Branch `main`. `admin.js` ora è ~1.435 righe (era 8.557). File estratti: `js/admin/budget/*.js` (11 file, provato dall'utente), `js/admin/atleti.js` e `js/admin/cms.js` (**entrambi da provare nel browser**, committati ma non verificati dall'utente). **Pubblicato con push su `origin/main` (5462c16)**: Atleti e CMS in produzione senza prova manuale dell'utente; se qualcosa non va, `git revert` dei commit f46095b..5462c16 o correzione puntuale.
 - Regole Firestore pubblicate e uguali al repository; funzione Vercel `api/set-athlete-password` configurata e provata; pulizia del codice morto fatta.
 - Controllo automatico `node scripts/check-admin.js`: OK. Checklist manuale `docs/SMOKE_TEST_ADMIN.md`: **non ancora eseguita** dall'utente.
 
@@ -113,3 +113,4 @@ Piano: file separati caricati in ordine, namespace comune `window.Admin`, nessun
 - Budget spezzato in 11 file con script ripetibile. Riferimenti tra file riscritti in `B.nome` (672 sostituzioni, 24 var di stato e 69 funzioni condivise); controllo che ogni `B.x` usato sia assegnato (93/93). ESLint `no-undef`, `node --check`, `check-admin.js` e render simulato di tutte le sotto-tab OK. Il vecchio `budget.js` rimosso.
 - Estratto `js/admin/atleti.js` (ex righe 2263–3730) con script ripetibile; `admin.js` scende a ~3.310 righe. Helper di data (`_daysDiff`, `_fmtDate`, `_fmtDateLong`) restati nel nucleo. `Admin.renderAtletiRows`/`renderRateAdmin`/`stagioneCorrenteNome` diventano wrapper ritardati verso `Admin.atleti`. Controlli: `node --check`, ESLint `no-undef`, `check-admin.js` OK; render simulato di atleti/righe/rate/presenze OK (avvisi e allenamenti non eseguibili con il DOM finto, per via di Firestore finto).
 - Estratto `js/admin/cms.js` (ex righe 363–1809, 1833–2234, 3191–3224); `admin.js` scende a ~1.435 righe. Icone `EDIT_ICON_SM`/`DEL_ICON_SM` restano nel nucleo. Controlli: `node --check`, ESLint `no-undef`, `check-admin.js` (aggiornato; verificato che segnali un handler mancante), render simulato di tutte le sezioni CMS OK, 78 metodi di `AdminActions` presenti a runtime.
+- Push su `origin/main` (dea4161..5462c16): 5 commit di refactor del monolite.
