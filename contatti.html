@@ -22,7 +22,7 @@
   <link rel="preload" href="/assets/fonts/barlow-700-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/manrope-400-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/fonts.css">
-  <link rel="stylesheet" href="css/style.css?v=20261002n">
+  <link rel="stylesheet" href="css/style.css?v=20261002o">
 </head>
 <body>
 
@@ -133,12 +133,12 @@
             <p>Per informazioni generali, partnership o qualsiasi altra richiesta</p>
           </div>
 
-          <div id="contactFormSuccess" style="display:none;padding:20px;background:rgba(26,138,46,0.08);border:1px solid rgba(26,138,46,0.25);border-radius:var(--card-radius);margin-bottom:24px">
+          <div id="contactFormSuccess" role="status" tabindex="-1" style="outline:none;display:none;padding:20px;background:rgba(26,138,46,0.08);border:1px solid rgba(26,138,46,0.25);border-radius:var(--card-radius);margin-bottom:24px">
             <strong style="color:#1a8a2e">&#10003; Messaggio inviato!</strong>
             <p style="font-size:14px;margin-top:4px;color:#555">Ti risponderemo al pi&ugrave; presto.</p>
           </div>
 
-          <div id="contactFormError" style="display:none;padding:20px;background:rgba(200,40,40,0.08);border:1px solid rgba(200,40,40,0.25);border-radius:var(--card-radius);margin-bottom:24px">
+          <div id="contactFormError" role="alert" tabindex="-1" style="outline:none;display:none;padding:20px;background:rgba(200,40,40,0.08);border:1px solid rgba(200,40,40,0.25);border-radius:var(--card-radius);margin-bottom:24px">
             <strong style="color:#c82828">Invio non riuscito.</strong>
             <p style="font-size:14px;margin-top:4px;color:#555">Riprova oppure scrivici direttamente a <a href="mailto:victorvolley@libero.it">victorvolley@libero.it</a>.</p>
           </div>
@@ -178,7 +178,8 @@
   <script src="js/animations.js"></script>
   <script src="js/main.js"></script>
 
-  <script src="js/pages/contatti-1.js?v=20261002h"></script>
+  <script src="js/form-validate.js?v=20261002o"></script>
+  <script src="js/pages/contatti-1.js?v=20261002o"></script>
   <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

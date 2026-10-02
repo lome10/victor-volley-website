@@ -2960,6 +2960,17 @@ main, footer.site-footer {
 
 .form-textarea { resize: vertical; min-height: 120px; }
 
+/* Errori di validazione sotto il campo */
+.form-input.is-invalid,
+.form-select.is-invalid,
+.form-textarea.is-invalid { border-color: #c82828; }
+.form-input.is-invalid:focus,
+.form-select.is-invalid:focus,
+.form-textarea.is-invalid:focus { box-shadow: 0 0 0 3px rgba(200, 40, 40, 0.14); }
+.form-error { margin: 6px 0 0; font-size: 13px; line-height: 1.4; color: #c82828; }
+.form-error[hidden] { display: none; }
+button[type="submit"][aria-busy="true"] { opacity: 0.7; cursor: progress; }
+
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
