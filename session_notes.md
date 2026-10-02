@@ -3,19 +3,19 @@
 File di coordinamento: va aggiornato **alla fine di ogni sessione** e **ad ogni cambiamento**.
 Ordine: stato attuale → da fare → da verificare → decisioni → registro sessioni.
 
-Ultimo aggiornamento: 2026-10-01
+Ultimo aggiornamento: 2026-10-02
 
 ---
 
 ## Stato attuale
 
-- Branch `main`, allineato con `origin` dopo l'ultimo commit della sessione del 2026-10-01.
+- Branch `main`. **Modifiche della sessione 2026-10-02 NON ancora committate**: estrazione del Budget da `js/admin.js` in `js/admin/budget.js` (vedi registro). Verificata solo in modo statico e con un caricamento simulato: **va provata nel browser** (giro rapido della checklist) prima di committare.
 - Regole Firestore pubblicate e uguali al repository; funzione Vercel `api/set-athlete-password` configurata e provata; pulizia del codice morto fatta.
 - Controllo automatico `node scripts/check-admin.js`: OK. Checklist manuale `docs/SMOKE_TEST_ADMIN.md`: **non ancora eseguita** dall'utente.
 
 ### Da dove ripartire (prossima sessione)
-1. L'utente esegue la checklist (almeno il giro rapido) e annota l'esito.
-2. Lanciare `node scripts/check-admin.js`, poi iniziare l'estrazione del **Budget & Forecast** da `js/admin.js` (righe 4645+), una sola sezione per volta, definendo prima l'interfaccia condivisa.
+1. L'utente esegue la checklist (almeno il giro rapido, con attenzione a Dashboard, Budget in tutte le sotto-tab, Rette dalla scheda atleta, Log) su `npx serve .` o in anteprima, e annota l'esito.
+2. Se tutto ✔: committare l'estrazione. Poi spezzare `js/admin/budget.js` (3.860 righe) in sotto-file per sotto-tab (sponsor, rette, spese, bilancio, log, IVA), oppure passare a `atleti.js`.
 3. Restano da decidere/fare: migrazioni a bottone (immagini Cloudinary, IVA sponsor), cancellazione dei 4 documenti di `matches`, CSP, Supabase, `esc()` centralizzata.
 
 ---
@@ -28,12 +28,12 @@ Legenda: `[ ]` aperto · `[x]` fatto · `[~]` in corso
 - [x] Committare e pubblicare i fix dell'audit (vedi sopra).
 - [x] Checklist di smoke test scritta: `docs/SMOKE_TEST_ADMIN.md` (giro rapido da 5 minuti + sezione per sezione) e controllo automatico `node scripts/check-admin.js` (sintassi, onclick→funzioni, menu→sezioni, id usati dal JS).
 - [ ] **Eseguire una volta la checklist per avere il punto di partenza** (tutto ✔) e annotare l'esito qui, prima di iniziare l'estrazione dal monolite.
-- [ ] Capire quali account usano email `@victorvolley` non reali (atleti/dirigenti): per loro l'email di reset non arriva, serve la password a mano. Il testo in tab Sicurezza ora lo spiega.
+- [x] Account con email `@victorvolley` non reali (dirigenti): l'utente li conosce già, nessuna indagine necessaria. Per loro l'email di reset non arriva, serve la password a mano (il testo in tab Sicurezza lo spiega).
 
 ### Monolite `js/admin.js` (8.526 righe, 452 KB)
 Piano: file separati caricati in ordine, namespace comune `window.Admin`, nessun bundler.
-- [ ] Definire l'interfaccia condivisa (`esc`, `db`, `_logWrite`, modali, stagione corrente).
-- [ ] Estrarre il **Budget & Forecast** (righe 4645–8526, circa metà del file) in `js/admin/budget/*.js`.
+- [x] Definita l'interfaccia condivisa: `window.Admin` in fondo a `admin.js` (uid, dirigenteNome, esc, cap, confirm, goTo, val, mapDoc, diff, logWrite, openModal/closeModal, openModalId, get/setAuditLog, daysDiff, fmtDate, fmtDateLong, renderAtletiRows, renderRateAdmin, stagioneCorrenteNome, EDIT_ICON_SM) e `Admin.budget` esposto da `budget.js` (loadData, renderActiveTab, renderLog, renderDash*Widget, refreshRette, state con accessori per stagioni/rette/rate).
+- [~] Estrarre il **Budget & Forecast** in `js/admin/budget.js`: **fatto in blocco unico** (non ancora provato nel browser, non committato). Resta da spezzarlo in sotto-file per sotto-tab (`js/admin/budget/*.js`).
 - [ ] Estrarre `atleti.js` (atleti, rate, avvisi, presenze, allenamenti).
 - [ ] Estrarre `cms.js` (articoli, calendario, galleria, squadre, sponsor del sito).
 - [ ] Lasciare in `core.js` bootstrap, navigazione, utility, audit log, modali.
@@ -102,3 +102,9 @@ Piano: file separati caricati in ordine, namespace comune `window.Admin`, nessun
 - Verificato che `atleti` (1 documento) ha già `accessUids`/`accessi`. Trovata la raccolta legacy `matches` (4 documenti con immagini base64) non usata dal codice.
 - Pulizia codice morto: eliminati `data/giocatori.json` e `data/partite.json`, rimossi gli helper di migrazione da `db.js`, `setPartite` da `data.js`, regola `matches` da `firestore.rules` (da pubblicare). Controllata solo la sintassi. Regola `matches` pubblicata sulla Console e verificata con richieste non autenticate.
 - Smoke test: creati `docs/SMOKE_TEST_ADMIN.md` e `scripts/check-admin.js` (esito attuale: OK, 72 handler, 16 voci di menu, 388 id; verificato che trovi errori inseriti apposta). Scoperto che le email `@victorvolley` non sono caselle reali: aggiunta la precisazione sul bottone di reset email.
+
+### 2026-10-02
+- Segnata come chiusa la voce sulle email `@victorvolley` non reali: l'utente sa già quali account sono (dirigenti), nessuna indagine.
+- `node scripts/check-admin.js`: OK prima di iniziare. Analisi dei punti di contatto tra Budget e resto di `admin.js`: ~21 nomi esportati, ~17 importati, stato condiviso (stagioni, rette, rate) toccato dalla sezione "Iscrizione alla stagione e rate".
+- Estratto il Budget (ex righe 4675–8555) in `js/admin/budget.js` con uno script ripetibile; `admin.js` scende a ~4.760 righe e pubblica `window.Admin`. Helper generici (audit log, `_diff`, `_mapDoc`, `val`, modali) riportati nel nucleo. `admin.html` carica `budget.js` dopo `admin.js` (cache-busting `?v=20261002a`).
+- Controlli: `node --check` OK; `check-admin.js` OK (72 handler, 16 menu, 388 id); ESLint `no-undef` pulito su entrambi i file (installato fuori dal progetto, non è una dipendenza); caricamento simulato in `vm` con DOM finto: nessun errore all'avvio. **Non provato con Firebase reale né nel browser.**
