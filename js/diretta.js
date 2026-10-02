@@ -45,6 +45,12 @@
     return channelId.indexOf('UC') === 0 ? 'UU' + channelId.slice(2) : null;
   }
 
+  /* L'iframe di YouTube (cookie di terze parti) parte solo dopo il consenso dell'utente */
+  function gateVideo(el, html) {
+    if (window.VVConsent) VVConsent.gate(el, html, { provider: 'YouTube', link: CHANNEL_URL + '/live' });
+    else el.innerHTML = html;
+  }
+
   function renderVideo(isLive) {
     var el    = document.getElementById('direttaVideo');
     var msgEl = document.getElementById('direttaVideoMsg');
@@ -54,12 +60,12 @@
 
     if (isLive && hasChannel) {
       if (msgEl) msgEl.hidden = true;
-      el.innerHTML =
+      gateVideo(el,
         '<iframe src="https://www.youtube.com/embed/live_stream?channel=' + encodeURIComponent(channelId) + '&autoplay=1&mute=1" ' +
           'title="Diretta YouTube Victor Volley" ' +
           'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" ' +
           'allowfullscreen></iframe>' +
-        '<a class="dt-video-fallback" href="' + CHANNEL_URL + '/live" target="_blank" rel="noopener">Guarda su YouTube &#8599;</a>';
+        '<a class="dt-video-fallback" href="' + CHANNEL_URL + '/live" target="_blank" rel="noopener">Guarda su YouTube &#8599;</a>');
       return;
     }
 
@@ -70,11 +76,11 @@
         msgEl.hidden = false;
         msgEl.innerHTML = 'Nessuna partita &egrave; al momento in diretta.<br>Nel frattempo, dai un&rsquo;occhiata alla nostra ultima partita.';
       }
-      el.innerHTML =
+      gateVideo(el,
         '<iframe src="https://www.youtube.com/embed/videoseries?list=' + encodeURIComponent(playlistId) + '&autoplay=1&mute=1" ' +
           'title="Ultimo video Victor Volley" ' +
           'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" ' +
-          'allowfullscreen></iframe>';
+          'allowfullscreen></iframe>');
       return;
     }
 

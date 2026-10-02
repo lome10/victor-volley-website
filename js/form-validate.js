@@ -31,6 +31,7 @@ var VVForm = (function () {
   }
 
   function messageFor(field) {
+    if (field.type === 'checkbox') return field.required && !field.checked ? 'Per inviare devi spuntare questa casella.' : '';
     var v = (field.value || '').trim();
     if (field.required && !v) return field.tagName === 'SELECT' ? 'Scegli un’opzione.' : 'Campo obbligatorio.';
     if (v && field.type === 'email' && !EMAIL_RE.test(v)) return 'Inserisci un indirizzo email valido.';

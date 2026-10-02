@@ -19,7 +19,8 @@
         telefono: val('telefono') || 'non indicato',
         eta: val('eta'),
         categoria: document.getElementById('categoria').value,
-        messaggio: val('messaggio') || '—'
+        messaggio: val('messaggio') || '—',
+        consenso_privacy: 'sì'
       };
     }
   });

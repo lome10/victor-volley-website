@@ -22,7 +22,7 @@
   <link rel="preload" href="/assets/fonts/barlow-700-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/manrope-400-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/fonts.css">
-  <link rel="stylesheet" href="css/style.css?v=20261002o">
+  <link rel="stylesheet" href="css/style.css?v=20261002q">
 </head>
 <body>
 
@@ -65,7 +65,7 @@
               <div>
                 <div class="contact-info-title">Palazzetto ARK&Eacute;</div>
                 <div class="contact-info-value">
-                  Melissano (LE)
+                  Via Don Marino Manco<br>Melissano (LE)
                 </div>
               </div>
             </div>
@@ -110,14 +110,7 @@
           <!-- Mappa -->
           <div id="mappa">
             <h2 style="margin-bottom:28px">Dove siamo</h2>
-            <iframe
-              src="https://maps.google.com/maps?q=39.9654525,18.1160189&z=17&hl=it&output=embed"
-              class="map-embed"
-              allowfullscreen=""
-              loading="lazy"
-              referrerpolicy="no-referrer-when-downgrade"
-              title="Palazzetto ARKÉ Melissano"
-            ></iframe>
+            <div id="mapGate" class="map-embed"></div>
           </div>
 
         </div>
@@ -162,6 +155,10 @@
               <label class="form-label" for="c-messaggio">Messaggio <span class="required">*</span></label>
               <textarea class="form-textarea" id="c-messaggio" name="messaggio" required placeholder="Scrivi qui il tuo messaggio..."></textarea>
             </div>
+            <div class="form-group form-check">
+              <input type="checkbox" id="c-privacy" name="privacy" required>
+              <label for="c-privacy">Ho letto l&rsquo;<a href="/privacy" target="_blank" rel="noopener">informativa privacy</a> e acconsento al trattamento dei miei dati per ricevere una risposta. <span class="required">*</span></label>
+            </div>
             <button type="submit" class="btn btn--primary" style="width:100%;padding:14px">Invia</button>
           </form>
         </div>
@@ -174,12 +171,13 @@
 
   <script src="js/splash.js"></script>
   <script src="js/esc.js?v=20261002f"></script>
-  <script src="js/components.js?v=20261002i"></script>
+  <script src="js/components.js?v=20261002p"></script>
   <script src="js/animations.js"></script>
   <script src="js/main.js"></script>
 
-  <script src="js/form-validate.js?v=20261002o"></script>
-  <script src="js/pages/contatti-1.js?v=20261002o"></script>
+  <script src="js/embed-consent.js?v=20261002p"></script>
+  <script src="js/form-validate.js?v=20261002p"></script>
+  <script src="js/pages/contatti-1.js?v=20261002p"></script>
   <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>
