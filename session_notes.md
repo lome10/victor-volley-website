@@ -3,7 +3,7 @@
 File di coordinamento: va aggiornato **alla fine di ogni sessione** e **ad ogni cambiamento**.
 Ordine: stato attuale → da fare → da verificare → decisioni → registro sessioni.
 
-Ultimo aggiornamento: 2026-10-02
+Ultimo aggiornamento: 2026-10-02 (fine sessione)
 
 ---
 
@@ -14,9 +14,12 @@ Ultimo aggiornamento: 2026-10-02
 - Controllo automatico `node scripts/check-admin.js`: OK. Checklist manuale `docs/SMOKE_TEST_ADMIN.md`: **non ancora eseguita** dall'utente.
 
 ### Da dove ripartire (prossima sessione)
-1. L'utente prova nel pannello (locale con `npx serve .` o produzione) Atleti, CMS, Piano editoriale e Bacheca; riferisce eventuali errori in console (ignorare `ERR_BLOCKED_BY_CLIENT`).
-2. Decisione presa: **Dirigenti e File JSON restano in `admin.js`** (piccoli; File JSON legato alle migrazioni). Il nucleo è bootstrap, backup, password, navigazione, dashboard, dirigenti, file JSON, audit log, modali.
-3. Restano da decidere/fare: migrazioni a bottone (immagini Cloudinary, IVA sponsor), cancellazione dei 4 documenti di `matches`, CSP, Supabase, `esc()` centralizzata.
+Tutto pubblicato su `origin/main` fino a `0a761e3` (2026-10-02, sito UX/UI: immagini lazy, skeleton, sfondo nuovo, sponsor articolo, form, privacy e cookie).
+1. **Far confermare alla società il testo di /privacy**: codice fiscale/P.IVA del titolare, tempi di conservazione (12 mesi per i moduli, ipotesi mia), frase sulle liberatorie foto/video. Sede legale già messa: Via Indipendenza 48, Racale (LE).
+2. **Logo Trisolino**: ricaricare dall'admin un file più grande (≥1200 px, PNG trasparente o SVG): ora è 320 px in base64 e a pieno spazio sarebbe sfocato (c'è un limite ~2x). Ideale anche per la migrazione Cloudinary.
+3. **Prossimi punti dell'audit UX** (aperti): messaggi «Nessun risultato»/errore con «Riprova» nelle liste; filtro per squadra + «Aggiungi al calendario» (.ics); menu mobile (ESC, focus, 44 px); stili inline → classi CSS; PWA (manifest, theme-color, icone); JSON-LD; meta description di atleta.html; modulo «Diventa sponsor».
+4. L'utente prova nel pannello admin (Atleti, CMS, Piano editoriale, Bacheca) e riferisce errori in console; checklist `docs/SMOKE_TEST_ADMIN.md` ancora da eseguire. Migrazioni (immagini Cloudinary, IVA sponsor) e backup incompleto: vedi «Da verificare».
+5. Non provato: mobile (sponsor articolo, skeleton, form, privacy), rete lenta, invio reale dei form a Web3Forms.
 
 ---
 
