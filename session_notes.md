@@ -9,13 +9,13 @@ Ultimo aggiornamento: 2026-10-02
 
 ## Stato attuale
 
-- Branch `main`. Budget in 11 file (`js/admin/budget/`, provato dall'utente: ok) e Atleti estratto in `js/admin/atleti.js` (commit di questa sessione, **da provare nel browser**). Nessun push ancora.
+- Branch `main`. `admin.js` ora è ~1.435 righe (era 8.557). File estratti: `js/admin/budget/*.js` (11 file, provato dall'utente), `js/admin/atleti.js` e `js/admin/cms.js` (**entrambi da provare nel browser**, committati ma non verificati dall'utente). Nessun push ancora.
 - Regole Firestore pubblicate e uguali al repository; funzione Vercel `api/set-athlete-password` configurata e provata; pulizia del codice morto fatta.
 - Controllo automatico `node scripts/check-admin.js`: OK. Checklist manuale `docs/SMOKE_TEST_ADMIN.md`: **non ancora eseguita** dall'utente.
 
 ### Da dove ripartire (prossima sessione)
-1. L'utente prova nel browser (`npx serve .`) l'estrazione di Atleti: lista e filtri, scheda atleta (anagrafica, accessi, rate & quote, password), nuovo atleta, export CSV, Avvisi, Presenze, Allenamenti, e il collegamento Budget → Rette → scheda atleta.
-2. Se tutto ✔: estrarre `cms.js` (articoli, calendario, galleria, squadre, sponsor del sito, stagioni, maglia), poi dirigenti/piano editoriale/bacheca/file JSON; lasciare in `admin.js` solo bootstrap, navigazione, utility, audit log, modali.
+1. L'utente prova nel browser (`npx serve .`) Atleti (lista, scheda, accessi, rate, password, nuovo atleta, CSV, Avvisi, Presenze, Allenamenti, Budget → Rette → scheda) e CMS (Articoli con copertina e categorie, Calendario/partite con logo, Galleria album/foto, Squadre con staff e giocatori, Stagioni, Maglia, Sponsor del sito).
+2. Se tutto ✔: estrarre le sezioni rimaste (Dirigenti, Piano editoriale, Bacheca, File JSON + migrazione immagini, Backup, cambio password) o lasciarle in `admin.js`: è il nucleo (bootstrap, navigazione, dashboard, utility, audit log, modali). Poi push.
 3. Restano da decidere/fare: migrazioni a bottone (immagini Cloudinary, IVA sponsor), cancellazione dei 4 documenti di `matches`, CSP, Supabase, `esc()` centralizzata.
 
 ---
@@ -36,7 +36,7 @@ Piano: file separati caricati in ordine, namespace comune `window.Admin`, nessun
 - [x] Estratto il **Budget & Forecast** da `admin.js` (provato dall'utente nel browser, 2026-10-02).
 - [~] Spezzato in `js/admin/budget/{state,riepilogo,sponsor,materiali,rette,spese,iva,exportpdf,bilancio,log,main}.js` (320–870 righe l'uno). Stato e funzioni condivise passano da `Admin.budgetShared` (`B._nome`); `state.js` va caricato per primo, `main.js` per ultimo. Controlli statici e simulati OK; **da riprovare nel browser**.
 - [~] Estratto `js/admin/atleti.js` (1.476 righe: atleti, iscrizione e rate, avvisi, presenze, allenamenti), espone `Admin.atleti`; helper di data e `showSubview`/`setTopbarBtn` restano nel nucleo ed escono da `window.Admin`. **Da provare nel browser.**
-- [ ] Estrarre `cms.js` (articoli, calendario, galleria, squadre, sponsor del sito).
+- [~] Estratto `js/admin/cms.js` (1.906 righe: articoli, calendario, galleria, upload Cloudinary, squadre, stagioni, maglia, sponsor del sito e i metodi di `AdminActions` per questi). Espone `Admin.cms`; il nucleo crea `window.AdminActions = {}` e cms.js lo riempie con `Object.assign`. `scripts/check-admin.js` aggiornato per trovare il letterale in `cms.js`. **Da provare nel browser.**
 - [ ] Lasciare in `core.js` bootstrap, navigazione, utility, audit log, modali.
 - [ ] Cache-busting `?v=` per ogni nuovo file.
 - [ ] Valutare uno strato dati: oggi ci sono 143 chiamate dirette a `db.collection()`.
@@ -112,3 +112,4 @@ Piano: file separati caricati in ordine, namespace comune `window.Admin`, nessun
 - Commit `5fd8e6c`. Prova locale con `npx serve .` (porta 3000): unico messaggio in console `ERR_BLOCKED_BY_CLIENT` (ad blocker su script Vercel insights), nessun errore JS.
 - Budget spezzato in 11 file con script ripetibile. Riferimenti tra file riscritti in `B.nome` (672 sostituzioni, 24 var di stato e 69 funzioni condivise); controllo che ogni `B.x` usato sia assegnato (93/93). ESLint `no-undef`, `node --check`, `check-admin.js` e render simulato di tutte le sotto-tab OK. Il vecchio `budget.js` rimosso.
 - Estratto `js/admin/atleti.js` (ex righe 2263–3730) con script ripetibile; `admin.js` scende a ~3.310 righe. Helper di data (`_daysDiff`, `_fmtDate`, `_fmtDateLong`) restati nel nucleo. `Admin.renderAtletiRows`/`renderRateAdmin`/`stagioneCorrenteNome` diventano wrapper ritardati verso `Admin.atleti`. Controlli: `node --check`, ESLint `no-undef`, `check-admin.js` OK; render simulato di atleti/righe/rate/presenze OK (avvisi e allenamenti non eseguibili con il DOM finto, per via di Firestore finto).
+- Estratto `js/admin/cms.js` (ex righe 363–1809, 1833–2234, 3191–3224); `admin.js` scende a ~1.435 righe. Icone `EDIT_ICON_SM`/`DEL_ICON_SM` restano nel nucleo. Controlli: `node --check`, ESLint `no-undef`, `check-admin.js` (aggiornato; verificato che segnali un handler mancante), render simulato di tutte le sezioni CMS OK, 78 metodi di `AdminActions` presenti a runtime.

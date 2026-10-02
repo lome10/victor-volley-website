@@ -46,10 +46,12 @@ const addDef = (ns, name) => { defined[ns].add(name); if (ns === 'DG') defined.A
 /* DG e AdminActions sono lo stesso oggetto (var DG = window.AdminActions) */
 for (const m of js.matchAll(/(?:window\.)?(AdminActions|DG)\.([A-Za-z_$][\w$]*)\s*=[^=]/g)) addDef(m[1], m[2]);
 
-const lit = js.indexOf('window.AdminActions = {');
-if (lit < 0) fail('Non trovo il letterale "window.AdminActions = {" in admin.js');
+/* il letterale con i metodi sta in js/admin/cms.js come Object.assign(window.AdminActions, { ... }) */
+const litMatch = /(?:window\.AdminActions = |Object\.assign\(window\.AdminActions, )\{\r?\n/.exec(js);
+const lit = litMatch ? litMatch.index : -1;
+if (lit < 0) fail('Non trovo il letterale con i metodi di window.AdminActions');
 else {
-  const end = js.indexOf('\n  };', lit);
+  const end = js.slice(lit).search(/\n  \}\)?;/) + lit;
   js.slice(lit, end).split('\n').forEach((line) => {
     const k = /^    ([A-Za-z_$][\w$]*)\s*:/.exec(line);
     if (k) addDef('AdminActions', k[1]);
