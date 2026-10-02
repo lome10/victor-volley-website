@@ -9,13 +9,13 @@ Ultimo aggiornamento: 2026-10-02
 
 ## Stato attuale
 
-- Branch `main`. Budget spezzato in 11 file in `js/admin/budget/` (commit di questa sessione). Il commit `5fd8e6c` (Budget in un solo file) è stato provato in browser dall'utente: tutto ok. **La suddivisione in 11 file va riprovata nel browser** (`npx serve .`, giro rapido). Nessun push ancora.
+- Branch `main`. Budget in 11 file (`js/admin/budget/`, provato dall'utente: ok) e Atleti estratto in `js/admin/atleti.js` (commit di questa sessione, **da provare nel browser**). Nessun push ancora.
 - Regole Firestore pubblicate e uguali al repository; funzione Vercel `api/set-athlete-password` configurata e provata; pulizia del codice morto fatta.
 - Controllo automatico `node scripts/check-admin.js`: OK. Checklist manuale `docs/SMOKE_TEST_ADMIN.md`: **non ancora eseguita** dall'utente.
 
 ### Da dove ripartire (prossima sessione)
-1. L'utente riprova il giro rapido su `npx serve .` dopo la suddivisione del Budget in 11 file (Dashboard, ogni sotto-tab del Budget, rate dalla scheda atleta, Log, un export PDF, il drawer di uno sponsor).
-2. Se tutto ✔: estrarre `atleti.js` (atleti, rate, avvisi, presenze, allenamenti), poi `cms.js`.
+1. L'utente prova nel browser (`npx serve .`) l'estrazione di Atleti: lista e filtri, scheda atleta (anagrafica, accessi, rate & quote, password), nuovo atleta, export CSV, Avvisi, Presenze, Allenamenti, e il collegamento Budget → Rette → scheda atleta.
+2. Se tutto ✔: estrarre `cms.js` (articoli, calendario, galleria, squadre, sponsor del sito, stagioni, maglia), poi dirigenti/piano editoriale/bacheca/file JSON; lasciare in `admin.js` solo bootstrap, navigazione, utility, audit log, modali.
 3. Restano da decidere/fare: migrazioni a bottone (immagini Cloudinary, IVA sponsor), cancellazione dei 4 documenti di `matches`, CSP, Supabase, `esc()` centralizzata.
 
 ---
@@ -35,7 +35,7 @@ Piano: file separati caricati in ordine, namespace comune `window.Admin`, nessun
 - [x] Definita l'interfaccia condivisa: `window.Admin` in fondo a `admin.js` (uid, dirigenteNome, esc, cap, confirm, goTo, val, mapDoc, diff, logWrite, openModal/closeModal, openModalId, get/setAuditLog, daysDiff, fmtDate, fmtDateLong, renderAtletiRows, renderRateAdmin, stagioneCorrenteNome, EDIT_ICON_SM) e `Admin.budget` esposto da `budget.js` (loadData, renderActiveTab, renderLog, renderDash*Widget, refreshRette, state con accessori per stagioni/rette/rate).
 - [x] Estratto il **Budget & Forecast** da `admin.js` (provato dall'utente nel browser, 2026-10-02).
 - [~] Spezzato in `js/admin/budget/{state,riepilogo,sponsor,materiali,rette,spese,iva,exportpdf,bilancio,log,main}.js` (320–870 righe l'uno). Stato e funzioni condivise passano da `Admin.budgetShared` (`B._nome`); `state.js` va caricato per primo, `main.js` per ultimo. Controlli statici e simulati OK; **da riprovare nel browser**.
-- [ ] Estrarre `atleti.js` (atleti, rate, avvisi, presenze, allenamenti).
+- [~] Estratto `js/admin/atleti.js` (1.476 righe: atleti, iscrizione e rate, avvisi, presenze, allenamenti), espone `Admin.atleti`; helper di data e `showSubview`/`setTopbarBtn` restano nel nucleo ed escono da `window.Admin`. **Da provare nel browser.**
 - [ ] Estrarre `cms.js` (articoli, calendario, galleria, squadre, sponsor del sito).
 - [ ] Lasciare in `core.js` bootstrap, navigazione, utility, audit log, modali.
 - [ ] Cache-busting `?v=` per ogni nuovo file.
@@ -111,3 +111,4 @@ Piano: file separati caricati in ordine, namespace comune `window.Admin`, nessun
 - Controlli: `node --check` OK; `check-admin.js` OK (72 handler, 16 menu, 388 id); ESLint `no-undef` pulito su entrambi i file (installato fuori dal progetto, non è una dipendenza); caricamento simulato in `vm` con DOM finto: nessun errore all'avvio. **Non provato con Firebase reale né nel browser.**
 - Commit `5fd8e6c`. Prova locale con `npx serve .` (porta 3000): unico messaggio in console `ERR_BLOCKED_BY_CLIENT` (ad blocker su script Vercel insights), nessun errore JS.
 - Budget spezzato in 11 file con script ripetibile. Riferimenti tra file riscritti in `B.nome` (672 sostituzioni, 24 var di stato e 69 funzioni condivise); controllo che ogni `B.x` usato sia assegnato (93/93). ESLint `no-undef`, `node --check`, `check-admin.js` e render simulato di tutte le sotto-tab OK. Il vecchio `budget.js` rimosso.
+- Estratto `js/admin/atleti.js` (ex righe 2263–3730) con script ripetibile; `admin.js` scende a ~3.310 righe. Helper di data (`_daysDiff`, `_fmtDate`, `_fmtDateLong`) restati nel nucleo. `Admin.renderAtletiRows`/`renderRateAdmin`/`stagioneCorrenteNome` diventano wrapper ritardati verso `Admin.atleti`. Controlli: `node --check`, ESLint `no-undef`, `check-admin.js` OK; render simulato di atleti/righe/rate/presenze OK (avvisi e allenamenti non eseguibili con il DOM finto, per via di Firestore finto).
