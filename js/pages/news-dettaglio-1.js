@@ -88,6 +88,9 @@
         out.width = x1 - x0 + 1; out.height = y1 - y0 + 1;
         out.getContext('2d').drawImage(c, x0, y0, out.width, out.height, 0, 0, out.width, out.height);
         img.src = out.toDataURL('image/png');
+        /* Non ingrandire oltre ~2x i pixel reali del logo: meglio più piccolo e nitido che a tutto spazio e sfocato.
+           Con un file più grande il limite sale da solo fino a riempire la fascia. */
+        if (img.parentNode) img.parentNode.style.maxWidth = Math.round(out.width / scale * 2) + 'px';
         img.classList.add('is-trimmed');
       } catch (e) {
         img.classList.add('is-raw');
