@@ -9,13 +9,13 @@ Ultimo aggiornamento: 2026-10-02
 
 ## Stato attuale
 
-- Branch `main`, commit `5fd8e6c` (estrazione del Budget in `js/admin/budget.js`) **non ancora pubblicato con push**. Provato in locale dall'utente (`npx serve .`): nessun errore JS in console, solo `ERR_BLOCKED_BY_CLIENT` dell'ad blocker su `/_vercel/insights`. Da confermare: rate dalla scheda atleta e sezione Log.
+- Branch `main`. Budget spezzato in 11 file in `js/admin/budget/` (commit di questa sessione). Il commit `5fd8e6c` (Budget in un solo file) è stato provato in browser dall'utente: tutto ok. **La suddivisione in 11 file va riprovata nel browser** (`npx serve .`, giro rapido). Nessun push ancora.
 - Regole Firestore pubblicate e uguali al repository; funzione Vercel `api/set-athlete-password` configurata e provata; pulizia del codice morto fatta.
 - Controllo automatico `node scripts/check-admin.js`: OK. Checklist manuale `docs/SMOKE_TEST_ADMIN.md`: **non ancora eseguita** dall'utente.
 
 ### Da dove ripartire (prossima sessione)
-1. L'utente esegue la checklist (almeno il giro rapido, con attenzione a Dashboard, Budget in tutte le sotto-tab, Rette dalla scheda atleta, Log) su `npx serve .` o in anteprima, e annota l'esito.
-2. Se tutto ✔: committare l'estrazione. Poi spezzare `js/admin/budget.js` (3.860 righe) in sotto-file per sotto-tab (sponsor, rette, spese, bilancio, log, IVA), oppure passare a `atleti.js`.
+1. L'utente riprova il giro rapido su `npx serve .` dopo la suddivisione del Budget in 11 file (Dashboard, ogni sotto-tab del Budget, rate dalla scheda atleta, Log, un export PDF, il drawer di uno sponsor).
+2. Se tutto ✔: estrarre `atleti.js` (atleti, rate, avvisi, presenze, allenamenti), poi `cms.js`.
 3. Restano da decidere/fare: migrazioni a bottone (immagini Cloudinary, IVA sponsor), cancellazione dei 4 documenti di `matches`, CSP, Supabase, `esc()` centralizzata.
 
 ---
@@ -33,7 +33,8 @@ Legenda: `[ ]` aperto · `[x]` fatto · `[~]` in corso
 ### Monolite `js/admin.js` (8.526 righe, 452 KB)
 Piano: file separati caricati in ordine, namespace comune `window.Admin`, nessun bundler.
 - [x] Definita l'interfaccia condivisa: `window.Admin` in fondo a `admin.js` (uid, dirigenteNome, esc, cap, confirm, goTo, val, mapDoc, diff, logWrite, openModal/closeModal, openModalId, get/setAuditLog, daysDiff, fmtDate, fmtDateLong, renderAtletiRows, renderRateAdmin, stagioneCorrenteNome, EDIT_ICON_SM) e `Admin.budget` esposto da `budget.js` (loadData, renderActiveTab, renderLog, renderDash*Widget, refreshRette, state con accessori per stagioni/rette/rate).
-- [~] Estrarre il **Budget & Forecast** in `js/admin/budget.js`: **fatto in blocco unico** (non ancora provato nel browser, non committato). Resta da spezzarlo in sotto-file per sotto-tab (`js/admin/budget/*.js`).
+- [x] Estratto il **Budget & Forecast** da `admin.js` (provato dall'utente nel browser, 2026-10-02).
+- [~] Spezzato in `js/admin/budget/{state,riepilogo,sponsor,materiali,rette,spese,iva,exportpdf,bilancio,log,main}.js` (320–870 righe l'uno). Stato e funzioni condivise passano da `Admin.budgetShared` (`B._nome`); `state.js` va caricato per primo, `main.js` per ultimo. Controlli statici e simulati OK; **da riprovare nel browser**.
 - [ ] Estrarre `atleti.js` (atleti, rate, avvisi, presenze, allenamenti).
 - [ ] Estrarre `cms.js` (articoli, calendario, galleria, squadre, sponsor del sito).
 - [ ] Lasciare in `core.js` bootstrap, navigazione, utility, audit log, modali.
@@ -109,3 +110,4 @@ Piano: file separati caricati in ordine, namespace comune `window.Admin`, nessun
 - Estratto il Budget (ex righe 4675–8555) in `js/admin/budget.js` con uno script ripetibile; `admin.js` scende a ~4.760 righe e pubblica `window.Admin`. Helper generici (audit log, `_diff`, `_mapDoc`, `val`, modali) riportati nel nucleo. `admin.html` carica `budget.js` dopo `admin.js` (cache-busting `?v=20261002a`).
 - Controlli: `node --check` OK; `check-admin.js` OK (72 handler, 16 menu, 388 id); ESLint `no-undef` pulito su entrambi i file (installato fuori dal progetto, non è una dipendenza); caricamento simulato in `vm` con DOM finto: nessun errore all'avvio. **Non provato con Firebase reale né nel browser.**
 - Commit `5fd8e6c`. Prova locale con `npx serve .` (porta 3000): unico messaggio in console `ERR_BLOCKED_BY_CLIENT` (ad blocker su script Vercel insights), nessun errore JS.
+- Budget spezzato in 11 file con script ripetibile. Riferimenti tra file riscritti in `B.nome` (672 sostituzioni, 24 var di stato e 69 funzioni condivise); controllo che ogni `B.x` usato sia assegnato (93/93). ESLint `no-undef`, `node --check`, `check-admin.js` e render simulato di tutte le sotto-tab OK. Il vecchio `budget.js` rimosso.
