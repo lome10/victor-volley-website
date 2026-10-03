@@ -222,7 +222,7 @@
 
             elFeat.innerHTML = next
               ? renderFeatured(next)
-              : '<div class="gf-empty">Nessuna partita in programma per la Prima Divisione.</div>';
+              : '<div class="gf-empty">Calendario in arrivo: le date della Prima Divisione saranno pubblicate appena disponibili.</div>';
             tick();
             setInterval(tick, 60000);
           });

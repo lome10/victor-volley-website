@@ -238,7 +238,7 @@
       var list = panel.querySelector('[data-role="fixtures"]');
       list.innerHTML = catPartite.length
         ? catPartite.map(function (p, i) { return fixtureRow(p, i === nextIdx); }).join('')
-        : '<div class="fixture-list-empty">Nessuna partita disponibile.</div>';
+        : '<div class="fixture-list-empty">Calendario in arrivo: le date saranno pubblicate appena la federazione le comunica.</div>';
 
       var jumpBtn = panel.querySelector('[data-role="jump-next"]');
       var nextRow = list.querySelector('.fixture-row--next');
