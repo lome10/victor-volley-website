@@ -210,6 +210,7 @@
     showSubview('calendario', 'list');
     setTopbarBtn('Aggiungi partita', function () { openMatchForm(null); });
     refreshMatchTable();
+    refreshGironeSquadre();
   }
 
   function _matchRow(p) {
@@ -291,9 +292,10 @@
       document.getElementById('matchTime').value     = p.ora  || '18:30';
       catSel.value                                   = p.categoria || 'Prima Divisione';
       document.getElementById('matchHomeTeam').value = p.squadra_casa   || '';
-      document.getElementById('matchHomeLogo').value = p.logo_casa     || '';
+      /* il logo scritto sulla partita, non quello preso dall'elenco del girone */
+      document.getElementById('matchHomeLogo').value = (p.logo_casa_orig !== undefined ? p.logo_casa_orig : p.logo_casa) || '';
       document.getElementById('matchAwayTeam').value = p.squadra_ospite || '';
-      document.getElementById('matchAwayLogo').value = p.logo_ospite   || '';
+      document.getElementById('matchAwayLogo').value = (p.logo_ospite_orig !== undefined ? p.logo_ospite_orig : p.logo_ospite) || '';
       _syncLogoPreview('matchHomeLogo', 'homeLogoPreview');
       _syncLogoPreview('matchAwayLogo', 'awayLogoPreview');
       document.getElementById('matchVenue').value    = p.palazzetto || '';
@@ -362,6 +364,186 @@
   });
 
   document.getElementById('matchCancel').addEventListener('click', renderCalendario);
+
+  /* ================================================
+     SQUADRE DEL GIRONE — elenco unico nomi + loghi
+     Vive in siteData/girone (campo "squadre"), lo stesso documento da cui la
+     classifica legge i loghi; VV.applyGironeLogos lo applica anche alle card
+     delle partite. Qui si modificano solo nome e logo: stagione, girone e
+     partite del documento restano come sono.
+  ================================================ */
+  var _gironeDoc  = null;   /* documento girone completo, come letto */
+  var _gironeRows = [];     /* copia di lavoro di squadre[] */
+  var _gironeBusy = 0;      /* upload di loghi in corso */
+
+  function _gironeStatus(msg, color) {
+    var el = document.getElementById('gironeSqStatus');
+    el.textContent = msg || '';
+    el.style.color = color || '';
+  }
+
+  function _loadGironeDoc() {
+    return db.collection('siteData').doc('girone').get().then(function (doc) {
+      if (doc.exists && doc.data() && doc.data().json) return JSON.parse(doc.data().json);
+      return fetch('/data/girone.json').then(function (r) { return r.json(); });
+    });
+  }
+
+  function _fillTeamDatalist() {
+    document.getElementById('gironeTeamNames').innerHTML = _gironeRows.map(function (r) {
+      return '<option value="' + esc(r.nome) + '"></option>';
+    }).join('');
+  }
+
+  function _gironeLogoBox(r) {
+    return r.logo
+      ? '<img src="' + esc(r.logo) + '" alt="">'
+      : esc((r.nome || '?').charAt(0).toUpperCase());
+  }
+
+  function _renderGironeRows() {
+    document.getElementById('gironeSqList').innerHTML = _gironeRows.map(function (r, i) {
+      return '<div class="girone-sq-row" data-i="' + i + '">' +
+        '<div class="girone-sq-logo" data-role="logo">' + _gironeLogoBox(r) + '</div>' +
+        '<input type="text" class="form-input girone-sq-name" data-role="nome" value="' + esc(r.nome) + '" placeholder="Nome squadra">' +
+        (r.home ? '<span class="girone-sq-tag">La nostra squadra</span>' : '') +
+        '<label class="btn-ghost" style="cursor:pointer;padding:6px 10px;white-space:nowrap" title="Carica logo: sfondo bianco rimosso, PNG 256 px">Carica logo' +
+          '<input type="file" accept="image/*" data-role="file" style="display:none"></label>' +
+        (r.logo ? '<button type="button" class="btn-ghost" data-act="rm-logo" style="padding:6px 10px">Togli logo</button>' : '') +
+        (r.home ? '' : '<button type="button" class="btn-icon btn-icon--danger" data-act="del" title="Elimina squadra">' + DEL_ICON_SM + '</button>') +
+      '</div>';
+    }).join('') || '<div class="empty-state"><p>Nessuna squadra nell’elenco.</p></div>';
+    _fillTeamDatalist();
+  }
+
+  function refreshGironeSquadre() {
+    _gironeStatus('Caricamento…');
+    _loadGironeDoc().then(function (g) {
+      _gironeDoc  = g;
+      _gironeRows = (g.squadre || []).map(function (s) {
+        return { id: s.id, nome: s.nome || '', logo: s.logo || '', home: !!s.home };
+      });
+      _renderGironeRows();
+      _gironeStatus('');
+    }).catch(function (e) {
+      console.error('[admin] squadre girone', e);
+      _gironeStatus('Impossibile caricare l’elenco: ' + e.message, 'var(--a-red)');
+    });
+  }
+
+  function _gironeUniqueId(nome) {
+    var base = VV.slugify(nome) || 'squadra', id = base, n = 2;
+    var used = _gironeRows.map(function (r) { return r.id; });
+    while (used.indexOf(id) !== -1) id = base + '-' + (n++);
+    return id;
+  }
+
+  function _gironeSaveBtnState() {
+    document.getElementById('gironeSqSave').disabled = _gironeBusy > 0;
+  }
+
+  function saveGironeSquadre() {
+    if (!_gironeDoc) return;
+    var seen = {};
+    for (var i = 0; i < _gironeRows.length; i++) {
+      var r = _gironeRows[i];
+      r.nome = (r.nome || '').trim();
+      if (!r.nome) { _gironeStatus('Ogni squadra deve avere un nome.', 'var(--a-red)'); return; }
+      var k = VV.teamKey(r.nome);
+      if (seen[k]) { _gironeStatus('«' + r.nome + '» compare due volte.', 'var(--a-red)'); return; }
+      seen[k] = true;
+    }
+    var prima = (_gironeDoc.squadre || []);
+    var squadre = _gironeRows.map(function (r) {
+      var o = { id: r.id || _gironeUniqueId(r.nome), nome: r.nome };
+      if (r.logo) o.logo = r.logo;
+      if (r.home) o.home = true;
+      r.id = o.id;
+      return o;
+    });
+    var doc = JSON.parse(JSON.stringify(_gironeDoc));
+    doc.squadre = squadre;
+    _gironeStatus('Salvataggio…');
+    db.collection('siteData').doc('girone').set({
+      json:      JSON.stringify(doc),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(function () {
+      _gironeDoc = doc;
+      VV.setSquadreGirone(squadre);
+      VV.applyGironeLogos(VV.getPartite());
+      refreshMatchTable();
+      _renderGironeRows();
+      _gironeStatus('✓ Salvato', 'var(--a-green)');
+      setTimeout(function () { _gironeStatus(''); }, 3000);
+      var conLogo = function (l) { return l.filter(function (s) { return s.logo; }).length; };
+      A.logWrite('squadreGirone', 'girone', 'Squadre del girone', 'update', [
+        { campo: 'squadre', prima: prima.length + ' (' + conLogo(prima) + ' con logo)', dopo: squadre.length + ' (' + conLogo(squadre) + ' con logo)' }
+      ]);
+    }).catch(function (e) {
+      _gironeStatus('Errore: ' + e.message, 'var(--a-red)');
+    });
+  }
+
+  (function initGironeSquadre() {
+    var list = document.getElementById('gironeSqList');
+
+    list.addEventListener('input', function (ev) {
+      var row = ev.target.closest('.girone-sq-row');
+      if (!row || ev.target.getAttribute('data-role') !== 'nome') return;
+      var r = _gironeRows[+row.getAttribute('data-i')];
+      r.nome = ev.target.value;
+      if (!r.logo) row.querySelector('[data-role="logo"]').textContent = (r.nome || '?').charAt(0).toUpperCase();
+    });
+
+    list.addEventListener('change', function (ev) {
+      if (ev.target.getAttribute('data-role') !== 'file' || !ev.target.files.length) return;
+      var row = ev.target.closest('.girone-sq-row');
+      var r = _gironeRows[+row.getAttribute('data-i')];
+      var fileEl = ev.target, box = row.querySelector('[data-role="logo"]'), prev = r.logo;
+      convertLogoToPng(fileEl.files[0], 256, function (dataUrl, blob) {
+        fileEl.value = '';
+        box.innerHTML = '<img src="' + dataUrl + '" alt="">';
+        _gironeBusy++; _gironeSaveBtnState();
+        _gironeStatus('Caricamento logo…');
+        _uploadImage(blob, 'squadre-girone', 'png', function (err, url) {
+          _gironeBusy--; _gironeSaveBtnState();
+          if (err) {
+            console.error('[admin] upload logo girone', err);
+            box.innerHTML = _gironeLogoBox({ nome: r.nome, logo: prev });
+            _gironeStatus('Errore caricamento logo, riprova.', 'var(--a-red)');
+            return;
+          }
+          r.logo = url;
+          _renderGironeRows();
+          _gironeStatus('Logo caricato: ricordati di salvare.');
+        });
+      });
+    });
+
+    list.addEventListener('click', function (ev) {
+      var btn = ev.target.closest('[data-act]');
+      if (!btn) return;
+      var i = +btn.closest('.girone-sq-row').getAttribute('data-i');
+      if (btn.getAttribute('data-act') === 'rm-logo') {
+        _gironeRows[i].logo = '';
+        _renderGironeRows();
+      } else if (btn.getAttribute('data-act') === 'del') {
+        var nome = _gironeRows[i].nome || 'questa squadra';
+        confirm('Eliminare «' + nome + '» dall’elenco? Le partite già inserite restano, ma senza il logo di questo elenco.', function () {
+          _gironeRows.splice(i, 1);
+          _renderGironeRows();
+        });
+      }
+    });
+
+    document.getElementById('gironeSqAdd').addEventListener('click', function () {
+      _gironeRows.push({ id: '', nome: '', logo: '', home: false });
+      _renderGironeRows();
+      var inputs = list.querySelectorAll('[data-role="nome"]');
+      inputs[inputs.length - 1].focus();
+    });
+    document.getElementById('gironeSqSave').addEventListener('click', saveGironeSquadre);
+  })();
 
   /* ================================================
      GALLERIA

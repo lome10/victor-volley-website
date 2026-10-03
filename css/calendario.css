@@ -26,15 +26,15 @@
   margin-top: 6px;
 }
 
-.cal-eyebrow {
-  font-family: var(--sport-font-display);
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  font-size: 12.5px;
-  color: var(--sport-azzurro-dim);
-  margin: 0 0 6px;
+.cal-sub {
+  font-size: 15px;
+  color: rgba(255,255,255,0.72);
+  margin: 6px 0 0;
 }
+
+/* Il hover globale dei link (azzurro scuro) non è leggibile sul blu della pagina */
+.page-header--calendario a:hover,
+.cal-dark-zone a:hover { color: #fff; text-decoration: underline; }
 
 /* ---- Switcher a pillola (stagione + tab sezione) ---- */
 .cal-switch-group {
@@ -59,7 +59,7 @@
 /* ---- Zona scura (tutto il corpo della pagina) ---- */
 .cal-dark-zone { background: var(--sport-navy-deep); padding-bottom: 8px; }
 
-.cal-tabs-row { padding: 22px 0 0; }
+.cal-tabs-row { padding: 22px var(--container-padding) 0; }
 
 /* ---- Tab categoria: scroll orizzontale su schermi piccoli ---- */
 .cal-switch-group--cat { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
@@ -117,7 +117,7 @@
 
 .fixture-list-empty {
   text-align: center;
-  color: rgba(255,255,255,0.45);
+  color: rgba(255,255,255,0.65);
   padding: 40px 24px;
 }
 
@@ -127,13 +127,11 @@
   padding: 13px 16px;
   background: rgba(255,255,255,0.035);
   border: 1px solid rgba(255,255,255,0.08);
-  border-left: 3px solid var(--sport-azzurro-dim);
   display: flex;
   flex-direction: column;
   gap: 9px;
   transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
-.fixture-row.warm { border-left-color: var(--sport-magenta-dim); }
 
 @media (hover: hover) {
   .fixture-row:hover {
@@ -144,7 +142,6 @@
 
 /* La prossima partita in calendario si distingue dal resto della lista */
 .fixture-row--next {
-  border-left-width: 3px;
   background: linear-gradient(120deg, rgba(0,140,253,0.14), rgba(255,255,255,0.03) 55%);
   border-color: rgba(0,140,253,0.35);
   padding-top: 30px;
@@ -161,9 +158,16 @@
 }
 
 .fixture-row-date {
-  font-family: var(--sport-font-display); font-size: 12px; font-weight: 700;
-  letter-spacing: 0.03em; text-transform: uppercase; color: rgba(255,255,255,0.5);
+  font-family: var(--sport-font-display); font-size: 12px; font-weight: 500;
+  letter-spacing: 0.02em; color: rgba(255,255,255,0.7);
 }
+
+/* Casa / Trasferta: etichetta al posto del bordo colorato sul lato */
+.fixture-row-tag {
+  font-size: 11px; font-weight: 600; line-height: 1; padding: 4px 8px; border-radius: 999px; white-space: nowrap;
+}
+.fixture-row-tag--casa  { color: #7cc8ff; background: rgba(0,140,253,0.16); }
+.fixture-row-tag--trasf { color: #f59bbf; background: rgba(203,33,104,0.18); }
 
 .fixture-teams { display: flex; flex-direction: column; gap: 6px; }
 
@@ -197,7 +201,7 @@
 .fixture-row-venue {
   display: flex; align-items: center; gap: 5px; min-width: 0;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  font-size: 11.5px; color: rgba(255,255,255,0.4);
+  font-size: 12px; color: rgba(255,255,255,0.62);
   padding-top: 8px; margin-top: 1px; border-top: 1px solid rgba(255,255,255,0.07);
 }
 .fixture-row-venue svg { flex-shrink: 0; }
@@ -215,12 +219,12 @@
 }
 .stand-head { padding: 18px 22px 14px; border-bottom: 1px solid rgba(255,255,255,0.08); }
 .stand-title { font-family: var(--sport-font-display); font-weight: 800; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: #fff; }
-.stand-sub { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 3px; }
+.stand-sub { font-size: 12px; color: rgba(255,255,255,0.68); margin-top: 3px; }
 
 .stand-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
 .stand-table thead th {
   text-align: left; font-family: var(--sport-font-display); font-size: 10px; font-weight: 700;
-  letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.35); padding: 12px 4px;
+  letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.6); padding: 12px 4px;
 }
 .stand-table thead th.stand-stat, .stand-table thead th.stand-pos { text-align: center; }
 .stand-table td { padding: 12px 4px; border-top: 1px solid rgba(255,255,255,0.06); vertical-align: middle; color: #fff; font-size: 13px; }
@@ -228,10 +232,10 @@
 .stand-table th:last-child,  .stand-table td:last-child  { padding-right: 16px; }
 .stand-table tbody tr:first-child td { border-top: none; }
 
-.stand-pos  { text-align: center; width: 34px; color: rgba(255,255,255,0.4); font-size: 11px; }
+.stand-pos  { text-align: center; width: 34px; color: rgba(255,255,255,0.62); font-size: 12px; }
 .stand-name { display: flex; align-items: center; gap: 8px; font-weight: 600; min-width: 0; }
 .stand-name-text { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.stand-stat { text-align: center; width: 34px; color: rgba(255,255,255,0.55); }
+.stand-stat { text-align: center; width: 34px; color: rgba(255,255,255,0.72); }
 .stand-pts  { text-align: center; width: 48px; font-weight: 800; color: #fff; }
 
 .stand-logo      { width: 22px; height: 22px; border-radius: 5px; object-fit: contain; background: rgba(255,255,255,0.92); padding: 2px; flex-shrink: 0; }
@@ -241,7 +245,7 @@
 .stand-row--vv .stand-name { color: var(--sport-azzurro-dim); font-weight: 800; }
 .stand-row--vv .stand-pts  { color: var(--sport-azzurro-dim); }
 
-.stand-footer { padding: 12px 22px; font-size: 11px; color: rgba(255,255,255,0.3); border-top: 1px solid rgba(255,255,255,0.08); }
+.stand-footer { padding: 12px 22px; font-size: 12px; color: rgba(255,255,255,0.55); border-top: 1px solid rgba(255,255,255,0.08); }
 
 .stand-empty { text-align: center; color: rgba(255,255,255,0.5); padding: 48px 24px; }
 

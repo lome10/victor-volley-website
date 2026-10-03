@@ -115,11 +115,26 @@
      upsert/delete indipendenti — niente più sovrascritture dell'intero
      elenco quando più persone lavorano in admin insieme (vedi il vecchio
      schema a doc unico, ormai migrato). */
+  /* Elenco squadre del girone (siteData/girone, campo "squadre"): fonte
+     unica dei loghi. In caso di errore resta vuoto e valgono i loghi
+     scritti sulle singole partite. */
+  function _loadSquadreGirone() {
+    return global.db.collection('siteData').doc('girone').get().then(function (doc) {
+      if (doc.exists && doc.data() && doc.data().json) return JSON.parse(doc.data().json);
+      return fetch('/data/girone.json').then(function (r) { return r.json(); });
+    }).then(function (g) {
+      VV.setSquadreGirone(g && g.squadre);
+    }).catch(function (err) { console.warn('[DB] squadre girone', err); });
+  }
+
   function _loadOnePartite() {
-    return _col('partite').get().then(function (snap) {
+    return Promise.all([
+      _col('partite').get(),
+      _loadSquadreGirone()
+    ]).then(function (res) {
       var items = [];
-      snap.forEach(function (doc) { items.push(doc.data()); });
-      VV._load('partite', items);
+      res[0].forEach(function (doc) { items.push(doc.data()); });
+      VV._load('partite', VV.applyGironeLogos(items));
     });
   }
 

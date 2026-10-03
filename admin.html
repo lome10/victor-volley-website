@@ -9,7 +9,7 @@
   <link rel="preload" href="/assets/fonts/barlow-700-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/manrope-400-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/fonts.css">
-  <link rel="stylesheet" href="/css/admin.css?v=20261001b">
+  <link rel="stylesheet" href="/css/admin.css?v=20261003g">
   <link rel="stylesheet" href="/css/dirigenti.css?v=20261002i">
 </head>
 <body>
@@ -463,7 +463,24 @@
             </thead>
             <tbody id="calendarioBody"></tbody>
           </table>
+
+          <!-- Elenco unico delle squadre del girone: nomi e loghi usati da classifica e card partita -->
+          <div class="girone-sq" id="gironeSquadre">
+            <div class="girone-sq-head">
+              <div>
+                <div class="girone-sq-title">Squadre del girone</div>
+                <p class="form-hint" id="gironeSquadreInfo">Elenco unico: il logo caricato qui compare nella classifica e nelle card delle partite, purché il nome della squadra nella partita corrisponda.</p>
+              </div>
+              <button type="button" class="btn-ghost" id="gironeSqAdd">+ Aggiungi squadra</button>
+            </div>
+            <div id="gironeSqList" class="girone-sq-list"></div>
+            <div class="girone-sq-foot">
+              <span id="gironeSqStatus" class="form-hint"></span>
+              <button type="button" class="btn-primary" id="gironeSqSave">Salva squadre</button>
+            </div>
+          </div>
         </div>
+        <datalist id="gironeTeamNames"></datalist>
         <!-- Form -->
         <div id="calendarioForm" class="is-hidden">
           <div class="form-grid">
@@ -481,9 +498,9 @@
             </div>
             <div class="form-group">
               <label class="form-label">Squadra di casa</label>
-              <input type="text" id="matchHomeTeam" class="form-input" placeholder="Squadra di casa">
+              <input type="text" id="matchHomeTeam" class="form-input" placeholder="Squadra di casa" list="gironeTeamNames" autocomplete="off">
               <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
-                <input type="text" id="matchHomeLogo" class="form-input form-input--sm" placeholder="Logo: URL esterno o carica file" style="flex:1;min-width:0">
+                <input type="text" id="matchHomeLogo" class="form-input form-input--sm" placeholder="Logo (solo se la squadra non è nell'elenco del girone)" style="flex:1;min-width:0">
                 <label class="btn-ghost" style="cursor:pointer;padding:6px 10px;white-space:nowrap;flex-shrink:0" title="Carica immagine — viene convertita in PNG 128 px">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                   Carica
@@ -494,9 +511,9 @@
             </div>
             <div class="form-group">
               <label class="form-label">Squadra ospite</label>
-              <input type="text" id="matchAwayTeam" class="form-input" placeholder="Avversario">
+              <input type="text" id="matchAwayTeam" class="form-input" placeholder="Avversario" list="gironeTeamNames" autocomplete="off">
               <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
-                <input type="text" id="matchAwayLogo" class="form-input form-input--sm" placeholder="Logo: URL esterno o carica file" style="flex:1;min-width:0">
+                <input type="text" id="matchAwayLogo" class="form-input form-input--sm" placeholder="Logo (solo se la squadra non è nell'elenco del girone)" style="flex:1;min-width:0">
                 <label class="btn-ghost" style="cursor:pointer;padding:6px 10px;white-space:nowrap;flex-shrink:0" title="Carica immagine — viene convertita in PNG 128 px">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                   Carica
@@ -2253,13 +2270,13 @@
   <script src="/js/vendor/firebase-auth-compat.js"></script>
   <script src="/js/firebase-config.js"></script>
   <script src="/js/esc.js?v=20261002f"></script>
-  <script src="/js/data.js?v=20260928"></script>
-  <script src="/js/db.js?v=20260928"></script>
+  <script src="/js/data.js?v=20261003g"></script>
+  <script src="/js/db.js?v=20261003g"></script>
   <script src="/js/config.js?v=20260928"></script>
   <script src="/js/photodb.js?v=20260929"></script>
   <script src="/js/admin.js?v=20261002i"></script>
   <script src="/js/admin/atleti.js?v=20261002i"></script>
-  <script src="/js/admin/cms.js?v=20261002i"></script>
+  <script src="/js/admin/cms.js?v=20261003g"></script>
   <script src="/js/admin/pianoeditoriale.js?v=20261002i"></script>
   <script src="/js/admin/bacheca.js?v=20261002i"></script>
   <script src="/js/admin/budget/state.js?v=20261002i"></script>

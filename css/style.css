@@ -28,8 +28,8 @@
   /* Forme */
   --card-radius:        12px;
   --btn-radius:         3px;
-  --card-shadow:        0 2px 8px rgba(5, 48, 99, 0.08);
-  --card-shadow-hover:  0 8px 24px rgba(5, 48, 99, 0.16);
+  --card-shadow:        0 2px 8px rgba(0, 0, 0, 0.08);
+  --card-shadow-hover:  0 8px 24px rgba(0, 0, 0, 0.16);
 
   /* Transizioni */
   --t: 0.2s ease;
@@ -58,7 +58,7 @@
   --sport-magenta-dim:  #e05c92;
   --sport-grad-cool:    linear-gradient(158deg, #0a2c57 0%, #0d1830 55%, #051022 100%);
   --sport-grad-warm:    linear-gradient(158deg, #5a1638 0%, #33112c 55%, #150a1c 100%);
-  --sport-font-display: 'Arial Narrow', 'Helvetica Neue Condensed', var(--font-heading), sans-serif;
+  --sport-font-display: var(--font-heading);
 }
 
 /* --- Reset --- */
@@ -116,6 +116,10 @@ a {
   transition: color var(--t);
 }
 
+.site-footer a:hover,
+.page-header a:hover {
+  color: #fff;
+}
 a:hover {
   color: var(--c-azzurro-dark);
 }
@@ -2203,11 +2207,6 @@ main, footer.site-footer {
   height: 8px;
   border-radius: 50%;
   background: var(--c-azzurro);
-  animation: maglia-blink 1.6s ease-in-out infinite;
-}
-@keyframes maglia-blink {
-  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0, 140, 253, 0.5); }
-  50%      { opacity: 0.4; box-shadow: 0 0 0 6px rgba(0, 140, 253, 0); }
 }
 
 .maglia-countdown {

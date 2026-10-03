@@ -5,10 +5,11 @@
 
   var PIN_ICON = '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>';
 
-  var MESI_SHORT = ['GEN','FEB','MAR','APR','MAG','GIU','LUG','AGO','SET','OTT','NOV','DIC'];
+  var GIORNI = ['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
+  var MESI   = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
   function formatDataCard(dateStr, ora) {
     var d = new Date(dateStr + 'T00:00:00');
-    return d.getDate() + ' ' + MESI_SHORT[d.getMonth()] + (ora ? ' · ' + ora : '');
+    return GIORNI[d.getDay()] + ' ' + d.getDate() + ' ' + MESI[d.getMonth()] + ' ' + d.getFullYear() + (ora ? ' - ' + ora : '');
   }
 
   function inSeason(p, seasonId) { return !p.stagione || p.stagione === seasonId; }
@@ -212,6 +213,7 @@
       (isNext ? '<span class="fixture-row-next-badge">Prossima partita</span>' : '') +
       '<div class="fixture-row-top">' +
         '<span class="fixture-row-date">' + formatDataCard(p.data, p.ora) + '</span>' +
+        '<span class="fixture-row-tag fixture-row-tag--' + (isHome ? 'casa' : 'trasf') + '">' + (isHome ? 'Casa' : 'Trasferta') + '</span>' +
       '</div>' +
       '<div class="fixture-teams">' +
         '<div class="fixture-team' + (isHome ? ' fixture-team--vv' : '') + '">' + teamLogo(p.logo_casa, p.squadra_casa) + '<span class="fixture-team-name">' + (casaWins ? '<strong>' + esc(p.squadra_casa) + '</strong>' : esc(p.squadra_casa)) + '</span>' + (hasScore ? teamScore(p.set_casa, rCls) : '') + '</div>' +

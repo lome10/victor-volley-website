@@ -24,6 +24,9 @@
   var _stats    = null;
   var _sponsors = [];
   var _seasons  = [];
+  var _squadreGirone = [];
+  /* I loghi dell'elenco possono essere file del sito ("assets/logo.png"): li rendo assoluti per le pagine annidate. */
+  function absLogo(u) { return /^(https?:|data:)/.test(u) || u.charAt(0) === '/' ? u : '/' + u; }
   var _maglia   = null;
   var _categorieArticoli = null;
   var _livelliSponsorSub = null;
@@ -293,6 +296,53 @@
     },
 
     /* Chiamato da db.js per popolare la cache da Firestore */
+    /* ---- ELENCO SQUADRE DEL GIRONE ----
+       Unica fonte dei loghi delle squadre: viene da siteData/girone
+       (campo "squadre": id, nome, logo, home) e serve sia alla classifica
+       sia alle card delle partite. */
+    setSquadreGirone: function (list) { _squadreGirone = Array.isArray(list) ? list : []; },
+    getSquadreGirone: function () { return _squadreGirone; },
+
+    /* Chiave di confronto tra nomi: minuscolo, senza accenti, punteggiatura
+       né sigle societarie (A.S.D., S.S.D., S.R.L.…). */
+    teamKey: function (nome) {
+      return String(nome || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .replace(/[^a-z0-9]+/g, ' ').replace(/\b(asd|ssd|srl|arl|ssdarl|a s d|s s d|s r l)\b/g, ' ')
+        .replace(/\s+/g, ' ').trim();
+    },
+    /* Squadra dell'elenco che corrisponde a un nome libero (o null).
+       Qualsiasi nome con "victor" è la squadra di casa. */
+    findSquadraGirone: function (nome) {
+      var key = this.teamKey(nome);
+      if (!key) return null;
+      var self = this;
+      if (key.indexOf('victor') !== -1) {
+        var home = _squadreGirone.filter(function (s) { return s.home; })[0];
+        if (home) return home;
+      }
+      return _squadreGirone.filter(function (s) {
+        return self.teamKey(s.nome) === key || s.id === key.replace(/ /g, '-');
+      })[0] || null;
+    },
+    /* Per ogni partita, se la squadra è nell'elenco usa il suo logo al posto
+       di quello scritto sulla partita (che resta come ripiego in
+       logo_casa_orig / logo_ospite_orig, per l'admin). */
+    applyGironeLogos: function (partite) {
+      var self = this;
+      (partite || []).forEach(function (p) {
+        var c = self.findSquadraGirone(p.squadra_casa);
+        var o = self.findSquadraGirone(p.squadra_ospite);
+        /* ripartendo sempre dal logo scritto sulla partita, così si può rilanciare */
+        if (p.logo_casa_orig   === undefined) p.logo_casa_orig   = p.logo_casa   || '';
+        if (p.logo_ospite_orig === undefined) p.logo_ospite_orig = p.logo_ospite || '';
+        p.logo_casa   = p.logo_casa_orig;
+        p.logo_ospite = p.logo_ospite_orig;
+        if (c && c.logo) p.logo_casa   = absLogo(c.logo);
+        if (o && o.logo) p.logo_ospite = absLogo(o.logo);
+      });
+      return partite;
+    },
+
     _load: function (col, items) {
       if (KEYS[col]) _cache[KEYS[col]] = items;
     }

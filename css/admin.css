@@ -1750,3 +1750,17 @@ button { font-family: var(--font-body); cursor: pointer; }
 .af-msg { font-size: 13px; margin-right: auto; align-self: center; }
 .af-msg.is-ok { color: #059669; }
 .af-msg.is-err { color: var(--a-red); }
+
+/* ---- Squadre del girone (Calendario) ---- */
+.girone-sq { margin-top: 28px; background: var(--a-card); border: 1px solid var(--a-border); border-radius: var(--a-radius); box-shadow: var(--a-shadow); }
+.girone-sq-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 16px 18px; border-bottom: 1px solid var(--a-border); }
+.girone-sq-title { font-family: var(--font-head); font-size: 15px; font-weight: 700; color: var(--a-text); margin-bottom: 4px; }
+.girone-sq-list { display: flex; flex-direction: column; }
+.girone-sq-row { display: flex; align-items: center; gap: 12px; padding: 10px 18px; border-top: 1px solid var(--a-border); }
+.girone-sq-row:first-child { border-top: none; }
+.girone-sq-logo { width: 38px; height: 38px; flex-shrink: 0; border-radius: 8px; border: 1px solid var(--a-border); background: #0b1f38; display: flex; align-items: center; justify-content: center; overflow: hidden; color: rgba(255,255,255,.6); font-size: 13px; font-weight: 700; }
+.girone-sq-logo img { width: 100%; height: 100%; object-fit: contain; padding: 3px; }
+.girone-sq-name { flex: 1; min-width: 0; }
+.girone-sq-tag { font-size: 11px; color: var(--a-muted); white-space: nowrap; }
+.girone-sq-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 18px; border-top: 1px solid var(--a-border); }
+@media (max-width: 700px) { .girone-sq-row { flex-wrap: wrap; } .girone-sq-name { flex-basis: 100%; order: -1; } }
