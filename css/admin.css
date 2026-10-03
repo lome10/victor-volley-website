@@ -1764,3 +1764,10 @@ button { font-family: var(--font-body); cursor: pointer; }
 .girone-sq-tag { font-size: 11px; color: var(--a-muted); white-space: nowrap; }
 .girone-sq-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 18px; border-top: 1px solid var(--a-border); }
 @media (max-width: 700px) { .girone-sq-row { flex-wrap: wrap; } .girone-sq-name { flex-basis: 100%; order: -1; } }
+.girone-sq-tabs { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 18px; border-bottom: 1px solid var(--a-border); }
+.girone-sq-tab { border: 1px solid var(--a-border); background: var(--a-white); color: var(--a-text); font: inherit; font-size: 13px; font-weight: 600; padding: 7px 14px; border-radius: 999px; cursor: pointer; }
+.girone-sq-tab:hover { border-color: var(--a-blue); color: var(--a-blue); }
+.girone-sq-tab.is-active { background: var(--a-blue); border-color: var(--a-blue); color: #fff; }
+.girone-sq-newcat { width: auto; padding: 6px 10px; font-size: 13px; }
+.girone-sq-meta { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid var(--a-border); }
+.girone-sq-in { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--a-text); white-space: nowrap; cursor: pointer; }

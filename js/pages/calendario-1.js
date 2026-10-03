@@ -91,44 +91,50 @@
     '</tr>';
   }
 
+  /* Un girone per categoria: ognuno va nel pannello della propria categoria
+     (che esiste solo se la categoria ha partite) e compare con almeno 2 squadre. */
   function renderClassifica() {
     if (!window.Girone) return;
 
-    Girone.loadGirone().then(function (girone) {
-      if (!girone || !girone.categoria || !girone.squadre || !girone.partite) return;
-
-      var panel = document.querySelector('.cal-cat-panel[data-cat="' + slug(girone.categoria) + '"]');
-      if (!panel) return;
-      var block = panel.querySelector('[data-role="classifica-wrap"]');
-      var target = panel.querySelector('[data-role="classifica"]');
-      if (!block || !target) return;
-
-      var classifica = Girone.calcolaClassifica(girone);
-      classifica.forEach(function (r, i) { r._pos = i + 1; });
-      var homeSquadra = girone.squadre.filter(function (s) { return s.home; })[0];
-      var homeId      = homeSquadra ? homeSquadra.id : null;
-      var sub = (girone.girone ? 'Girone ' + girone.girone : '') +
-        (girone.stagione ? ' · Stagione ' + girone.stagione : '');
-
-      target.innerHTML =
-        '<div class="stand-head">' +
-          '<div class="stand-title">Classifica</div>' +
-          '<div class="stand-sub">' + esc(sub) + '</div>' +
-        '</div>' +
-        '<table class="stand-table">' +
-          '<thead><tr>' +
-            '<th class="stand-pos">#</th><th>Squadra</th>' +
-            '<th class="stand-stat" title="Vittorie">V</th>' +
-            '<th class="stand-stat" title="Sconfitte">P</th>' +
-            '<th class="stand-pts">Pt</th>' +
-          '</tr></thead>' +
-          '<tbody>' + classifica.map(function (r) { return standRow(r, girone.squadre, homeId); }).join('') + '</tbody>' +
-        '</table>' +
-        '<div class="stand-footer">' + esc(girone.stagione || '') + '</div>';
-
-      block.classList.remove('is-hidden');
-      panel.querySelector('[data-role="cols"]').classList.add('cal-cols--split');
+    Girone.loadGironi().then(function (gironi) {
+      gironi.forEach(renderGirone);
     }).catch(function (e) { console.warn('[calendario] classifica non disponibile:', e); });
+  }
+
+  function renderGirone(girone) {
+    if (!girone || !girone.categoria || girone.squadre.length < 2) return;
+
+    var panel = document.querySelector('.cal-cat-panel[data-cat="' + slug(girone.categoria) + '"]');
+    if (!panel) return;
+    var block = panel.querySelector('[data-role="classifica-wrap"]');
+    var target = panel.querySelector('[data-role="classifica"]');
+    if (!block || !target) return;
+
+    var classifica = Girone.calcolaClassifica(girone);
+    classifica.forEach(function (r, i) { r._pos = i + 1; });
+    var homeSquadra = girone.squadre.filter(function (s) { return s.home; })[0];
+    var homeId      = homeSquadra ? homeSquadra.id : null;
+    var sub = (girone.girone ? 'Girone ' + girone.girone : '') +
+      (girone.stagione ? ' · Stagione ' + girone.stagione : '');
+
+    target.innerHTML =
+      '<div class="stand-head">' +
+        '<div class="stand-title">Classifica</div>' +
+        '<div class="stand-sub">' + esc(sub) + '</div>' +
+      '</div>' +
+      '<table class="stand-table">' +
+        '<thead><tr>' +
+          '<th class="stand-pos">#</th><th>Squadra</th>' +
+          '<th class="stand-stat" title="Vittorie">V</th>' +
+          '<th class="stand-stat" title="Sconfitte">P</th>' +
+          '<th class="stand-pts">Pt</th>' +
+        '</tr></thead>' +
+        '<tbody>' + classifica.map(function (r) { return standRow(r, girone.squadre, homeId); }).join('') + '</tbody>' +
+      '</table>' +
+      '<div class="stand-footer">' + esc(girone.stagione || '') + '</div>';
+
+    block.classList.remove('is-hidden');
+    panel.querySelector('[data-role="cols"]').classList.add('cal-cols--split');
   }
 
   /* ================================================

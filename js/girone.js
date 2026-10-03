@@ -204,6 +204,25 @@
     return fetch('/data/girone.json').then(function (r) { return r.json(); });
   }
 
+  /* Gironi pronti per classifica e card: uno per categoria, con le squadre
+     risolte dall'anagrafica unica (nome + logo). Ogni elemento ha la forma
+     { stagione, categoria, girone, squadre:[{id,nome,logo,home}], partite }. */
+  function loadGironi() {
+    return loadGirone().then(function (raw) {
+      var n = VV.normalizeGirone(raw), byId = {};
+      n.squadre.forEach(function (s) { byId[s.id] = s; });
+      return n.gironi.map(function (g) {
+        return {
+          stagione:  n.stagione,
+          categoria: g.categoria,
+          girone:    g.girone,
+          partite:   g.partite,
+          squadre:   g.squadre.map(function (id) { return byId[id] || { id: id, nome: id }; })
+        };
+      });
+    });
+  }
+
   /* ----------------------------------------------------------------
      Init
   ---------------------------------------------------------------- */
@@ -212,17 +231,17 @@
     var elCl   = document.getElementById('gironeClassifica');
     if (!elFeat && !elCl) return;
 
-    loadGirone()
-      .then(function (girone) {
-        var classifica = calcolaClassifica(girone);
-        var homeSquadra = girone.squadre.filter(function (s) { return s.home; })[0];
-        var homeId = homeSquadra ? homeSquadra.id : null;
+    loadGironi()
+      .then(function (gironi) {
+        /* La home mostra la Prima Squadra: girone di Prima Divisione. */
+        var girone = gironi.filter(function (g) { return g.categoria === 'Prima Divisione'; })[0];
 
         /* Homepage — classifica gestita a mano via girone.json (il Calendario
            registra solo le partite della Prima Squadra, non l'intero girone,
            quindi da lì non è calcolabile una classifica vera). */
-        if (elCl) {
-          elCl.innerHTML = renderClassifica(classifica, girone.squadre, girone, homeId);
+        if (elCl && girone && girone.squadre.length > 1) {
+          var homeSquadra = girone.squadre.filter(function (s) { return s.home; })[0];
+          elCl.innerHTML = renderClassifica(calcolaClassifica(girone), girone.squadre, girone, homeSquadra ? homeSquadra.id : null);
         }
 
         /* La card "Prossima partita" invece legge dal calendario reale
@@ -260,6 +279,7 @@
      di calcolo classifica e i renderer restano in un solo posto. */
   global.Girone = {
     loadGirone:        loadGirone,
+    loadGironi:        loadGironi,
     calcolaClassifica: calcolaClassifica,
     squadraById:       squadraById,
     renderClassifica:  renderClassifica,

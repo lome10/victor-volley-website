@@ -301,6 +301,29 @@
        (campo "squadre": id, nome, logo, home) e serve sia alla classifica
        sia alle card delle partite. */
     setSquadreGirone: function (list) { _squadreGirone = Array.isArray(list) ? list : []; },
+
+    /* Formato del documento siteData/girone (v2): anagrafica unica delle
+       squadre + un girone per categoria:
+         { stagione, squadre:[{id,nome,logo,home}],
+           gironi:[{categoria, girone, squadre:[id…], partite:[…]}] }
+       Il vecchio formato (un solo girone: categoria/girone/squadre-oggetto/
+       partite al primo livello) viene convertito qui, così continua a funzionare. */
+    normalizeGirone: function (raw) {
+      raw = raw || {};
+      var ids = function (arr) { return (arr || []).map(function (x) { return typeof x === 'string' ? x : x.id; }); };
+      var squadre = (raw.squadre || []).map(function (s) { return typeof s === 'string' ? { id: s, nome: s } : s; });
+      var gironi;
+      if (Array.isArray(raw.gironi)) {
+        gironi = raw.gironi.map(function (g) {
+          return { categoria: g.categoria || '', girone: g.girone || '', squadre: ids(g.squadre), partite: g.partite || [] };
+        });
+      } else if (raw.categoria) {
+        gironi = [{ categoria: raw.categoria, girone: raw.girone || '', squadre: ids(squadre), partite: raw.partite || [] }];
+      } else {
+        gironi = [];
+      }
+      return { stagione: raw.stagione || '', squadre: squadre, gironi: gironi };
+    },
     getSquadreGirone: function () { return _squadreGirone; },
 
     /* Chiave di confronto tra nomi: minuscolo, senza accenti, punteggiatura

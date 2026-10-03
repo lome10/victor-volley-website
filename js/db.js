@@ -123,7 +123,7 @@
       if (doc.exists && doc.data() && doc.data().json) return JSON.parse(doc.data().json);
       return fetch('/data/girone.json').then(function (r) { return r.json(); });
     }).then(function (g) {
-      VV.setSquadreGirone(g && g.squadre);
+      VV.setSquadreGirone(VV.normalizeGirone(g).squadre);
     }).catch(function (err) { console.warn('[DB] squadre girone', err); });
   }
 

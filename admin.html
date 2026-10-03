@@ -9,7 +9,7 @@
   <link rel="preload" href="/assets/fonts/barlow-700-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/manrope-400-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/fonts.css">
-  <link rel="stylesheet" href="/css/admin.css?v=20261003g">
+  <link rel="stylesheet" href="/css/admin.css?v=20261003i">
   <link rel="stylesheet" href="/css/dirigenti.css?v=20261002i">
 </head>
 <body>
@@ -468,15 +468,22 @@
           <div class="girone-sq" id="gironeSquadre">
             <div class="girone-sq-head">
               <div>
-                <div class="girone-sq-title">Squadre del girone</div>
-                <p class="form-hint" id="gironeSquadreInfo">Elenco unico: il logo caricato qui compare nella classifica e nelle card delle partite, purché il nome della squadra nella partita corrisponda.</p>
+                <div class="girone-sq-title">Gironi e squadre</div>
+                <p class="form-hint" id="gironeSquadreInfo">Squadre e loghi sono unici: si caricano una volta sola e valgono per tutte le categorie. Per ogni categoria scegli le squadre del girone (la classifica usa quelle spuntate); i loghi compaiono anche nelle card delle partite, purché il nome nella partita corrisponda.</p>
               </div>
-              <button type="button" class="btn-ghost" id="gironeSqAdd">+ Aggiungi squadra</button>
+            </div>
+            <div class="girone-sq-tabs" id="gironeSqTabs"></div>
+            <div class="girone-sq-meta" id="gironeSqMeta" style="display:none">
+              <label class="form-label" for="gironeSqLetter" style="margin:0">Girone</label>
+              <input type="text" id="gironeSqLetter" class="form-input" maxlength="4" placeholder="es. B" style="width:70px">
+              <span class="form-hint" id="gironeSqCount"></span>
+              <button type="button" class="btn-ghost" id="gironeSqDelGirone" style="margin-left:auto">Elimina girone</button>
             </div>
             <div id="gironeSqList" class="girone-sq-list"></div>
             <div class="girone-sq-foot">
-              <span id="gironeSqStatus" class="form-hint"></span>
-              <button type="button" class="btn-primary" id="gironeSqSave">Salva squadre</button>
+              <button type="button" class="btn-ghost" id="gironeSqAdd">+ Aggiungi squadra</button>
+              <span id="gironeSqStatus" class="form-hint" style="margin-left:auto"></span>
+              <button type="button" class="btn-primary" id="gironeSqSave">Salva</button>
             </div>
           </div>
         </div>
@@ -1280,7 +1287,7 @@
             <div class="json-file-header">
               <div>
                 <span class="json-file-name">data/girone.json</span>
-                <span class="json-file-desc">Squadre e partite del girone Prima Divisione. Aggiungi <code>set_casa</code> e <code>set_ospite</code> alle partite giocate per aggiornare la classifica.</span>
+                <span class="json-file-desc">Anagrafica squadre (<code>squadre</code>: nome e logo) e gironi per categoria (<code>gironi</code>: lettera, squadre per id e partite). In ogni partita di un girone aggiungi <code>set_casa</code> e <code>set_ospite</code> per aggiornare la classifica. Nomi e loghi si gestiscono meglio da Calendario → Gironi e squadre.</span>
               </div>
               <span class="json-file-updated" id="gironeJsonUpdated"></span>
             </div>
@@ -2270,13 +2277,13 @@
   <script src="/js/vendor/firebase-auth-compat.js"></script>
   <script src="/js/firebase-config.js"></script>
   <script src="/js/esc.js?v=20261002f"></script>
-  <script src="/js/data.js?v=20261003g"></script>
-  <script src="/js/db.js?v=20261003g"></script>
+  <script src="/js/data.js?v=20261003i"></script>
+  <script src="/js/db.js?v=20261003i"></script>
   <script src="/js/config.js?v=20260928"></script>
   <script src="/js/photodb.js?v=20260929"></script>
   <script src="/js/admin.js?v=20261002i"></script>
   <script src="/js/admin/atleti.js?v=20261002i"></script>
-  <script src="/js/admin/cms.js?v=20261003h"></script>
+  <script src="/js/admin/cms.js?v=20261003i"></script>
   <script src="/js/admin/pianoeditoriale.js?v=20261002i"></script>
   <script src="/js/admin/bacheca.js?v=20261002i"></script>
   <script src="/js/admin/budget/state.js?v=20261002i"></script>

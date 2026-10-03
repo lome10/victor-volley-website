@@ -1,7 +1,5 @@
 {
   "stagione": "2026/27",
-  "categoria": "Prima Divisione",
-  "girone": "B",
   "squadre": [
     {
       "id": "victor-volley",
@@ -58,5 +56,32 @@
       "nome": "Polisportiva Supersano"
     }
   ],
-  "partite": []
+  "gironi": [
+    {
+      "categoria": "Prima Divisione",
+      "girone": "B",
+      "squadre": [
+        "victor-volley",
+        "citta-di-otranto",
+        "cesp-olimpius-parabita",
+        "magic-volley-galatina",
+        "mb-volley-ruffano",
+        "volley-alezio-98",
+        "dream-volley-nardo",
+        "flyarmida-volley",
+        "astra-volley-presicce-acquarica",
+        "green-volley-galatone",
+        "cutrofiano-volley",
+        "aradeo-volley-1977",
+        "polisportiva-supersano"
+      ],
+      "partite": []
+    },
+    {
+      "categoria": "Under 19",
+      "girone": "",
+      "squadre": [],
+      "partite": []
+    }
+  ]
 }
