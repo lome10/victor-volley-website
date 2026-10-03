@@ -83,7 +83,7 @@
       : '<span class="stand-logo-init">' + esc((s.nome || '?').charAt(0)) + '</span>';
     return '<tr' + (isHome ? ' class="stand-row--vv"' : '') + '>' +
       '<td class="stand-pos">' + (r._pos) + '</td>' +
-      '<td><div class="stand-name">' + logo + esc(s.nome) + '</div></td>' +
+      '<td><div class="stand-name" title="' + esc(s.nome) + '">' + logo + '<span class="stand-name-text">' + esc(s.nome) + '</span></div></td>' +
       '<td class="stand-stat">' + r.v + '</td>' +
       '<td class="stand-stat">' + r.p + '</td>' +
       '<td class="stand-pts">' + r.pts + '</td>' +
