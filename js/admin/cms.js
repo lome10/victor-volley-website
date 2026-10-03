@@ -395,9 +395,12 @@
     }).join('');
   }
 
+  /* "assets/logo.png" è relativo alla radice del sito: l'admin vive anche su /admin/budget ecc., quindi lo rendo assoluto */
+  function _absLogo(u) { return /^(https?:|data:)/.test(u) || u.charAt(0) === '/' ? u : '/' + u; }
+
   function _gironeLogoBox(r) {
     return r.logo
-      ? '<img src="' + esc(r.logo) + '" alt="">'
+      ? '<img src="' + esc(_absLogo(r.logo)) + '" alt="">'
       : esc((r.nome || '?').charAt(0).toUpperCase());
   }
 
