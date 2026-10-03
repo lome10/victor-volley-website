@@ -115,8 +115,25 @@
   /* ----------------------------------------------------------------
      Pannello classifica (homepage + calendario)
   ---------------------------------------------------------------- */
+  /* Specchietto di 5 squadre con la Victor al centro (2 sopra, 2 sotto);
+     ai bordi la finestra scorre: 1ª → 4 sotto, 2ª → 1 sopra e 3 sotto,
+     ultima → 4 sopra, penultima → 3 sopra e 1 sotto. */
+  var WINDOW_SIZE = 5;
+
+  function finestraClassifica(classifica, homeId) {
+    var n = classifica.length;
+    if (n <= WINDOW_SIZE) return { da: 0, a: n };
+    var pos = -1;
+    for (var i = 0; i < n; i++) { if (classifica[i].id === homeId) { pos = i; break; } }
+    if (pos < 0) return { da: 0, a: WINDOW_SIZE };
+    var da = Math.max(0, Math.min(pos - 2, n - WINDOW_SIZE));
+    return { da: da, a: da + WINDOW_SIZE };
+  }
+
   function renderClassifica(classifica, squadre, girone, homeId) {
+    var fin = finestraClassifica(classifica, homeId);
     var rows = classifica.map(function (r, i) {
+      if (i < fin.da || i >= fin.a) return '';
       var s = squadraById(squadre, r.id);
       var isVV = r.id === homeId;
       return '<tr class="' + (isVV ? 'gc-row--vv' : '') + '">' +
@@ -147,7 +164,8 @@
         '</tr></thead>' +
         '<tbody>' + rows + '</tbody>' +
       '</table>' +
-      '<div class="gc-footer">' + esc(girone.stagione || '') + '</div>' +
+      '<div class="gc-footer">' + esc(girone.stagione || '') +
+        (classifica.length > WINDOW_SIZE ? ' · <a href="calendario.html">Classifica completa</a>' : '') + '</div>' +
     '</div>';
   }
 
