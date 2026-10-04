@@ -5,6 +5,58 @@
 
   var PIN_ICON = '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>';
 
+  var CAL_ICON = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18M12 13v5M9.5 15.5h5"/></svg>';
+
+  /* ---- File .ics (aggiunge la partita al calendario del telefono/PC) ---- */
+  function icsEscape(t) {
+    return String(t == null ? '' : t).replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;');
+  }
+  function icsFold(line) {
+    var out = [];
+    while (line.length > 74) { out.push(line.slice(0, 74)); line = ' ' + line.slice(74); }
+    out.push(line);
+    return out.join('\r\n');
+  }
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function icsStamp(d) {
+    return d.getUTCFullYear() + pad2(d.getUTCMonth() + 1) + pad2(d.getUTCDate()) + 'T' +
+      pad2(d.getUTCHours()) + pad2(d.getUTCMinutes()) + pad2(d.getUTCSeconds()) + 'Z';
+  }
+  /* Orario «flottante» (ora locale di chi apre il file): gara e spettatori sono nello stesso fuso.
+     Senza orario l'evento dura un giorno intero. Durata stimata: 2 ore. */
+  function icsEvent(p) {
+    var ymd = p.data.replace(/-/g, '');
+    var m = /^(\d{1,2}):(\d{2})/.exec(p.ora || '');
+    var lines = ['BEGIN:VEVENT', 'UID:partita-' + p.id + '@victorvolley.it', 'DTSTAMP:' + icsStamp(new Date())];
+    if (m) {
+      var h = +m[1], mi = +m[2], hEnd = h + 2;
+      lines.push('DTSTART:' + ymd + 'T' + pad2(h) + pad2(mi) + '00');
+      lines.push('DTEND:' + ymd + 'T' + (hEnd > 23 ? '235900' : pad2(hEnd) + pad2(mi) + '00'));
+    } else {
+      var nx = new Date(p.data + 'T00:00:00'); nx.setDate(nx.getDate() + 1);
+      lines.push('DTSTART;VALUE=DATE:' + ymd);
+      lines.push('DTEND;VALUE=DATE:' + nx.getFullYear() + pad2(nx.getMonth() + 1) + pad2(nx.getDate()));
+    }
+    lines.push('SUMMARY:' + icsEscape(p.squadra_casa + ' - ' + p.squadra_ospite + (p.categoria ? ' (' + p.categoria + ')' : '')));
+    if (p.palazzetto) lines.push('LOCATION:' + icsEscape(p.palazzetto));
+    lines.push('END:VEVENT');
+    return lines.map(icsFold).join('\r\n');
+  }
+  function downloadIcs(partite, filename) {
+    var body = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Victor Volley//Calendario//IT', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH']
+      .concat(partite.map(icsEvent)).concat(['END:VCALENDAR']).join('\r\n') + '\r\n';
+    var url = URL.createObjectURL(new Blob([body], { type: 'text/calendar;charset=utf-8' }));
+    var a = document.createElement('a');
+    a.href = url; a.download = filename; a.style.display = 'none';
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+  }
+  /* In Firestore ci sono partite con avversario non ancora noto salvato come testo "undefined" */
+  function validName(n) { return !!n && n !== "undefined" && n !== "null"; }
+  function hasValidData(p) {
+    return !!p && /^\d{4}-\d{2}-\d{2}$/.test(p.data || '') && validName(p.squadra_casa) && validName(p.squadra_ospite);
+  }
+
   var GIORNI = ['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
   var MESI   = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
   function formatDataCard(dateStr, ora) {
@@ -43,6 +95,12 @@
               '<div class="cal-section-head">' +
                 '<h2 class="cal-section-title">Calendario</h2>' +
                 '<button type="button" class="cal-jump-btn" data-role="jump-next">Vai alla prossima partita &darr;</button>' +
+              '</div>' +
+              '<div class="cal-toolbar">' +
+                '<label class="cal-team-filter">Squadra avversaria ' +
+                  '<select data-role="team-filter"><option value="">Tutte le squadre</option></select>' +
+                '</label>' +
+                '<button type="button" class="cal-ics-all" data-role="ics-all">' + CAL_ICON + ' Aggiungi tutte al calendario</button>' +
               '</div>' +
               '<div class="fixture-list" data-role="fixtures"></div>' +
             '</div>' +
@@ -226,11 +284,17 @@
         '<div class="fixture-team' + (isHome ? ' fixture-team--vv' : '') + '">' + teamLogo(p.logo_casa, p.squadra_casa) + '<span class="fixture-team-name">' + (casaWins ? '<strong>' + esc(p.squadra_casa) + '</strong>' : esc(p.squadra_casa)) + '</span>' + (hasScore ? teamScore(p.set_casa, rCls) : '') + '</div>' +
         '<div class="fixture-team' + (!isHome ? ' fixture-team--vv' : '') + '">' + teamLogo(p.logo_ospite, p.squadra_ospite) + '<span class="fixture-team-name">' + (hasScore && !casaWins ? '<strong>' + esc(p.squadra_ospite) + '</strong>' : esc(p.squadra_ospite)) + '</span>' + (hasScore ? teamScore(p.set_ospite, rCls) : '') + '</div>' +
       '</div>' +
-      '<div class="fixture-row-venue">' + PIN_ICON + esc(p.palazzetto || '—') + '</div>' +
+      '<div class="fixture-row-venue">' + PIN_ICON + '<span class="fixture-row-venue-text">' + esc(p.palazzetto || '—') + '</span>' +
+        (!isPast(p) && hasValidData(p)
+          ? '<button type="button" class="fixture-ics" data-ics-id="' + esc(p.id) + '" aria-label="' + esc('Aggiungi al calendario: ' + p.squadra_casa + ' - ' + p.squadra_ospite) + '">' + CAL_ICON + ' Aggiungi al calendario</button>'
+          : '') +
+      '</div>' +
     '</div>';
   }
 
   function isPast(p) { return p.stato === 'conclusa' || p.data < today; }
+
+  function opponentOf(p) { return isVV(p.squadra_casa) ? p.squadra_ospite : p.squadra_casa; }
 
   function renderMatches() {
     var partite = allPartite.filter(function (p) { return inSeason(p, activeSeason.id); });
@@ -240,8 +304,24 @@
       var panel = document.querySelector('.cal-cat-panel[data-cat="' + s + '"]');
       if (!panel) return;
 
-      var catPartite = partite.filter(function (p) { return slug(p.categoria) === s; })
+      var tutte = partite.filter(function (p) { return slug(p.categoria) === s; })
         .sort(function (a, b) { return a.data === b.data ? (a.ora || '').localeCompare(b.ora || '') : a.data.localeCompare(b.data); });
+
+      /* Filtro per squadra avversaria: l'elenco dipende da categoria e stagione */
+      var avversari = [];
+      tutte.forEach(function (p) {
+        var o = opponentOf(p);
+        if (validName(o) && avversari.indexOf(o) < 0) avversari.push(o);
+      });
+      avversari.sort(function (a, b) { return a.localeCompare(b, 'it'); });
+      var sel = panel.querySelector('[data-role="team-filter"]');
+      var scelta = panel.dataset.team || '';
+      if (avversari.indexOf(scelta) < 0) { scelta = ''; panel.dataset.team = ''; }
+      sel.innerHTML = '<option value="">Tutte le squadre</option>' +
+        avversari.map(function (o) { return '<option value="' + esc(o) + '"' + (o === scelta ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join('');
+      sel.parentNode.style.display = avversari.length > 1 ? '' : 'none';
+
+      var catPartite = scelta ? tutte.filter(function (p) { return opponentOf(p) === scelta; }) : tutte;
       var nextIdx = catPartite.findIndex(function (p) { return !isPast(p); });
 
       var list = panel.querySelector('[data-role="fixtures"]');
@@ -255,8 +335,32 @@
       jumpBtn.onclick = function () {
         nextRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
       };
+
+      /* «Aggiungi tutte»: le partite future (con data e squadre) dell'elenco mostrato */
+      var future = catPartite.filter(function (p) { return !isPast(p) && hasValidData(p); });
+      var icsAll = panel.querySelector('[data-role="ics-all"]');
+      icsAll.style.display = future.length > 1 ? '' : 'none';
+      icsAll.onclick = function () {
+        downloadIcs(future, 'victor-volley-' + s + (scelta ? '-' + slug(scelta) : '') + '.ics');
+      };
     });
   }
+
+  /* Cambio squadra nel filtro e «Aggiungi al calendario» di una singola partita */
+  var panelsEl = document.getElementById('calCatPanels');
+  panelsEl.addEventListener('change', function (e) {
+    var sel = e.target.closest && e.target.closest('[data-role="team-filter"]');
+    if (!sel) return;
+    sel.closest('.cal-cat-panel').dataset.team = sel.value;
+    renderMatches();
+  });
+  panelsEl.addEventListener('click', function (e) {
+    var btn = e.target.closest && e.target.closest('[data-ics-id]');
+    if (!btn) return;
+    var id = btn.getAttribute('data-ics-id');
+    var p = allPartite.filter(function (x) { return String(x.id) === id; })[0];
+    if (hasValidData(p)) downloadIcs([p], 'partita-' + p.data + '.ics');
+  });
 
   renderMatches();
   }); // DB.load
