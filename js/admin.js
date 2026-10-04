@@ -700,20 +700,25 @@
       }});
     });
 
+    /* Partite: in lettura i loghi vengono sostituiti da quelli dell'elenco squadre del girone
+       (VV.applyGironeLogos); il logo scritto sul documento è in logo_casa_orig / logo_ospite_orig.
+       Si migra QUELLO e si salva la partita senza i campi derivati (_orig), così il documento
+       resta com'è, solo con l'URL al posto del base64. */
     VV.getPartite().forEach(function (m) {
       var label = 'Partita — ' + (m.squadra_casa || '?') + ' vs ' + (m.squadra_ospite || '?');
-      jobs.push({ label: label + ' (logo casa)', run: function () {
-        return Admin.cms.migrateFieldIfBase64(m.logo_casa, 'matches').then(function (url) {
-          if (url === m.logo_casa) return false;
-          m.logo_casa = url;
-          return new Promise(function (resolve) { DB.savePartita(m, function () { resolve(true); }); });
-        });
-      }});
-      jobs.push({ label: label + ' (logo ospite)', run: function () {
-        return Admin.cms.migrateFieldIfBase64(m.logo_ospite, 'matches').then(function (url) {
-          if (url === m.logo_ospite) return false;
-          m.logo_ospite = url;
-          return new Promise(function (resolve) { DB.savePartita(m, function () { resolve(true); }); });
+      var casaOrig   = m.logo_casa_orig   !== undefined ? m.logo_casa_orig   : m.logo_casa;
+      var ospiteOrig = m.logo_ospite_orig !== undefined ? m.logo_ospite_orig : m.logo_ospite;
+      jobs.push({ label: label + ' (loghi)', run: function () {
+        return Admin.cms.migrateFieldIfBase64(casaOrig, 'matches').then(function (casaUrl) {
+          return Admin.cms.migrateFieldIfBase64(ospiteOrig, 'matches').then(function (ospiteUrl) {
+            if (casaUrl === casaOrig && ospiteUrl === ospiteOrig) return false;
+            var doc = Object.assign({}, m);
+            doc.logo_casa = casaUrl;
+            doc.logo_ospite = ospiteUrl;
+            delete doc.logo_casa_orig;
+            delete doc.logo_ospite_orig;
+            return new Promise(function (resolve) { DB.savePartita(doc, function () { resolve(true); }); });
+          });
         });
       }});
     });
