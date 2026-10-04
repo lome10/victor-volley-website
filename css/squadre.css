@@ -59,7 +59,7 @@
   transition: background 0.15s ease, color 0.15s ease;
   white-space: nowrap;
 }
-.sq-switch-group button.is-active { background: var(--c-azzurro); color: #fff; }
+.sq-switch-group button.is-active { background: var(--c-azzurro-dark); color: #fff; }
 .sq-switch-group button:hover:not(.is-active) { color: #fff; }
 .sq-switch-group button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 

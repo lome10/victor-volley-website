@@ -164,12 +164,12 @@ a:hover {
 }
 
 .btn--primary {
-  background-color: var(--c-azzurro);
+  background-color: var(--c-azzurro-dark);
   color: var(--c-white);
 }
 
 .btn--primary:hover {
-  background-color: var(--c-azzurro-dark);
+  background-color: #005bb0;
   color: var(--c-white);
 }
 
@@ -645,11 +645,11 @@ main, footer.site-footer {
 .footer-bottom p,
 .footer-bottom a {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(255, 255, 255, 0.65);
 }
 
 .footer-bottom a { text-decoration: none; transition: color var(--t); }
-.footer-bottom a:hover { color: rgba(255, 255, 255, 0.65); }
+.footer-bottom a:hover { color: rgba(255, 255, 255, 0.9); }
 
 /* ================================================
    Page header (banner top di pagine interne)
@@ -771,7 +771,7 @@ main, footer.site-footer {
 
 .partite-card-date {
   font-size: 9px;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.55);
   white-space: nowrap;
 }
 
@@ -845,7 +845,7 @@ main, footer.site-footer {
 .partite-card-vs {
   font-size: 10px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.5);
 }
 
 /* colonna destra: punteggi allineati riga per riga */
@@ -1751,7 +1751,7 @@ main, footer.site-footer {
 .gc-sub {
   display: block;
   font-size: 11px;
-  color: #aaa;
+  color: #6b6b6b;
   margin-top: 1px;
 }
 
@@ -1766,7 +1766,7 @@ main, footer.site-footer {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #bbb;
+  color: #6b6b6b;
   padding: 8px 12px 6px;
   border-bottom: 1px solid #f0f0f2;
   text-align: left;
@@ -1785,7 +1785,7 @@ main, footer.site-footer {
 
 .gc-table tbody tr:last-child td { border-bottom: none; }
 
-.gc-pos  { text-align: center; width: 28px; color: #aaa; font-size: 11px; }
+.gc-pos  { text-align: center; width: 28px; color: #767676; font-size: 11px; }
 .gc-name { display: flex; align-items: center; gap: 7px; font-weight: 500; }
 .gc-name-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .gc-stat { text-align: center; width: 28px; color: #777; }
@@ -1810,7 +1810,7 @@ main, footer.site-footer {
 .gc-footer {
   padding: 9px 16px;
   font-size: 11px;
-  color: #ccc;
+  color: #767676;
   border-top: 1px solid #f0f0f2;
   text-align: right;
 }
@@ -3994,3 +3994,8 @@ button[type="submit"][aria-busy="true"] { opacity: 0.7; cursor: progress; }
 .live-banner-link:focus-visible, .live-banner-close:focus-visible { outline: 3px solid var(--c-azzurro); outline-offset: -3px; }
 @media (max-width: 900px) { .live-banner { left: 16px; max-width: none; } }
 @media (prefers-reduced-motion: reduce) { .live-banner-dot { animation: none; } }
+
+.gc-footer a { color: var(--c-azzurro-dark); }
+
+/* Home mobile: spazio riservato al card «prossima partita» finché i dati non arrivano (evita il salto di layout) */
+.mtb-match.is-pending:empty { display: block; min-height: 137px; }

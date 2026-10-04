@@ -327,7 +327,11 @@
 
     /* Match card — solo in homepage, solo se Firebase/DB è disponibile */
     if (page === 'index' && window.DB && typeof DB.load === 'function') {
+      /* Riserva subito lo spazio della card: arrivando in ritardo spingeva giù tutta la pagina (CLS).
+         Si toglie appena i dati sono arrivati, ci sia o no una prossima partita. */
+      if (matchEl) matchEl.classList.add('is-pending');
       DB.load(['partite'], function () {
+        if (matchEl) matchEl.classList.remove('is-pending');
         var next = VV.getPartite()
           .filter(function (p) { return p.stato !== 'conclusa'; })
           .sort(function (a, b) { return a.data > b.data ? 1 : -1; })[0];

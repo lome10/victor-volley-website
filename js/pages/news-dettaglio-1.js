@@ -104,7 +104,7 @@
   var cover = document.getElementById('articleCover');
   cover.style.aspectRatio = article.coverRatio === '9:16' ? '9 / 16' : '4 / 5';
   cover.innerHTML = article.image
-    ? '<img fetchpriority="high" decoding="async" src="' + esc(article.image) + '" alt="' + esc(article.title) + '"' + (article.imageFocus ? ' style="object-position:' + esc(article.imageFocus) + '"' : '') + '>'
+    ? '<img fetchpriority="high" decoding="async" src="' + esc(VV.imgUrl(article.image, 1200)) + '" alt="' + esc(article.title) + '"' + (article.imageFocus ? ' style="object-position:' + esc(article.imageFocus) + '"' : '') + '>'
     : '<div class="article-cover-placeholder">&#127944;</div>';
 
   /* Metadati */

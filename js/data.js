@@ -191,6 +191,12 @@
     },
 
     /* ---- HELPERS ---- */
+    /* Immagini già su Cloudinary: formato e qualità automatici (WebP/AVIF dove il browser li supporta) e
+       larghezza massima (senza mai ingrandire). Altri URL, o già trasformati, restano com'erano. */
+    imgUrl: function (url, width) {
+      var m = /^(https:\/\/res\.cloudinary\.com\/[^\/]+\/image\/upload\/)(v\d+\/.+)$/.exec(String(url || ''));
+      return m ? m[1] + 'f_auto,q_auto,c_limit,w_' + (width || 1000) + '/' + m[2] : url;
+    },
     /* Dati strutturati (JSON-LD) generati dai contenuti: un solo <script> per id, sostituito a ogni chiamata.
        «<» è escluso dal testo così un titolo non può chiudere il tag. */
     setJsonLd: function (id, obj) {
@@ -229,7 +235,7 @@
     cardBgHtml: function (article, gradient, eager) {
       var e = function (v) { return String(v || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); };
       if (!article.image) return '<div class="hero-card-bg" style="background:' + gradient + '"></div>';
-      return '<div class="hero-card-bg"><img src="' + e(article.image) + '" alt=""' +
+      return '<div class="hero-card-bg"><img src="' + e(VV.imgUrl(article.image, 900)) + '" alt=""' +
         (eager ? ' fetchpriority="high"' : ' loading="lazy"') + ' decoding="async"' +
         (article.imageFocus ? ' style="object-position:' + e(article.imageFocus) + '"' : '') + '></div>';
     },
