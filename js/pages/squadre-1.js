@@ -151,10 +151,11 @@
 
   }
 
-  DB.load(['categories', 'seasons', 'players', 'staff'], function () {
+  DB.loadOrError(['categories', 'seasons', 'players', 'staff'], 'squadreMain', function () {
   var categories   = VV.getCategories(true).filter(function (c) { return c.showInSquadre !== false; });
   var seasons      = VV.getSeasons();
   var activeSeason = VV.getCurrentSeason() || seasons[0];
+  if (!activeSeason) { document.getElementById('squadreMain').innerHTML = '<div class="container">' + VV.emptyStateHtml('Nessuna stagione disponibile', 'Le rose saranno pubblicate presto.') + '</div>'; return; }
 
   var main       = document.getElementById('squadreMain');
   var catSelect  = document.getElementById('sqCatSelect');
@@ -199,7 +200,7 @@
     seasonLbl.textContent = 'Stagione ' + (activeSeason.name || activeSeason.id);
 
     if (!categories.length) {
-      main.innerHTML = '<div class="container"><p class="sq-empty">Nessuna categoria disponibile al momento.</p></div>';
+      main.innerHTML = '<div class="container">' + VV.emptyStateHtml('Nessuna squadra disponibile', 'Le rose della stagione saranno pubblicate presto.') + '</div>';
       return;
     }
 

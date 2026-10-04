@@ -12,7 +12,7 @@
     }
     return out;
   }
-  DB.load(['albums'], function () {
+  DB.loadOrError(['albums'], 'galleryPreviewGrid', function () {
     var albums = VV.getAlbums()
       .filter(function (a) { return a.photos && a.photos.length; })
       .sort(function (a, b) { return (b.date || '') < (a.date || '') ? -1 : (b.date || '') > (a.date || '') ? 1 : 0; });

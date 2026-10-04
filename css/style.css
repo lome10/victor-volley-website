@@ -3834,3 +3834,15 @@ button[type="submit"][aria-busy="true"] { opacity: 0.7; cursor: progress; }
 .legal th, .legal td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #e3e3ea; vertical-align: top; }
 .legal th { background: #f4f6fa; color: var(--c-navy); font-weight: 700; white-space: nowrap; }
 .legal-box { padding: 16px 18px; background: #f4f6fa; border-left: 4px solid var(--c-azzurro); border-radius: 6px; margin: 0 0 18px; }
+
+/* ---- Stati vuoto / errore delle liste (VV.errorStateHtml, VV.emptyStateHtml) ---- */
+.vv-state { grid-column: 1 / -1; width: 100%; box-sizing: border-box; text-align: center; padding: 48px 20px; color: inherit; }
+.vv-state-title { margin: 0 0 6px; font-family: var(--font-heading); font-size: 20px; font-weight: 700; }
+.vv-state-text { margin: 0 0 18px; font-size: 14px; line-height: 1.5; opacity: 0.7; }
+.vv-state-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 22px; border: 0; border-radius: var(--btn-radius); background: var(--c-azzurro-dark); color: #fff; font: 700 14px var(--font-body); text-decoration: none; cursor: pointer; transition: background var(--t); }
+.vv-state-btn:hover { background: var(--c-navy); }
+.vv-state-btn:focus-visible { outline: 3px solid var(--c-azzurro); outline-offset: 2px; }
+.vv-state-btn:disabled { opacity: 0.6; cursor: wait; }
+.partite-retry { margin-left: 6px; padding: 2px 8px; border: 1px solid currentColor; border-radius: var(--btn-radius); background: transparent; color: inherit; font: inherit; font-style: normal; cursor: pointer; }
+.partite-retry:hover { background: rgba(255, 255, 255, 0.12); }
+.partite-retry:focus-visible { outline: 2px solid var(--c-azzurro); outline-offset: 2px; }

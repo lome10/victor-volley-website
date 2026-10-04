@@ -272,6 +272,14 @@
 
     new Promise(function (resolve) { DB.load(['partite'], resolve); })
       .then(function () {
+        if (DB.failed(['partite'])) {
+          var errHtml = '<div class="partite-empty">Partite non disponibili. <button type="button" class="partite-retry">Riprova</button></div>';
+          if (elP) elP.innerHTML = errHtml;
+          if (elC) elC.innerHTML = '';
+          var rb = elP && elP.querySelector('.partite-retry');
+          if (rb) rb.addEventListener('click', function () { rb.disabled = true; rb.textContent = 'Riprovo…'; DB.retry(['partite'], init); });
+          return;
+        }
         var partite = VV.getPartite();
 
         /* Fetch sessioni Supabase per le partite con codice_tabellone */

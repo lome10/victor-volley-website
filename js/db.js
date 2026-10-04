@@ -103,7 +103,7 @@
   var PART_NAMES = ['articles', 'partite', 'albums', 'categories', 'players', 'staff', 'sponsors', 'seasons', 'stats', 'maglia', 'categorieArticoli', 'livelliSponsorSub'];
 
   var _parts = {};
-  PART_NAMES.forEach(function (name) { _parts[name] = { loaded: false, loading: false, pending: [] }; });
+  PART_NAMES.forEach(function (name) { _parts[name] = { loaded: false, loading: false, error: false, pending: [] }; });
 
   function _settingsDoc(id, applyFn) {
     return global.db.collection('settings').doc(id).get().then(function (doc) {
@@ -179,7 +179,7 @@
     if (!state.loading) {
       state.loading = true;
       _fetchPart(name)
-        .catch(function (err) { console.error('[DB] load ' + name, err); })
+        .then(function () { state.error = false; }, function (err) { state.error = true; console.error('[DB] load ' + name, err); })
         .then(function () {
           state.loaded = true;
           var cbs = state.pending.slice(); state.pending = [];
@@ -208,6 +208,40 @@
        ogni parte viene scaricata una sola volta e messa in cache. */
     load: function (parts, cb) {
       Promise.all((parts || []).map(_ensurePart)).then(function () { if (cb) cb(); });
+    },
+
+    /* true se almeno una delle parti non si è caricata (rete o permessi). */
+    failed: function (parts) {
+      return (parts || []).some(function (n) { return _parts[n] && _parts[n].error; });
+    },
+
+    /* Rimette in coda le parti andate in errore, poi chiama cb. */
+    retry: function (parts, cb) {
+      (parts || []).forEach(function (n) {
+        var st = _parts[n];
+        if (st && st.error) { st.error = false; st.loaded = false; st.loading = false; }
+      });
+      DB.load(parts, cb);
+    },
+
+    /* Come load(), ma se il caricamento fallisce mostra in `target`
+       (elemento o id) un messaggio con «Riprova» invece di chiamare cb:
+       così una rete assente non si confonde con «nessun risultato». */
+    loadOrError: function (parts, target, cb, message) {
+      function el() { return typeof target === 'string' ? document.getElementById(target) : target; }
+      function run() {
+        DB.load(parts, function () {
+          var box = el();
+          if (!DB.failed(parts) || !box) { cb(); return; }
+          box.innerHTML = VV.errorStateHtml(message);
+          var btn = box.querySelector('[data-retry]');
+          if (btn) btn.addEventListener('click', function () {
+            btn.disabled = true; btn.textContent = 'Riprovo…';
+            DB.retry(parts, run);
+          });
+        });
+      }
+      run();
     },
 
     /* ---- INIT ------------------------------------------------ */

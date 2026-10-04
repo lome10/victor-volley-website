@@ -226,6 +226,19 @@
         (eager ? ' fetchpriority="high"' : ' loading="lazy"') + ' decoding="async"' +
         (article.imageFocus ? ' style="object-position:' + e(article.imageFocus) + '"' : '') + '></div>';
     },
+    /* Stati vuoto/errore delle liste (stile .vv-state in style.css).
+       Il pulsante «Riprova» è collegato da DB.loadOrError tramite [data-retry]. */
+    errorStateHtml: function (msg) {
+      return '<div class="vv-state vv-state--error" role="alert">' +
+        '<p class="vv-state-title">Non riusciamo a caricare i contenuti</p>' +
+        '<p class="vv-state-text">' + (msg || 'Controlla la connessione e riprova.') + '</p>' +
+        '<button type="button" class="vv-state-btn" data-retry>Riprova</button></div>';
+    },
+    emptyStateHtml: function (title, text, linkHref, linkLabel) {
+      return '<div class="vv-state" role="status"><p class="vv-state-title">' + title + '</p>' +
+        (text ? '<p class="vv-state-text">' + text + '</p>' : '') +
+        (linkHref ? '<a class="vv-state-btn" href="' + linkHref + '">' + linkLabel + '</a>' : '') + '</div>';
+    },
     getArticleCategories: function (article) {
       if (!article) return [];
       if (Array.isArray(article.categories) && article.categories.length) return article.categories;

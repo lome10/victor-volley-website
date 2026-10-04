@@ -157,6 +157,12 @@
     if (!el) return;
 
     new Promise(function (resolve) { DB.load(['partite'], resolve); }).then(function () {
+      if (DB.failed(['partite'])) {
+        el.innerHTML = VV.errorStateHtml('Non riusciamo a caricare le partite.');
+        var rb = el.querySelector('[data-retry]');
+        if (rb) rb.addEventListener('click', function () { rb.disabled = true; rb.textContent = 'Riprovo…'; DB.retry(['partite'], init); });
+        return;
+      }
       var partite = VV.getPartite();
       var oggi = new Date().toISOString().slice(0, 10);
 

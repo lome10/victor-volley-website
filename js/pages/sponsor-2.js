@@ -22,7 +22,7 @@
       '<a href="/contatti">Vuoi essere il primo?</a></div>';
   }
 
-  DB.load(['sponsors', 'livelliSponsorSub'], function () {
+  DB.loadOrError(['sponsors', 'livelliSponsorSub'], 'sponsorTiers', function () {
     var sponsors = VV.getSponsors().sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
     var subTexts = VV.getLivelliSponsorSub();
     var wrap = document.getElementById('sponsorTiers');

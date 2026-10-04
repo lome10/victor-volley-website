@@ -15,7 +15,7 @@
     '</div>';
   }
 
-  DB.load(['articles'], function () {
+  DB.loadOrError(['articles'], 'heroCardsTrack', function () {
   var all      = VV.getArticles(true).sort(function (a, b) { return a.date < b.date ? 1 : -1; });
   var ordered  = all.filter(function (a) { return a.heroOrder > 0; })
                     .sort(function (a, b) { return a.heroOrder - b.heroOrder; });

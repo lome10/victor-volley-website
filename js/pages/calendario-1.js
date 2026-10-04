@@ -156,9 +156,10 @@
     return cats;
   }
 
-  DB.load(['seasons', 'partite'], function () {
+  DB.loadOrError(['seasons', 'partite'], 'calCatPanels', function () {
   var seasons      = VV.getSeasons();
   var activeSeason = VV.getCurrentSeason() || seasons[0];
+  if (!activeSeason) { document.getElementById('calCatPanels').innerHTML = '<div class="container">' + VV.emptyStateHtml('Calendario in arrivo', 'Le date saranno pubblicate appena la federazione le comunica.') + '</div>'; return; }
   var allPartite   = VV.getPartite();
 
   categories = uniqueCats(allPartite);

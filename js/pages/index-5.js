@@ -16,7 +16,7 @@
     '</div>';
   }
 
-  DB.load(['articles'], function () {
+  DB.loadOrError(['articles'], 'newsCardsTrack', function () {
     var articles = VV.getArticles(true)
       .sort(function (a, b) { return a.date < b.date ? 1 : -1; })
       .slice(0, 6);

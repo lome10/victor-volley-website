@@ -202,7 +202,7 @@
   }
 
   /* ---- Avvio ---- */
-  DB.load(['albums'], function () {
+  DB.loadOrError(['albums'], 'galleriaContainer', function () {
     var m = window.location.pathname.match(/^\/galleria\/([^\/]+)\/?$/);
     var albums = sortAlbums(VV.getAlbums().filter(hasPhotos));
     if (!m) { renderIndex(albums); return; }

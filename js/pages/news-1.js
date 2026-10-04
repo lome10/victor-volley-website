@@ -21,7 +21,7 @@
     '</div>';
   }
 
-  DB.load(['articles'], function () {
+  DB.loadOrError(['articles'], 'newsPageCards', function () {
     var articles = VV.getArticles(true)
       .filter(function (a) { return a.id && !isNaN(+a.id); })
       .sort(function (a, b) { return a.date < b.date ? 1 : -1; });
@@ -57,7 +57,7 @@
       var page  = filtered.slice(start, start + PAGE_SIZE);
 
       if (!page.length) {
-        grid.innerHTML = '<p style="color:#888;text-align:center;padding:48px 0;width:100%">Nessun articolo pubblicato.</p>';
+        grid.innerHTML = VV.emptyStateHtml(currentFilter === 'all' ? 'Nessun articolo pubblicato' : 'Nessun articolo in questa categoria', currentFilter === 'all' ? 'Torna a trovarci presto: le novità arriveranno qui.' : 'Prova con un&rsquo;altra categoria.', '', '');
       } else {
         grid.innerHTML = page.map(function (a, i) {
           var bgHtml = VV.cardBgHtml(a, GRADIENTS[(start + i) % GRADIENTS.length], i === 0);
