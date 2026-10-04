@@ -67,7 +67,7 @@
   <link rel="preload" href="/assets/fonts/barlow-700-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/manrope-400-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/fonts.css">
-  <link rel="stylesheet" href="css/style.css?v=20261004b">
+  <link rel="stylesheet" href="css/style.css?v=20261004k">
 </head>
 <body>
 
@@ -164,8 +164,8 @@
           <h2 id="gallery-preview-title">Galleria foto</h2>
           <p id="galleryPreviewSubtitle"></p>
         </div>
-        <div class="gallery-preview-grid" id="galleryPreviewGrid" style="margin-bottom:28px"><div class="skel skel-gallery" aria-hidden="true"></div><div class="skel skel-gallery" aria-hidden="true"></div><div class="skel skel-gallery" aria-hidden="true"></div><div class="skel skel-gallery" aria-hidden="true"></div></div>
-        <div style="text-align:center">
+        <div class="gallery-preview-grid gallery-preview-grid--gap" id="galleryPreviewGrid"><div class="skel skel-gallery" aria-hidden="true"></div><div class="skel skel-gallery" aria-hidden="true"></div><div class="skel skel-gallery" aria-hidden="true"></div><div class="skel skel-gallery" aria-hidden="true"></div></div>
+        <div class="u-text-center">
           <a href="/galleria" id="galleryPreviewLink" class="btn btn--outline">Vedi l'album completo</a>
         </div>
       </div>
@@ -184,7 +184,7 @@
           <div id="gironeClassifica" class="girone-classifica"></div>
         </div>
 
-        <div style="text-align:center;margin-top:32px">
+        <div class="section-cta">
           <a href="/calendario" class="btn btn--outline">Vedi tutto il calendario</a>
         </div>
       </div>
@@ -208,7 +208,7 @@
         </button>
         <div class="news-dots-mobile" id="newsDotsMobile"></div>
       </div>
-      <div style="text-align:center;margin-bottom:8px">
+      <div class="section-eyebrow-center">
         <a href="/news" class="btn btn--outline-white">Tutte le news</a>
       </div>
     </section>
@@ -242,7 +242,7 @@
             <div class="squadra-card-desc">Categoria giovanile</div>
           </a>
           <a href="/squadre#minivolley" class="squadra-card reveal">
-            <div class="squadra-card-icon" style="background:linear-gradient(135deg,var(--c-magenta),#e05090)">MV</div>
+            <div class="squadra-card-icon squadra-card-icon--magenta">MV</div>
             <div class="squadra-card-name">Minivolley</div>
             <div class="squadra-card-desc">Dai 6 ai 10 anni</div>
           </a>
@@ -265,7 +265,7 @@
           <div class="sponsor-ticker-track" id="sponsorTickerTrack"></div>
         </div>
 
-        <div style="text-align:center;margin-top:28px">
+        <div class="section-cta section-cta--sm">
           <a href="/sponsor" class="btn btn--outline">Scopri tutti i nostri partner</a>
         </div>
       </div>
@@ -274,9 +274,9 @@
     <!-- 9. VIENI A GIOCARE CON NOI ============================ -->
     <section class="cta-banner" aria-labelledby="cta-title">
       <!-- Logo decorativo animato (2.ter punto 3) -->
-      <img class="deco-ball" src="assets/logo-bianco.svg" alt="" style="width:220px;right:-40px;top:50%;transform:translateY(-50%)" aria-hidden="true">
-      <img class="deco-ball" src="assets/logo-bianco.svg" alt="" style="width:160px;left:-20px;bottom:-20px;opacity:0.04" aria-hidden="true">
-      <div class="container" style="position:relative;z-index:1">
+      <img class="deco-ball deco-ball--a" src="assets/logo-bianco.svg" alt="" aria-hidden="true">
+      <img class="deco-ball deco-ball--b" src="assets/logo-bianco.svg" alt="" aria-hidden="true">
+      <div class="container container--raised">
         <h2 id="cta-title">Vuoi giocare con noi?</h2>
         <p>Siamo sempre alla ricerca di nuovi atleti, da qualsiasi et&agrave; e livello. Contattaci e vieni a provare un allenamento gratuitamente.</p>
         <a href="/unisciti-a-noi" class="btn btn--primary">Mandaci un messaggio</a>
