@@ -3935,3 +3935,20 @@ button[type="submit"][aria-busy="true"] { opacity: 0.7; cursor: progress; }
 .deco-ball--a { width: 220px; right: -40px; top: 50%; transform: translateY(-50%); }
 .deco-ball--b { width: 160px; left: -20px; bottom: -20px; opacity: 0.04; }
 .container--raised { position: relative; z-index: 1; }
+
+/* ---- Partner ---- */
+.sponsor-cta-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 64px; align-items: center; }
+.sponsor-cta-title { margin-bottom: 16px; }
+.sponsor-cta-text { color: #555; margin-bottom: 24px; }
+.sponsor-cta-text--20 { margin-bottom: 20px; }
+.sponsor-cta-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.sponsor-stats { text-align: center; padding: 32px; }
+.sponsor-stat-value { font-family: var(--font-heading); font-size: 40px; font-weight: 700; margin-bottom: 4px; }
+.sponsor-stat-value--azzurro { color: var(--c-azzurro); }
+.sponsor-stat-value--navy { color: var(--c-navy); }
+.sponsor-stat-value--magenta { color: var(--c-magenta); }
+.sponsor-stat-label { font-size: 13px; color: #888; text-transform: uppercase; letter-spacing: .05em; }
+.sponsor-stat-label--gap { margin-bottom: 20px; }
+@media (max-width: 768px) {
+  .sponsor-cta-grid { grid-template-columns: 1fr; gap: 32px; }
+}
