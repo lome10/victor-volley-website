@@ -1,27 +1,10 @@
 /**
- * Victor Volley — Partite Live
- * Carica le partite dalla collection Firestore "partite" (via DB/VV), arricchisce con dati Supabase (live/conclusa)
- * e popola la partite-bar della home con aggiornamenti realtime.
+ * Victor Volley — Partite della home
+ * Carica le partite dalla collection Firestore "partite" (via DB/VV) e popola la partite-bar della home:
+ * le prossime in programma e gli ultimi risultati. La diretta vera e propria sta in /diretta (Set Point Pulse).
  */
 (function () {
   'use strict';
-
-  /* -------------------------------------------------------
-     Supabase client — creato solo se le credenziali sono
-     state configurate (non placeholder).
-  ------------------------------------------------------- */
-  var _sb = null;
-
-  function getSupabase() {
-    if (_sb) return _sb;
-    if (!window.SUPABASE_URL || window.SUPABASE_URL === 'INSERISCI_URL_SUPABASE') return null;
-    if (!window.supabase || typeof window.supabase.createClient !== 'function') return null;
-    _sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
-    return _sb;
-  }
-
-  /* Canali realtime attivi — puliti su beforeunload */
-  var _channels = [];
 
   /* -------------------------------------------------------
      Helpers HTML
@@ -92,176 +75,6 @@
     '</div>';
   }
 
-  function cardLive(p, state) {
-    var teamCasa   = (p.tabellone_squadra_casa || 'A') === 'A' ? 'A' : 'B';
-    var teamOspite = teamCasa === 'A' ? 'B' : 'A';
-
-    var setCasa    = (state && state['team' + teamCasa]   && state['team' + teamCasa].sets   != null) ? state['team' + teamCasa].sets   : 0;
-    var setOspite  = (state && state['team' + teamOspite] && state['team' + teamOspite].sets  != null) ? state['team' + teamOspite].sets  : 0;
-    var scoreCasa  = (state && state['team' + teamCasa]   && state['team' + teamCasa].score  != null) ? state['team' + teamCasa].score  : 0;
-    var scoreOsp   = (state && state['team' + teamOspite] && state['team' + teamOspite].score != null) ? state['team' + teamOspite].score : 0;
-    var currentSet = (state && state.currentSet != null) ? state.currentSet : 1;
-
-    var setConclusi = ((state && state.history) || [])
-      .filter(function (e) { return e && e.setCompleted; })
-      .map(function (e) { return e.setCompleted; });
-
-    var setDetailHtml = '';
-    if (setConclusi.length) {
-      setDetailHtml =
-        '<div class="partite-card-set-detail" hidden>' +
-          setConclusi.map(function (s) {
-            var sCasa = teamCasa === 'A' ? (s.scoreA != null ? s.scoreA : 0) : (s.scoreB != null ? s.scoreB : 0);
-            var sOsp  = teamOspite === 'A' ? (s.scoreA != null ? s.scoreA : 0) : (s.scoreB != null ? s.scoreB : 0);
-            return '<span class="partite-card-set-row">Set ' + (s.setNumber || '') + ': ' + sCasa + '–' + sOsp + '</span>';
-          }).join('') +
-        '</div>';
-    }
-
-    return '<div class="partite-card partite-card--live" data-partita-id="' + esc(p.id) + '" tabindex="0">' +
-      '<div class="partite-card-top">' +
-        '<span class="partite-card-cat ' + catCls(p.categoria) + '">' + esc(p.categoria) + '</span>' +
-        '<span class="partite-card-live-badge" aria-label="Partita in corso">' +
-          '<span class="partite-card-live-dot" aria-hidden="true"></span>LIVE' +
-        '</span>' +
-      '</div>' +
-      '<div class="partite-card-body">' +
-        '<div class="partite-card-teams">' +
-          teamEl(p.squadra_casa, p.logo_casa) +
-          teamEl(p.squadra_ospite, p.logo_ospite) +
-        '</div>' +
-        '<div class="partite-card-scores-col">' +
-          '<div class="partite-card-pts">' + setCasa + '</div>' +
-          '<div class="partite-card-pts">' + setOspite + '</div>' +
-        '</div>' +
-      '</div>' +
-      '<div class="partite-card-live-detail">' +
-        '<span class="partite-card-live-score">Set ' + currentSet + ': ' + scoreCasa + '–' + scoreOsp + '</span>' +
-        (setConclusi.length
-          ? '<button class="partite-card-live-expand" aria-expanded="false" aria-label="Mostra tabellino">&#9656;</button>'
-          : '') +
-      '</div>' +
-      setDetailHtml +
-    '</div>';
-  }
-
-  /* -------------------------------------------------------
-     Logica stato: usa sempre state.matchOver, mai status
-  ------------------------------------------------------- */
-  function resolveState(p, sessionRow) {
-    if (!p.codice_tabellone) return { stato: p.stato || 'programmata' };
-    if (!sessionRow) return { stato: 'programmata' };
-
-    var st = sessionRow.state || {};
-    if (st.matchOver === true) {
-      var teamCasa   = (p.tabellone_squadra_casa || 'A') === 'A' ? 'A' : 'B';
-      var teamOspite = teamCasa === 'A' ? 'B' : 'A';
-      return {
-        stato:      'conclusa',
-        set_casa:   (st['team' + teamCasa]   && st['team' + teamCasa].sets   != null) ? st['team' + teamCasa].sets   : 0,
-        set_ospite: (st['team' + teamOspite] && st['team' + teamOspite].sets != null) ? st['team' + teamOspite].sets : 0
-      };
-    }
-    return { stato: 'live', liveState: st, sessionId: sessionRow.id };
-  }
-
-  /* -------------------------------------------------------
-     Supabase: fetch singola sessione
-  ------------------------------------------------------- */
-  function fetchSession(code) {
-    var sb = getSupabase();
-    if (!sb) return Promise.resolve(null);
-    return sb
-      .from('match_sessions')
-      .select('id, state, status')
-      .eq('code', code)
-      .maybeSingle()
-      .then(function (res) {
-        if (res.error) { console.warn('[partite-live] Supabase error:', res.error.message); return null; }
-        return res.data;
-      })
-      .catch(function (e) { console.warn('[partite-live] fetch session failed:', e); return null; });
-  }
-
-  /* -------------------------------------------------------
-     Supabase: realtime subscription per una partita live
-  ------------------------------------------------------- */
-  function subscribeToSession(partita, sessionId, onUpdate) {
-    var sb = getSupabase();
-    if (!sb) return null;
-
-    var channel = sb
-      .channel('vv-match-' + sessionId)
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'match_sessions',
-        filter: 'id=eq.' + sessionId
-      }, function (payload) {
-        onUpdate(payload.new.state, payload.new);
-      })
-      .subscribe();
-
-    _channels.push(channel);
-    return channel;
-  }
-
-  function removeChannel(ch) {
-    var sb = getSupabase();
-    if (!sb || !ch) return;
-    try { sb.removeChannel(ch); } catch (e) {}
-    var idx = _channels.indexOf(ch);
-    if (idx !== -1) _channels.splice(idx, 1);
-  }
-
-  /* -------------------------------------------------------
-     DOM: aggiornamento card singola
-  ------------------------------------------------------- */
-  function replaceCard(partitaId, newHtml) {
-    var el = document.querySelector('[data-partita-id="' + partitaId + '"]');
-    if (!el) return;
-    var tmp = document.createElement('div');
-    tmp.innerHTML = newHtml;
-    var newEl = tmp.firstElementChild;
-    el.parentNode.replaceChild(newEl, el);
-    initExpandBtn(newEl);
-  }
-
-  function moveToConcluse(partitaId, conclusaHtml) {
-    var elSrc = document.querySelector('#partiteProssime [data-partita-id="' + partitaId + '"]');
-    if (elSrc) elSrc.remove();
-
-    var elC = document.getElementById('partiteConcluse');
-    if (!elC) return;
-    var empty = elC.querySelector('.partite-empty');
-    if (empty) empty.remove();
-
-    var tmp = document.createElement('div');
-    tmp.innerHTML = conclusaHtml;
-    elC.insertBefore(tmp.firstElementChild, elC.firstChild);
-  }
-
-  /* -------------------------------------------------------
-     UX: expand/collapse tabellino set su card live
-  ------------------------------------------------------- */
-  function initExpandBtn(cardEl) {
-    var btn    = cardEl.querySelector('.partite-card-live-expand');
-    var detail = cardEl.querySelector('.partite-card-set-detail');
-    if (!btn || !detail) return;
-
-    btn.addEventListener('click', function (e) {
-      e.stopPropagation();
-      var expanded = btn.getAttribute('aria-expanded') === 'true';
-      btn.setAttribute('aria-expanded', String(!expanded));
-      detail.hidden = expanded;
-      btn.innerHTML = expanded ? '&#9656;' : '&#9662;';
-    });
-
-    cardEl.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); btn.click(); }
-    });
-  }
-
   /* -------------------------------------------------------
      Init principale
   ------------------------------------------------------- */
@@ -282,107 +95,37 @@
         }
         var partite = VV.getPartite();
 
-        /* Fetch sessioni Supabase per le partite con codice_tabellone */
-        var withCode = partite.filter(function (p) { return p.codice_tabellone; });
+        var prossime = partite
+          .filter(function (p) { return p.stato !== 'conclusa'; })
+          .sort(function (a, b) { return a.data > b.data ? 1 : -1; })
+          .slice(0, 2);
 
-        var sessionPromises = withCode.map(function (p) {
-          return fetchSession(p.codice_tabellone).then(function (row) {
-            return { id: p.id, row: row };
-          });
-        });
+        var concluse = partite
+          .filter(function (p) { return p.stato === 'conclusa'; })
+          .sort(function (a, b) { return a.data < b.data ? 1 : -1; })
+          .slice(0, 2);
 
-        Promise.all(sessionPromises).then(function (results) {
+        /* Fallback colonna concluse: usa extra prossime */
+        var concluseRender = concluse.length ? concluse : prossime.slice(2);
 
-          var sessionMap = {};
-          results.forEach(function (r) { sessionMap[r.id] = r.row; });
+        if (elP) {
+          elP.innerHTML = prossime.length
+            ? prossime.map(cardProssima).join('')
+            : '<div class="partite-empty">Nessuna partita in programma.</div>';
+        }
 
-          /* Arricchisci ogni partita con lo stato risolto */
-          var enriched = partite.map(function (p) {
-            var session = sessionMap[p.id] || null;
-            var info    = resolveState(p, session);
-            return Object.assign({}, p, info, { _session: session });
-          });
-
-          /* Ordina e separa */
-          var prossime = enriched
-            .filter(function (p) { return p.stato === 'programmata' || p.stato === 'live'; })
-            .sort(function (a, b) { return a.data > b.data ? 1 : -1; })
-            .slice(0, 2);
-
-          var concluse = enriched
-            .filter(function (p) { return p.stato === 'conclusa'; })
-            .sort(function (a, b) { return a.data < b.data ? 1 : -1; })
-            .slice(0, 2);
-
-          /* Fallback colonna concluse: usa extra prossime */
-          var concluseRender = concluse.length ? concluse : prossime.slice(2);
-
-          /* Render prossime */
-          if (elP) {
-            if (prossime.length) {
-              elP.innerHTML = prossime.map(function (p) {
-                return p.stato === 'live' ? cardLive(p, p.liveState) : cardProssima(p);
-              }).join('');
-              elP.querySelectorAll('.partite-card--live').forEach(initExpandBtn);
-            } else {
-              elP.innerHTML = '<div class="partite-empty">Nessuna partita in programma.</div>';
-            }
-          }
-
-          /* Render concluse */
-          if (elC) {
-            if (concluseRender.length) {
-              elC.innerHTML = concluseRender.map(function (p) {
-                return p.stato === 'conclusa'
-                  ? cardConclusa(p, p.set_casa, p.set_ospite)
-                  : cardProssima(p);
-              }).join('');
-            } else {
-              elC.innerHTML = '<div class="partite-empty">Nessun risultato disponibile.</div>';
-            }
-          }
-
-          /* Realtime: subscribe solo alle partite live con sessione nota */
-          enriched
-            .filter(function (p) { return p.stato === 'live' && p._session; })
-            .forEach(function (p) {
-              var ch = subscribeToSession(p, p.sessionId, function (newState) {
-                if (newState && newState.matchOver === true) {
-                  /* Partita finita: sposta in concluse */
-                  var teamCasa   = (p.tabellone_squadra_casa || 'A') === 'A' ? 'A' : 'B';
-                  var teamOspite = teamCasa === 'A' ? 'B' : 'A';
-                  var updatedP = Object.assign({}, p, {
-                    set_casa:   (newState['team' + teamCasa]   && newState['team' + teamCasa].sets   != null) ? newState['team' + teamCasa].sets   : 0,
-                    set_ospite: (newState['team' + teamOspite] && newState['team' + teamOspite].sets != null) ? newState['team' + teamOspite].sets : 0
-                  });
-                  moveToConcluse(p.id, cardConclusa(updatedP, updatedP.set_casa, updatedP.set_ospite));
-                  removeChannel(ch);
-                } else {
-                  /* Aggiorna card live */
-                  replaceCard(p.id, cardLive(p, newState));
-                }
-              });
-            });
-
-        }).catch(function (e) {
-          console.warn('[partite-live] Promise.all sessions error:', e);
-        });
-
+        if (elC) {
+          elC.innerHTML = concluseRender.length
+            ? concluseRender.map(function (p) {
+                return p.stato === 'conclusa' ? cardConclusa(p, p.set_casa, p.set_ospite) : cardProssima(p);
+              }).join('')
+            : '<div class="partite-empty">Nessun risultato disponibile.</div>';
+        }
       })
       .catch(function (e) {
         console.warn('[partite-live] caricamento partite fallito:', e);
       });
   }
-
-  /* -------------------------------------------------------
-     Cleanup WebSocket su uscita dalla pagina
-  ------------------------------------------------------- */
-  window.addEventListener('beforeunload', function () {
-    var sb = getSupabase();
-    if (!sb) return;
-    _channels.forEach(function (ch) { try { sb.removeChannel(ch); } catch (e) {} });
-    _channels = [];
-  });
 
   document.addEventListener('DOMContentLoaded', init);
 })();
