@@ -16,6 +16,10 @@
     {
       "source": "/galleria/:slug",
       "destination": "/galleria"
+    },
+    {
+      "source": "/sitemap.xml",
+      "destination": "/api/sitemap"
     }
   ],
   "headers": [
