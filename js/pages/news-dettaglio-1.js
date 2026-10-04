@@ -121,11 +121,29 @@
       if (!el) { el = document.createElement(tag); el.setAttribute(attr, key); document.head.appendChild(el); }
       el.setAttribute(attr2, val);
     }
+    /* Riassunto: quello scritto in admin, altrimenti le prime parole del testo (senza HTML, parsato senza eseguire nulla). */
+    var summary = String(article.excerpt || '').trim();
+    if (!summary && article.content) {
+      var txt = new DOMParser().parseFromString(String(article.content).replace(/<\/(p|div|h[1-6]|li)>|<br\s*\/?>/gi, '$& '), 'text/html').body.textContent || '';
+      txt = txt.replace(/\s+/g, ' ').trim();
+      summary = txt.length > 155 ? txt.slice(0, 155).replace(/\s+\S*$/, '') + '…' : txt;
+    }
     up('link', 'rel', 'canonical', url, 'href');
     up('meta', 'property', 'og:url', url, 'content');
     up('meta', 'property', 'og:title', document.title, 'content');
-    if (article.excerpt) up('meta', 'property', 'og:description', article.excerpt, 'content');
+    if (summary) up('meta', 'property', 'og:description', summary, 'content');
     if (/^https?:\/\//.test(article.image || '')) up('meta', 'property', 'og:image', article.image, 'content');
+    if (summary) up('meta', 'name', 'description', summary, 'content');
+    /* Dati strutturati dell'articolo (NewsArticle) */
+    var ld = {
+      '@context': 'https://schema.org', '@type': 'NewsArticle',
+      mainEntityOfPage: url, headline: String(article.title || '').slice(0, 110), inLanguage: 'it-IT',
+      publisher: { '@type': 'Organization', name: 'Victor Volley', logo: { '@type': 'ImageObject', url: SITE + '/assets/logo.png' } }
+    };
+    if (/^\d{4}-\d{2}-\d{2}/.test(article.date || '')) { ld.datePublished = article.date; ld.dateModified = article.date; }
+    if (/^https?:\/\//.test(article.image || '')) ld.image = [article.image];
+    if (summary) ld.description = summary;
+    VV.setJsonLd('ld-article', ld);
   })();
 
   /* Corpo */

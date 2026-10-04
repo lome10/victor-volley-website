@@ -191,6 +191,13 @@
     },
 
     /* ---- HELPERS ---- */
+    /* Dati strutturati (JSON-LD) generati dai contenuti: un solo <script> per id, sostituito a ogni chiamata.
+       «<» è escluso dal testo così un titolo non può chiudere il tag. */
+    setJsonLd: function (id, obj) {
+      var el = document.getElementById(id);
+      if (!el) { el = document.createElement('script'); el.type = 'application/ld+json'; el.id = id; document.head.appendChild(el); }
+      el.textContent = JSON.stringify(obj).replace(/</g, '\\u003c');
+    },
     formatDate: function (s) {
       if (!s) return '';
       var d = new Date(s + 'T00:00:00');

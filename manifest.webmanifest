@@ -1,0 +1,21 @@
+{
+  "name": "Victor Volley",
+  "short_name": "Victor Volley",
+  "description": "Victor Volley, società di pallavolo: squadre, calendario, news e area atleti.",
+  "lang": "it",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#020d1a",
+  "theme_color": "#020d1a",
+  "icons": [
+    { "src": "/assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Calendario", "url": "/calendario" },
+    { "name": "News", "url": "/news" },
+    { "name": "Area Atleti", "url": "/atleta" }
+  ]
+}

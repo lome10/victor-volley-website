@@ -375,6 +375,41 @@
     sel.closest('.cal-cat-panel').dataset.team = sel.value;
     renderMatches();
   });
+
+  /* Dati strutturati (SportsEvent) per le prossime partite: ci sono solo se con data e squadre note. */
+  function offsetRome(dateStr, ora) {
+    try {
+      var part = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Rome', timeZoneName: 'longOffset' })
+        .formatToParts(new Date(dateStr + 'T' + ora + ':00Z')).filter(function (x) { return x.type === 'timeZoneName'; })[0];
+      var m = part && /GMT([+-]\d{2}):?(\d{2})?/.exec(part.value);
+      return m ? m[1] + ':' + (m[2] || '00') : '';
+    } catch (e) { return ''; }
+  }
+  function renderJsonLd() {
+    var events = allPartite
+      .filter(function (p) { return inSeason(p, activeSeason.id) && !isPast(p) && hasValidData(p); })
+      .sort(function (a, b) { return a.data === b.data ? (a.ora || '').localeCompare(b.ora || '') : a.data.localeCompare(b.data); })
+      .slice(0, 12)
+      .map(function (p) {
+        var hasOra = /^\d{1,2}:\d{2}/.test(p.ora || '');
+        var ora = hasOra ? pad2(+p.ora.split(':')[0]) + ':' + p.ora.split(':')[1].slice(0, 2) : '';
+        var ev = {
+          '@type': 'SportsEvent',
+          name: p.squadra_casa + ' - ' + p.squadra_ospite + (p.categoria ? ' (' + p.categoria + ')' : ''),
+          sport: 'Volleyball',
+          startDate: hasOra ? p.data + 'T' + ora + ':00' + offsetRome(p.data, ora) : p.data,
+          eventStatus: 'https://schema.org/EventScheduled',
+          homeTeam: { '@type': 'SportsTeam', name: p.squadra_casa },
+          awayTeam: { '@type': 'SportsTeam', name: p.squadra_ospite },
+          organizer: { '@type': 'Organization', name: 'Victor Volley', url: 'https://www.victorvolley.it/' }
+        };
+        if (p.palazzetto) ev.location = { '@type': 'Place', name: p.palazzetto, address: p.palazzetto };
+        return ev;
+      });
+    if (events.length) VV.setJsonLd('ld-partite', { '@context': 'https://schema.org', '@graph': events });
+  }
+
   renderMatches();
+  renderJsonLd();
   }); // DB.load
 })();
