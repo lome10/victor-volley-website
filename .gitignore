@@ -7,3 +7,6 @@ Thumbs.db
 .firebase/
 
 .vercel
+
+# copie locali dei dati prima delle migrazioni (contengono immagini in base64, molto pesanti)
+backups/
