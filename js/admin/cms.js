@@ -900,10 +900,21 @@
      lo carica su Cloudinary e risolve con il nuovo URL. Se il campo è già un
      URL vero (o vuoto) lo restituisce invariato — rende la migrazione
      idempotente, sicura da rilanciare più volte. */
+  /* Data URL → Blob decodificando il testo, senza fetch(): la CSP dell'admin (connect-src) non ammette data:. */
+  function _dataUrlToBlob(dataUrl) {
+    var m = /^data:([^;,]*)((?:;[^;,]*)*),([\s\S]*)$/.exec(dataUrl);
+    if (!m) throw new Error('Immagine non valida');
+    var isB64 = /;base64/i.test(m[2]);
+    var raw = isB64 ? atob(m[3].replace(/\s/g, '')) : decodeURIComponent(m[3]);
+    var bytes = new Uint8Array(raw.length);
+    for (var i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+    return new Blob([bytes], { type: m[1] || 'application/octet-stream' });
+  }
+
   function _migrateFieldIfBase64(value, folder) {
     if (!value || value.indexOf('data:') !== 0) return Promise.resolve(value);
-    return fetch(value).then(function (r) { return r.blob(); }).then(function (blob) {
-      var ext = blob.type === 'image/png' ? 'png' : 'jpg';
+    return new Promise(function (resolve) { resolve(_dataUrlToBlob(value)); }).then(function (blob) {
+      var ext = blob.type === 'image/png' ? 'png' : (blob.type === 'image/svg+xml' ? 'svg' : 'jpg');
       return new Promise(function (resolve, reject) {
         _uploadImage(blob, folder, ext, function (err, url) {
           if (err) reject(err); else resolve(url);
