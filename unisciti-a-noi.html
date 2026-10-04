@@ -25,7 +25,7 @@
   <link rel="preload" href="/assets/fonts/barlow-700-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/manrope-400-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/fonts.css">
-  <link rel="stylesheet" href="css/style.css?v=20261004b">
+  <link rel="stylesheet" href="css/style.css?v=20261004k">
 </head>
 <body>
 
@@ -49,45 +49,45 @@
       <div class="container">
         <p class="breadcrumb"><a href="/">Home</a> / Vieni a giocare con noi</p>
         <h1>Vieni a giocare con noi</h1>
-        <p style="color:rgba(255,255,255,0.65);margin-top:8px">Inviaci un messaggio &mdash; ti ricontattiamo noi</p>
+        <p class="page-header-sub">Inviaci un messaggio &mdash; ti ricontattiamo noi</p>
       </div>
     </div>
 
     <section class="section">
       <div class="container">
-        <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:64px;align-items:start">
+        <div class="join-grid">
 
           <!-- Info colonna sinistra -->
           <div>
-            <h2 style="margin-bottom:16px">Perch&eacute; Victor Volley?</h2>
-            <p style="color:#555;margin-bottom:24px">Siamo una societ&agrave; sportiva dilettantistica nata nel 2019 a Melissano. Il nostro obiettivo &egrave; offrire a bambini, ragazzi e adulti la possibilit&agrave; di praticare la pallavolo in un ambiente sereno, inclusivo e stimolante.</p>
+            <h2 class="join-title">Perch&eacute; Victor Volley?</h2>
+            <p class="join-lead">Siamo una societ&agrave; sportiva dilettantistica nata nel 2019 a Melissano. Il nostro obiettivo &egrave; offrire a bambini, ragazzi e adulti la possibilit&agrave; di praticare la pallavolo in un ambiente sereno, inclusivo e stimolante.</p>
 
-            <div style="display:flex;flex-direction:column;gap:16px;margin-bottom:32px">
-              <div style="display:flex;gap:12px;align-items:flex-start">
-                <div style="width:36px;height:36px;border-radius:50%;background:rgba(0,140,253,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--c-azzurro);font-size:16px">&#127944;</div>
+            <div class="join-points">
+              <div class="join-point">
+                <div class="join-point-icon">&#127944;</div>
                 <div>
-                  <div style="font-weight:700;font-size:16px;color:var(--c-navy);margin-bottom:2px">Cinque categorie</div>
-                  <div style="font-size:12px;color:#888">Da Minivolley (6 anni) fino alla Prima Divisione senior</div>
+                  <div class="join-point-title">Cinque categorie</div>
+                  <div class="join-point-text">Da Minivolley (6 anni) fino alla Prima Divisione senior</div>
                 </div>
               </div>
-              <div style="display:flex;gap:12px;align-items:flex-start">
-                <div style="width:36px;height:36px;border-radius:50%;background:rgba(0,140,253,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--c-azzurro);font-size:16px">&#127959;</div>
+              <div class="join-point">
+                <div class="join-point-icon">&#127959;</div>
                 <div>
-                  <div style="font-weight:700;font-size:16px;color:var(--c-navy);margin-bottom:2px">Palazzetto moderno</div>
-                  <div style="font-size:12px;color:#888">Palazzetto ARK&Eacute; &mdash; Via Don Marino Manco, Melissano (LE)</div>
+                  <div class="join-point-title">Palazzetto moderno</div>
+                  <div class="join-point-text">Palazzetto ARK&Eacute; &mdash; Via Don Marino Manco, Melissano (LE)</div>
                 </div>
               </div>
-              <div style="display:flex;gap:12px;align-items:flex-start">
-                <div style="width:36px;height:36px;border-radius:50%;background:rgba(0,140,253,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--c-azzurro);font-size:16px">&#128137;</div>
+              <div class="join-point">
+                <div class="join-point-icon">&#128137;</div>
                 <div>
-                  <div style="font-weight:700;font-size:16px;color:var(--c-navy);margin-bottom:2px">Prima prova gratuita</div>
-                  <div style="font-size:12px;color:#888">Vieni a provare un allenamento senza impegno</div>
+                  <div class="join-point-title">Prima prova gratuita</div>
+                  <div class="join-point-text">Vieni a provare un allenamento senza impegno</div>
                 </div>
               </div>
             </div>
 
-            <div class="card" style="background:var(--c-gray-light);border:none">
-              <p style="font-size:13px;color:#666">
+            <div class="card join-note">
+              <p class="join-note-text">
                 <strong>Questo non &egrave; un modulo di tesseramento ufficiale.</strong><br>
                 &Egrave; un semplice messaggio di contatto per conoscerci. Ti ricontattiamo noi per fissare una prova o darti informazioni sulle categorie.
               </p>
@@ -96,14 +96,14 @@
 
           <!-- Form colonna destra -->
           <div>
-            <div id="formSuccess" role="status" tabindex="-1" style="outline:none;display:none;padding:24px;background:rgba(26,138,46,0.08);border:1px solid rgba(26,138,46,0.25);border-radius:var(--card-radius);margin-bottom:24px">
-              <strong style="color:#1a8a2e">&#10003; Messaggio inviato!</strong>
-              <p style="font-size:14px;margin-top:4px;color:#555">Ti contatteremo presto. Grazie per il tuo interesse!</p>
+            <div id="formSuccess" role="status" tabindex="-1" class="form-notice form-notice--ok" hidden>
+              <strong>&#10003; Messaggio inviato!</strong>
+              <p>Ti contatteremo presto. Grazie per il tuo interesse!</p>
             </div>
 
-            <div id="formError" role="alert" tabindex="-1" style="outline:none;display:none;padding:20px;background:rgba(200,40,40,0.08);border:1px solid rgba(200,40,40,0.25);border-radius:var(--card-radius);margin-bottom:24px">
-              <strong style="color:#c82828">Invio non riuscito.</strong>
-              <p style="font-size:14px;margin-top:4px;color:#555">Riprova oppure scrivici direttamente a <a href="mailto:victorvolley@libero.it">victorvolley@libero.it</a>.</p>
+            <div id="formError" role="alert" tabindex="-1" class="form-notice form-notice--err" hidden>
+              <strong>Invio non riuscito.</strong>
+              <p>Riprova oppure scrivici direttamente a <a href="mailto:victorvolley@libero.it">victorvolley@libero.it</a>.</p>
             </div>
 
             <form class="form-wrapper" id="uniscitiForm" novalidate>
@@ -157,7 +157,7 @@
                 <label for="privacy">Ho letto l&rsquo;<a href="/privacy" target="_blank" rel="noopener">informativa privacy</a> e acconsento al trattamento dei dati per ricevere una risposta. Se i dati riguardano un minore, dichiaro di essere genitore o tutore. <span class="required">*</span></label>
               </div>
 
-              <button type="submit" class="btn btn--primary" style="width:100%;padding:14px">Invia il messaggio</button>
+              <button type="submit" class="btn btn--primary form-submit">Invia il messaggio</button>
             </form>
           </div>
 
@@ -178,11 +178,6 @@
   <script src="js/form-validate.js?v=20261002p"></script>
   <script src="js/pages/unisciti-a-noi-1.js?v=20261002p"></script>
 
-  <style>
-    @media(max-width:768px){
-      main .container > div { grid-template-columns:1fr !important; gap:40px !important; }
-    }
-  </style>
   <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>
