@@ -14,14 +14,6 @@ document.addEventListener('DOMContentLoaded', function () {
         var li = m.closest('.has-megamenu');
         if (li) li.classList.remove('is-open');
       });
-      var mobileNav = document.getElementById('mobile-nav-panel');
-      var hamburger = document.querySelector('.hamburger');
-      if (mobileNav && mobileNav.classList.contains('is-open')) {
-        mobileNav.classList.remove('is-open');
-        if (hamburger) { hamburger.classList.remove('is-open'); hamburger.setAttribute('aria-expanded', 'false'); }
-        mobileNav.setAttribute('aria-hidden', 'true');
-        document.body.style.overflow = '';
-      }
     }
   });
 

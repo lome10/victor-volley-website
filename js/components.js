@@ -20,6 +20,7 @@
   function buildSidebar() {
     var el = document.querySelector('header.site-header');
     if (!el) return;
+    el.id = 'siteNav';
 
     el.innerHTML =
       '<div class="sidebar-logo">' +
@@ -162,27 +163,83 @@
     document.body.appendChild(toggle);
     document.body.appendChild(overlay);
 
+    /* Pulsante «Chiudi» dentro il menu (solo mobile, vedi CSS): il menu copre
+       l'hamburger della barra in alto, quindi serve un modo di chiuderlo da tastiera. */
+    var closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'sidebar-close';
+    closeBtn.setAttribute('aria-label', 'Chiudi menu');
+    closeBtn.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19"/></svg>';
+    sidebar.insertBefore(closeBtn, sidebar.firstChild);
+
+    var mq = window.matchMedia('(max-width: 900px)');
+    var BG = ['main', 'footer.site-footer', '#mobileTopbar'];
+
+    function setInert(el, on) { if (on) el.setAttribute('inert', ''); else el.removeAttribute('inert'); }
+
+    /* Mobile: chiuso = fuori dall'ordine di tabulazione e dagli screen reader;
+       aperto = il resto della pagina è inerte (il focus resta nel menu). */
+    function syncA11y() {
+      var open = sidebar.classList.contains('is-open');
+      var mobile = mq.matches;
+      setInert(sidebar, mobile && !open);
+      BG.forEach(function (sel) {
+        document.querySelectorAll(sel).forEach(function (el) { setInert(el, mobile && open); });
+      });
+      var brand = document.getElementById('mtbBrand');
+      if (brand) {
+        brand.setAttribute('aria-expanded', String(open));
+        brand.setAttribute('aria-label', open ? 'Chiudi menu di navigazione' : 'Apri menu di navigazione');
+      }
+      toggle.setAttribute('aria-label', open ? 'Chiudi menu' : 'Apri menu');
+    }
+
     function openSidebar() {
       sidebar.classList.add('is-open');
       toggle.classList.add('is-open');
       toggle.setAttribute('aria-expanded', 'true');
       overlay.classList.add('is-open');
       document.body.style.overflow = 'hidden';
+      syncA11y();
+      if (mq.matches) closeBtn.focus();
     }
 
-    function closeSidebar() {
+    function closeSidebar(returnFocus) {
       sidebar.classList.remove('is-open');
       toggle.classList.remove('is-open');
       toggle.setAttribute('aria-expanded', 'false');
       overlay.classList.remove('is-open');
       document.body.style.overflow = '';
+      syncA11y();
+      if (returnFocus === true && mq.matches) {
+        var brand = document.getElementById('mtbBrand');
+        if (brand) brand.focus();
+      }
     }
 
     toggle.addEventListener('click', function() {
-      sidebar.classList.contains('is-open') ? closeSidebar() : openSidebar();
+      sidebar.classList.contains('is-open') ? closeSidebar(true) : openSidebar();
     });
 
-    overlay.addEventListener('click', closeSidebar);
+    closeBtn.addEventListener('click', function () { closeSidebar(true); });
+    overlay.addEventListener('click', function () { closeSidebar(true); });
+
+    /* ESC chiude il menu e riporta il focus sul pulsante che l'ha aperto */
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && mq.matches && sidebar.classList.contains('is-open')) closeSidebar(true);
+    });
+
+    /* Un link verso la pagina in cui si è già (es. Home) non ricarica: chiudi il menu */
+    sidebar.addEventListener('click', function (e) {
+      if (mq.matches && e.target.closest && e.target.closest('a[href]')) closeSidebar(false);
+    });
+
+    /* Passando al desktop il menu torna la barra laterale fissa */
+    var onMq = function () { if (!mq.matches && sidebar.classList.contains('is-open')) closeSidebar(false); else syncA11y(); };
+    if (mq.addEventListener) mq.addEventListener('change', onMq); else if (mq.addListener) mq.addListener(onMq);
+
+    window.VVNavSync = syncA11y;
+    syncA11y();
   }
 
   /* ---- FOOTER ---- */
@@ -220,7 +277,7 @@
     nav.setAttribute('aria-label', 'Navigazione mobile');
     nav.innerHTML =
       '<div class="mtb-bar">' +
-        '<button class="mtb-ham-btn" id="mtbBrand" aria-label="Apri menu di navigazione">' +
+        '<button class="mtb-ham-btn" id="mtbBrand" type="button" aria-label="Apri menu di navigazione" aria-expanded="false" aria-controls="siteNav">' +
           '<span class="mtb-ham" aria-hidden="true">' +
             '<span class="mtb-line"></span>' +
             '<span class="mtb-line"></span>' +

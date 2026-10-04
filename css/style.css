@@ -3846,3 +3846,38 @@ button[type="submit"][aria-busy="true"] { opacity: 0.7; cursor: progress; }
 .partite-retry { margin-left: 6px; padding: 2px 8px; border: 1px solid currentColor; border-radius: var(--btn-radius); background: transparent; color: inherit; font: inherit; font-style: normal; cursor: pointer; }
 .partite-retry:hover { background: rgba(255, 255, 255, 0.12); }
 .partite-retry:focus-visible { outline: 2px solid var(--c-azzurro); outline-offset: 2px; }
+
+/* ---- Menu: focus visibile e pulsante «Chiudi» (mobile) ---- */
+.sidebar-close { display: none; }
+.sidebar-nav-link:focus-visible,
+.sidebar-nav-trigger:focus-visible,
+.sidebar-flyout-link:focus-visible,
+.sidebar-cta-btn:focus-visible,
+.sidebar-social-link:focus-visible,
+.sidebar-logo a:focus-visible,
+.sidebar-close:focus-visible,
+.mtb-ham-btn:focus-visible,
+.mtb-identity:focus-visible,
+.mtb-tv-btn:focus-visible,
+.footer-social a:focus-visible,
+.footer-bottom a:focus-visible { outline: 3px solid var(--c-azzurro); outline-offset: -3px; }
+.footer-social a:focus-visible { outline-offset: 2px; }
+
+@media (max-width: 900px) {
+  .sidebar-close {
+    display: flex; align-items: center; justify-content: center;
+    position: absolute; top: 8px; right: 8px; z-index: 1;
+    width: 44px; height: 44px; padding: 0;
+    background: none; border: 0; border-radius: 50%;
+    color: rgba(255, 255, 255, 0.85); cursor: pointer;
+  }
+  .sidebar-close:hover { color: #fff; background: rgba(255, 255, 255, 0.1); }
+  /* target da almeno 44 px */
+  .sidebar-social-link { width: 44px; height: 44px; justify-content: center; }
+  .sidebar-bottom { gap: 12px; }
+  .mtb-ham-btn { width: 54px; min-height: 44px; }
+  .mtb-tv-btn { width: 54px; padding: 0; }
+  .footer-social a { width: 44px; height: 44px; }
+  .footer-social { gap: 6px; }
+  .footer-bottom a { display: inline-flex; align-items: center; min-height: 44px; }
+}
