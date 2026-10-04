@@ -3952,3 +3952,13 @@ button[type="submit"][aria-busy="true"] { opacity: 0.7; cursor: progress; }
 @media (max-width: 768px) {
   .sponsor-cta-grid { grid-template-columns: 1fr; gap: 32px; }
 }
+
+/* ---- Pagine varie ---- */
+.page-header-sub--strong { color: rgba(255, 255, 255, 0.80); }
+.article-back { margin-bottom: 32px; }
+.article-back-link { color: var(--c-azzurro); font-size: 14px; font-weight: 500; text-decoration: none; }
+.u-contents { display: contents; }
+.related-section--spaced { margin-top: 64px; padding-top: 48px; border-top: 1px solid var(--c-gray-light); }
+.related-title { margin-bottom: 24px; }
+.revoke-status { margin-left: 10px; font-size: 14px; color: #1a8a2e; }
+.deco-ball--c { width: 200px; right: -30px; top: 50%; transform: translateY(-50%); }

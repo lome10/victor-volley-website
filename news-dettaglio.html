@@ -23,7 +23,7 @@
   <link rel="preload" href="/assets/fonts/barlow-700-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/manrope-400-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/fonts.css">
-  <link rel="stylesheet" href="css/style.css?v=20261004b">
+  <link rel="stylesheet" href="css/style.css?v=20261004k">
 </head>
 <body>
 
@@ -48,8 +48,8 @@
 
         <div class="art-sponsors" id="articleSponsors"></div>
 
-        <div style="margin-bottom:32px">
-          <a href="/news" style="color:var(--c-azzurro);font-size:14px;font-weight:500;text-decoration:none">
+        <div class="article-back">
+          <a href="/news" class="article-back-link">
             &larr; Torna alle news
           </a>
         </div>
@@ -63,7 +63,7 @@
             </aside>
             <div class="article-text-col">
               <div class="article-meta">
-                <span id="articleCategory" style="display:contents"></span>
+                <span id="articleCategory" class="u-contents"></span>
                 <span class="article-date" id="articleDate"></span>
               </div>
               <h1 id="articleTitle"></h1>
@@ -74,8 +74,8 @@
         </article>
 
         <!-- Articoli correlati -->
-        <div id="relatedSection" class="related-section" style="margin-top:64px;padding-top:48px;border-top:1px solid var(--c-gray-light);display:none">
-          <h3 style="margin-bottom:24px">Articoli correlati</h3>
+        <div id="relatedSection" class="related-section related-section--spaced" style="display:none">
+          <h3 class="related-title">Articoli correlati</h3>
           <div class="related-cards" id="relatedGrid"></div>
           <div class="related-dots-mobile" id="relatedDotsMobile"></div>
         </div>
