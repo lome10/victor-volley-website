@@ -7,8 +7,8 @@
   }
   function heroCatBadges(cats) {
     if (!cats.length) return '';
-    return '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">' +
-      cats.map(function (c) { return '<span class="hero-card-cat ' + heroCatCls(c) + '" style="margin-bottom:0">' + esc(c) + '</span>'; }).join('') +
+    return '<div class="hero-card-cats">' +
+      cats.map(function (c) { return '<span class="hero-card-cat ' + heroCatCls(c) + ' hero-card-cat--flush">' + esc(c) + '</span>'; }).join('') +
     '</div>';
   }
 
@@ -24,8 +24,8 @@
 
   if (!article) {
     content.innerHTML =
-      '<p style="color:#888;text-align:center;padding:64px 0;font-size:16px">Articolo non trovato.<br>' +
-      '<a href="/news" style="color:var(--c-azzurro)">Torna alle news</a></p>';
+      '<p class="article-notfound">Articolo non trovato.<br>' +
+      '<a href="/news" class="link-accent">Torna alle news</a></p>';
     return;
   }
 
@@ -151,7 +151,7 @@
   /* Il corpo è HTML scritto in admin: passa da DOMPurify (via script, onclick, iframe, javascript:…).
      Se la libreria non si carica si mostra solo testo semplice, mai HTML grezzo. */
   if (!article.content) {
-    bodyEl.innerHTML = '<p style="color:#aaa;font-style:italic">Contenuto non disponibile.</p>';
+    bodyEl.innerHTML = '<p class="article-empty">Contenuto non disponibile.</p>';
   } else if (window.DOMPurify) {
     DOMPurify.addHook('afterSanitizeAttributes', function (node) {
       if (node.tagName === 'A' && node.getAttribute('target') === '_blank') node.setAttribute('rel', 'noopener noreferrer');

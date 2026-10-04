@@ -3962,3 +3962,12 @@ button[type="submit"][aria-busy="true"] { opacity: 0.7; cursor: progress; }
 .related-title { margin-bottom: 24px; }
 .revoke-status { margin-left: 10px; font-size: 14px; color: #1a8a2e; }
 .deco-ball--c { width: 200px; right: -30px; top: 50%; transform: translateY(-50%); }
+
+/* ---- Elementi generati dal JS (menu, badge categoria, messaggi) ---- */
+.sidebar-nav-sep { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+.sidebar-nav-icon { margin-right: 5px; vertical-align: middle; opacity: .7; }
+.hero-card-cats { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.hero-card-cat--flush { margin-bottom: 0; }
+.article-notfound { color: #888; text-align: center; padding: 64px 0; font-size: 16px; }
+.article-empty { color: #aaa; font-style: italic; }
+.gallery-empty-note { font-size: 12px; }

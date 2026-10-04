@@ -9,7 +9,6 @@ var VVConsent = (function () {
   function grant() { try { localStorage.setItem(KEY, '1'); } catch (e) { /* storage non disponibile */ } }
   function revoke() { try { localStorage.removeItem(KEY); } catch (e) { /* storage non disponibile */ } }
 
-  function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
   /* Mostra html (l'iframe) dentro container, ma solo con consenso; altrimenti un riquadro con il pulsante.
      opts = { provider: 'Google Maps', link: url di ripiego (apre il servizio in una nuova scheda) }.

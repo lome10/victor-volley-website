@@ -16,8 +16,8 @@
   function badgeCls(cat) { return cat === 'Prima Divisione' ? 'hero-card-cat--magenta' : 'hero-card-cat--azzurro'; }
   function catBadges(cats) {
     if (!cats.length) return '';
-    return '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">' +
-      cats.map(function (c) { return '<span class="hero-card-cat ' + badgeCls(c) + '" style="margin-bottom:0">' + esc(c) + '</span>'; }).join('') +
+    return '<div class="hero-card-cats">' +
+      cats.map(function (c) { return '<span class="hero-card-cat ' + badgeCls(c) + ' hero-card-cat--flush">' + esc(c) + '</span>'; }).join('') +
     '</div>';
   }
 

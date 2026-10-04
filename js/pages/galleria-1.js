@@ -126,7 +126,7 @@
     }).join('');
   }
   function emptyHtml(msg) {
-    return '<div class="gallery-empty"><p>' + msg + '<br><span style="font-size:12px">Le foto verranno caricate dalla societ&agrave;.</span></p></div>';
+    return '<div class="gallery-empty"><p>' + msg + '<br><span class="gallery-empty-note">Le foto verranno caricate dalla societ&agrave;.</span></p></div>';
   }
 
   /* ---- Vista: elenco album ---- */

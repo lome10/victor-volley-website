@@ -750,3 +750,6 @@ button { font-family: inherit; cursor: pointer; }
 .al-resp-btn:hover { color: var(--al-text); border-color: var(--al-text); }
 .al-resp-btn--si.is-active { background: #ECFDF5; border-color: var(--al-green); color: #047857; }
 .al-resp-btn--no.is-active { background: #FEF2F2; border-color: var(--al-red); color: #B91C1C; }
+
+.al-no-data .al-no-data-icon { color: #94a3b8; margin-bottom: 12px; }
+.al-no-data .al-no-data-hint { font-size: 13px; margin-top: 4px; }
