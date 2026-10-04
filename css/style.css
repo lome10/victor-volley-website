@@ -3757,6 +3757,10 @@ button[type="submit"][aria-busy="true"] { opacity: 0.7; cursor: progress; }
 }
 
 /* Pulsanti social nella pagina Contatti: attenuazione al passaggio del mouse (prima era un onmouseover inline). */
+.social-btn { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; color: #fff; text-decoration: none; transition: opacity .2s; }
+.social-btn--fb { background: #1877f2; }
+.social-btn--ig { background: radial-gradient(circle at 30% 110%, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); }
+.social-btn--tt { background: #010101; }
 .social-btn:hover { opacity: .8; }
 
 /* ---- Skeleton di caricamento ----
@@ -3910,3 +3914,13 @@ button[type="submit"][aria-busy="true"] { opacity: 0.7; cursor: progress; }
 @media (max-width: 768px) {
   .join-grid { grid-template-columns: 1fr; gap: 40px; }
 }
+
+/* ---- Contatti ---- */
+.link-accent { color: var(--c-azzurro); }
+.contact-title { margin-bottom: 28px; }
+.contact-icon--magenta { background: rgba(203, 33, 104, 0.1); color: var(--c-magenta); }
+.contact-socials { display: flex; gap: 10px; align-items: center; margin-top: 4px; }
+.contact-cta { margin-top: 32px; }
+.contact-form-wrap { max-width: 640px; margin: 0 auto; }
+.contact-form-head { margin-bottom: 36px; }
+.form-notice--compact { padding: 20px; }
