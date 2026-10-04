@@ -3881,3 +3881,14 @@ button[type="submit"][aria-busy="true"] { opacity: 0.7; cursor: progress; }
   .footer-social { gap: 6px; }
   .footer-bottom a { display: inline-flex; align-items: center; min-height: 44px; }
 }
+
+/* ---- Avvisi di esito dei moduli (successo / errore) ---- */
+.form-notice { padding: 20px 24px; margin-bottom: 24px; border: 1px solid; border-radius: var(--card-radius); outline: none; }
+.form-notice[hidden] { display: none; }
+.form-notice p { margin: 4px 0 0; font-size: 14px; color: #555; }
+.form-notice--ok { background: rgba(26, 138, 46, 0.08); border-color: rgba(26, 138, 46, 0.25); }
+.form-notice--ok strong { color: #1a8a2e; }
+.form-notice--err { background: rgba(200, 40, 40, 0.08); border-color: rgba(200, 40, 40, 0.25); }
+.form-notice--err strong { color: #c82828; }
+.form-submit { width: 100%; padding: 14px; }
+#richiedi-info { scroll-margin-top: calc(var(--topbar-h) + 16px); }

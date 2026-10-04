@@ -25,7 +25,7 @@
   <link rel="preload" href="/assets/fonts/barlow-700-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/manrope-400-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/fonts.css">
-  <link rel="stylesheet" href="css/style.css?v=20261004b">
+  <link rel="stylesheet" href="css/style.css?v=20261004j">
 </head>
 <body>
 
@@ -78,7 +78,7 @@
             <p style="color:#555;margin-bottom:24px">Offriamo tre livelli di partnership &mdash; <strong>Gold</strong>, <strong>Silver</strong> e <strong>Bronze</strong> &mdash; con visibilit&agrave; crescente del tuo logo su maglie, striscioni, sito web e social network. Contattaci per un preventivo personalizzato su misura per la tua azienda.</p>
 
             <div style="display:flex;gap:12px;flex-wrap:wrap">
-              <a href="/contatti" class="btn btn--primary">Contattaci</a>
+              <a href="#richiedi-info" class="btn btn--primary">Richiedi informazioni</a>
             </div>
           </div>
 
@@ -96,6 +96,75 @@
       </div>
     </section>
 
+
+    <!-- Richiesta di partnership -->
+    <section class="section" id="richiedi-info" aria-labelledby="richiedi-info-title">
+      <div class="container">
+        <div class="section-heading section-heading--center">
+          <h2 id="richiedi-info-title">Richiedi informazioni</h2>
+          <p>Raccontaci chi sei: ti ricontattiamo per presentarti i livelli di partnership e trovare la formula pi&ugrave; adatta.</p>
+        </div>
+
+        <div class="form-wrapper">
+          <div id="sponsorFormSuccess" class="form-notice form-notice--ok" role="status" tabindex="-1" hidden>
+            <strong>&#10003; Richiesta inviata!</strong>
+            <p>Grazie per l&rsquo;interesse: ti contatteremo presto.</p>
+          </div>
+
+          <div id="sponsorFormError" class="form-notice form-notice--err" role="alert" tabindex="-1" hidden>
+            <strong>Invio non riuscito.</strong>
+            <p>Riprova oppure scrivici direttamente a <a href="mailto:victorvolley@libero.it">victorvolley@libero.it</a>.</p>
+          </div>
+
+          <form id="sponsorForm" novalidate>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="sp-azienda">Azienda o attivit&agrave; <span class="required">*</span></label>
+                <input class="form-input" type="text" id="sp-azienda" name="azienda" autocomplete="organization" required placeholder="Nome dell&rsquo;azienda">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="sp-referente">Referente <span class="required">*</span></label>
+                <input class="form-input" type="text" id="sp-referente" name="referente" autocomplete="name" required placeholder="Nome e cognome">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="sp-email">Email <span class="required">*</span></label>
+                <input class="form-input" type="email" id="sp-email" name="email" autocomplete="email" required placeholder="esempio@azienda.it">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="sp-telefono">Telefono</label>
+                <input class="form-input" type="tel" id="sp-telefono" name="telefono" autocomplete="tel" placeholder="+39 000 000 0000">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="sp-livello">Livello di interesse <span class="required">*</span></label>
+              <select class="form-select" id="sp-livello" name="livello" required>
+                <option value="" disabled selected>Seleziona un livello</option>
+                <option value="Gold">Gold</option>
+                <option value="Silver">Silver</option>
+                <option value="Bronze">Bronze</option>
+                <option value="Non so">Non so / vorrei saperne di pi&ugrave;</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="sp-messaggio">Messaggio (opzionale)</label>
+              <textarea class="form-textarea" id="sp-messaggio" name="messaggio" placeholder="Raccontaci della tua attivit&agrave; e di cosa ti piacerebbe fare insieme..."></textarea>
+            </div>
+
+            <div class="form-group form-check">
+              <input type="checkbox" id="sp-privacy" name="privacy" required>
+              <label for="sp-privacy">Ho letto l&rsquo;<a href="/privacy" target="_blank" rel="noopener">informativa privacy</a> e acconsento al trattamento dei dati per ricevere una risposta.</label>
+            </div>
+
+            <button type="submit" class="btn btn--primary form-submit">Invia la richiesta</button>
+          </form>
+        </div>
+      </div>
+    </section>
   </main>
 
   <footer class="site-footer" role="contentinfo"></footer>
@@ -116,7 +185,9 @@
   <script src="js/pages/sponsor-1.js?v=20261002h"></script>
 
   <!-- Elenco sponsor per livello -->
-  <script src="js/pages/sponsor-2.js?v=20261004a"></script>
+  <script src="js/form-validate.js?v=20261002p"></script>
+  <script src="js/pages/sponsor-3.js?v=20261004j"></script>
+  <script src="js/pages/sponsor-2.js?v=20261004j"></script>
 
   <style>
     .sponsor-cta-grid { display:grid; grid-template-columns:1.5fr 1fr; gap:64px; align-items:center; }

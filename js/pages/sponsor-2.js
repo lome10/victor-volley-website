@@ -19,7 +19,7 @@
 
   function emptyState(tierKey, label) {
     return '<div class="sponsor-tier-empty">Nessun partner ' + label + ' al momento. ' +
-      '<a href="/contatti">Vuoi essere il primo?</a></div>';
+      '<a href="#richiedi-info">Vuoi essere il primo?</a></div>';
   }
 
   DB.loadOrError(['sponsors', 'livelliSponsorSub'], 'sponsorTiers', function () {
