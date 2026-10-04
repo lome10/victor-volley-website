@@ -2,7 +2,8 @@
   "name": "victor-volley-website",
   "version": "1.0.0",
   "scripts": {
-    "dev": "npx serve ."
+    "dev": "npx serve .",
+    "test": "node scripts/check-site.js && node scripts/check-esc.js && node scripts/check-csp.js && node scripts/check-admin.js"
   },
   "dependencies": {
     "firebase-admin": "^12.7.0"
