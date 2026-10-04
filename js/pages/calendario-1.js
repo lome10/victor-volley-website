@@ -53,6 +53,27 @@
   }
   /* In Firestore ci sono partite con avversario non ancora noto salvato come testo "undefined" */
   function validName(n) { return !!n && n !== "undefined" && n !== "null"; }
+  /* Link «aggiungi evento» di Google Calendar: su telefono apre l'app (o la pagina) con l'evento già compilato.
+     ctz = fuso della gara, così l'orario resta quello giusto ovunque si apra. */
+  function gcalUrl(p) {
+    var ymd = p.data.replace(/-/g, '');
+    var m = /^(\d{1,2}):(\d{2})/.exec(p.ora || '');
+    var dates;
+    if (m) {
+      var h = +m[1], mi = +m[2], hEnd = h + 2;
+      dates = ymd + 'T' + pad2(h) + pad2(mi) + '00/' + ymd + 'T' + (hEnd > 23 ? '235900' : pad2(hEnd) + pad2(mi) + '00');
+    } else {
+      var nx = new Date(p.data + 'T00:00:00'); nx.setDate(nx.getDate() + 1);
+      dates = ymd + '/' + nx.getFullYear() + pad2(nx.getMonth() + 1) + pad2(nx.getDate());
+    }
+    var q = ['action=TEMPLATE',
+      'text=' + encodeURIComponent(p.squadra_casa + ' - ' + p.squadra_ospite + (p.categoria ? ' (' + p.categoria + ')' : '')),
+      'dates=' + dates,
+      'ctz=Europe/Rome'];
+    if (p.palazzetto) q.push('location=' + encodeURIComponent(p.palazzetto));
+    q.push('details=' + encodeURIComponent('Victor Volley — calendario partite: https://www.victorvolley.it/calendario'));
+    return 'https://calendar.google.com/calendar/render?' + q.join('&');
+  }
   function hasValidData(p) {
     return !!p && /^\d{4}-\d{2}-\d{2}$/.test(p.data || '') && validName(p.squadra_casa) && validName(p.squadra_ospite);
   }
@@ -286,7 +307,7 @@
       '</div>' +
       '<div class="fixture-row-venue">' + PIN_ICON + '<span class="fixture-row-venue-text">' + esc(p.palazzetto || '—') + '</span>' +
         (!isPast(p) && hasValidData(p)
-          ? '<button type="button" class="fixture-ics" data-ics-id="' + esc(p.id) + '" aria-label="' + esc('Aggiungi al calendario: ' + p.squadra_casa + ' - ' + p.squadra_ospite) + '">' + CAL_ICON + ' Aggiungi al calendario</button>'
+          ? '<a class="fixture-ics" href="' + esc(gcalUrl(p)) + '" target="_blank" rel="noopener noreferrer" aria-label="' + esc('Aggiungi a Google Calendar: ' + p.squadra_casa + ' - ' + p.squadra_ospite) + '">' + CAL_ICON + ' Aggiungi al calendario</a>'
           : '') +
       '</div>' +
     '</div>';
@@ -346,7 +367,7 @@
     });
   }
 
-  /* Cambio squadra nel filtro e «Aggiungi al calendario» di una singola partita */
+  /* Cambio squadra nel filtro */
   var panelsEl = document.getElementById('calCatPanels');
   panelsEl.addEventListener('change', function (e) {
     var sel = e.target.closest && e.target.closest('[data-role="team-filter"]');
@@ -354,14 +375,6 @@
     sel.closest('.cal-cat-panel').dataset.team = sel.value;
     renderMatches();
   });
-  panelsEl.addEventListener('click', function (e) {
-    var btn = e.target.closest && e.target.closest('[data-ics-id]');
-    if (!btn) return;
-    var id = btn.getAttribute('data-ics-id');
-    var p = allPartite.filter(function (x) { return String(x.id) === id; })[0];
-    if (hasValidData(p)) downloadIcs([p], 'partita-' + p.data + '.ics');
-  });
-
   renderMatches();
   }); // DB.load
 })();
