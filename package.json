@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "npx serve .",
-    "test": "node scripts/check-site.js && node scripts/check-esc.js && node scripts/check-csp.js && node scripts/check-admin.js && node scripts/stamp-versions.js --check"
+    "test": "node scripts/check-site.js && node scripts/check-esc.js && node scripts/check-csp.js && node scripts/check-admin.js && node scripts/check-collections.js && node scripts/stamp-versions.js --check"
   },
   "dependencies": {
     "firebase-admin": "^12.7.0"
