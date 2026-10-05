@@ -32,7 +32,8 @@
     '*{box-sizing:border-box}' +
     'body{font-family:Calibri,"Segoe UI",Arial,Helvetica,sans-serif;color:#000;margin:0;font-size:12px;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
     '.doc{position:relative;max-width:780px;margin:0 auto}' +
-    '.wm{position:absolute;left:50%;top:400px;transform:translateX(-50%);width:340px;opacity:.09;z-index:0}' +
+    /* filigrana: logo al centro esatto del documento, sopra le celle colorate con poca opacità (così si vede uniforme anche sotto le bande) */
+    '.wm{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:440px;height:440px;object-fit:contain;opacity:.08;z-index:3;pointer-events:none}' +
     'table{width:100%;border-collapse:collapse;table-layout:fixed;position:relative;z-index:1}' +
     'td{border:1px solid ' + BORDO + ';padding:3px 6px;vertical-align:middle}' +
     '.logo{width:25%;text-align:center;background:#fff;padding:8px}' +
