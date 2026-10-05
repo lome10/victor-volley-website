@@ -26,6 +26,46 @@
     return m ? m[3] + '/' + m[2] + '/' + m[1] : '';
   }
 
+  /* ---- importo in lettere (italiano): «centocinquanta/00» ---- */
+  var UNITA = ['zero', 'uno', 'due', 'tre', 'quattro', 'cinque', 'sei', 'sette', 'otto', 'nove', 'dieci', 'undici', 'dodici',
+    'tredici', 'quattordici', 'quindici', 'sedici', 'diciassette', 'diciotto', 'diciannove'];
+  var DECINE = ['', '', 'venti', 'trenta', 'quaranta', 'cinquanta', 'sessanta', 'settanta', 'ottanta', 'novanta'];
+
+  function sotto100(n) {
+    if (n < 20) return UNITA[n];
+    var d = Math.floor(n / 10), u = n % 10, base = DECINE[d];
+    if (u === 1 || u === 8) base = base.slice(0, -1);        /* ventuno, ventotto, trentuno… */
+    return u ? base + UNITA[u] : base;
+  }
+  function sotto1000(n) {
+    var c = Math.floor(n / 100), r = n % 100, s = '';
+    if (c) s = c === 1 ? 'cento' : UNITA[c] + 'cento';
+    if (r) {
+      if (c && (r === 8 || (r >= 80 && r < 90))) s = s.slice(0, -1);   /* centotto, centottanta */
+      s += sotto100(r);
+    }
+    return s;
+  }
+  /* Intero da 0 a 999.999.999 in lettere. «tre» prende l'accento solo come ultima parte di un composto (ventitré). */
+  function interoInLettere(n) {
+    if (n === 0) return 'zero';
+    var milioni = Math.floor(n / 1000000), migliaia = Math.floor((n % 1000000) / 1000), resto = n % 1000, out = [];
+    if (milioni) out.push(milioni === 1 ? 'un milione' : sotto1000(milioni) + ' milioni');
+    var parte = '';
+    if (migliaia) parte += migliaia === 1 ? 'mille' : sotto1000(migliaia) + 'mila';
+    if (resto) parte += sotto1000(resto);
+    if (parte) out.push(parte);
+    var testo = out.join(' ');
+    return testo.replace(/(^|\s)(\S+)tre$/, function (m, sp, testa) { return sp + testa + 'tré'; });
+  }
+  /** 150 → «centocinquanta/00», 12,5 → «dodici/50». Fuori dall'intervallo gestito ritorna ''. */
+  function inLettere(importo) {
+    if (importo === null || importo === undefined || importo === '') return '';
+    var cent = Math.round(Number(importo) * 100);
+    if (!isFinite(cent) || cent < 0 || cent >= 100000000000) return '';
+    return interoInLettere(Math.floor(cent / 100)) + '/' + ('0' + (cent % 100)).slice(-2);
+  }
+
   var BLU = '#4C95D9', ROSA = '#E8326A', GRIGIO = '#F3F6F8', BORDO = '#CFD6DD';
 
   var CSS = '@page{size:A4;margin:10mm}' +
@@ -51,6 +91,7 @@
     '.v.name{font-size:16px}' +
     '.imp-l{background:' + BLU + ';color:#fff;font-weight:700;font-size:20px;height:44px;border-color:' + BLU + ';width:64%}' +
     '.imp-r{background:' + ROSA + ';color:#000;font-weight:700;font-size:23px;text-align:center;border-color:' + ROSA + '}' +
+    '.imp-let{font-size:12px;font-weight:600;margin-top:3px;letter-spacing:.01em;opacity:.95}' +
     '.txt{font-weight:700;font-size:12px;padding:8px 6px;line-height:1.45}' +
     '.firma{height:118px;vertical-align:bottom;font-weight:700;font-size:11px;width:50%}' +
     '.firma .sigimg{display:block;height:52px;max-width:200px;margin:0 0 -14px 34px;position:relative;z-index:4}' +
@@ -104,7 +145,7 @@
         riga('Tipo incasso', r.tipoIncasso, 'n') + riga('Causale / periodo', r.causale, 'n xl') +
         riga('Modalità di pagamento', r.modalita, 'n') + (r.riferimento ? riga('Riferimento pagamento', r.riferimento, 'n') : '') +
         (atl ? riga('Data nascita atleta', fmtDate(atl.dataNascita)) : '') + '</table>' +
-      '<table><tr><td class="imp-l">IMPORTO RICEVUTO</td><td class="imp-r">€ ' + h(num(r.importo)) + '</td></tr></table>' +
+      '<table><tr><td class="imp-l">IMPORTO RICEVUTO' + (inLettere(r.importo) ? '<div class="imp-let">Euro ' + h(inLettere(r.importo)) + '</div>' : '') + '</td><td class="imp-r">€ ' + h(num(r.importo)) + '</td></tr></table>' +
       '<table>' +
         (r.bollo ? '<tr><td class="txt">' + h(r.bollo) + '</td></tr>' : '') +
         '<tr><td class="txt">La presente ricevuta attesta esclusivamente l’incasso indicato. La qualificazione fiscale dipende dalla natura effettiva del rapporto e dai requisiti dell’ASD e del soggetto versante.</td></tr>' +
@@ -146,5 +187,5 @@
     return true;
   }
 
-  global.RicevutaDoc = { html: html, open: open, openBlank: openBlank, writeTo: writeTo, eur: eur, fmtDate: fmtDate };
+  global.RicevutaDoc = { html: html, open: open, openBlank: openBlank, writeTo: writeTo, eur: eur, fmtDate: fmtDate, inLettere: inLettere };
 })(window);
