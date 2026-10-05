@@ -145,6 +145,9 @@ service cloud.firestore {
     }
     // Contatore progressivo delle ricevute (un documento per anno: { ultimo: n }).
     match /contatoriRicevute/{anno}       { allow read, write: if isDirigente(); }
+    // Firma del presidente (immagine PNG): solo i dirigenti. Viene copiata dentro ogni ricevuta
+    // all'emissione, così la famiglia la vede solo nella propria ricevuta.
+    match /firme/{firmaId}                { allow read, write: if isDirigente(); }
     match /tessere/{document=**}          { allow read, write: if isDirigente(); }
     match /vociSpesa/{document=**}        { allow read, write: if isDirigente(); }
     match /sottospese/{document=**}       { allow read, write: if isDirigente(); }

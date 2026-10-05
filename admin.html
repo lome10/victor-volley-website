@@ -2431,6 +2431,12 @@
         <input type="text" id="ricAsdPres" class="dg-form-input" placeholder="es. Cuna Matteo">
       </div>
       <div class="dg-form-group">
+        <label class="dg-form-label" for="ricAsdFirma">Firma del presidente (immagine PNG, sfondo trasparente, max 60 KB)</label>
+        <img id="ricAsdFirmaPrev" alt="Firma attuale" class="is-hidden" style="display:block;max-height:70px;max-width:260px;margin-bottom:8px;border:1px dashed var(--a-border);padding:4px;background:#fff">
+        <input type="file" id="ricAsdFirma" accept="image/png" class="dg-form-input">
+        <p class="dg-card-sub" style="margin-top:6px">Viene stampata sopra la riga «Firma» di ogni nuova ricevuta. Non è visibile pubblicamente: la vedono i dirigenti e, nella propria ricevuta, la famiglia.</p>
+      </div>
+      <div class="dg-form-group">
         <label class="dg-form-label" for="ricAsdRasd">Iscritta al RASD (bollo: esente)</label>
         <select id="ricAsdRasd" class="dg-form-input">
           <option value="si">Sì — ricevute esenti da bollo (art. 27-bis DPR 642/72)</option>
@@ -2466,7 +2472,7 @@
   <script src="/js/db.js?v=258bd128"></script>
   <script src="/js/config.js?v=24603e80"></script>
   <script src="/js/photodb.js?v=9d4a6627"></script>
-  <script src="/js/admin.js?v=bfdd408e"></script>
+  <script src="/js/admin.js?v=350f07e9"></script>
   <script src="/js/admin/atleti.js?v=27e7dde6"></script>
   <script src="/js/admin/cms.js?v=1f17cd27"></script>
   <script src="/js/admin/pianoeditoriale.js?v=c6cd1275"></script>
@@ -2483,8 +2489,8 @@
   <script src="/js/admin/budget/bilancio.js?v=fe1d2af6"></script>
   <script src="/js/admin/budget/log.js?v=a69cb9fe"></script>
   <script src="/js/admin/budget/main.js?v=6443bdc9"></script>
-  <script src="/js/ricevuta-doc.js?v=613063b5"></script>
-  <script src="/js/admin/ricevute.js?v=54190f3f"></script>
+  <script src="/js/ricevuta-doc.js?v=94b26e0e"></script>
+  <script src="/js/admin/ricevute.js?v=ed2fa9cb"></script>
   <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

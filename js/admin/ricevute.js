@@ -29,7 +29,8 @@
   var BOLLO_ESENTE = 'Esente dall’imposta di bollo ai sensi dell’art. 27-bis, Tabella allegato B, D.P.R. 642/1972.';
   var SOGLIA_BOLLO = 77.47;
 
-  var _ric = [], _asd = Object.assign({}, ASD_DEFAULT);
+  var _ric = [], _asd = Object.assign({}, ASD_DEFAULT), _firma = '';   /* _firma: PNG del presidente (data URL), raccolta privata firme/presidente */
+  var FIRMA_MAX_BYTES = 60 * 1024;
   var _loaded = false, _loading = null, _errore = false;
   var _atleti = null;
   var _filtro = { anno: String(new Date().getFullYear()), stato: '', q: '' };
@@ -49,10 +50,15 @@
     if (_loaded) { cb(); return; }
     if (_loading) { _loading.push(cb); return; }
     _loading = [cb];
-    Promise.all([db.collection('ricevute').get(), db.collection('settings').doc('asd').get()])
+    Promise.all([
+      db.collection('ricevute').get(),
+      db.collection('settings').doc('asd').get(),
+      db.collection('firme').doc('presidente').get().catch(function (e) { console.error('[ricevute] firma', e); return null; })
+    ])
       .then(function (res) {
         _ric = res[0].docs.map(_mapDoc);
         if (res[1].exists) _asd = Object.assign({}, ASD_DEFAULT, res[1].data());
+        if (res[2] && res[2].exists) _firma = res[2].data().img || '';
       })
       .catch(function (e) { console.error('[ricevute] load', e); _errore = true; })
       .then(function () {
@@ -195,6 +201,9 @@
       document.getElementById('ricAsdRasd').value = _asd.rasd ? 'si' : 'no';
       document.getElementById('ricAsdLuogo').value = _asd.luogo || '';
       document.getElementById('ricAsdPres').value = _asd.presidente || '';
+      document.getElementById('ricAsdFirma').value = '';
+      var prev = document.getElementById('ricAsdFirmaPrev');
+      if (_firma) { prev.src = _firma; prev.classList.remove('is-hidden'); } else { prev.removeAttribute('src'); prev.classList.add('is-hidden'); }
       document.getElementById('ricAsdErr').textContent = '';
       openModal('ricAsdModal');
     });
@@ -202,6 +211,20 @@
   function _closeAsd() { closeModal('ricAsdModal'); }
   document.getElementById('ricAsdClose').addEventListener('click', _closeAsd);
   document.getElementById('ricAsdCancel').addEventListener('click', _closeAsd);
+  /* Legge l'immagine scelta: solo PNG, max 60 KB; risolve con il data URL o null se non è stata scelta. */
+  function _leggiFirma() {
+    var f = document.getElementById('ricAsdFirma').files[0];
+    if (!f) return Promise.resolve(null);
+    if (f.type !== 'image/png') return Promise.reject(new Error('La firma deve essere un file PNG.'));
+    if (f.size > FIRMA_MAX_BYTES) return Promise.reject(new Error('La firma pesa troppo (massimo 60 KB).'));
+    return new Promise(function (ok, ko) {
+      var rd = new FileReader();
+      rd.onload = function () { ok(String(rd.result)); };
+      rd.onerror = function () { ko(new Error('Non riesco a leggere il file della firma.')); };
+      rd.readAsDataURL(f);
+    });
+  }
+
   document.getElementById('ricAsdSave').addEventListener('click', function () {
     var err = document.getElementById('ricAsdErr');
     var nuovo = {
@@ -212,17 +235,24 @@
     };
     if (!nuovo.denominazione) { err.textContent = 'Inserisci la denominazione.'; return; }
     if (!/^[A-Z0-9]{11,16}$/.test(nuovo.codiceFiscale)) { err.textContent = 'Il codice fiscale dell\'ASD deve avere 11 o 16 caratteri.'; return; }
-    var btn = this, old = Object.assign({}, _asd);
-    btn.disabled = true;
-    db.collection('settings').doc('asd').set(nuovo).then(function () {
+    var btn = this, old = Object.assign({}, _asd), nuovaFirma = null;
+    btn.disabled = true; err.textContent = '';
+    _leggiFirma().then(function (img) {
+      nuovaFirma = img;
+      return img ? db.collection('firme').doc('presidente').set({ img: img, nome: nuovo.presidente, aggiornataIl: new Date().toISOString() }) : null;
+    }).then(function () {
+      if (nuovaFirma) _firma = nuovaFirma;
+      return db.collection('settings').doc('asd').set(nuovo);
+    }).then(function () {
       var diff = Object.keys(nuovo).filter(function (k) { return String(old[k]) !== String(nuovo[k]); })
         .map(function (k) { return { campo: k, prima: old[k] == null ? '' : old[k], dopo: nuovo[k] }; });
       _asd = Object.assign({}, nuovo);
+      if (nuovaFirma) diff.push({ campo: 'firma presidente', prima: '', dopo: '(immagine aggiornata)' });
       return _logWrite('impostazione', 'asd', 'Dati ASD per le ricevute', 'update', diff);
     }).then(function () {
       _closeAsd();
       _renderRegistro();
-    }).catch(function (e) { console.error('[ricevute] asd', e); err.textContent = 'Errore nel salvataggio. Riprova.'; })
+    }).catch(function (e) { console.error('[ricevute] asd', e); err.textContent = e && /PNG|60 KB|file della firma/.test(e.message) ? e.message : 'Errore nel salvataggio. Riprova.'; })
       .then(function () { btn.disabled = false; });
   });
 
@@ -395,7 +425,7 @@
       atleta: a ? { nome: ((a.cognome || '') + ' ' + (a.nome || '')).trim(), cf: a.codiceFiscale || '', dataNascita: a.dataNascita || '' } : null,
       asd: { denominazione: _asd.denominazione, codiceFiscale: _asd.codiceFiscale, sede: _asd.sede || '',
         affiliazione: _asd.affiliazione || '', codiceAffiliazione: _asd.codiceAffiliazione || '', rasd: !!_asd.rasd,
-        luogo: _asd.luogo || '', presidente: _asd.presidente || '' },
+        luogo: _asd.luogo || '', presidente: _asd.presidente || '', firma: _firma || '' },
       emessaDa: A.dirigenteNome() || ''
     };
     var btn = this, creata = null;

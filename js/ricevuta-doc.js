@@ -52,7 +52,8 @@
     '.imp-l{background:' + BLU + ';color:#fff;font-weight:700;font-size:20px;height:44px;border-color:' + BLU + ';width:64%}' +
     '.imp-r{background:' + ROSA + ';color:#000;font-weight:700;font-size:23px;text-align:center;border-color:' + ROSA + '}' +
     '.txt{font-weight:700;font-size:12px;padding:8px 6px;line-height:1.45}' +
-    '.firma{height:92px;vertical-align:bottom;font-weight:700;font-size:11px;width:50%}' +
+    '.firma{height:118px;vertical-align:bottom;font-weight:700;font-size:11px;width:50%}' +
+    '.firma .sigimg{display:block;height:52px;max-width:200px;margin:0 0 -14px 34px;position:relative;z-index:4}' +
     '.firma .ln{display:block;font-weight:400;color:#555;margin-top:4px}' +
     '.firma .ln.fill{color:#000;font-weight:700;font-size:12px;border-bottom:1px solid #555;max-width:230px;padding-bottom:1px}' +
     '.firma .nome{display:block;font-size:13px;margin-top:2px}' +
@@ -76,6 +77,8 @@
     var aff = [asd.affiliazione, asd.codiceAffiliazione].filter(Boolean).join(' ');
     var sede = 'Sede legale: ' + (asd.sede || '') + ' | Affiliazione: ' + aff + ' | RASD: ' + (asd.rasd ? 'Sì' : 'No');
     var daGenitore = pag.ruolo === 'Genitore / tutore';
+    /* firma del presidente: immagine PNG salvata nella ricevuta (data URL); accetta solo questo formato, mai altri schemi */
+    var firmaImg = /^data:image\/png;base64,[A-Za-z0-9+\/=]+$/.test(asd.firma || '') ? '<img class="sigimg" src="' + asd.firma + '" alt="">' : '';
     /* luogo e data della firma: il giorno in cui il PDF viene generato (non la data della ricevuta, che è in alto) */
     var d = new Date(), oggi = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear();
 
@@ -99,7 +102,7 @@
         '<tr><td class="band" colspan="2">DATI DEL VERSAMENTO</td></tr>' +
         (atl ? riga('Atleta / beneficiario', atl.nome) + riga('Codice fiscale atleta', atl.cf) : '') +
         riga('Tipo incasso', r.tipoIncasso, 'n') + riga('Causale / periodo', r.causale, 'n xl') +
-        riga('Modalità di pagamento', r.modalita, 'n') + riga('Riferimento pagamento', r.riferimento, 'n') +
+        riga('Modalità di pagamento', r.modalita, 'n') + (r.riferimento ? riga('Riferimento pagamento', r.riferimento, 'n') : '') +
         (atl ? riga('Data nascita atleta', fmtDate(atl.dataNascita)) : '') + '</table>' +
       '<table><tr><td class="imp-l">IMPORTO RICEVUTO</td><td class="imp-r">€ ' + h(num(r.importo)) + '</td></tr></table>' +
       '<table>' +
@@ -108,7 +111,7 @@
         '<tr><td class="txt">Per spese sportive potenzialmente detraibili, registrare un pagamento tracciabile e indicare chiaramente atleta, attività e periodo.</td></tr>' +
         '</table>' +
       '<table><tr><td class="firma">Luogo e data<span class="ln fill">' + h((asd.luogo || '') + (asd.luogo ? ', ' : '') + oggi) + '</span></td>' +
-        '<td class="firma">Il Presidente / incaricato' + (asd.presidente ? '<span class="nome">' + h(asd.presidente) + '</span>' : '') +
+        '<td class="firma">Il Presidente / incaricato' + (asd.presidente ? '<span class="nome">' + h(asd.presidente) + '</span>' : '') + firmaImg +
         '<span class="ln">Firma ____________________________</span></td></tr></table>' +
       '</div></body></html>';
   }

@@ -86,7 +86,7 @@
     'pianoEditoriale', 'promemoria', 'rateAtleti', 'sottospese',
     'sponsorizzazioni', 'tranchePagamento', 'vociSpesa', 'tessere', 'settings', 'siteData',
     'accessi', 'allenamenti', 'atletiDati', 'comunicazioni', 'presenze',
-    'ricevute', 'contatoriRicevute'
+    'ricevute', 'contatoriRicevute', 'firme'
   ];
 
   document.getElementById('btnExportBackup').addEventListener('click', function () {
