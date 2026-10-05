@@ -1,0 +1,12 @@
+# File di lavoro: restano nel repository ma NON vanno online. Senza questo elenco Vercel pubblica ogni file
+# della cartella, comprese le note interne (es. https://www.victorvolley.it/session_notes.md).
+session_notes.md
+PIANO_SITO_VICTOR_VOLLEY.md
+PROMPT_HERO_PARTITE_LIVE.md
+piano_claude_code_area_dirigenti.md
+docs
+scripts
+backups
+.github
+firebase.json
+firestore.rules
