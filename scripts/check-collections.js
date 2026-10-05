@@ -6,7 +6,7 @@
  *      risponde 403 e la funzione sembra «rotta» solo in produzione);
  *   2. ogni regola riguarda una raccolta davvero usata (le regole orfane allargano la superficie d'accesso
  *      senza motivo: è il caso della vecchia `matches`);
- *   3. segnala (senza fallire) le raccolte usate ma assenti da BACKUP_COLLECTIONS in js/admin.js.
+ *   3. ogni raccolta usata è inclusa in BACKUP_COLLECTIONS (js/admin.js), altrimenti il backup è incompleto.
  *
  * Nomi cercati: collection('x'), _col('x'), le chiavi di `_ids` in js/db.js e BACKUP_COLLECTIONS.
  */
@@ -66,7 +66,7 @@ else {
 }
 
 console.log('Raccolte usate: ' + used.size + ' · regole: ' + ruled.size);
-if (missing.length) console.log('Avviso: non incluse nel backup (BACKUP_COLLECTIONS): ' + missing.join(', '));
+if (missing.length) problems.push('Raccolte non incluse nel backup (BACKUP_COLLECTIONS in js/admin.js): ' + missing.join(', '));
 if (problems.length) {
   console.error('\nPROBLEMI:');
   problems.forEach((p) => console.error('  - ' + p));

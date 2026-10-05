@@ -84,7 +84,8 @@
     'atleti', 'atletiRette', 'attivita', 'auditLog', 'aziende', 'bacheca',
     'budgetSeasons', 'categorieAtleti', 'categorieSpesa', 'dirigenti',
     'pianoEditoriale', 'promemoria', 'rateAtleti', 'sottospese',
-    'sponsorizzazioni', 'tranchePagamento', 'vociSpesa', 'tessere', 'settings', 'siteData'
+    'sponsorizzazioni', 'tranchePagamento', 'vociSpesa', 'tessere', 'settings', 'siteData',
+    'accessi', 'allenamenti', 'atletiDati', 'comunicazioni', 'presenze'
   ];
 
   document.getElementById('btnExportBackup').addEventListener('click', function () {
