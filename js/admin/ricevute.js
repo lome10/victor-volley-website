@@ -25,7 +25,7 @@
     denominazione: 'ASD Victor Volley', codiceFiscale: '', sede: 'Via Indipendenza 48, Racale (LE)',
     affiliazione: 'FIPAV', codiceAffiliazione: '', rasd: true
   };
-  var BOLLO_ESENTE = 'Esente dall’imposta di bollo ai sensi dell’art. 27-bis, Tabella allegato B, D.P.R. 642/1972 (ASD iscritta al RASD).';
+  var BOLLO_ESENTE = 'Esente dall’imposta di bollo ai sensi dell’art. 27-bis, Tabella allegato B, D.P.R. 642/1972.';
   var SOGLIA_BOLLO = 77.47;
 
   var _ric = [], _asd = Object.assign({}, ASD_DEFAULT);
@@ -80,7 +80,7 @@
 
   /* ---------- registro ---------- */
   function render() {
-    setTopbarBtn('Nuova ricevuta', function () { openEmit(null); });
+    setTopbarBtn('Genera ricevuta', function () { openEmit(null); });
     var bt = document.createElement('button');
     bt.className = 'btn-ghost';
     bt.textContent = 'Dati ASD';
@@ -138,7 +138,7 @@
         '<td>' + esc(r.tipoIncasso || '') + '<div class="table-sub">' + esc(r.causale || '') + '</div></td>' +
         '<td style="text-align:right;white-space:nowrap">' + esc(_eur(r.importo)) + '</td>' +
         '<td>' + (ann ? '<span class="chip chip--red">Annullata</span>' : '<span class="chip chip--green">Valida</span>') + '</td>' +
-        '<td style="white-space:nowrap"><button type="button" class="btn-ghost btn-sm" data-ric-open="' + esc(r.id) + '">Apri / Stampa</button> ' +
+        '<td style="white-space:nowrap"><button type="button" class="btn-ghost btn-sm" data-ric-open="' + esc(r.id) + '">PDF</button> ' +
           (ann ? '' : '<button type="button" class="btn-ghost btn-sm" data-ric-annulla="' + esc(r.id) + '">Annulla</button>') + '</td>' +
         '</tr>';
     }).join('');
@@ -393,10 +393,15 @@
         affiliazione: _asd.affiliazione || '', codiceAffiliazione: _asd.codiceAffiliazione || '', rasd: !!_asd.rasd },
       emessaDa: A.dirigenteNome() || ''
     };
-    var btn = this;
+    var btn = this, creata = null;
+    /* la finestra del PDF si apre ora, nel gestore del clic: dopo l'attesa della transazione il browser la bloccherebbe */
+    var w = Doc.openBlank();
     btn.disabled = true; err.textContent = '';
     _crea(doc).then(function (r) {
+      creata = r;
       _ric.push(r);
+      if (w) Doc.writeTo(w, r);
+      else alert('Ricevuta ' + r.numero + ' generata. Il browser ha bloccato la finestra del PDF: consenti i popup per questo sito e usa «PDF» nel registro.');
       _filtro.anno = _filtro.anno && String(r.anno) !== _filtro.anno ? String(r.anno) : _filtro.anno;
       return _logWrite('ricevuta', r.id, 'Ricevuta ' + r.numero, 'create', [
         { campo: 'numero', prima: null, dopo: r.numero }, { campo: 'importo', prima: null, dopo: r.importo }]);
@@ -406,6 +411,7 @@
       if (A.renderRateAdmin) A.renderRateAdmin();
     }).catch(function (e) {
       console.error('[ricevute] crea', e);
+      if (w && !creata) w.close();
       err.textContent = 'Errore: ' + (e && e.message ? e.message : 'impossibile emettere la ricevuta. Riprova.');
     }).then(function () { btn.disabled = false; });
   });

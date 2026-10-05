@@ -615,8 +615,8 @@
   function _ricevutaBtn(r) {
     var ric = A.ricevute.forRata(r.id);
     return ric
-      ? '<button class="btn-ghost" style="font-size:12px;padding:5px 10px" title="Apri la ricevuta" onclick="AdminActions.apriRicevuta(\'' + esc(ric.id) + '\')">Ricevuta ' + esc(ric.numero) + '</button>'
-      : '<button class="btn-ghost" style="font-size:12px;padding:5px 10px" onclick="AdminActions.emettiRicevutaRata(\'' + esc(r.id) + '\')">Emetti ricevuta</button>';
+      ? '<button class="btn-ghost" style="font-size:12px;padding:5px 10px" title="Apri la ricevuta" onclick="AdminActions.apriRicevuta(\'' + esc(ric.id) + '\')">Ricevuta ' + esc(ric.numero) + ' · PDF</button>'
+      : '<button class="btn-ghost" style="font-size:12px;padding:5px 10px" onclick="AdminActions.emettiRicevutaRata(\'' + esc(r.id) + '\')">Genera ricevuta</button>';
   }
   window.AdminActions.apriRicevuta = function (ricId) { A.ricevute.openDoc(ricId); };
   window.AdminActions.emettiRicevutaRata = function (rataId) {
