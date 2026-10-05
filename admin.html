@@ -961,7 +961,8 @@
             </div>
             <div class="form-group">
               <label class="form-label">Accesso atleta &mdash; password iniziale</label>
-              <input type="text" id="atletaPassword" class="form-input" placeholder="Minimo 6 caratteri">
+              <input type="text" id="atletaPassword" class="form-input" placeholder="Minimo 10 caratteri">
+              <button type="button" class="btn-ghost btn-sm" data-genpwd="atletaPassword" style="margin-top:6px">Genera password</button>
             </div>
             <div class="form-group">
               <label class="form-label">Accesso genitore &mdash; nome</label>
@@ -974,6 +975,7 @@
             <div class="form-group">
               <label class="form-label">Accesso genitore &mdash; password iniziale</label>
               <input type="text" id="genitorePassword" class="form-input" placeholder="Solo se è un nuovo account">
+              <button type="button" class="btn-ghost btn-sm" data-genpwd="genitorePassword" style="margin-top:6px">Genera password</button>
             </div>
           </div>
           <div class="form-actions">
@@ -1091,6 +1093,7 @@
                 <div class="form-group">
                   <label class="form-label">Password iniziale</label>
                   <input type="text" id="accPassword" class="form-input" placeholder="Solo se è un nuovo account">
+              <button type="button" class="btn-ghost btn-sm" data-genpwd="accPassword" style="margin-top:6px">Genera password</button>
                 </div>
               </div>
               <p style="font-size:12px;color:var(--a-muted);margin:-4px 0 12px">Se l'email appartiene già a un genitore di un altro atleta, viene collegata allo stesso login e la password non serve.</p>
@@ -1121,13 +1124,14 @@
                 <div class="form-grid" style="width:100%">
                   <div class="form-group form-full">
                     <label class="form-label">Nuova password</label>
-                    <input type="password" id="newPassword" class="form-input" placeholder="Minimo 6 caratteri" autocomplete="new-password">
+                    <input type="password" id="newPassword" class="form-input" placeholder="Minimo 10 caratteri" autocomplete="new-password">
                   </div>
                   <div class="form-group form-full">
                     <label class="form-label">Conferma password</label>
                     <input type="password" id="confirmPassword" class="form-input" placeholder="Ripeti la password" autocomplete="new-password">
                   </div>
                 </div>
+                <button type="button" class="btn-ghost" data-genpwd="newPassword,confirmPassword">Genera password</button>
                 <button id="btnCambiaPassword" class="btn-ghost">Salva password</button>
               </div>
               <p id="sicurezzaMsg" class="sicurezza-msg is-hidden"></p>
@@ -1303,7 +1307,8 @@
             </div>
             <div class="form-group">
               <label class="form-label">Password iniziale *</label>
-              <input type="text" id="dirigentePassword" class="form-input" placeholder="Minimo 6 caratteri">
+              <input type="text" id="dirigentePassword" class="form-input" placeholder="Minimo 10 caratteri">
+              <button type="button" class="btn-ghost btn-sm" data-genpwd="dirigentePassword" style="margin-top:6px">Genera password</button>
             </div>
           </div>
           <div class="form-actions">
@@ -2030,7 +2035,7 @@
       </div>
       <div class="dg-form-group">
         <label class="dg-form-label">Nuova password</label>
-        <input type="password" id="myPwdNew" class="dg-form-input" placeholder="Minimo 6 caratteri" autocomplete="new-password">
+        <input type="password" id="myPwdNew" class="dg-form-input" placeholder="Minimo 10 caratteri" autocomplete="new-password">
       </div>
       <div class="dg-form-group">
         <label class="dg-form-label">Conferma nuova password</label>
@@ -2472,8 +2477,8 @@
   <script src="/js/db.js?v=258bd128"></script>
   <script src="/js/config.js?v=24603e80"></script>
   <script src="/js/photodb.js?v=9d4a6627"></script>
-  <script src="/js/admin.js?v=350f07e9"></script>
-  <script src="/js/admin/atleti.js?v=27e7dde6"></script>
+  <script src="/js/admin.js?v=ea97e2d5"></script>
+  <script src="/js/admin/atleti.js?v=c6dee6b2"></script>
   <script src="/js/admin/cms.js?v=1f17cd27"></script>
   <script src="/js/admin/pianoeditoriale.js?v=c6cd1275"></script>
   <script src="/js/admin/bacheca.js?v=e180b759"></script>
@@ -2489,6 +2494,7 @@
   <script src="/js/admin/budget/bilancio.js?v=fe1d2af6"></script>
   <script src="/js/admin/budget/log.js?v=a69cb9fe"></script>
   <script src="/js/admin/budget/main.js?v=6443bdc9"></script>
+  <script src="/js/admin/password.js?v=ec78580e"></script>
   <script src="/js/ricevuta-doc.js?v=94b26e0e"></script>
   <script src="/js/admin/ricevute.js?v=ed2fa9cb"></script>
   <script defer src="/_vercel/insights/script.js"></script>

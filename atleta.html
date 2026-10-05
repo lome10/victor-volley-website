@@ -14,7 +14,7 @@
   <link rel="preload" href="/assets/fonts/manrope-400-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
   <link rel="stylesheet" href="/css/fonts.css?v=c0ba2518">
-  <link rel="stylesheet" href="css/atleta.css?v=c870090b">
+  <link rel="stylesheet" href="css/atleta.css?v=ab827b80">
 </head>
 <body>
 
@@ -28,7 +28,9 @@
         <input type="email" id="emailInput" class="al-login-input" placeholder="Email" required autocomplete="username">
         <input type="password" id="passwordInput" class="al-login-input" placeholder="Password" required autocomplete="current-password">
         <button type="submit" class="al-btn-primary">Accedi</button>
+        <button type="button" id="forgotBtn" class="al-login-link">Password dimenticata?</button>
         <p id="loginError" class="al-login-error"></p>
+        <p id="loginOk" class="al-login-ok" role="status"></p>
       </form>
     </div>
   </div>
@@ -293,7 +295,7 @@
                 <label class="al-label" for="pwdCurrent">Password attuale</label>
                 <input type="password" id="pwdCurrent" class="al-login-input" autocomplete="current-password" required>
                 <label class="al-label" for="pwdNew">Nuova password</label>
-                <input type="password" id="pwdNew" class="al-login-input" autocomplete="new-password" minlength="6" placeholder="Minimo 6 caratteri" required>
+                <input type="password" id="pwdNew" class="al-login-input" autocomplete="new-password" minlength="10" placeholder="Minimo 10 caratteri" required>
                 <label class="al-label" for="pwdConfirm">Conferma nuova password</label>
                 <input type="password" id="pwdConfirm" class="al-login-input" autocomplete="new-password" required>
                 <button type="submit" id="pwdSubmit" class="al-btn-primary">Salva password</button>
@@ -316,7 +318,7 @@
   <script src="js/data.js?v=f59e753e"></script>
   <script src="js/db.js?v=258bd128"></script>
   <script src="js/ricevuta-doc.js?v=94b26e0e"></script>
-  <script src="js/atleta.js?v=af21ae3a"></script>
+  <script src="js/atleta.js?v=bb837a2c"></script>
   <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

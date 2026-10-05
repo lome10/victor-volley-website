@@ -44,6 +44,21 @@
       });
     });
 
+    /* Recupero password: Firebase manda un'email con il link per sceglierne una nuova. La risposta è la stessa
+       sia che l'indirizzo esista o no, così nessuno può scoprire chi è registrato. */
+    document.getElementById('forgotBtn').addEventListener('click', function () {
+      var email = document.getElementById('emailInput').value.trim();
+      var errEl = document.getElementById('loginError'), okEl = document.getElementById('loginOk');
+      errEl.textContent = ''; okEl.textContent = '';
+      if (!/^\S+@\S+\.\S+$/.test(email)) { errEl.textContent = 'Scrivi qui sopra la tua email, poi tocca «Password dimenticata?».'; return; }
+      auth.sendPasswordResetEmail(email).then(function () { return null; }, function (e) {
+        return e && e.code === 'auth/user-not-found' ? null : e;
+      }).then(function (e) {
+        if (e) { errEl.textContent = 'Non riesco a inviare l\'email in questo momento. Riprova più tardi.'; return; }
+        okEl.textContent = 'Se l\'indirizzo è registrato, riceverai un\'email con il link per scegliere una nuova password. Controlla anche lo spam.';
+      });
+    });
+
     document.getElementById('logoutBtn').addEventListener('click', function () {
       auth.signOut().then(function () { location.reload(); });
     });
@@ -1036,7 +1051,7 @@
 
     function say(text, ok) { msg.textContent = text; msg.className = 'al-form-msg ' + (ok ? 'is-ok' : 'is-err'); }
 
-    if (nw.length < 6) { say('La nuova password deve avere almeno 6 caratteri.'); return; }
+    if (nw.length < 10) { say('La nuova password deve avere almeno 10 caratteri.'); return; }
     if (nw !== cf)     { say('Le due password non coincidono.'); return; }
     if (nw === cur)    { say('La nuova password deve essere diversa da quella attuale.'); return; }
 

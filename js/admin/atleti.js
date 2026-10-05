@@ -182,8 +182,8 @@
     var getUid;
     if (known) {
       getUid = Promise.resolve(known);
-    } else if (!pwd || pwd.length < 6) {
-      return Promise.reject(new Error('Nuovo account: la password deve avere almeno 6 caratteri.'));
+    } else if (!pwd || pwd.length < 10) {
+      return Promise.reject(new Error('Nuovo account: la password deve avere almeno 10 caratteri.'));
     } else {
       getUid = _createAuthAccount(email, pwd);
     }
@@ -800,9 +800,9 @@
 
     if (!nome || !cognome) { alert('Nome e cognome sono obbligatori.'); return; }
     if (!email && !gEmail) { alert('Serve almeno un accesso: atleta o genitore.'); return; }
-    if (email && pwd.length < 6) { alert('Accesso atleta: la password deve avere almeno 6 caratteri.'); return; }
-    if (gEmail && !_findParentUid(gEmail) && gPwd.length < 6) {
-      alert('Accesso genitore: è un nuovo account, la password deve avere almeno 6 caratteri.'); return;
+    if (email && pwd.length < 10) { alert('Accesso atleta: la password deve avere almeno 10 caratteri.'); return; }
+    if (gEmail && !_findParentUid(gEmail) && gPwd.length < 10) {
+      alert('Accesso genitore: è un nuovo account, la password deve avere almeno 10 caratteri.'); return;
     }
 
     var btn = document.getElementById('atletaFormSave');
@@ -983,7 +983,7 @@
 
     document.getElementById('sicurezzaMsg').classList.add('is-hidden');
 
-    if (pwd.length < 6) { _sicurezzaMsg('La password deve avere almeno 6 caratteri.', false); return; }
+    if (pwd.length < 10) { _sicurezzaMsg('La password deve avere almeno 10 caratteri.', false); return; }
     if (pwd !== confirm) { _sicurezzaMsg('Le due password non coincidono.', false); return; }
 
     btn.disabled = true;

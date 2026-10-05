@@ -753,3 +753,20 @@ button { font-family: inherit; cursor: pointer; }
 
 .al-no-data .al-no-data-icon { color: #94a3b8; margin-bottom: 12px; }
 .al-no-data .al-no-data-hint { font-size: 13px; margin-top: 4px; }
+
+/* ---- Mobile / touch (2026-10-05) ---- */
+.al-form-msg:empty { display: none; }          /* niente spazio vuoto sopra le liste quando non c'è un messaggio */
+.al-btn-primary, .al-btn-ghost, .al-btn-logout, .al-child, .al-resp-btn, .al-nav-btn { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.al-login-link { display: block; margin: 4px 0 0; padding: 6px 0; background: none; border: 0; color: var(--al-blue); font: inherit; font-size: 13px; text-align: center; cursor: pointer; width: 100%; }
+.al-login-link:hover { text-decoration: underline; }
+.al-login-ok { margin-top: 10px; font-size: 13px; color: #059669; text-align: center; }
+.al-login-ok:empty { display: none; }
+@media (pointer: coarse) {
+  /* iOS ingrandisce la pagina quando si tocca un campo con testo sotto i 16 px */
+  .al-login-input { font-size: 16px; padding: 13px 14px; }
+  /* bersagli del dito di almeno 44 px (linee guida Apple/Google) */
+  .al-btn-primary, .al-btn-ghost, .al-btn-logout, .al-resp-btn { min-height: 44px; justify-content: center; }
+  .al-btn-sm { padding: 9px 16px; font-size: 13px; }
+  .al-child { min-height: 40px; display: inline-flex; align-items: center; }
+  .al-login-link { min-height: 44px; }
+}

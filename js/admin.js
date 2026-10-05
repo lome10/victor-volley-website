@@ -156,8 +156,8 @@
       msg.classList.remove('is-hidden');
       return;
     }
-    if (pwd.length < 6) {
-      msg.textContent = 'La nuova password deve avere almeno 6 caratteri.';
+    if (pwd.length < 10) {
+      msg.textContent = 'La nuova password deve avere almeno 10 caratteri.';
       msg.style.color = 'var(--a-red)';
       msg.classList.remove('is-hidden');
       return;
@@ -509,7 +509,7 @@
     if (!nome || !cognome || !email || !pwd) {
       alert('Nome, cognome, email e password sono obbligatori.'); return;
     }
-    if (pwd.length < 6) { alert('La password deve avere almeno 6 caratteri.'); return; }
+    if (pwd.length < 10) { alert('La password deve avere almeno 10 caratteri.'); return; }
 
     var btn = document.getElementById('dirigenteFormSave');
     btn.textContent = 'Creazione…'; btn.disabled = true;

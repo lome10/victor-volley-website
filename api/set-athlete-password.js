@@ -64,8 +64,8 @@ module.exports = async function handler(req, res) {
   const password = body.password;
 
   if (!uid || typeof uid !== 'string') return fail(res, 400, 'UID mancante.');
-  if (!password || typeof password !== 'string' || password.length < 6) {
-    return fail(res, 400, 'La password deve avere almeno 6 caratteri.');
+  if (!password || typeof password !== 'string' || password.length < 10) {
+    return fail(res, 400, 'La password deve avere almeno 10 caratteri.');
   }
 
   try {
