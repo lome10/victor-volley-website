@@ -236,6 +236,25 @@
             </div>
           </div>
 
+          <!-- Ricevute di pagamento -->
+          <div class="al-card">
+            <div class="al-card-header">
+              <div class="al-card-icon al-card-icon--green">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M4 2v20l3-2 3 2 3-2 3 2 3-2V2l-3 2-3-2-3 2-3-2z"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+              </div>
+              <div>
+                <div class="al-card-title">Ricevute di pagamento</div>
+                <div class="al-card-sub">Scarica le ricevute dei pagamenti effettuati</div>
+              </div>
+            </div>
+            <div class="al-card-body">
+              <p id="ricMsg" class="al-form-msg is-err" role="alert"></p>
+              <div id="ricList" class="al-rate-list">
+                <p class="al-muted">Nessuna ricevuta disponibile.</p>
+              </div>
+            </div>
+          </div>
+
           <!-- Modulo Iscrizione -->
           <div class="al-card">
             <div class="al-card-header">
@@ -296,7 +315,8 @@
   <script src="js/firebase-config.js?v=6b9dd403"></script>
   <script src="js/data.js?v=f59e753e"></script>
   <script src="js/db.js?v=258bd128"></script>
-  <script src="js/atleta.js?v=0f5d6370"></script>
+  <script src="js/ricevuta-doc.js?v=163f0d86"></script>
+  <script src="js/atleta.js?v=af21ae3a"></script>
   <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

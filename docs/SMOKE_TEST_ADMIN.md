@@ -122,6 +122,18 @@ Legenda: ☐ da fare · ✔ ok · ✘ rotto (annota cosa, con il testo dell'erro
 - ☐ Modifica, riordina, cancella.
 - ☐ Sito pubblico: `/sponsor` e la striscia in home mostrano lo sponsor; il link si apre (solo `http(s)`).
 
+### Ricevute
+Richiede le regole Firestore pubblicate (`ricevute`, `contatoriRicevute`). Le ricevute **non si cancellano**: ogni prova lascia un record. Provale con importi e nomi `TEST` e **annullale** a fine prova (il numero resta usato: è voluto).
+- ☐ «Dati ASD» (pulsante in alto): senza codice fiscale «Nuova ricevuta» rifiuta di procedere; compilali e salva.
+- ☐ «Nuova ricevuta» senza atleta (contributo liberale TEST): si emette, numero `AAAA/0001`, compare nel registro.
+- ☐ Da Atleti → scheda → Rate & Quote: su una rata **pagata** compare «Emetti ricevuta»; si apre con importo, causale e data già compilati; dopo l'emissione il pulsante diventa «Ricevuta AAAA/NNNN» e apre il documento.
+- ☐ Il documento si apre (finestra di stampa/«Salva come PDF»): dati ASD, pagatore, atleta, importo, bollo e firme corretti.
+- ☐ Una rata con ricevuta valida **non si cancella** né si rimette «da pagare» (messaggio che rimanda alla ricevuta).
+- ☐ «Annulla» chiede il motivo; la ricevuta resta nel registro come Annullata, il PDF mostra il timbro e la rata torna emettibile.
+- ☐ Filtri (anno, stato, ricerca) ed «Esporta CSV» (si apre in Excel con le colonne giuste).
+- ☐ Area atleti (`/atleta`, account famiglia di prova): la scheda «Ricevute di pagamento» elenca solo le ricevute del proprio atleta e «Scarica PDF» apre il documento. Un'altra famiglia non le vede.
+- ☐ Log: compaiono «Ricevuta … create/update» e le modifiche ai Dati ASD.
+
 ### Dirigenti
 - ☐ Elenco dirigenti; **aggiungi** un dirigente TEST (form nome, cognome, email, password); poi rimuovi. Non toccare i
   dirigenti veri.

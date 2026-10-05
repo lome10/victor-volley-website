@@ -74,6 +74,16 @@
       if (_current) _exportRatePdf(_current);
     });
 
+    document.getElementById('ricList').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-ric]');
+      if (!b || !_current) return;
+      var r = (_current.ricevute || []).find(function (x) { return x.id === b.getAttribute('data-ric'); });
+      document.getElementById('ricMsg').textContent = '';
+      if (r && !window.RicevutaDoc.open(r)) {
+        document.getElementById('ricMsg').textContent = 'Il browser ha bloccato la finestra della ricevuta. Consenti i popup per questo sito e riprova.';
+      }
+    });
+
     document.getElementById('icsAll').addEventListener('click', function () {
       if (_current) _downloadIcs(_buildIcs(_current, null), _current);
     });
@@ -190,6 +200,7 @@
     _presenzeReady = false;
     _loadPresenze(_current);
     _loadRate(_current);
+    _loadRicevute(_current);
     _avvisi = [];
     _avvisiError = false;
     _seenBefore = _getLastSeen(_current);
@@ -446,6 +457,54 @@
         _renderRate(a);
         _renderHome(a);
       });
+  }
+
+  /* ---------------- ricevute di pagamento: emesse dai dirigenti, qui solo lettura e download ---------------- */
+
+  var _ricToken = 0;
+
+  function _loadRicevute(a) {
+    var token = ++_ricToken;
+    a.ricevute = [];
+    a.ricevuteErrore = false;
+    db.collection('ricevute').where('atletaId', '==', a.uid).get()
+      .then(function (snap) {
+        if (token !== _ricToken) return;
+        a.ricevute = snap.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); })
+          .sort(function (x, y) { return (y.data || '').localeCompare(x.data || '') || (y.progressivo || 0) - (x.progressivo || 0); });
+      })
+      .catch(function (e) {
+        if (token !== _ricToken) return;
+        console.error('[atleta] ricevute', e);
+        a.ricevuteErrore = true;
+      })
+      .then(function () {
+        if (token === _ricToken && _current === a) _renderRicevute(a);
+      });
+  }
+
+  function _renderRicevute(a) {
+    var el = document.getElementById('ricList');
+    document.getElementById('ricMsg').textContent = '';
+    var list = a.ricevute || [];
+    if (!list.length) {
+      el.innerHTML = '<p class="al-muted">' + (a.ricevuteErrore ? 'Non è stato possibile caricare le ricevute. Riprova più tardi.' : 'Nessuna ricevuta disponibile.') + '</p>';
+      return;
+    }
+    el.innerHTML = list.map(function (r) {
+      var ann = r.stato === 'annullata';
+      return '<div class="al-rate-item' + (ann ? '' : ' al-rate-item--paid') + '">' +
+        '<div class="al-rate-info">' +
+          '<div class="al-rate-desc">Ricevuta ' + _esc(r.numero) + '</div>' +
+          '<div class="al-rate-date">' + _esc(_fmtDate(r.data)) + ' · ' + _esc(r.causale || r.tipoIncasso || '') + '</div>' +
+        '</div>' +
+        '<div class="al-rate-right">' +
+          '<div class="al-rate-amount">' + _eur(r.importo) + '</div>' +
+          (ann ? '<span class="al-badge al-badge--red">Annullata</span>' : '') +
+          '<button type="button" class="al-btn-ghost al-btn-sm" data-ric="' + _esc(r.id) + '">Scarica PDF</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
   }
 
   /* ---------------- presenze: "ci sarò / non ci sarò" ---------------- */
@@ -938,7 +997,7 @@
       }).join('') +
       '<tr class="total-row"><td colspan="2">Totale</td><td class="num">' + _eur(t.totale) + '</td><td></td></tr>' +
       '</tbody></table>' +
-      '<p class="note">Riepilogo informativo aggiornato alla data di generazione. Non costituisce ricevuta fiscale: per ricevute o attestazioni di pagamento rivolgersi alla segreteria.</p>' +
+      '<p class="note">Riepilogo informativo aggiornato alla data di generazione. Non è una ricevuta: le ricevute dei pagamenti si scaricano dalla scheda «Ricevute di pagamento».</p>' +
       '<footer><span>Victor Volley &middot; Area Atleti</span><span>Documento generato automaticamente</span></footer>' +
       '</div></body></html>';
 

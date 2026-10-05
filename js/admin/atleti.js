@@ -611,6 +611,18 @@
     });
   }
 
+  /* Rata pagata: se ha già una ricevuta valida ne mostra il numero (apre il documento), altrimenti propone di emetterla. */
+  function _ricevutaBtn(r) {
+    var ric = A.ricevute.forRata(r.id);
+    return ric
+      ? '<button class="btn-ghost" style="font-size:12px;padding:5px 10px" title="Apri la ricevuta" onclick="AdminActions.apriRicevuta(\'' + esc(ric.id) + '\')">Ricevuta ' + esc(ric.numero) + '</button>'
+      : '<button class="btn-ghost" style="font-size:12px;padding:5px 10px" onclick="AdminActions.emettiRicevutaRata(\'' + esc(r.id) + '\')">Emetti ricevuta</button>';
+  }
+  window.AdminActions.apriRicevuta = function (ricId) { A.ricevute.openDoc(ricId); };
+  window.AdminActions.emettiRicevutaRata = function (rataId) {
+    if (_editingAtleta) A.ricevute.openEmit({ atletaId: _editingAtleta.uid, rataId: rataId });
+  };
+
   /* ---- Tab "Rate & Quote" della scheda ---- */
   function _renderRateAdmin() {
     var el = document.getElementById('rateAdminList');
@@ -618,6 +630,10 @@
     var rate = a ? _rateOfAtleta(a.uid).slice().sort(function (x, y) {
       return (x.scadenza || '9999-12-31').localeCompare(y.scadenza || '9999-12-31');
     }) : [];
+
+    /* le ricevute si caricano una volta sola; a caricamento finito la lista si ridisegna */
+    if (a && A.ricevute && !A.ricevute.isLoaded()) A.ricevute.ensureLoaded(_renderRateAdmin);
+    var ricOk = !!(A.ricevute && A.ricevute.isLoaded());
 
     if (!rate.length) {
       el.innerHTML = '<p style="color:var(--a-muted);font-size:13px">Nessuna quota inserita per ' + esc(_stagioneCorrenteNome() || 'questa stagione') + '.</p>';
@@ -633,6 +649,7 @@
             (r.pagata && r.dataPagamento ? ' &nbsp;·&nbsp; pagata il ' + _fmtDate(r.dataPagamento) : '') + '</div>' +
         '</div>' +
         '<div class="atleta-rate-actions">' +
+          (r.pagata && ricOk ? _ricevutaBtn(r) : '') +
           '<button class="btn-ghost" style="font-size:12px;padding:5px 10px;color:' +
             (r.pagata ? 'var(--a-green)' : 'var(--a-text)') +
             '" onclick="AdminActions.toggleRataScheda(\'' + esc(r.id) + '\')">' +

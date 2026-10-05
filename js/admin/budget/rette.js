@@ -249,7 +249,27 @@
     }).catch(function (e) { alert('Errore: ' + e.message); });
   }
 
+  /* Una rata con una ricevuta valida non si cancella e non torna «da pagare»: prima va annullata la ricevuta. */
+  function _bloccataDaRicevuta(rataId, azione, cb) {
+    var R = window.Admin && window.Admin.ricevute;
+    if (!R) { cb(true); return; }
+    R.ensureLoaded(function () {
+      var ric = R.forRata(rataId);
+      if (ric) alert('Questa rata è coperta dalla ricevuta ' + ric.numero + ': per ' + azione + ' devi prima annullare la ricevuta (sezione Ricevute).');
+      cb(!ric);
+    });
+  }
+
   DG.toggleRataAtleta = function (id, checked) {
+    var r = B._rateAtleti.find(function (x) { return x.id === id; });
+    if (!r) return;
+    if (checked) { _applicaTogglePagata(id, checked); return; }
+    _bloccataDaRicevuta(id, 'rimetterla da pagare', function (ok) {
+      if (ok) _applicaTogglePagata(id, checked); else _renderRateAtletaModal();
+    });
+  };
+
+  function _applicaTogglePagata(id, checked) {
     var r = B._rateAtleti.find(function (x) { return x.id === id; });
     if (!r) return;
     var old = { pagata: !!r.pagata };
@@ -261,9 +281,15 @@
       .then(function () { return _logWrite('rataAtleti', id, 'Rata — ' + (a ? a.cognome + ' ' + a.nome : ''), 'update', _diff(old, patch, ['pagata'])); })
       .then(function () { _renderRateAtletaModal(); _renderRette(); B._renderStatCards(); B._renderCharts(); B._renderBilancio(); _renderRateAdmin(); _renderAtletiRows(); })
       .catch(function (e) { alert('Errore: ' + e.message); });
-  };
+  }
 
   DG.deleteRataAtleta = function (id) {
+    var r = B._rateAtleti.find(function (x) { return x.id === id; });
+    if (!r) return;
+    _bloccataDaRicevuta(id, 'cancellarla', function (ok) { if (ok) _confermaDeleteRata(id); });
+  };
+
+  function _confermaDeleteRata(id) {
     var r = B._rateAtleti.find(function (x) { return x.id === id; });
     if (!r) return;
     var a = B._atletiRette.find(function (x) { return x.id === r.atletaRettaId; });
@@ -277,7 +303,7 @@
         })
         .catch(function (e) { alert('Errore: ' + e.message); });
     });
-  };
+  }
 
   /* ---- Esportato per gli altri file del Budget ---- */
   B._addRataAtleta = _addRataAtleta;

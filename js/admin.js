@@ -85,7 +85,8 @@
     'budgetSeasons', 'categorieAtleti', 'categorieSpesa', 'dirigenti',
     'pianoEditoriale', 'promemoria', 'rateAtleti', 'sottospese',
     'sponsorizzazioni', 'tranchePagamento', 'vociSpesa', 'tessere', 'settings', 'siteData',
-    'accessi', 'allenamenti', 'atletiDati', 'comunicazioni', 'presenze'
+    'accessi', 'allenamenti', 'atletiDati', 'comunicazioni', 'presenze',
+    'ricevute', 'contatoriRicevute'
   ];
 
   document.getElementById('btnExportBackup').addEventListener('click', function () {
@@ -206,7 +207,7 @@
     dashboard: 'Dashboard', articoli: 'Articoli', calendario: 'Calendario', allenamenti: 'Allenamenti', presenze: 'Presenze', comunicazioni: 'Avvisi', pianoEditoriale: 'Piano Editoriale',
     bacheca: 'Bacheca', galleria: 'Galleria', squadre: 'Squadre',
     sponsor: 'Sponsor', atleti: 'Atleti', dirigenti: 'Dirigenti', datiJson: 'File JSON',
-    log: 'Log', budget: 'Budget & Forecast'
+    log: 'Log', budget: 'Budget & Forecast', ricevute: 'Ricevute'
   };
 
   function initNav() {
@@ -302,6 +303,7 @@
     if (section === 'datiJson')   renderDatiJson();
     if (section === 'log')        Admin.budget.renderLog();
     if (section === 'budget')     Admin.budget.renderActiveTab();
+    if (section === 'ricevute')   Admin.ricevute.render();
 
     if (!_suppressPush) {
       var path = '/admin/' + section;

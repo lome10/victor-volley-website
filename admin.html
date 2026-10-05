@@ -122,6 +122,10 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
             Budget &amp; Forecast
           </a>
+          <a href="#" class="admin-nav-item" data-section="ricevute">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M4 2v20l3-2 3 2 3-2 3 2 3-2V2l-3 2-3-2-3 2-3-2z"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            Ricevute
+          </a>
           <a href="#" class="admin-nav-item" data-section="sponsor">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
             Sponsor
@@ -631,6 +635,41 @@
       <!-- ---- BACHECA (task board) ---- -->
       <section id="sectionBacheca" class="admin-section is-hidden">
         <div class="kb-board" id="kbBoard"></div>
+      </section>
+
+      <!-- ---- RICEVUTE ---- -->
+      <section id="sectionRicevute" class="admin-section is-hidden">
+        <p id="ricAsdWarn" class="atleti-summary is-hidden" style="color:var(--a-red)">Prima di emettere ricevute compila i «Dati ASD» (pulsante in alto): serve almeno il codice fiscale dell'associazione.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px">
+          <select id="ricFiltroAnno" class="form-input" style="max-width:160px" aria-label="Anno"></select>
+          <select id="ricFiltroStato" class="form-input" style="max-width:160px" aria-label="Stato">
+            <option value="">Tutti gli stati</option>
+            <option value="valida">Valide</option>
+            <option value="annullata">Annullate</option>
+          </select>
+          <input type="search" id="ricFiltroQ" class="form-input" style="max-width:280px" placeholder="Cerca numero, pagatore, atleta…" aria-label="Cerca">
+          <button type="button" id="ricExportCsv" class="btn-ghost" style="margin-left:auto">Esporta CSV</button>
+        </div>
+        <p id="ricSummary" class="atleti-summary"></p>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>N.</th>
+                <th>Data</th>
+                <th>Pagatore</th>
+                <th>Atleta</th>
+                <th>Incasso</th>
+                <th style="text-align:right">Importo</th>
+                <th>Stato</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="ricBody">
+              <tr><td colspan="8" style="text-align:center;color:var(--a-muted);padding:20px">—</td></tr>
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <!-- ---- SQUADRE ---- -->
@@ -1811,6 +1850,8 @@
             <option value="stagioneSito">Stagione sito</option>
             <option value="atleta">Atleta</option>
             <option value="tessera">Tessera</option>
+            <option value="ricevuta">Ricevuta</option>
+            <option value="impostazione">Impostazioni (dati ASD)</option>
             <option value="dirigente">Dirigente</option>
             <option value="azienda">Azienda (CRM)</option>
             <option value="sponsorizzazione">Sponsorizzazione</option>
@@ -2260,6 +2301,142 @@
     </div>
   </div>
 
+  <!-- MODAL: nuova ricevuta -->
+  <div id="ricModal" class="dg-modal is-hidden">
+    <div class="dg-modal-head">
+      <h3>Nuova ricevuta di pagamento</h3>
+      <button id="ricModalClose" class="dg-btn-icon-only" aria-label="Chiudi">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="dg-modal-body">
+      <div class="dg-form-group">
+        <label class="dg-form-label" for="ricAtleta">Atleta / beneficiario</label>
+        <select id="ricAtleta" class="dg-form-input"></select>
+      </div>
+      <div class="dg-form-group">
+        <label class="dg-form-label">Rate già pagate da coprire con questa ricevuta (facoltativo)</label>
+        <div id="ricRateBox"></div>
+      </div>
+      <div class="dg-form-group">
+        <label class="dg-form-label" for="ricPagSel">Chi paga</label>
+        <select id="ricPagSel" class="dg-form-input"></select>
+      </div>
+      <div class="dg-form-group">
+        <label class="dg-form-label" for="ricPagNome">Pagatore (cognome e nome) *</label>
+        <input type="text" id="ricPagNome" class="dg-form-input">
+      </div>
+      <div class="dg-form-group">
+        <label class="dg-form-label" for="ricPagCf">Codice fiscale del pagatore</label>
+        <input type="text" id="ricPagCf" class="dg-form-input" maxlength="16" style="text-transform:uppercase">
+      </div>
+      <div class="dg-form-group">
+        <label class="dg-form-label" for="ricPagInd">Indirizzo del pagatore</label>
+        <input type="text" id="ricPagInd" class="dg-form-input">
+      </div>
+      <div class="dg-form-group">
+        <label class="dg-form-label" for="ricData">Data *</label>
+        <input type="date" id="ricData" class="dg-form-input">
+      </div>
+      <div class="dg-form-group">
+        <label class="dg-form-label" for="ricImporto">Importo (€) *</label>
+        <input type="number" id="ricImporto" class="dg-form-input" min="0" step="0.01" inputmode="decimal">
+      </div>
+      <div class="dg-form-group">
+        <label class="dg-form-label" for="ricTipo">Tipo di incasso</label>
+        <select id="ricTipo" class="dg-form-input"></select>
+      </div>
+      <div class="dg-form-group">
+        <label class="dg-form-label" for="ricCausale">Causale / periodo *</label>
+        <input type="text" id="ricCausale" class="dg-form-input" placeholder="es. Quota corso 2026/2027 — 1ª rata">
+      </div>
+      <div class="dg-form-group">
+        <label class="dg-form-label" for="ricModalita">Modalità di pagamento</label>
+        <select id="ricModalita" class="dg-form-input"></select>
+      </div>
+      <div class="dg-form-group">
+        <label class="dg-form-label" for="ricRif">Riferimento del pagamento</label>
+        <input type="text" id="ricRif" class="dg-form-input" placeholder="es. CRO del bonifico (facoltativo)">
+      </div>
+      <div class="dg-form-group">
+        <label class="dg-form-label" for="ricNote">Note interne (non stampate)</label>
+        <input type="text" id="ricNote" class="dg-form-input">
+      </div>
+      <p id="ricErr" class="dg-card-sub" role="alert" style="color:var(--a-red)"></p>
+    </div>
+    <div class="dg-modal-actions">
+      <button id="ricCancel" type="button" class="dg-btn-ghost">Annulla</button>
+      <button id="ricSave" type="button" class="dg-btn-primary">Emetti ricevuta</button>
+    </div>
+  </div>
+
+  <!-- MODAL: annulla ricevuta -->
+  <div id="ricAnnullaModal" class="dg-modal is-hidden">
+    <div class="dg-modal-head">
+      <h3>Annulla ricevuta</h3>
+      <button id="ricAnnullaClose" class="dg-btn-icon-only" aria-label="Chiudi">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="dg-modal-body">
+      <p id="ricAnnullaTesto" class="dg-card-sub" style="margin-bottom:14px"></p>
+      <div class="dg-form-group">
+        <label class="dg-form-label" for="ricAnnullaMotivo">Motivo *</label>
+        <textarea id="ricAnnullaMotivo" class="dg-form-input" rows="3"></textarea>
+      </div>
+      <p id="ricAnnullaErr" class="dg-card-sub" role="alert" style="color:var(--a-red)"></p>
+    </div>
+    <div class="dg-modal-actions">
+      <button id="ricAnnullaCancel" type="button" class="dg-btn-ghost">Indietro</button>
+      <button id="ricAnnullaOk" type="button" class="dg-btn-ghost dg-btn-ghost--danger">Annulla la ricevuta</button>
+    </div>
+  </div>
+
+  <!-- MODAL: dati ASD per le ricevute -->
+  <div id="ricAsdModal" class="dg-modal is-hidden">
+    <div class="dg-modal-head">
+      <h3>Dati ASD per le ricevute</h3>
+      <button id="ricAsdClose" class="dg-btn-icon-only" aria-label="Chiudi">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="dg-modal-body">
+      <p class="dg-card-sub" style="margin-bottom:14px">Questi dati vengono copiati su ogni nuova ricevuta: le ricevute già emesse non cambiano.</p>
+      <div class="dg-form-group">
+        <label class="dg-form-label" for="ricAsdDenom">Denominazione *</label>
+        <input type="text" id="ricAsdDenom" class="dg-form-input">
+      </div>
+      <div class="dg-form-group">
+        <label class="dg-form-label" for="ricAsdCf">Codice fiscale dell'associazione *</label>
+        <input type="text" id="ricAsdCf" class="dg-form-input" maxlength="16" style="text-transform:uppercase">
+      </div>
+      <div class="dg-form-group">
+        <label class="dg-form-label" for="ricAsdSede">Sede legale</label>
+        <input type="text" id="ricAsdSede" class="dg-form-input">
+      </div>
+      <div class="dg-form-group">
+        <label class="dg-form-label" for="ricAsdAff">Affiliazione / organismo</label>
+        <input type="text" id="ricAsdAff" class="dg-form-input">
+      </div>
+      <div class="dg-form-group">
+        <label class="dg-form-label" for="ricAsdCodAff">Codice di affiliazione</label>
+        <input type="text" id="ricAsdCodAff" class="dg-form-input">
+      </div>
+      <div class="dg-form-group">
+        <label class="dg-form-label" for="ricAsdRasd">Iscritta al RASD (bollo: esente)</label>
+        <select id="ricAsdRasd" class="dg-form-input">
+          <option value="si">Sì — ricevute esenti da bollo (art. 27-bis DPR 642/72)</option>
+          <option value="no">No — segnala il bollo da 2 € sopra 77,47 €</option>
+        </select>
+      </div>
+      <p id="ricAsdErr" class="dg-card-sub" role="alert" style="color:var(--a-red)"></p>
+    </div>
+    <div class="dg-modal-actions">
+      <button id="ricAsdCancel" type="button" class="dg-btn-ghost">Annulla</button>
+      <button id="ricAsdSave" type="button" class="dg-btn-primary">Salva</button>
+    </div>
+  </div>
+
   <!-- Confirm modal -->
   <div id="confirmModal" class="modal-overlay is-hidden">
     <div class="modal-box">
@@ -2281,8 +2458,8 @@
   <script src="/js/db.js?v=258bd128"></script>
   <script src="/js/config.js?v=24603e80"></script>
   <script src="/js/photodb.js?v=9d4a6627"></script>
-  <script src="/js/admin.js?v=281e1e06"></script>
-  <script src="/js/admin/atleti.js?v=e0a79c6c"></script>
+  <script src="/js/admin.js?v=bfdd408e"></script>
+  <script src="/js/admin/atleti.js?v=f22b41ea"></script>
   <script src="/js/admin/cms.js?v=1f17cd27"></script>
   <script src="/js/admin/pianoeditoriale.js?v=c6cd1275"></script>
   <script src="/js/admin/bacheca.js?v=e180b759"></script>
@@ -2290,7 +2467,7 @@
   <script src="/js/admin/budget/riepilogo.js?v=0e9d0db9"></script>
   <script src="/js/admin/budget/sponsor.js?v=fdaaa11e"></script>
   <script src="/js/admin/budget/materiali.js?v=3202b53a"></script>
-  <script src="/js/admin/budget/rette.js?v=ade6b445"></script>
+  <script src="/js/admin/budget/rette.js?v=411c84cb"></script>
   <script src="/js/admin/budget/tessere.js?v=89e8e0f6"></script>
   <script src="/js/admin/budget/spese.js?v=eadc7af1"></script>
   <script src="/js/admin/budget/iva.js?v=2b927099"></script>
@@ -2298,6 +2475,8 @@
   <script src="/js/admin/budget/bilancio.js?v=fe1d2af6"></script>
   <script src="/js/admin/budget/log.js?v=a69cb9fe"></script>
   <script src="/js/admin/budget/main.js?v=6443bdc9"></script>
+  <script src="/js/ricevuta-doc.js?v=163f0d86"></script>
+  <script src="/js/admin/ricevute.js?v=b3f4af6f"></script>
   <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>
