@@ -3,7 +3,7 @@
 File di coordinamento: va aggiornato **alla fine di ogni sessione** e **ad ogni cambiamento**.
 Ordine: stato attuale → da fare → da verificare → decisioni → registro sessioni.
 
-Ultimo aggiornamento: 2026-10-05
+Ultimo aggiornamento: 2026-10-06 (fine sessione)
 
 ---
 
@@ -14,12 +14,19 @@ Ultimo aggiornamento: 2026-10-05
 - Controllo automatico `node scripts/check-admin.js`: OK. Checklist manuale `docs/SMOKE_TEST_ADMIN.md`: eseguita dall'utente il 2026-10-05, tutto ✔.
 
 ### Da dove ripartire (prossima sessione)
-Tutto pubblicato su `origin/main` fino a `0a761e3` (2026-10-02, sito UX/UI: immagini lazy, skeleton, sfondo nuovo, sponsor articolo, form, privacy e cookie).
-1. **Far confermare alla società il testo di /privacy**: codice fiscale/P.IVA del titolare, tempi di conservazione (12 mesi per i moduli, ipotesi mia), frase sulle liberatorie foto/video. Sede legale già messa: Via Indipendenza 48, Racale (LE).
-2. **Logo Trisolino**: la società NON ha un file ad alta risoluzione (2026-10-04). Resta quello da 320 px, ora su Cloudinary; nella fascia sponsor degli articoli l'ingrandimento è limitato a ~2x i pixel reali (nessuna sfocatura, ma logo più piccolo). Se arriva un PNG trasparente/SVG (≥1200 px, es. chiedendolo a Trisolino) basta ricaricarlo da Admin → Sponsor: il limite sale da solo.
-3. **Prossimi punti dell'audit UX** (aperti): [FATTO 2026-10-04, non committato] messaggi «Nessun risultato»/errore con «Riprova» nelle liste; [FATTO 2026-10-04] filtro per squadra + «Aggiungi al calendario» (.ics); [FATTO 2026-10-04] menu mobile (ESC, focus, 44 px); [FATTO sulle pagine pubbliche 2026-10-04] stili inline → classi CSS; [FATTI 2026-10-04] PWA (manifest, theme-color, icone); JSON-LD; meta description di atleta.html; [FATTO 2026-10-04] modulo «Diventa sponsor». **Audit UX: completato (stili inline fatti sulle pagine pubbliche; admin escluso).**
-4. [FATTO 2026-10-05] Prova del pannello admin e checklist. Restano le migrazioni (immagini Cloudinary, IVA sponsor) e backup incompleto: vedi «Da verificare».
-5. Non provato: mobile (sponsor articolo, skeleton, form, privacy), rete lenta, invio reale dei form a Web3Forms.
+Tutto pubblicato su `origin/main` (ultimo commit di codice `ddadf15`, 2026-10-06). Regole Firestore pubblicate, comprese quelle di `ricevute`, `contatoriRicevute`, `firme`, `notifiche`, `promemoriaInviati`. `.vercelignore` verificato: note e file di lavoro non sono più pubblici.
+
+**Fatto in questi giorni (dettagli nel registro in fondo):** ricevute di pagamento complete (registro, emissione AAAA/NNNN, annullamento, formato del modello Excel, importo in lettere, firma del presidente, download per le famiglie), area atleti mobile, «Password dimenticata?», generatore di password (min 10 caratteri), job dei promemoria email (inattivo), guida per le famiglie, backup completo.
+
+**Da fare, in ordine:**
+1. **Email promemoria (IN PAUSA):** servono le credenziali di Aruba. Con quelle: inserire i 4 record DNS di Brevo (vedi sezione «Email promemoria — stato…»), «Authenticate» in Brevo, mittente `@victorvolley.it`, chiave API, variabili su Vercel (`BREVO_API_KEY`, `EMAIL_FROM`, `CRON_SECRET`), redeploy, prova a secco `/api/promemoria?dry=1`, poi invio a un solo indirizzo di prova.
+2. **Prova a mano delle ricevute** (sezione «Ricevute» di `docs/SMOKE_TEST_ADMIN.md`) e con un account famiglia di prova: l'utente non l'ha ancora fatta; mancavano ancora dati. Le ricevute non si cancellano, si annullano. Controllare che «Dati ASD» (codice fiscale, affiliazione) e firma siano nei campi e compaiano sul PDF.
+3. **Prima famiglia reale:** l'utente dà le credenziali alle mamme con email ufficiali (usando «Genera password» o «Invia email di reset»); verificare accesso, cambio password, ricevute e vista da telefono vero (l'area atleti non è mai stata provata su un telefono).
+4. **Notifiche push (fase C):** serve la chiave VAPID dalla Console Firebase (Impostazioni progetto → Cloud Messaging → Web Push).
+5. **Far confermare alla società /privacy:** codice fiscale/P.IVA del titolare, «12 mesi» per i moduli (ipotesi mia), liberatorie foto/video; la voce sui promemoria cita Brevo anche se non è ancora attivo.
+6. **Scelte da confermare:** «Luogo e data» in fondo alla ricevuta mostra il giorno in cui si genera il PDF (non quello della ricevuta): l'utente può preferire la data della ricevuta; chi può emettere/annullare (oggi tutti i dirigenti).
+7. **Sito pubblico:** Lighthouse mobile home 49/100; non provati rete lenta e invio reale dei form a Web3Forms; decidere se cancellare i 4 vecchi documenti `matches`; revisione dei punti con `innerHTML` in admin; dati reali da confermare (palazzetto, telefono, social).
+8. **Logo Trisolino:** la società non ha un file ad alta risoluzione: NON riproporlo.
 
 ---
 
