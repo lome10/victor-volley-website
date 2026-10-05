@@ -52,8 +52,10 @@
     '.imp-l{background:' + BLU + ';color:#fff;font-weight:700;font-size:20px;height:44px;border-color:' + BLU + ';width:64%}' +
     '.imp-r{background:' + ROSA + ';color:#000;font-weight:700;font-size:23px;text-align:center;border-color:' + ROSA + '}' +
     '.txt{font-weight:700;font-size:12px;padding:8px 6px;line-height:1.45}' +
-    '.firma{height:78px;vertical-align:bottom;font-weight:700;font-size:11px;width:50%}' +
-    '.firma span{display:block;font-weight:400;color:#555;margin-top:4px}' +
+    '.firma{height:92px;vertical-align:bottom;font-weight:700;font-size:11px;width:50%}' +
+    '.firma .ln{display:block;font-weight:400;color:#555;margin-top:4px}' +
+    '.firma .ln.fill{color:#000;font-weight:700;font-size:12px;border-bottom:1px solid #555;max-width:230px;padding-bottom:1px}' +
+    '.firma .nome{display:block;font-size:13px;margin-top:2px}' +
     '.annullata{background:#FEF2F2;border:1px solid #FCA5A5;color:#991B1B;border-radius:6px;padding:8px 12px;margin:8px 0;font-size:12px;position:relative;z-index:1}' +
     '.stamp{position:absolute;top:240px;left:50%;transform:translateX(-50%) rotate(-18deg);border:6px solid #DC2626;color:#DC2626;z-index:2;' +
       'font-weight:800;font-size:68px;letter-spacing:.1em;padding:4px 26px;opacity:.3;pointer-events:none}';
@@ -74,6 +76,8 @@
     var aff = [asd.affiliazione, asd.codiceAffiliazione].filter(Boolean).join(' ');
     var sede = 'Sede legale: ' + (asd.sede || '') + ' | Affiliazione: ' + aff + ' | RASD: ' + (asd.rasd ? 'Sì' : 'No');
     var daGenitore = pag.ruolo === 'Genitore / tutore';
+    /* luogo e data della firma: il giorno in cui il PDF viene generato (non la data della ricevuta, che è in alto) */
+    var d = new Date(), oggi = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear();
 
     return '<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>' + h(titolo(r)) + '</title>' +
       '<style>' + CSS + '</style></head><body><div class="doc">' +
@@ -103,8 +107,9 @@
         '<tr><td class="txt">La presente ricevuta attesta esclusivamente l’incasso indicato. La qualificazione fiscale dipende dalla natura effettiva del rapporto e dai requisiti dell’ASD e del soggetto versante.</td></tr>' +
         '<tr><td class="txt">Per spese sportive potenzialmente detraibili, registrare un pagamento tracciabile e indicare chiaramente atleta, attività e periodo.</td></tr>' +
         '</table>' +
-      '<table><tr><td class="firma">Luogo e data<span>____________________________</span></td>' +
-        '<td class="firma">Il Presidente / incaricato<span>Firma ____________________________</span></td></tr></table>' +
+      '<table><tr><td class="firma">Luogo e data<span class="ln fill">' + h((asd.luogo || '') + (asd.luogo ? ', ' : '') + oggi) + '</span></td>' +
+        '<td class="firma">Il Presidente / incaricato' + (asd.presidente ? '<span class="nome">' + h(asd.presidente) + '</span>' : '') +
+        '<span class="ln">Firma ____________________________</span></td></tr></table>' +
       '</div></body></html>';
   }
 

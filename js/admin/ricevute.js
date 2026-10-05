@@ -23,7 +23,8 @@
   /* Nessun codice fiscale preimpostato: lo inserisce la società dal pannello «Dati ASD». */
   var ASD_DEFAULT = {
     denominazione: 'ASD Victor Volley', codiceFiscale: '', sede: 'Via Indipendenza 48, Racale (LE)',
-    affiliazione: 'FIPAV', codiceAffiliazione: '', rasd: true
+    affiliazione: 'FIPAV', codiceAffiliazione: '', rasd: true,
+    luogo: 'Racale', presidente: 'Cuna Matteo'          /* stampati in fondo alla ricevuta: «Luogo e data» e nome sotto «Il Presidente» */
   };
   var BOLLO_ESENTE = 'Esente dall’imposta di bollo ai sensi dell’art. 27-bis, Tabella allegato B, D.P.R. 642/1972.';
   var SOGLIA_BOLLO = 77.47;
@@ -192,6 +193,8 @@
       document.getElementById('ricAsdAff').value = _asd.affiliazione || '';
       document.getElementById('ricAsdCodAff').value = _asd.codiceAffiliazione || '';
       document.getElementById('ricAsdRasd').value = _asd.rasd ? 'si' : 'no';
+      document.getElementById('ricAsdLuogo').value = _asd.luogo || '';
+      document.getElementById('ricAsdPres').value = _asd.presidente || '';
       document.getElementById('ricAsdErr').textContent = '';
       openModal('ricAsdModal');
     });
@@ -204,7 +207,8 @@
     var nuovo = {
       denominazione: _v('ricAsdDenom'), codiceFiscale: _v('ricAsdCf').toUpperCase().replace(/\s+/g, ''),
       sede: _v('ricAsdSede'), affiliazione: _v('ricAsdAff'), codiceAffiliazione: _v('ricAsdCodAff'),
-      rasd: document.getElementById('ricAsdRasd').value === 'si'
+      rasd: document.getElementById('ricAsdRasd').value === 'si',
+      luogo: _v('ricAsdLuogo'), presidente: _v('ricAsdPres')
     };
     if (!nuovo.denominazione) { err.textContent = 'Inserisci la denominazione.'; return; }
     if (!/^[A-Z0-9]{11,16}$/.test(nuovo.codiceFiscale)) { err.textContent = 'Il codice fiscale dell\'ASD deve avere 11 o 16 caratteri.'; return; }
@@ -390,7 +394,8 @@
       pagatore: { nome: nome, cf: cf, indirizzo: _v('ricPagInd'), ruolo: po.ruolo || 'Pagatore' },
       atleta: a ? { nome: ((a.cognome || '') + ' ' + (a.nome || '')).trim(), cf: a.codiceFiscale || '', dataNascita: a.dataNascita || '' } : null,
       asd: { denominazione: _asd.denominazione, codiceFiscale: _asd.codiceFiscale, sede: _asd.sede || '',
-        affiliazione: _asd.affiliazione || '', codiceAffiliazione: _asd.codiceAffiliazione || '', rasd: !!_asd.rasd },
+        affiliazione: _asd.affiliazione || '', codiceAffiliazione: _asd.codiceAffiliazione || '', rasd: !!_asd.rasd,
+        luogo: _asd.luogo || '', presidente: _asd.presidente || '' },
       emessaDa: A.dirigenteNome() || ''
     };
     var btn = this, creata = null;
