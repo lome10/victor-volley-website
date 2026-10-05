@@ -59,6 +59,24 @@
       });
     });
 
+    /* Promemoria via email: attivi di default; chi li disattiva salva notifiche/{uid} = { email: false } */
+    document.getElementById('notifEmail').addEventListener('change', function () {
+      var box = this, msg = document.getElementById('notifMsg');
+      if (!_user) return;
+      msg.className = 'al-form-msg'; msg.textContent = '';
+      db.collection('notifiche').doc(_user.uid).set({ email: box.checked, aggiornatoIl: new Date().toISOString() })
+        .then(function () {
+          msg.className = 'al-form-msg is-ok';
+          msg.textContent = box.checked ? 'Promemoria attivati.' : 'Promemoria disattivati: non riceverai più email di scadenza.';
+        })
+        .catch(function (e) {
+          console.error('[atleta] notifiche', e);
+          box.checked = !box.checked;
+          msg.className = 'al-form-msg is-err';
+          msg.textContent = 'Non è stato possibile salvare la preferenza. Riprova.';
+        });
+    });
+
     document.getElementById('logoutBtn').addEventListener('click', function () {
       auth.signOut().then(function () { location.reload(); });
     });
@@ -111,6 +129,12 @@
 
   });
 
+  function _loadNotifiche(user) {
+    db.collection('notifiche').doc(user.uid).get().then(function (d) {
+      document.getElementById('notifEmail').checked = !(d.exists && d.data().email === false);
+    }).catch(function (e) { console.error('[atleta] notifiche', e); });
+  }
+
   function _showLogin() {
     document.getElementById('loginScreen').classList.remove('is-hidden');
     document.getElementById('dashboard').classList.add('is-hidden');
@@ -153,6 +177,7 @@
       document.getElementById('profiloEmail').textContent = user.email || '';
       _renderChildBar();
       _selectAtleta(_atleti[0].uid);
+      _loadNotifiche(user);
       _ensureData(function () { if (_current) _refreshAgendaViews(_current); });
     });
   }

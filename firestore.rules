@@ -148,6 +148,16 @@ service cloud.firestore {
     // Firma del presidente (immagine PNG): solo i dirigenti. Viene copiata dentro ogni ricevuta
     // all'emissione, così la famiglia la vede solo nella propria ricevuta.
     match /firme/{firmaId}                { allow read, write: if isDirigente(); }
+    // Preferenze di notifica: ognuno legge e scrive solo il proprio documento (id = uid), con il solo campo
+    // email (true/false) e la data; i dirigenti possono leggerle. Le legge anche il job dei promemoria.
+    match /notifiche/{uid} {
+      allow read: if isDirigente() || (signedIn() && request.auth.uid == uid);
+      allow create, update: if signedIn() && request.auth.uid == uid &&
+        request.resource.data.keys().hasOnly(['email', 'aggiornatoIl']) && request.resource.data.email is bool;
+      allow delete: if false;
+    }
+    // Registro dei promemoria già spediti (lo scrive solo il server con l'account di servizio): i dirigenti lo leggono.
+    match /promemoriaInviati/{id}         { allow read: if isDirigente(); allow write: if false; }
     match /tessere/{document=**}          { allow read, write: if isDirigente(); }
     match /vociSpesa/{document=**}        { allow read, write: if isDirigente(); }
     match /sottospese/{document=**}       { allow read, write: if isDirigente(); }
