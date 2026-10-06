@@ -189,11 +189,11 @@
 
       var chipsHtml = dayItems.map(function (it) {
         var plat = _peItemPlatform(it);
-        return '<div class="pe-chip chip ' + plat.chipClass + '" onclick="AdminActions.editPianoEditoriale(\'' + it.id + '\')" title="' + esc(it.titolo) + '">' + esc(it.titolo) + '</div>';
+        return '<div class="pe-chip chip ' + plat.chipClass + '" draggable="true" data-pe-id="' + esc(it.id) + '" onclick="AdminActions.editPianoEditoriale(\'' + it.id + '\')" title="' + esc(it.titolo) + '">' + esc(it.titolo) + '</div>';
       }).join('');
 
       html +=
-        '<div class="pe-cal-cell' + (inMonth ? '' : ' pe-cal-cell--out') + (ymd === todayYmd ? ' pe-cal-cell--today' : '') + '">' +
+        '<div data-ymd="' + ymd + '" class="pe-cal-cell' + (inMonth ? '' : ' pe-cal-cell--out') + (ymd === todayYmd ? ' pe-cal-cell--today' : '') + '">' +
           '<div class="pe-cal-cell-head"><span>' + cellDate.getDate() + '</span>' +
             '<button type="button" class="pe-cal-add" onclick="AdminActions.newPianoEditoriale(\'' + ymd + '\')" title="Nuovo contenuto">+</button>' +
           '</div>' +
@@ -249,6 +249,45 @@
     grid.className = 'pe-agenda-list';
     grid.innerHTML = html;
   }
+
+  /* Trascinare un contenuto su un altro giorno del calendario (solo computer: sul telefono si cambia la data dal contenuto) */
+  (function () {
+    var grid = document.getElementById('peCalGrid'), dragId = null;
+    function cella(e) { return e.target.closest ? e.target.closest('.pe-cal-cell[data-ymd]') : null; }
+    function pulisci() { grid.querySelectorAll('.pe-cal-cell.is-drop').forEach(function (c) { c.classList.remove('is-drop'); }); }
+    grid.addEventListener('dragstart', function (e) {
+      var chip = e.target.closest ? e.target.closest('.pe-chip[data-pe-id]') : null;
+      if (!chip) return;
+      dragId = chip.getAttribute('data-pe-id');
+      e.dataTransfer.effectAllowed = 'move';
+      try { e.dataTransfer.setData('text/plain', dragId); } catch (x) { /* alcuni browser vogliono comunque un dato */ }
+      chip.classList.add('is-dragging');
+    });
+    grid.addEventListener('dragend', function () { dragId = null; pulisci(); grid.querySelectorAll('.is-dragging').forEach(function (c) { c.classList.remove('is-dragging'); }); });
+    grid.addEventListener('dragover', function (e) {
+      var c = cella(e); if (!c || !dragId) return;
+      e.preventDefault(); e.dataTransfer.dropEffect = 'move';
+      if (!c.classList.contains('is-drop')) { pulisci(); c.classList.add('is-drop'); }
+    });
+    grid.addEventListener('drop', function (e) {
+      var c = cella(e); if (!c || !dragId) return;
+      e.preventDefault(); pulisci();
+      var id = dragId, ymd = c.getAttribute('data-ymd');
+      dragId = null;
+      var item = _peItems.find(function (x) { return x.id === id; });
+      if (!item || item.data === ymd) return;
+      var prima = item.data;
+      db.collection('pianoEditoriale').doc(id).update({ data: ymd }).then(function () {
+        item.data = ymd;
+        _renderPeGrid(); _renderPeSponsorPanel();
+        A.avviso('«' + item.titolo + '» spostato al ' + A.fmtDateLong(ymd) + '.', 'ok');
+        return _logWrite('pianoEditoriale', id, 'Piano editoriale — ' + item.titolo, 'update', [{ campo: 'data', prima: prima, dopo: ymd }]);
+      }).catch(function (err) {
+        console.error('[pianoEditoriale] sposta', err);
+        A.avviso('Non sono riuscito a spostare il contenuto: ' + err.message, 'errore');
+      });
+    });
+  })();
 
   document.getElementById('peMonthPrev').addEventListener('click', function () {
     _peMonthCursor.setMonth(_peMonthCursor.getMonth() - 1);

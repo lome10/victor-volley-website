@@ -1810,3 +1810,8 @@ button { font-family: var(--font-body); cursor: pointer; }
 .pe-sp-logo--no { display: inline-flex; align-items: center; justify-content: center; background: #f1f5f9; border-radius: 6px; font-weight: 700; color: #64748b; }
 .pe-sp-nome { flex: 1; min-width: 0; font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pe-sp-nome small { display: block; font-weight: 400; font-size: 11px; color: #64748b; }
+
+/* PIANO EDITORIALE — trascinare i contenuti da un giorno all'altro */
+.pe-chip[draggable="true"] { cursor: grab; }
+.pe-chip.is-dragging { opacity: .45; }
+.pe-cal-cell.is-drop { outline: 2px dashed #008CFD; outline-offset: -2px; background: #eff6ff; }
