@@ -1449,6 +1449,11 @@
               <input type="url" id="spUrl" class="form-input" placeholder="https://...">
             </div>
             <div class="form-group">
+              <label class="form-label">Collegato a (pipeline sponsor)</label>
+              <select id="spAzienda" class="form-input"></select>
+              <p style="font-size:12px;color:var(--a-muted);margin-top:4px">Collega il logo all'azienda del Budget: così nella pipeline si vede chi è sul sito e qui si vede a che punto è il contributo. Resta nei dati riservati dei dirigenti, non sul sito pubblico.</p>
+            </div>
+            <div class="form-group">
               <label class="form-label">Posizione nel nastro</label>
               <input type="number" id="spOrder" class="form-input" min="1" value="1" style="max-width:100px">
             </div>
@@ -1611,10 +1616,23 @@
               <input type="checkbox" id="filterMieiSponsor">
               Solo i miei
             </label>
+            <div class="sp-subtabs" role="tablist" aria-label="Vista della pipeline" style="margin:0">
+              <button type="button" role="tab" id="spVistaColonne" aria-selected="true">Colonne</button>
+              <button type="button" role="tab" id="spVistaElenco" aria-selected="false">Elenco</button>
+            </div>
             <button id="newSponsorBtn" class="dg-btn-primary dg-btn-sm">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               Nuovo sponsor
             </button>
+          </div>
+          <div id="sponsorElenco" class="dg-card is-hidden">
+            <div class="dg-table-wrap">
+              <table class="dg-table">
+                <thead><tr><th>Azienda</th><th>Stato</th><th class="cs-r">Importo</th><th class="cs-r">Incassato</th><th class="cs-r">Da incassare</th><th>Responsabile</th><th>Prossimo promemoria</th><th>Sul sito</th></tr></thead>
+                <tbody id="sponsorElencoBody"><tr><td colspan="8" class="dg-empty">—</td></tr></tbody>
+              </table>
+            </div>
+            <p class="dg-card-sub" style="margin-top:10px">Clicca una riga per aprire lo sponsor. «Sul sito» mostra il livello del logo collegato: si collega dalla pagina «Sponsor» del menu. Importo: confermato per i chiusi, stimato per gli altri.</p>
           </div>
           <div class="dg-kanban" id="kanbanBoard">
             <div class="dg-kanban-col" data-stato="prospect">
@@ -2600,12 +2618,13 @@
   <script src="/js/photodb.js?v=9d4a6627"></script>
   <script src="/js/admin.js?v=909d5d79"></script>
   <script src="/js/admin/atleti.js?v=ddea1737"></script>
-  <script src="/js/admin/cms.js?v=1f17cd27"></script>
+  <script src="/js/admin/cms.js?v=09f21237"></script>
   <script src="/js/admin/pianoeditoriale.js?v=c6cd1275"></script>
   <script src="/js/admin/bacheca.js?v=e180b759"></script>
   <script src="/js/admin/budget/state.js?v=aa87a3e5"></script>
   <script src="/js/admin/budget/riepilogo.js?v=42899596"></script>
-  <script src="/js/admin/budget/sponsor.js?v=3169c89d"></script>
+  <script src="/js/admin/budget/sponsor.js?v=c9450952"></script>
+  <script src="/js/admin/budget/sponsor-elenco.js?v=be117688"></script>
   <script src="/js/admin/budget/materiali.js?v=3202b53a"></script>
   <script src="/js/admin/budget/rette.js?v=411c84cb"></script>
   <script src="/js/admin/budget/stagioni.js?v=2ff1f867"></script>

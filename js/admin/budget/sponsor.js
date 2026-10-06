@@ -65,6 +65,7 @@
 
     B._attachKanbanEvents();
     B._renderPezziSponsor();
+    if (B._renderElencoSponsor) B._renderElencoSponsor();
   }
 
   /* ---- Drag & drop touch per Kanban sponsor (mobile) ---- */

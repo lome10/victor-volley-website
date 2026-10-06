@@ -1781,6 +1781,7 @@
       document.getElementById('spUrl').value       = '';
       document.getElementById('spOrder').value     = String(VV.getSponsors().length + 1);
       document.getElementById('spLivello').value   = 'silver';
+      _popolaSpAzienda(null);
       document.getElementById('spRipetizioni').value = String(SP_REPS_DEFAULT.silver);
       document.getElementById('spLogoPreview').style.display = 'none';
       document.getElementById('spLogoEditor').style.display = 'none';
@@ -1832,6 +1833,7 @@
       list.sort(function (a, b) { return a.order - b.order; });
       DB.saveSponsors(list);
       document.getElementById('spForm').classList.add('is-hidden');
+      _salvaCollegamentoSponsor(item.id, document.getElementById('spAzienda').value).then(refreshSpList);
       refreshSpList();
     };
   }
@@ -1997,6 +1999,44 @@
     });
   }
 
+  /* ---- Collegamento logo del sito → azienda della pipeline (campo sponsorSitoId sull'azienda, dato riservato) ---- */
+  function _budgetB() { return window.Admin && window.Admin.budgetShared; }
+  function _normNome(s) { return String(s || '').trim().toLowerCase().replace(/\s+/g, ' '); }
+  function _popolaSpAzienda(s) {
+    var sel = document.getElementById('spAzienda'), B = _budgetB();
+    if (!sel) return;
+    var az = ((B && B._aziende) || []).slice().sort(function (a, b) { return String(a.ragioneSociale || '').localeCompare(String(b.ragioneSociale || '')); });
+    var attuale = s ? az.filter(function (a) { return a.sponsorSitoId === s.id; })[0] : null;
+    if (!attuale && s) {   /* nome uguale e azienda non ancora collegata a un altro logo: la proponiamo */
+      attuale = az.filter(function (a) { return _normNome(a.ragioneSociale) === _normNome(s.nome) && a.sponsorSitoId == null; })[0] || null;
+    }
+    sel.innerHTML = '<option value="">— nessuna —</option>' + az.map(function (a) { return '<option value="' + esc(a.id) + '">' + esc(a.ragioneSociale || '—') + '</option>'; }).join('');
+    sel.value = attuale ? attuale.id : '';
+  }
+  function _salvaCollegamentoSponsor(siteId, aziendaId) {
+    var B = _budgetB();
+    if (!B || !B._aziende) return Promise.resolve();
+    var ops = [];
+    B._aziende.forEach(function (a) { if (a.sponsorSitoId === siteId && a.id !== aziendaId) ops.push({ a: a, v: null }); });
+    var tgt = aziendaId ? B._aziende.filter(function (a) { return a.id === aziendaId; })[0] : null;
+    if (tgt && tgt.sponsorSitoId !== siteId) ops.push({ a: tgt, v: siteId });
+    return Promise.all(ops.map(function (o) {
+      return db.collection('aziende').doc(o.a.id).update({ sponsorSitoId: o.v }).then(function () {
+        o.a.sponsorSitoId = o.v;
+        return window.Admin.logWrite('azienda', o.a.id, 'Azienda — ' + (o.a.ragioneSociale || ''), 'update', [{ campo: 'logo sul sito', prima: o.v == null ? 'collegato' : 'non collegato', dopo: o.v == null ? 'non collegato' : 'collegato' }]);
+      });
+    })).catch(function (e) { window.Admin.avviso('Collegamento alla pipeline non salvato: ' + e.message, 'errore'); });
+  }
+  function _pipelineDiSponsor(s) {
+    var B = _budgetB();
+    if (!B || !B._aziende) return '';
+    var az = B._aziende.filter(function (a) { return a.sponsorSitoId === s.id; })[0];
+    if (!az) return '<div class="sp-item-url" style="color:var(--a-muted)">Non collegato alla pipeline</div>';
+    var sp = B._sponsorizzazioni.filter(function (x) { return x.aziendaId === az.id && x.seasonId === B._currentSeasonId; })[0];
+    var t = sp ? B._statoLabel(sp.stato) + (sp.stato === 'chiuso' ? ' · ' + B._eur(+sp.importoConfermato || 0) : '') : 'nessuna sponsorizzazione in questa stagione';
+    return '<div class="sp-item-url">Pipeline: ' + esc(az.ragioneSociale || '—') + ' · ' + esc(t) + '</div>';
+  }
+
   var SP_TIER_RANK = { gold: 0, silver: 1, bronze: 2 };
 
   function refreshSpList() {
@@ -2024,7 +2064,7 @@
         '<div class="sp-item-thumb">' + logoHtml + '</div>' +
         '<div class="sp-item-info">' +
           '<div class="sp-item-nome">' + esc(s.nome) + '</div>' +
-          (s.url ? '<div class="sp-item-url">' + esc(s.url) + '</div>' : '') +
+          (s.url ? '<div class="sp-item-url">' + esc(s.url) + '</div>' : '') + _pipelineDiSponsor(s) +
         '</div>' +
         '<span class="sp-item-tier sp-item-tier--' + livello + '">' + TIER_LABEL[livello] + '</span>' +
         (livello !== 'gold' ? '<span class="sp-item-reps" title="Ripetizioni nel ticker">&times;' + (s.ripetizioni || 1) + '</span>' : '') +
@@ -2160,6 +2200,7 @@
     document.getElementById('spOrder').value     = String(s.order || 1);
     document.getElementById('spLivello').value   = s.livello || 'silver';
     document.getElementById('spRipetizioni').value = String(s.ripetizioni || 1);
+    _popolaSpAzienda(s);
     _syncSpPreview();
     document.getElementById('spLogoEditor').style.display = 'none';
     document.getElementById('spForm').classList.remove('is-hidden');
@@ -2170,6 +2211,7 @@
     confirm('Eliminare questo sponsor?', function () {
       var list = VV.getSponsors().filter(function (s) { return s.id !== id; });
       DB.saveSponsors(list);
+      _salvaCollegamentoSponsor(id, '');
       refreshSpList();
     });
   };

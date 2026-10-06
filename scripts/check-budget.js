@@ -244,7 +244,7 @@ function statoCassa(extra) {
     _atletaRettaById: () => null, _sponsorDaIncassare: () => 0, _calcRetteAtleti: () => ({ totIncassato: 0, totPrevisto: 0, righe: [] })
   }, extra || {});
   const window = { Admin: { budgetShared: B, esc, fmtDate: (d) => d, fmtDateLong: (d) => d, avviso: noop, logWrite: () => Promise.resolve(), diff: () => [] }, AdminActions: {}, VV: B.__VV };
-  ['bilancio.js', 'spese.js', 'altre.js', 'stagioni.js', 'cassa.js'].forEach((f) => new Function('window', 'document', 'db', fs.readFileSync(path.join(__dirname, '..', 'js', 'admin', 'budget', f), 'utf8'))(window, doc, {}));
+  ['bilancio.js', 'spese.js', 'altre.js', 'stagioni.js', 'sponsor-elenco.js', 'cassa.js'].forEach((f) => new Function('window', 'document', 'db', fs.readFileSync(path.join(__dirname, '..', 'js', 'admin', 'budget', f), 'utf8'))(window, doc, {}));
   return { B, els };
 }
 
@@ -376,6 +376,26 @@ t('Confronto tra stagioni: totali per fonte e per categoria di spesa', () => {
   assert.deepStrictEqual(x.entrate, { 'Sponsor': 500, 'Rette atleti': 100, 'Tessere': 20, 'Altre entrate': 300 });
   assert.deepStrictEqual([x.totEntrate, x.totSpese, x.saldo], [920, 260, 660]);
   assert.deepStrictEqual(x.spese, { 'Federazione': 250, 'Senza categoria': 10 });
+});
+
+t('Pipeline sponsor in elenco: stato, incassato/da incassare, responsabile, logo sul sito', () => {
+  const { B } = statoCassa({
+    STATI: ['prospect', 'contattato', 'in_trattativa', 'chiuso', 'rifiutato'], _dirigentiList: [{ id: 'd1', nome: 'Anna', cognome: 'Bianchi' }],
+    _nextPromemoria: (id) => (id === 'p1' ? { dataScadenza: '2026-11-03' } : null), _isStorico: (id) => id === 'az9',
+    _statoLabel: (s) => s, _statoColor: () => '#000', _sponsorIncassato: (s) => (s.id === 'c1' ? 1000 : 0), _sponsorDaIncassare: (s) => (s.id === 'c1' ? 2000 : 0),
+    _aziende: [{ id: 'az1', sponsorSitoId: 7 }],
+    _sponsorizzazioni: [
+      { id: 'c1', seasonId: 's1', aziendaId: 'az1', stato: 'chiuso', importoConfermato: 3000, importoStimato: 9, dirigenteResponsabileId: 'd1' },
+      { id: 'p1', seasonId: 's1', aziendaId: 'az9', stato: 'prospect', importoStimato: 500 },
+      { id: 'x1', seasonId: 's0', aziendaId: 'az1', stato: 'chiuso', importoConfermato: 99 }],
+    _aziendaById: (id) => ({ id, ragioneSociale: 'Azienda ' + id, sponsorSitoId: id === 'az1' ? 7 : null }),
+    __VV: { getSponsors: () => [{ id: 7, nome: 'Logo', livello: 'gold', logo: 'x.png' }] }
+  });
+  const r = B._righeElencoSponsor(false, 'd1');
+  assert.deepStrictEqual(r.map((x) => x.id), ['p1', 'c1'], 'ordinati per fase della pipeline; l’altra stagione non conta');
+  assert.deepStrictEqual([r[1].importo, r[1].incassato, r[1].daIncassare, r[1].responsabile, r[1].sito.livello], [3000, 1000, 2000, 'Anna Bianchi', 'gold']);
+  assert.deepStrictEqual([r[0].importo, r[0].incassato, r[0].storico, r[0].promemoria, r[0].sito], [500, 0, true, '2026-11-03', null]);
+  assert.deepStrictEqual(B._righeElencoSponsor(true, 'd1').map((x) => x.id), ['c1'], '«solo i miei»');
 });
 
 console.log(process.exitCode ? 'Collaudo fallito.' : 'OK: ' + passed + ' verifiche su Bilancio, Spese e cassa.');
