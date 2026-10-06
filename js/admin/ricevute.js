@@ -99,6 +99,12 @@
     bp.title = 'Mostra una ricevuta di esempio con i vostri Dati ASD e la firma, senza emettere né salvare nulla';
     bp.addEventListener('click', anteprimaEsempio);
     document.getElementById('topbarActions').appendChild(bp);
+    var bm = document.createElement('button');
+    bm.className = 'btn-ghost';
+    bm.textContent = 'Invia esempio via email';
+    bm.title = 'Manda la ricevuta di esempio (PDF in allegato) a un indirizzo a tua scelta, per vedere come arriva. Non scrive nulla nel registro';
+    bm.addEventListener('click', inviaEsempio);
+    document.getElementById('topbarActions').appendChild(bm);
     document.getElementById('ricBody').innerHTML =
       '<tr><td colspan="8" style="text-align:center;color:var(--a-muted);padding:20px">Caricamento…</td></tr>';
     ensureLoaded(_renderRegistro);
@@ -124,6 +130,27 @@
       w.document.write(window.RicevutaDoc.html(r, window.location.origin));
       w.document.close();
     });
+  }
+
+  /* Prova dell'invio automatico senza emettere nulla: la funzione sul server crea il PDF d'esempio e lo manda
+     all'indirizzo scelto qui. Niente nel registro, nessun numero consumato. */
+  function inviaEsempio() {
+    var u = auth.currentUser;
+    var pre = u && u.email && !/@victorvolley\./i.test(u.email) ? u.email : '';
+    var a = window.prompt('A quale indirizzo mando la ricevuta di esempio? Non scrive nulla nel registro.', pre);
+    if (!a || !a.trim()) return;
+    u.getIdToken().then(function (token) {
+      return fetch('/api/invia-ricevuta', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ esempio: true, a: a.trim() })
+      });
+    }).then(function (res) {
+      return res.json().catch(function () { return {}; }).then(function (d) {
+        if (!res.ok) throw new Error(d.error || ('Errore ' + res.status));
+        A.avviso('Ricevuta di esempio inviata a ' + d.a[0] + '. Se non arriva, controlla lo spam.', 'ok');
+      });
+    }).catch(function (e) { A.avviso('Errore: ' + ((e && e.message) || 'riprova più tardi.'), 'errore'); });
   }
 
   function _filtrate() {
@@ -174,13 +201,25 @@
         '<td style="text-align:right;white-space:nowrap">' + esc(_eur(r.importo)) + '</td>' +
         '<td>' + (ann ? '<span class="chip chip--red">Annullata</span>' : '<span class="chip chip--green">Valida</span>') + '</td>' +
         '<td style="white-space:nowrap"><button type="button" class="btn-ghost btn-sm" data-ric-open="' + esc(r.id) + '">PDF</button> ' +
-          (ann ? '' : '<button type="button" class="btn-ghost btn-sm" data-ric-annulla="' + esc(r.id) + '">Annulla</button>') + '</td>' +
+          (ann ? '' : '<button type="button" class="btn-ghost btn-sm" data-ric-email="' + esc(r.id) + '" title="' +
+            (r.emailInviata ? 'Già inviata il ' + esc(_fmtDate(String(r.emailInviata.il || '').slice(0, 10))) + ': premi per rimandarla' : 'Manda il PDF ai genitori collegati all’atleta') + '">' +
+            (r.emailInviata ? '✉ Rimanda' : '✉ Invia email') + '</button> ' +
+          '<button type="button" class="btn-ghost btn-sm" data-ric-annulla="' + esc(r.id) + '">Annulla</button>') + '</td>' +
         '</tr>';
     }).join('');
   }
 
   document.getElementById('ricBody').addEventListener('click', function (e) {
-    var o = e.target.closest('[data-ric-open]'), n = e.target.closest('[data-ric-annulla]');
+    var o = e.target.closest('[data-ric-open]'), n = e.target.closest('[data-ric-annulla]'), em = e.target.closest('[data-ric-email]');
+    if (em) {
+      var rr = _ric.find(function (x) { return x.id === em.getAttribute('data-ric-email'); });
+      if (!rr) return;
+      A.confirm((rr.emailInviata ? 'Rimandare' : 'Mandare') + ' la ricevuta ' + rr.numero + ' via email ai genitori collegati all’atleta?', function () {
+        em.disabled = true;
+        _inviaEmail(rr, true).then(function (m) { A.avviso(m.testo, m.tipo); _renderRegistro(); });
+      });
+      return;
+    }
     if (o) openDoc(o.getAttribute('data-ric-open'));
     if (n) openAnnulla(n.getAttribute('data-ric-annulla'));
   });
@@ -472,12 +511,46 @@
       _closeEmit();
       _renderRegistro();
       if (A.renderRateAdmin) A.renderRateAdmin();
+      /* invio automatico alla famiglia: un problema qui non annulla la ricevuta, già emessa */
+      return _inviaEmail(creata, false).then(function (m) { A.avviso(m.testo, m.tipo); _renderRegistro(); });
     }).catch(function (e) {
       console.error('[ricevute] crea', e);
       if (w && !creata) w.close();
       err.textContent = 'Errore: ' + (e && e.message ? e.message : 'impossibile emettere la ricevuta. Riprova.');
     }).then(function () { btn.disabled = false; });
   });
+
+  /* ---------- invio per email ---------- */
+  /* Chiama /api/invia-ricevuta (Vercel): crea il PDF sul server e lo manda ai genitori collegati all'atleta.
+     Risolve sempre con un messaggio per il banner { testo, tipo }, mai con un errore. */
+  var MOTIVI_NO = {
+    'nessun-atleta': 'Non l’ho inviata per email perché non è collegata a un atleta.',
+    'nessun-destinatario': 'Non l’ho inviata per email: l’atleta non ha genitori con un’email reale.',
+    'gia-inviata': 'Era già stata inviata per email.'
+  };
+  function _inviaEmail(r, rimanda) {
+    return auth.currentUser.getIdToken().then(function (token) {
+      return fetch('/api/invia-ricevuta', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ ricevutaId: r.id, rimanda: !!rimanda })
+      });
+    }).then(function (res) {
+      return res.json().catch(function () { return {}; }).then(function (d) {
+        if (!res.ok) throw new Error(d.error || ('Errore ' + res.status));
+        return d;
+      });
+    }).then(function (d) {
+      if (d.inviata) {
+        r.emailInviata = { il: new Date().toISOString() };
+        return _logWrite('ricevuta', r.id, 'Ricevuta ' + r.numero, 'update', [{ campo: 'email', prima: null, dopo: 'inviata a ' + d.a.join(', ') }])
+          .then(function () { return { testo: 'Ricevuta ' + r.numero + ': email con il PDF inviata a ' + d.a.join(', ') + '.', tipo: 'ok' }; });
+      }
+      return { testo: 'Ricevuta ' + r.numero + ': ' + (MOTIVI_NO[d.motivo] || 'email non inviata.'), tipo: 'avviso' };
+    }).catch(function (e) {
+      return { testo: 'Ricevuta ' + r.numero + ': l’email non è partita (' + ((e && e.message) || 'errore') + '). Usa «Invia email» nel registro per riprovare.', tipo: 'errore' };
+    });
+  }
 
   /* ---------- annullamento ---------- */
   function openAnnulla(id) {

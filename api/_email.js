@@ -12,7 +12,8 @@ function configEmail() {
   };
 }
 
-/** Invia un'email a dest = { email, nome? }; msg = { subject, html, text }. Lancia un errore se Brevo rifiuta. */
+/** Invia un'email a dest = { email, nome? }; msg = { subject, html, text, attachment? }, con attachment = [{ name, content (base64) }].
+ *  Lancia un errore se Brevo rifiuta. */
 async function inviaEmail(cfg, dest, msg) {
   const r = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
@@ -21,7 +22,8 @@ async function inviaEmail(cfg, dest, msg) {
       sender: { name: cfg.fromName, email: cfg.from },
       replyTo: cfg.replyTo ? { email: cfg.replyTo } : undefined,
       to: [{ email: dest.email, name: dest.nome || undefined }],
-      subject: msg.subject, htmlContent: msg.html, textContent: msg.text
+      subject: msg.subject, htmlContent: msg.html, textContent: msg.text,
+      attachment: msg.attachment
     })
   });
   if (!r.ok) throw new Error('Brevo ' + r.status);

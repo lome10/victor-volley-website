@@ -1,6 +1,9 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
+  "functions": {
+    "api/invia-ricevuta.js": { "includeFiles": "{assets/logo.png,js/ricevuta-doc.js}", "maxDuration": 30 }
+  },
   "crons": [
     { "path": "/api/promemoria", "schedule": "0 6 * * *" }
   ],
