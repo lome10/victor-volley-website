@@ -1827,8 +1827,14 @@
             <button type="button" role="tab" id="bilTabCons" data-bsub="cons" aria-selected="true">Consuntivo</button>
             <button type="button" role="tab" id="bilTabPrev" data-bsub="prev" aria-selected="false">Previsione di cassa</button>
             <button type="button" role="tab" id="bilTabIva" data-bsub="iva" aria-selected="false">IVA</button>
+            <button type="button" role="tab" id="bilTabConf" data-bsub="conf" aria-selected="false">Confronto</button>
           </div>
           <div id="bilSecCons">
+          <div class="dg-toolbar" style="margin:0 0 10px">
+            <span class="dg-muted">Per il commercialista (solo ciò che è già incassato o pagato):</span>
+            <button type="button" class="dg-btn-ghost dg-btn-sm" onclick="DG.budgetCsv('entrate')">Scarica entrate (CSV)</button>
+            <button type="button" class="dg-btn-ghost dg-btn-sm" onclick="DG.budgetCsv('uscite')">Scarica uscite (CSV)</button>
+          </div>
           <div id="bilancioPerCategoria" class="dg-card">
             <div class="dg-card-title">Per categoria</div>
             <div class="dg-card-sub">Da dove arrivano le entrate e dove vanno le uscite in questa stagione. «Incassato» conta solo ciò che è già pagato; «Da incassare» è il previsto non ancora pagato. Clicca una riga per vedere nel saldo mensile solo quella voce.</div>
@@ -1904,6 +1910,23 @@
                 <table class="dg-table">
                   <thead><tr><th>Mese</th><th>Entrate previste</th><th>Uscite previste</th><th>Saldo del mese</th><th>In cassa</th><th></th></tr></thead>
                   <tbody id="prevBody"><tr><td colspan="6" class="dg-empty">—</td></tr></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div id="bilSecConf" class="is-hidden">
+            <div class="dg-card cs-card">
+              <div class="dg-toolbar">
+                <div>
+                  <div class="dg-card-title">Confronto tra stagioni</div>
+                  <div class="dg-card-sub">Incassato e speso di questa stagione contro un'altra. Stesse definizioni della Panoramica: entrate già incassate, spese già sostenute.</div>
+                </div>
+                <select id="confSelect" class="dg-select-sm" aria-label="Stagione con cui confrontare"></select>
+              </div>
+              <div class="dg-table-wrap" style="margin-top:10px">
+                <table class="dg-table">
+                  <thead><tr><th></th><th class="cs-r" id="confHeadA">Questa stagione</th><th class="cs-r" id="confHeadB">—</th><th class="cs-r">Differenza</th></tr></thead>
+                  <tbody id="confBody"><tr><td colspan="4" class="dg-empty">—</td></tr></tbody>
                 </table>
               </div>
             </div>
@@ -2092,6 +2115,10 @@
         <label class="dg-form-label">Nome stagione *</label>
         <input type="text" id="seasonNomeInput" class="dg-form-input" placeholder="es. 2026/2027">
       </div>
+      <label id="seasonCopiaWrap" class="dg-check" style="margin-bottom:12px">
+        <input type="checkbox" id="seasonCopiaBudget" checked>
+        <span>Copia il budget dalla stagione <strong id="seasonCopiaNome">aperta</strong>: voci di spesa (a zero speso, date spostate di un anno) e categorie delle rette</span>
+      </label>
       <div class="dg-form-grid">
         <div class="dg-form-group">
           <label class="dg-form-label">Data inizio</label>
@@ -2581,14 +2608,15 @@
   <script src="/js/admin/budget/sponsor.js?v=3169c89d"></script>
   <script src="/js/admin/budget/materiali.js?v=3202b53a"></script>
   <script src="/js/admin/budget/rette.js?v=411c84cb"></script>
+  <script src="/js/admin/budget/stagioni.js?v=3c91a4cd"></script>
   <script src="/js/admin/budget/altre.js?v=0fb5f323"></script>
   <script src="/js/admin/budget/tessere.js?v=29a979d9"></script>
-  <script src="/js/admin/budget/spese.js?v=88290983"></script>
+  <script src="/js/admin/budget/spese.js?v=42ac29f1"></script>
   <script src="/js/admin/budget/iva.js?v=2b927099"></script>
   <script src="/js/admin/budget/exportpdf.js?v=5d577cf9"></script>
-  <script src="/js/admin/budget/cassa.js?v=2caf5a71"></script>
+  <script src="/js/admin/budget/cassa.js?v=3a482384"></script>
   <script src="/js/admin/budget/bilancio.js?v=8f2a295b"></script>
-  <script src="/js/admin/budget/log.js?v=a69cb9fe"></script>
+  <script src="/js/admin/budget/log.js?v=9343fe64"></script>
   <script src="/js/admin/budget/main.js?v=dbe602c0"></script>
   <script src="/js/admin/password.js?v=ec78580e"></script>
   <script src="/js/ricevuta-doc.js?v=6cc81c25"></script>

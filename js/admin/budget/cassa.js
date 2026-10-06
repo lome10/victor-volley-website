@@ -241,13 +241,14 @@
   B._bilSub = 'cons';
   function _renderBilancioSezioni() {
     if (!document.getElementById('bilSecCons')) return;
-    ['cons', 'prev', 'iva'].forEach(function (k) {
+    ['cons', 'prev', 'iva', 'conf'].forEach(function (k) {
       var sec = document.getElementById('bilSec' + k.charAt(0).toUpperCase() + k.slice(1)), tab = document.getElementById('bilTab' + k.charAt(0).toUpperCase() + k.slice(1));
       if (sec) sec.classList.toggle('is-hidden', B._bilSub !== k);
       if (tab) tab.setAttribute('aria-selected', String(B._bilSub === k));
     });
     if (B._bilSub === 'prev') _renderPrevisione();
     if (B._bilSub === 'iva') B._renderIvaRiepilogo();
+    if (B._bilSub === 'conf' && B._renderConfronto) B._renderConfronto();
   }
 
   function _renderPrevisione() {

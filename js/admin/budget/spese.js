@@ -322,7 +322,7 @@
     var figlia = v.ivaVoceSpesaId ? B._vociSpesa.find(function (x) { return x.id === v.ivaVoceSpesaId; }) : null;
     var iva = figlia ? (+figlia.importoPreventivato || 0) : (+v.ivaAliquota > 0 ? p * (+v.ivaAliquota) / 100 : 0);
     var nSub = _sottospeseOf(v.id).length, gestitaDaSub = _sottospeseSpesaOf(v.id).length > 0;
-    var badge = (iva ? '<span class="sp-b">+ IVA ' + (+v.ivaAliquota || '') + (+v.ivaAliquota ? '% ' : ' ') + B._eur(iva) + '</span>' : '') + (nSub ? '<span class="sp-tag">' + nSub + (nSub === 1 ? ' pagamento' : ' pagamenti') + '</span>' : '');
+    var badge = (iva ? '<span class="sp-b">+ IVA ' + (+v.ivaAliquota || '') + (+v.ivaAliquota ? '% ' : ' ') + B._eur(iva) + '</span>' : '') + (_linkValido(v.documentoUrl) ? '<span class="sp-tag" title="C\'è un documento collegato">Documento</span>' : '') + (nSub ? '<span class="sp-tag">' + nSub + (nSub === 1 ? ' pagamento' : ' pagamenti') + '</span>' : '');
     return '<div class="sp-row" tabindex="0" role="button" data-id="' + v.id + '" aria-label="Apri ' + esc(v.categoria) + '">' +
       '<div class="sp-name"><div class="sp-t">' + esc(v.categoria) + '</div>' + (badge ? '<div class="sp-m">' + badge + '</div>' : '') +
         '<div class="sp-m sp-m-mobile"><span>' + B._eur(s) + ' / ' + B._eur(p) + '</span><span>' + (v.dataSpesa ? esc(_fmtDate(v.dataSpesa)) : 'senza data') + '</span></div></div>' +
@@ -388,7 +388,8 @@
   /* ---- Pannello laterale ---- */
   function _drawerRoot() { return document.getElementById('speseDrawerRoot'); }
   function _chiudiDrawer() { B._speseDrawerId = null; var r = _drawerRoot(); if (r) r.innerHTML = ''; }
-  var CAMPI_BOZZA = { speDNome: 'categoria', speDCat: 'categoriaSpesaId', speDData: 'dataSpesa', speDPrev: 'importoPreventivato', speDSost: 'importoSostenuto', speDIva: 'ivaAliquota', speDNote: 'note' };
+  function _linkValido(u) { return /^https?:\/\/[^\s]+$/i.test(String(u || '').trim()); }
+  var CAMPI_BOZZA = { speDNome: 'categoria', speDCat: 'categoriaSpesaId', speDData: 'dataSpesa', speDPrev: 'importoPreventivato', speDSost: 'importoSostenuto', speDIva: 'ivaAliquota', speDDoc: 'documentoUrl', speDNote: 'note' };
 
   /* Valori già scritti nel pannello, per non perderli quando si aggiunge o cambia un pagamento (il pannello si ridisegna). */
   function _leggiBozza() {
@@ -417,6 +418,8 @@
       '<div class="sp-f"><label for="speDPrev">Preventivato (€)</label><input type="number" id="speDPrev" class="dg-form-input" min="0" step="any" value="' + esc(val0('speDPrev', 'importoPreventivato', 0)) + '"' + (prevDaSub ? ' readonly' : '') + '>' + (prevDaSub ? '<span class="sp-h">Somma dei preventivati dei pagamenti qui sotto.</span>' : '') + '</div>' +
       '<div class="sp-f"><label for="speDSost">Già speso (€)</label><input type="number" id="speDSost" class="dg-form-input" min="0" step="any" value="' + esc(val0('speDSost', 'importoSostenuto', 0)) + '"' + (haSub ? ' readonly' : '') + '>' + (haSub ? '<span class="sp-h">Somma dei pagati dei pagamenti qui sotto.</span>' : '') + '</div>' +
       '<div class="sp-f"><label for="speDIva">IVA %</label><input type="number" id="speDIva" class="dg-form-input" min="0" step="1" placeholder="0" value="' + esc(val0('speDIva', 'ivaAliquota', '') || '') + '"><span class="sp-h" id="speDIvaH"></span></div>' +
+      '<div class="sp-f sp-full"><label for="speDDoc">Documento (link a fattura o ricevuta)</label><input type="url" id="speDDoc" class="dg-form-input" placeholder="https://drive.google.com/…" value="' + esc(val0('speDDoc', 'documentoUrl', '')) + '">' +
+        (_linkValido(v.documentoUrl) ? '<a class="sp-h" href="' + esc(v.documentoUrl) + '" target="_blank" rel="noopener noreferrer">Apri il documento salvato</a>' : '<span class="sp-h">Incolla il link di Drive, Dropbox o altro: il file resta lì, qui si tiene solo l\'indirizzo.</span>') + '</div>' +
       '<div class="sp-f sp-full"><label for="speDNote">Note</label><textarea id="speDNote" class="dg-form-input" rows="3">' + esc(val0('speDNote', 'note', '')) + '</textarea></div></div>' +
       '<div class="sp-sect"><h4>Pagamenti e dettaglio</h4>' + _sottospeseInnerHtml(v) + '</div></div>' +
       '<footer class="sp-dr-f"><button type="button" class="dg-btn-ghost sp-danger" onclick="DG.speseDrawerElimina()">Elimina</button><span class="sp-sp"></span>' +
@@ -442,11 +445,12 @@
     var nuovo = {
       categoria: nome, categoriaSpesaId: document.getElementById('speDCat').value, dataSpesa: document.getElementById('speDData').value,
       importoPreventivato: +document.getElementById('speDPrev').value || 0, importoSostenuto: +document.getElementById('speDSost').value || 0,
-      ivaAliquota: +document.getElementById('speDIva').value || 0, note: document.getElementById('speDNote').value.trim()
+      ivaAliquota: +document.getElementById('speDIva').value || 0, documentoUrl: document.getElementById('speDDoc').value.trim(), note: document.getElementById('speDNote').value.trim()
     };
+    if (nuovo.documentoUrl && !_linkValido(nuovo.documentoUrl)) { A.avviso('Il link al documento deve iniziare con https://', 'avviso'); document.getElementById('speDDoc').focus(); return; }
     var patch = {};
     Object.keys(nuovo).forEach(function (k) {
-      var vecchio = k === 'categoria' || k === 'categoriaSpesaId' || k === 'dataSpesa' || k === 'note' ? (v[k] || '') : (+v[k] || 0);
+      var vecchio = k === 'categoria' || k === 'categoriaSpesaId' || k === 'dataSpesa' || k === 'note' || k === 'documentoUrl' ? (v[k] || '') : (+v[k] || 0);
       if (nuovo[k] !== vecchio) patch[k] = nuovo[k];
     });
     if (!Object.keys(patch).length) { _chiudiDrawer(); A.avviso('Nessuna modifica da salvare.'); return; }
@@ -578,7 +582,7 @@
      ricalcolo del trimestre di versamento se si tocca la data di una voce IVA, aggiornamento della voce IVA collegata.
      Risolve quando tutto è scritto e le schede dipendenti sono ridisegnate; rifiuta con l'errore di Firestore. */
   function _salvaCampi(v, patch) {
-    var fields = Object.keys(patch), old = {}, testo = ['categoria', 'categoriaSpesaId', 'dataSpesa', 'note'];
+    var fields = Object.keys(patch), old = {}, testo = ['categoria', 'categoriaSpesaId', 'dataSpesa', 'note', 'documentoUrl'];
     fields.forEach(function (f) { old[f] = testo.indexOf(f) !== -1 ? (v[f] || '') : (v[f] || 0); });
     Object.assign(v, patch);
     /* Se è la voce IVA stessa (non la sua «genitrice») e la scadenza non è mai stata forzata a mano,

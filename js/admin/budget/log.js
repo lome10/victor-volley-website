@@ -136,6 +136,7 @@
       nome: nome, dataInizio: val('seasonInizioInput'), dataFine: val('seasonFineInput'),
       obiettivoSaldo: +val('seasonObiettivoInput') || 0, isAttiva: true, createdAt: new Date().toISOString()
     };
+    var daId = B._currentSeasonId;
     var batch = db.batch();
     var ref = db.collection('budgetSeasons').doc();
     batch.set(ref, data);
@@ -147,6 +148,14 @@
       B._seasons.unshift(data);
       B._currentSeasonId = ref.id;
       return _logWrite('obiettivo', ref.id, 'Stagione — ' + nome, 'create', _diff({}, data, Object.keys(data)));
+    }).then(function () {
+      /* «Copia il budget» dalla stagione che era aperta: voci di spesa e categorie delle rette (non atleti, sponsor, incassi) */
+      var chk = document.getElementById('seasonCopiaBudget');
+      if (!daId || !chk || !chk.checked || !B._copiaBudget) return null;
+      return B._copiaBudget(daId, ref.id).then(function (n) {
+        A.avviso('Budget copiato: ' + n.voci + ' voci di spesa e ' + n.categorie + ' categorie delle rette. Controlla importi e date nelle schede Spese e Rette.', 'ok');
+        return _logWrite('obiettivo', ref.id, 'Stagione — ' + nome, 'update', [{ campo: '(copia del budget)', prima: null, dopo: n.voci + ' voci, ' + n.categorie + ' categorie' }]);
+      });
     }).then(function () {
       _closeBudgetModal('newSeasonModal');
       B._populateSeasonSelect();

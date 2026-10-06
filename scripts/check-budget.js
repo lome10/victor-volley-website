@@ -244,7 +244,7 @@ function statoCassa(extra) {
     _atletaRettaById: () => null, _sponsorDaIncassare: () => 0, _calcRetteAtleti: () => ({ totIncassato: 0, totPrevisto: 0, righe: [] })
   }, extra || {});
   const window = { Admin: { budgetShared: B, esc, fmtDate: (d) => d, fmtDateLong: (d) => d, avviso: noop, logWrite: () => Promise.resolve(), diff: () => [] }, AdminActions: {}, VV: B.__VV };
-  ['bilancio.js', 'spese.js', 'altre.js', 'cassa.js'].forEach((f) => new Function('window', 'document', 'db', fs.readFileSync(path.join(__dirname, '..', 'js', 'admin', 'budget', f), 'utf8'))(window, doc, {}));
+  ['bilancio.js', 'spese.js', 'altre.js', 'stagioni.js', 'cassa.js'].forEach((f) => new Function('window', 'document', 'db', fs.readFileSync(path.join(__dirname, '..', 'js', 'admin', 'budget', f), 'utf8'))(window, doc, {}));
   return { B, els };
 }
 
@@ -334,6 +334,48 @@ t('Altre entrate: totali, incassi attesi, mese d’incasso, Bilancio e ritardi',
   const cat = B._calcBilancioPerCategoria().entrate.filter((e) => e.fonte === 'Altre entrate')[0];
   assert.deepStrictEqual([cat.incassato, cat.daIncassare], [300, 550]);
   assert.ok(B._calcDaFare(oggi)[0].testo.indexOf('altra entrata') !== -1);
+});
+
+t('CSV per il commercialista: entrate e uscite reali, celle sicure, decimali all’italiana', () => {
+  const { B } = statoCassa({ _sponsorIncassato: () => 0,
+    _tranche: [{ sponsorizzazioneId: 'sp1', importo: 1000.5, scadenza: '2026-07-31', pagato: true, dataIncasso: '2026-10-05' }],
+    _vociSpesa: [
+      voce({ categoria: '=CMD', categoriaSpesaId: 'c3', importoPreventivato: 120, importoSostenuto: 100, dataSpesa: '2026-09-01', documentoUrl: 'https://drive.example/f' }),
+      voce({ categoria: 'Mai pagata', categoriaSpesaId: 'c3', importoPreventivato: 50 }),
+      voce({ categoria: 'IVA non versata', isIva: true, importoSostenuto: 22, pagata: false })] });
+  const e = B._csvEntrate().replace(/^﻿/, '').split('\r\n'), u = B._csvUscite().replace(/^﻿/, '').split('\r\n');
+  assert.strictEqual(e[0], 'Data incasso;Fonte;Nome;Importo;Note'); assert.ok(e.some((r) => /^2026-10-05;Sponsor;Azienda az1;1000,5;/.test(r)), e.join(' / '));
+  assert.strictEqual(u.filter((r) => /Mai pagata|IVA non versata/.test(r)).length, 0, 'solo la spesa pagata: né quella mai pagata né l’IVA non versata');
+  assert.ok(u.some((r) => r.indexOf("'=CMD") !== -1), 'la formula è neutralizzata'); assert.ok(/https:\/\/drive\.example\/f$/.test(u[1]));
+});
+t('Copia del budget: voci a zero speso, date +1 anno, IVA collegata rifatta, niente IVA sponsor', () => {
+  const { B } = statoCassa();
+  let n = 0; const nuovoId = () => 'n' + (++n);
+  const voci = [
+    { id: 'v1', categoria: 'Palestra', categoriaSpesaId: 'c1', importoPreventivato: 1000, importoSostenuto: 400, dataSpesa: '2026-11-15', pagata: true, ivaAliquota: 22, ivaVoceSpesaId: 'v2', documentoUrl: 'https://x.it', note: 'ok' },
+    { id: 'v2', categoria: 'IVA palestra', isIva: true, importoPreventivato: 220, importoSostenuto: 100, dataSpesa: '2026-11-15', ivaScadenza: '2026-11-16', ivaScadenzaManuale: true, pagata: true },
+    { id: 'v3', categoria: 'IVA sponsor', isIva: true, importoPreventivato: 50, importoSostenuto: 50, pagata: true }];
+  const cat = [{ id: 'k1', nome: 'Under 13', rettaUnitaria: 105 }];
+  const r = B._copiaBudgetDati(voci, cat, 's2', nuovoId);
+  assert.strictEqual(r.voci.length, 2, 'l’IVA sponsor non si copia'); assert.strictEqual(r.categorie.length, 1);
+  const p = r.voci.find((x) => x.data.categoria === 'Palestra').data, i = r.voci.find((x) => x.data.isIva).data, idIva = r.voci.find((x) => x.data.isIva).id;
+  assert.deepStrictEqual([p.seasonId, p.importoPreventivato, p.importoSostenuto, p.dataSpesa, p.ivaVoceSpesaId], ['s2', 1000, 0, '2027-11-15', idIva]);
+  assert.strictEqual(p.documentoUrl, undefined); assert.strictEqual(p.pagata, undefined);
+  assert.deepStrictEqual([i.importoSostenuto, i.pagata, i.ivaScadenza, i.ivaTrimestre], [0, false, '2027-11-16', '']);
+  assert.deepStrictEqual(r.categorie[0].data, { seasonId: 's2', nome: 'Under 13', rettaUnitaria: 105 });
+});
+t('Confronto tra stagioni: totali per fonte e per categoria di spesa', () => {
+  const { B } = statoCassa();
+  const dati = { sponsorizzazioni: [{ id: 'a', stato: 'chiuso' }, { id: 'b', stato: 'prospect' }], sponsorIncassato: (s) => (s.id === 'a' ? 500 : 999),
+    atletiRette: [{ id: 'r1' }], rate: [{ atletaRettaId: 'r1', importo: 100, pagata: true }, { atletaRettaId: 'r1', importo: 100, pagata: false }, { atletaRettaId: 'altro', importo: 77, pagata: true }],
+    tessere: [{ nome: 'Mario', pagata: true }, { nome: '', pagata: true }, { nome: 'Anna', pagata: false }], prezzoTessera: 20,
+    altre: [{ importo: 300, pagata: true }, { importo: 50, pagata: false }],
+    voci: [{ categoriaSpesaId: 'c1', importoSostenuto: 200 }, { categoriaSpesaId: 'c1', importoSostenuto: 50 }, { importoSostenuto: 10 }, { categoriaSpesaId: 'c2', importoSostenuto: 0 }],
+    nomeCategoria: (id) => (id === 'c1' ? 'Federazione' : 'Società') };
+  const x = B._totaliStagione(dati);
+  assert.deepStrictEqual(x.entrate, { 'Sponsor': 500, 'Rette atleti': 100, 'Tessere': 20, 'Altre entrate': 300 });
+  assert.deepStrictEqual([x.totEntrate, x.totSpese, x.saldo], [920, 260, 660]);
+  assert.deepStrictEqual(x.spese, { 'Federazione': 250, 'Senza categoria': 10 });
 });
 
 console.log(process.exitCode ? 'Collaudo fallito.' : 'OK: ' + passed + ' verifiche su Bilancio, Spese e cassa.');
