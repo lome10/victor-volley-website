@@ -346,6 +346,7 @@ input, select, textarea { font-family: inherit; }
 .dg-check input { width: 16px; height: 16px; accent-color: var(--dg-blue); }
 
 .tessera-nome { width: 100%; min-width: 180px; }
+.tessera-accessorio { width: 100%; min-width: 200px; }
 
 /* Bilancio → Per categoria: righe cliccabili che filtrano il saldo mensile */
 .bil-cat-row { cursor: pointer; }
