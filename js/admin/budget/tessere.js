@@ -11,13 +11,14 @@
 
   var TESSERA_PREZZO = 20;
   var TESSERE_TOTALI = 100;
-  var CAMPI_LOG = ['nome', 'pagata', 'dataPagamento'];
+  var CAMPI_LOG = ['nome', 'accessorio', 'pagata', 'dataPagamento'];
 
   function _oggi() { return new Date().toISOString().slice(0, 10); }
   function _eur(n) { return '€' + Math.round(n).toLocaleString('it-IT'); }
   function _tesseraId(n) { return B._currentSeasonId + '_' + n; }
   function _tessera(n) { return B._tessere.find(function (t) { return +t.numero === n; }) || null; }
   function _nomeOf(t) { return t ? String(t.nome || '').trim() : ''; }
+  function _accessorioOf(t) { return t ? String(t.accessorio || '').trim() : ''; }   /* testo libero: cosa ha scelto la persona (es. cappellino) */
 
   /* Calcolo puro (nessun DOM), condiviso da Riepilogo, Bilancio e export PDF.
      B._tessere contiene solo la stagione corrente (vedi _loadSeasonScoped). */
@@ -58,6 +59,8 @@
       '<td><strong>' + n + '</strong></td>' +
       '<td><input type="text" id="tesseraNome' + n + '" class="dg-select-sm tessera-nome" maxlength="80" placeholder="Nome e cognome"' +
         ' value="' + esc(nome) + '" aria-label="Nome per la tessera ' + n + '" onchange="DG.tesseraSalvaNome(' + n + ', this.value)"></td>' +
+      '<td><input type="text" id="tesseraAccessorio' + n + '" class="dg-select-sm tessera-accessorio" maxlength="80" placeholder="' + (nome ? 'es. cappellino' : '—') + '"' +
+        ' value="' + esc(_accessorioOf(t)) + '"' + (nome ? '' : ' disabled') + ' aria-label="Accessorio scelto per la tessera ' + n + '" onchange="DG.tesseraSalvaAccessorio(' + n + ', this.value)"></td>' +
       '<td style="text-align:center"><input type="checkbox" id="tesseraPagata' + n + '"' + (pagata ? ' checked' : '') + (nome ? '' : ' disabled') +
         ' aria-label="Tessera ' + n + ' pagata" onchange="DG.tesseraTogglePagata(' + n + ', this.checked)"></td>' +
       '<td><input type="date" id="tesseraData' + n + '" class="dg-select-sm" value="' + esc(pagata ? (t.dataPagamento || '') : '') + '"' + (pagata ? '' : ' disabled') +
@@ -88,6 +91,8 @@
     var elNome = document.getElementById('tesseraNome' + n);
     if (!elNome) return;
     elNome.value = nome;
+    var acc = document.getElementById('tesseraAccessorio' + n);
+    acc.value = _accessorioOf(t); acc.disabled = !nome; acc.placeholder = nome ? 'es. cappellino' : '—';
     var chk = document.getElementById('tesseraPagata' + n);
     chk.checked = pagata; chk.disabled = !nome;
     var dt = document.getElementById('tesseraData' + n);
@@ -102,8 +107,8 @@
     for (var n = 1; n <= TESSERE_TOTALI; n++) {
       var row = document.getElementById('tesseraRow' + n);
       if (!row) continue;
-      var nome = _nomeOf(_tessera(n)).toLowerCase();
-      row.style.display = (!q || String(n) === q || nome.indexOf(q) !== -1) ? '' : 'none';
+      var t = _tessera(n), nome = _nomeOf(t).toLowerCase(), acc = _accessorioOf(t).toLowerCase();
+      row.style.display = (!q || String(n) === q || nome.indexOf(q) !== -1 || acc.indexOf(q) !== -1) ? '' : 'none';
     }
   }
 
@@ -121,12 +126,12 @@
         .then(function () { B._tessere = B._tessere.filter(function (t) { return +t.numero !== n; }); });
     }
 
-    var data = { seasonId: B._currentSeasonId, numero: n, nome: nuovo.nome, pagata: !!nuovo.pagata, dataPagamento: nuovo.pagata ? (nuovo.dataPagamento || _oggi()) : '' };
+    var data = { seasonId: B._currentSeasonId, numero: n, nome: nuovo.nome, accessorio: String(nuovo.accessorio || '').trim(), pagata: !!nuovo.pagata, dataPagamento: nuovo.pagata ? (nuovo.dataPagamento || _oggi()) : '' };
     return db.collection('tessere').doc(id).set(data)
       .then(function () {
         var salvata = Object.assign({ id: id }, data);
         if (old) { Object.assign(old, salvata); } else { B._tessere.push(salvata); }
-        var prima = old ? { nome: old.nome, pagata: old.pagata, dataPagamento: old.dataPagamento } : {};
+        var prima = old ? { nome: old.nome, accessorio: old.accessorio || '', pagata: old.pagata, dataPagamento: old.dataPagamento } : {};
         return _logWrite('tessera', id, label, old ? 'update' : 'create', _diff(old ? prima : {}, data, old ? CAMPI_LOG : Object.keys(data)));
       });
   }
@@ -145,20 +150,27 @@
       _syncRow(n);   /* finché non si conferma, la riga resta com'è */
       return;
     }
-    _dopoSalvataggio(n, _applica(n, { nome: nome, pagata: !!(old && old.pagata), dataPagamento: old ? old.dataPagamento : '' }));
+    _dopoSalvataggio(n, _applica(n, { nome: nome, accessorio: _accessorioOf(old), pagata: !!(old && old.pagata), dataPagamento: old ? old.dataPagamento : '' }));
+  };
+
+  /* L'accessorio si scrive solo su una tessera già assegnata (con un nome). */
+  DG.tesseraSalvaAccessorio = function (n, value) {
+    var old = _tessera(n);
+    if (!_nomeOf(old)) { _syncRow(n); return; }
+    _dopoSalvataggio(n, _applica(n, { nome: _nomeOf(old), accessorio: value, pagata: !!old.pagata, dataPagamento: old.dataPagamento || '' }));
   };
 
   DG.tesseraTogglePagata = function (n, checked) {
     var old = _tessera(n);
     if (!_nomeOf(old)) { _syncRow(n); return; }
-    _dopoSalvataggio(n, _applica(n, { nome: _nomeOf(old), pagata: checked, dataPagamento: checked ? (old.dataPagamento || _oggi()) : '' }));
+    _dopoSalvataggio(n, _applica(n, { nome: _nomeOf(old), accessorio: _accessorioOf(old), pagata: checked, dataPagamento: checked ? (old.dataPagamento || _oggi()) : '' }));
   };
 
   DG.tesseraSalvaData = function (n, value) {
     var old = _tessera(n);
     if (!old || !old.pagata) { _syncRow(n); return; }
     /* la data serve al Bilancio mensile: se la si cancella torna quella di oggi */
-    _dopoSalvataggio(n, _applica(n, { nome: _nomeOf(old), pagata: true, dataPagamento: value || _oggi() }));
+    _dopoSalvataggio(n, _applica(n, { nome: _nomeOf(old), accessorio: _accessorioOf(old), pagata: true, dataPagamento: value || _oggi() }));
   };
 
   document.addEventListener('DOMContentLoaded', function () {
