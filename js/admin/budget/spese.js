@@ -221,6 +221,7 @@
     var u = _urgenzaVoce(v, oggi);
     if (u === 'scaduta') return { k: 'scaduta', t: 'Scaduta' };
     if (u === 'in-scadenza') return { k: 'in-scadenza', t: 'In scadenza' };
+    if (!(+v.importoPreventivato) && (+v.importoSostenuto) > 0) return { k: 'in-scadenza', t: 'Senza preventivo' };
     var s = _statoVoce(v);
     return { k: s, t: s === 'pagata' ? 'Pagata' : s === 'parziale' ? 'Parziale' : 'Da pagare' };
   }
