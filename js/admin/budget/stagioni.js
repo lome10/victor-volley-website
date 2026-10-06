@@ -150,6 +150,7 @@
     var sel = document.getElementById('confSelect'), body = document.getElementById('confBody');
     if (!sel || !body) return;
     var altre = B._seasons.filter(function (s) { return s.id !== B._currentSeasonId; });
+    sel.style.display = altre.length ? '' : 'none';
     if (!altre.length) { sel.innerHTML = ''; body.innerHTML = '<tr><td colspan="4" class="dg-empty">Non c\'è ancora un\'altra stagione con cui confrontare. Dopo «+ Stagione» qui vedrai le due a fianco.</td></tr>'; return; }
     if (!altre.some(function (s) { return s.id === _confId; })) _confId = altre[0].id;
     sel.innerHTML = altre.map(function (s) { return '<option value="' + esc(s.id) + '"' + (s.id === _confId ? ' selected' : '') + '>' + esc(s.nome) + '</option>'; }).join('');
