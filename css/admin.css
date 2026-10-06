@@ -1791,3 +1791,22 @@ button { font-family: var(--font-body); cursor: pointer; }
 .girone-sq-newcat { width: auto; padding: 6px 10px; font-size: 13px; }
 .girone-sq-meta { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid var(--a-border); }
 .girone-sq-in { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--a-text); white-space: nowrap; cursor: pointer; }
+
+/* PIANO EDITORIALE — sponsor collegati ai contenuti, con contatore */
+.pe-sp-box { display: flex; flex-wrap: wrap; gap: 8px; }
+.pe-sp-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; padding: 6px 12px; border: 1px solid #e2e8f0; border-radius: 20px; cursor: pointer; user-select: none; }
+.pe-sp-chip.is-on { background: #eff6ff; border-color: #008CFD; color: #0369a1; }
+.pe-sp-count { display: inline-block; min-width: 22px; padding: 1px 7px; border-radius: 99px; background: #008CFD; color: #fff; font-size: 12px; font-weight: 700; text-align: center; }
+.pe-sp-count.is-zero { background: #e2e8f0; color: #64748b; }
+.pe-sp-panel { margin-top: 18px; }
+.pe-sp-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: baseline; margin-bottom: 10px; font-size: 13px; color: var(--a-muted); }
+.pe-sp-head strong { color: var(--a-text, #0f172a); font-size: 14px; }
+.pe-sp-reset { border: 0; background: none; color: #008CFD; cursor: pointer; font: inherit; text-decoration: underline; padding: 0; }
+.pe-sp-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
+.pe-sp-row { display: flex; align-items: center; gap: 10px; text-align: left; padding: 8px 10px; border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; cursor: pointer; font: inherit; }
+.pe-sp-row:hover { border-color: #008CFD; }
+.pe-sp-row.is-on { border-color: #008CFD; background: #eff6ff; }
+.pe-sp-logo { width: 38px; height: 28px; object-fit: contain; flex: none; }
+.pe-sp-logo--no { display: inline-flex; align-items: center; justify-content: center; background: #f1f5f9; border-radius: 6px; font-weight: 700; color: #64748b; }
+.pe-sp-nome { flex: 1; min-width: 0; font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pe-sp-nome small { display: block; font-weight: 400; font-size: 11px; color: #64748b; }

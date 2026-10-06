@@ -20,6 +20,7 @@
   var _peMonthCursor = new Date();
   _peMonthCursor.setDate(1);
   var _pePlatformFilter = { instagram: true, facebook: true, tiktok: true, sito: true };
+  var _peSponsorFilter = null;   /* id di uno sponsor: il calendario mostra solo i suoi contenuti */
 
   var PE_PLATFORMS = [
     { key: 'instagram', label: 'Instagram', chipClass: 'chip--pink'  },
@@ -64,6 +65,67 @@
       setTopbarBtn('Nuovo contenuto', function () { _openPeForm(null, null); });
       _renderPeFilterBox();
       _renderPeGrid();
+      _renderPeSponsorPanel();
+    });
+  }
+
+  /* ---- Sponsor collegati ai contenuti, con contatore ---- */
+  var PE_TIER_RANK = { gold: 0, silver: 1, bronze: 2 };
+  var PE_TIER_LABEL = { gold: 'Gold', silver: 'Silver', bronze: 'Bronze' };
+  function _peSponsors() {
+    return (VV.getSponsors() || []).slice().sort(function (a, b) {
+      var ta = PE_TIER_RANK[a.livello || 'silver'], tb = PE_TIER_RANK[b.livello || 'silver'];
+      return ta !== tb ? ta - tb : (a.order || 0) - (b.order || 0);
+    });
+  }
+  /* quanti contenuti hanno lo sponsor; exceptId esclude il contenuto che si sta modificando */
+  function _peSponsorCount(sponsorId, exceptId) {
+    return _peItems.filter(function (it) { return it.id !== exceptId && (it.sponsorIds || []).indexOf(sponsorId) !== -1; }).length;
+  }
+
+  function _renderPeSponsorPanel() {
+    var box = document.getElementById('peSponsorPanel');
+    if (!box) return;
+    var list = _peSponsors();
+    if (!list.length) { box.innerHTML = ''; return; }
+    var totale = _peItems.filter(function (it) { return (it.sponsorIds || []).length; }).length;
+    box.innerHTML = '<div class="pe-sp-head"><strong>Visibilità per sponsor</strong><span>' + totale + (totale === 1 ? ' contenuto con sponsor' : ' contenuti con sponsor') +
+      (_peSponsorFilter != null ? ' · <button type="button" class="pe-sp-reset" id="peSponsorReset">Mostra tutti i contenuti</button>' : ' · clicca uno sponsor per vedere solo i suoi contenuti') + '</span></div>' +
+      '<div class="pe-sp-list">' + list.map(function (s) {
+        var n = _peSponsorCount(s.id, null);
+        var pub = _peItems.filter(function (it) { return it.stato === 'pubblicato' && (it.sponsorIds || []).indexOf(s.id) !== -1; }).length;
+        return '<button type="button" class="pe-sp-row' + (_peSponsorFilter === s.id ? ' is-on' : '') + '" data-sp="' + s.id + '" aria-pressed="' + (_peSponsorFilter === s.id) + '">' +
+          (s.logo ? '<img src="' + esc(s.logo) + '" alt="" class="pe-sp-logo">' : '<span class="pe-sp-logo pe-sp-logo--no">' + esc((s.nome || '?').charAt(0)) + '</span>') +
+          '<span class="pe-sp-nome">' + esc(s.nome) + '<small>' + PE_TIER_LABEL[s.livello || 'silver'] + (n ? ' · ' + pub + ' pubblicati' : '') + '</small></span>' +
+          '<span class="pe-sp-count' + (n ? '' : ' is-zero') + '" title="Contenuti collegati">' + n + '</span></button>';
+      }).join('') + '</div>';
+    box.querySelectorAll('.pe-sp-row').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var id = +b.getAttribute('data-sp');
+        _peSponsorFilter = _peSponsorFilter === id ? null : id;
+        _renderPeGrid(); _renderPeSponsorPanel();
+      });
+    });
+    var reset = document.getElementById('peSponsorReset');
+    if (reset) reset.addEventListener('click', function () { _peSponsorFilter = null; _renderPeGrid(); _renderPeSponsorPanel(); });
+  }
+
+  /* Nel modulo: una casella per sponsor, con il contatore che sale quando la si spunta. */
+  function _renderPeSponsorBox(selected, itemId) {
+    var box = document.getElementById('peSponsorBox');
+    var list = _peSponsors();
+    if (!list.length) { box.innerHTML = '<span style="font-size:13px;color:var(--a-muted)">Nessuno sponsor inserito: aggiungili dalla pagina «Sponsor».</span>'; return; }
+    box.innerHTML = list.map(function (s) {
+      var base = _peSponsorCount(s.id, itemId), on = selected.indexOf(s.id) !== -1;
+      return '<label class="pe-sp-chip' + (on ? ' is-on' : '') + '"><input type="checkbox" class="peSponsorCheck" value="' + s.id + '" data-base="' + base + '"' + (on ? ' checked' : '') + '> ' +
+        esc(s.nome) + ' <span class="pe-sp-count">' + (base + (on ? 1 : 0)) + '</span></label>';
+    }).join('');
+    box.querySelectorAll('.peSponsorCheck').forEach(function (cb) {
+      cb.addEventListener('change', function () {
+        var chip = cb.parentNode;
+        chip.classList.toggle('is-on', cb.checked);
+        chip.querySelector('.pe-sp-count').textContent = (+cb.getAttribute('data-base')) + (cb.checked ? 1 : 0);
+      });
     });
   }
 
@@ -89,6 +151,7 @@
 
   function _peDayItems(ymd) {
     return _peItems.filter(function (it) {
+      if (_peSponsorFilter != null && (it.sponsorIds || []).indexOf(_peSponsorFilter) === -1) return false;
       return it.data === ymd && (it.piattaforme || []).some(function (p) { return _pePlatformFilter[p]; });
     }).sort(function (a, b) { return (a.ora || '').localeCompare(b.ora || ''); });
   }
@@ -242,6 +305,7 @@
 
     _renderPeArticoloSelect(item ? item.articoloId : null);
     _renderPePiattaformeCheckboxes(item ? (item.piattaforme || []) : []);
+    _renderPeSponsorBox(item ? (item.sponsorIds || []) : [], item ? item.id : null);
     _loadPeDirigenti(function () { _renderPeResponsabileSelect(item ? item.responsabile : ''); });
 
     document.getElementById('peTitolo').value = item ? (item.titolo || '') : '';
@@ -289,6 +353,7 @@
       piattaforme:  piattaforme,
       stato:        document.getElementById('peStato').value,
       articoloId:   articoloRaw ? +articoloRaw : null,
+      sponsorIds:   Array.prototype.map.call(document.querySelectorAll('#peSponsorBox .peSponsorCheck:checked'), function (cb) { return +cb.value; }),
       responsabile: document.getElementById('peResponsabile').value,
       note:         document.getElementById('peNote').value.trim()
     };
