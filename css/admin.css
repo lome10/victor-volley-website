@@ -1824,3 +1824,7 @@ button { font-family: var(--font-body); cursor: pointer; }
 .pe-chip-ini, .pe-chip-more { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; border-radius: 5px; background: #fff; border: 1px solid #e2e8f0; color: #475569; font-size: 11px; font-weight: 700; padding: 0 4px; box-sizing: border-box; }
 .pe-chip:has(.pe-chip-logos) { padding-top: 3px; padding-bottom: 3px; }
 .pe-agenda-item-top .pe-chip-logos img { height: 28px; width: 64px; }
+.pe-chip-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.pe-chip-sp { font-size: 10px; font-weight: 700; color: #0f172a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pe-chip-sp::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #008CFD; margin-right: 4px; vertical-align: 1px; }
+.pe-chip:has(.pe-chip-logos) { border-radius: 12px; }

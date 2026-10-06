@@ -97,6 +97,11 @@
     var l = _peSponsorsOf(it);
     return l.length ? ' — Sponsor: ' + l.map(function (s) { return esc(s.nome); }).join(', ') : '';
   }
+  /* nome degli sponsor sotto il titolo: i loghi da soli, piccoli e chiari, non bastano a riconoscerli */
+  function _peSponsorNames(it) {
+    var l = _peSponsorsOf(it);
+    return l.length ? '<span class="pe-chip-sp">' + l.map(function (s) { return esc(s.nome); }).join(' · ') + '</span>' : '';
+  }
   /* logo piccolo a destra: fino a 2, poi «+N» */
   function _peSponsorLogos(it) {
     var l = _peSponsorsOf(it);
@@ -207,7 +212,7 @@
 
       var chipsHtml = dayItems.map(function (it) {
         var plat = _peItemPlatform(it);
-        return '<div class="pe-chip chip ' + plat.chipClass + '" draggable="true" data-pe-id="' + esc(it.id) + '" onclick="AdminActions.editPianoEditoriale(\'' + it.id + '\')" title="' + esc(it.titolo) + _peSponsorTitle(it) + '"><span class="pe-chip-t">' + esc(it.titolo) + '</span>' + _peSponsorLogos(it) + '</div>';
+        return '<div class="pe-chip chip ' + plat.chipClass + '" draggable="true" data-pe-id="' + esc(it.id) + '" onclick="AdminActions.editPianoEditoriale(\'' + it.id + '\')" title="' + esc(it.titolo) + _peSponsorTitle(it) + '"><span class="pe-chip-main"><span class="pe-chip-t">' + esc(it.titolo) + '</span>' + _peSponsorNames(it) + '</span>' + _peSponsorLogos(it) + '</div>';
       }).join('');
 
       html +=
