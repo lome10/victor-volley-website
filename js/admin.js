@@ -835,10 +835,33 @@
 
   function val(id) { return document.getElementById(id).value; }
 
+  /* Banner in alto al posto di alert(): tipo 'ok' (verde, 6 s), 'avviso' (ambra, 12 s, predefinito) o 'errore'
+     (rosso, 12 s). Si chiude con la × o toccandolo; i banner si impilano. Il testo va in textContent (niente HTML);
+     gli «a capo» (\n) sono rispettati. */
+  function avviso(testo, tipo) {
+    tipo = (tipo === 'ok' || tipo === 'errore') ? tipo : 'avviso';
+    var box = document.getElementById('avvisiBox');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'avvisiBox'; box.className = 'avvisi-box';
+      document.body.appendChild(box);
+    }
+    var el = document.createElement('div');
+    el.className = 'avviso avviso--' + tipo;
+    el.setAttribute('role', tipo === 'errore' ? 'alert' : 'status');
+    var t = document.createElement('span'); t.className = 'avviso-testo'; t.textContent = String(testo);
+    var x = document.createElement('button'); x.type = 'button'; x.className = 'avviso-x'; x.setAttribute('aria-label', 'Chiudi'); x.textContent = '×';
+    el.appendChild(t); el.appendChild(x);
+    var chiudi = function () { if (el.parentNode) el.parentNode.removeChild(el); };
+    el.addEventListener('click', chiudi);
+    box.appendChild(el);
+    setTimeout(chiudi, tipo === 'ok' ? 6000 : 12000);
+  }
+
   window.Admin = {
     uid: function () { return _uid; },
     dirigenteNome: function () { return _dirigenteNome; },
-    esc: esc, cap: cap, confirm: confirm, goTo: goTo, val: val,
+    esc: esc, cap: cap, confirm: confirm, goTo: goTo, val: val, avviso: avviso,
     mapDoc: _mapDoc, diff: _diff, logWrite: _logWrite,
     openModal: _openBudgetModal, closeModal: _closeBudgetModal,
     openModalId: function () { return _openModalId; },

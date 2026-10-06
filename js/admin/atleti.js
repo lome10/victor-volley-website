@@ -169,6 +169,11 @@
       : (err && err.message) || 'errore sconosciuto';
   }
 
+  /* Banner al posto di _avviso(): rosso per gli errori, ambra per i controlli sui campi, verde se passato 'ok'. */
+  function _avviso(testo, tipo) {
+    window.Admin.avviso(testo, tipo || (/^Errore|non è partita|non è stato aggiunto/.test(testo) ? 'errore' : 'avviso'));
+  }
+
   function _atletaLabel(a) { return 'Atleta — ' + (a.cognome || '') + ' ' + (a.nome || ''); }
 
   /* Collega un genitore all'atleta: riusa l'account se l'email è già di un genitore. Senza password (nuovo account)
@@ -522,7 +527,7 @@
 
   function _esportaAtletiCsv() {
     var list = _atletiFiltrati();
-    if (!list.length) { alert('Nessun atleta da esportare.'); return; }
+    if (!list.length) { _avviso('Nessun atleta da esportare.'); return; }
     confirm('Il file contiene dati personali di minori (codice fiscale, indirizzo, telefoni). Conservalo in un posto sicuro e cancellalo quando non serve più. Scaricare?', function () {
       var cols = [{ k: 'cognome', l: 'Cognome' }, { k: 'nome', l: 'Nome' }];
       ATLETA_CAMPI.forEach(function (f) {
@@ -691,8 +696,8 @@
     var desc    = document.getElementById('rataDesc').value.trim();
     var importo = parseFloat(document.getElementById('rataImporto').value) || 0;
     var scad    = document.getElementById('rataScadenza').value;
-    if (!desc)    { alert('Inserisci una descrizione.'); return; }
-    if (!importo) { alert('Inserisci un importo.'); return; }
+    if (!desc)    { _avviso('Inserisci una descrizione.'); return; }
+    if (!importo) { _avviso('Inserisci un importo.'); return; }
 
     var btn = this;
     btn.disabled = true;
@@ -713,7 +718,7 @@
       _renderRateAdmin();
       _renderAtletiRows();
       _refreshBudgetViews();
-    }).catch(function (e) { alert('Errore: ' + e.message); })
+    }).catch(function (e) { _avviso('Errore: ' + e.message); })
       .then(function () { btn.disabled = false; });
   });
 
@@ -753,7 +758,7 @@
         _reconcileAccessi();
         _renderAtletiRows();
         _refreshBudgetViews();
-      }).catch(function (e) { alert('Errore: ' + e.message); });
+      }).catch(function (e) { _avviso('Errore: ' + e.message); });
     });
   };
 
@@ -779,16 +784,16 @@
       var tutti = [];
       res[0].forEach(function (d) { tutti.push(Object.assign({}, dati[d.id] || {}, d.data(), { uid: d.id })); });
       var daIscrivere = tutti.filter(function (a) { return a.categoria && !_iscrizioneOf(a.uid); });
-      if (!daIscrivere.length) { alert('Tutti gli atleti con una categoria sono già iscritti a questa stagione.'); return; }
+      if (!daIscrivere.length) { _avviso('Tutti gli atleti con una categoria sono già iscritti a questa stagione.'); return; }
 
       confirm('Iscrivere ' + daIscrivere.length + (daIscrivere.length === 1 ? ' atleta' : ' atleti') + ' alla stagione ' +
               (_stagioneCorrenteNome() || 'corrente') + '? Le categorie mancanti verranno create con retta 0.', function () {
         daIscrivere.reduce(function (chain, a) {
           return chain.then(function () { return _ensureIscrizione(a, true); });
         }, Promise.resolve()).then(_refreshBudgetViews)
-          .catch(function (e) { alert('Errore: ' + e.message); });
+          .catch(function (e) { _avviso('Errore: ' + e.message); });
       });
-    }).catch(function (e) { alert('Errore: ' + e.message); })
+    }).catch(function (e) { _avviso('Errore: ' + e.message); })
       .then(function () { btn.disabled = false; });
   });
 
@@ -822,11 +827,11 @@
     var categ   = document.getElementById('atletaCategoria').value;
     var certSc  = document.getElementById('atletaCertScadenza').value;
 
-    if (!nome || !cognome) { alert('Nome e cognome sono obbligatori.'); return; }
-    if (!email && !gEmail) { alert('Serve almeno un accesso: atleta o genitore.'); return; }
-    if (email && pwd.length < 10) { alert('Accesso atleta: la password deve avere almeno 10 caratteri.'); return; }
+    if (!nome || !cognome) { _avviso('Nome e cognome sono obbligatori.'); return; }
+    if (!email && !gEmail) { _avviso('Serve almeno un accesso: atleta o genitore.'); return; }
+    if (email && pwd.length < 10) { _avviso('Accesso atleta: la password deve avere almeno 10 caratteri.'); return; }
     if (gEmail && gPwd && gPwd.length < 10) {
-      alert('Accesso genitore: la password deve avere almeno 10 caratteri (oppure lasciala vuota: la famiglia la sceglie dal link via email).'); return;
+      _avviso('Accesso genitore: la password deve avere almeno 10 caratteri (oppure lasciala vuota: la famiglia la sceglie dal link via email).'); return;
     }
 
     var btn = document.getElementById('atletaFormSave');
@@ -863,13 +868,13 @@
         return _linkParent(atleta, gNome, gEmail, gPwd).then(function (r) {
           if (!r.invita) return null;
           return _invitaGenitore(atleta, r.uid).then(function (to) {
-            alert('Atleta creato. Ho inviato a ' + to + ' l\'email con il link per scegliere la password.');
+            _avviso('Atleta creato. Ho inviato a ' + to + ' l\'email con il link per scegliere la password.', 'ok');
           }, function (err) {
-            alert('Atleta e account creati, ma l\'email di invito non è partita: ' + ((err && err.message) || 'errore') +
+            _avviso('Atleta e account creati, ma l\'email di invito non è partita: ' + ((err && err.message) || 'errore') +
                   '\nPuoi rimandarla dalla scheda dell\'atleta, tab "Accessi" (icona busta).');
           });
         }, function (err) {
-          alert('Atleta creato, ma l\'accesso genitore non è stato aggiunto: ' + _authErrorText(err) +
+          _avviso('Atleta creato, ma l\'accesso genitore non è stato aggiunto: ' + _authErrorText(err) +
                 '\nPuoi riprovare dalla scheda dell\'atleta, tab "Accessi".');
         });
       })
@@ -879,7 +884,7 @@
         renderAtleti();
       })
       .catch(function (err) {
-        alert('Errore: ' + _authErrorText(err));
+        _avviso('Errore: ' + _authErrorText(err));
         btn.textContent = 'Crea atleta'; btn.disabled = false;
       });
   });
@@ -951,7 +956,7 @@
     db.collection('atleti').doc(_editingAtleta.uid)
       .update({ certMedicoScadenza: scadenza, certMedicoUrl: url })
       .then(function () { return _logWrite('atleta', _editingAtleta.uid, 'Atleta — ' + _editingAtleta.cognome + ' ' + _editingAtleta.nome, 'update', _diff(before, { certMedicoScadenza: scadenza, certMedicoUrl: url }, ['certMedicoScadenza', 'certMedicoUrl'])); })
-      .catch(function (e) { alert('Errore: ' + e.message); });
+      .catch(function (e) { _avviso('Errore: ' + e.message); });
   });
 
   /* ---- Salva modulo iscrizione ---- */
@@ -965,7 +970,7 @@
     db.collection('atleti').doc(_editingAtleta.uid)
       .update({ moduloIscrizioneUrl: url })
       .then(function () { return _logWrite('atleta', _editingAtleta.uid, 'Atleta — ' + _editingAtleta.cognome + ' ' + _editingAtleta.nome, 'update', _diff(before, { moduloIscrizioneUrl: url }, ['moduloIscrizioneUrl'])); })
-      .catch(function (e) { alert('Errore: ' + e.message); });
+      .catch(function (e) { _avviso('Errore: ' + e.message); });
   });
 
   /* ---- Password atleta ----
@@ -1081,7 +1086,7 @@
     var nome  = document.getElementById('accNome').value.trim();
     var email = document.getElementById('accEmail').value.trim();
     var pwd   = document.getElementById('accPassword').value;
-    if (!email) { alert('Inserisci l\'email del genitore.'); return; }
+    if (!email) { _avviso('Inserisci l\'email del genitore.'); return; }
     var btn = this;
     btn.disabled = true; btn.textContent = 'Aggiunta…';
     var atleta = _editingAtleta;
@@ -1091,13 +1096,13 @@
         _renderAccessiAdmin();
         if (!r.invita) return null;
         return _invitaGenitore(atleta, r.uid).then(function (to) {
-          alert('Genitore aggiunto. Ho inviato a ' + to + ' l\'email con il link per scegliere la password.');
+          _avviso('Genitore aggiunto. Ho inviato a ' + to + ' l\'email con il link per scegliere la password.', 'ok');
         }, function (err) {
-          alert('Genitore aggiunto, ma l\'email di invito non è partita: ' + ((err && err.message) || 'errore') +
+          _avviso('Genitore aggiunto, ma l\'email di invito non è partita: ' + ((err && err.message) || 'errore') +
                 '\nRimandala con l\'icona busta accanto al suo nome.');
         });
       })
-      .catch(function (e) { alert('Errore: ' + _authErrorText(e)); })
+      .catch(function (e) { _avviso('Errore: ' + _authErrorText(e)); })
       .then(function () { btn.disabled = false; btn.textContent = 'Aggiungi'; });
   });
 
@@ -1107,8 +1112,8 @@
     if (!x || !x.email) return;
     if (!window.confirm('Inviare a ' + x.email + ' l\'email con il link per scegliere la password? I link inviati prima smettono di funzionare.')) return;
     _invitaGenitore(_editingAtleta, uid)
-      .then(function (to) { alert('Email inviata a ' + to + '. Se non arriva, controlla lo spam.'); })
-      .catch(function (e) { alert('Errore: ' + ((e && e.message) || 'riprova più tardi.')); });
+      .then(function (to) { _avviso('Email inviata a ' + to + '. Se non arriva, controlla lo spam.', 'ok'); })
+      .catch(function (e) { _avviso('Errore: ' + ((e && e.message) || 'riprova più tardi.')); });
   };
 
   window.AdminActions.resetAccesso = function (uid) {
@@ -1116,8 +1121,8 @@
     var x = _accessiOf(_editingAtleta).filter(function (a) { return a.uid === uid; })[0];
     if (!x || !x.email) return;
     _sendResetEmail(x.email, _editingAtleta.uid, _atletaLabel(_editingAtleta))
-      .then(function () { alert('Email di reset inviata a ' + x.email + '. Se non arriva, controlla lo spam.'); })
-      .catch(function (e) { alert('Errore: ' + _resetErrorText(e)); });
+      .then(function () { _avviso('Email di reset inviata a ' + x.email + '. Se non arriva, controlla lo spam.', 'ok'); })
+      .catch(function (e) { _avviso('Errore: ' + _resetErrorText(e)); });
   };
 
   window.AdminActions.removeAccesso = function (uid) {
@@ -1135,7 +1140,7 @@
             return _logWrite('atleta', _editingAtleta.uid, _atletaLabel(_editingAtleta), 'update', _diff({ accessi: before }, upd, ['accessi']));
           })
           .then(_renderAccessiAdmin)
-          .catch(function (e) { alert('Errore: ' + e.message); });
+          .catch(function (e) { _avviso('Errore: ' + e.message); });
       }
     );
   };
@@ -1231,10 +1236,10 @@
       autore:      before ? (before.autore || '') : (A.dirigenteNome() || '')
     };
     if (!data.categoria || !data.titolo || !data.testo) {
-      alert('Destinatari, titolo e testo sono obbligatori.'); return;
+      _avviso('Destinatari, titolo e testo sono obbligatori.'); return;
     }
     if (data.allegatoUrl && !/^https:\/\//i.test(data.allegatoUrl)) {
-      alert('Il link allegato deve iniziare con https://'); return;
+      _avviso('Il link allegato deve iniziare con https://'); return;
     }
 
     var ref   = before ? db.collection('comunicazioni').doc(before.id) : db.collection('comunicazioni').doc();
@@ -1248,7 +1253,7 @@
           _diff(before || {}, data, ['categoria', 'titolo', 'testo', 'importante', 'allegatoUrl']));
       })
       .then(function () { btn.disabled = false; renderComunicazioni(); })
-      .catch(function (e) { btn.disabled = false; alert('Errore: ' + e.message); });
+      .catch(function (e) { btn.disabled = false; _avviso('Errore: ' + e.message); });
   });
 
   window.AdminActions.editComunicazione = function (id) { _openComunicazioneForm(id); };
@@ -1261,7 +1266,7 @@
           return _logWrite('avviso', id, 'Avviso — ' + (target ? target.titolo : id), 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]);
         })
         .then(renderComunicazioni)
-        .catch(function (e) { alert('Errore: ' + e.message); });
+        .catch(function (e) { _avviso('Errore: ' + e.message); });
     });
   };
 
@@ -1493,10 +1498,10 @@
       note:       document.getElementById('allenNote').value.trim()
     };
     if (!data.categoria || !data.giorno || !data.oraInizio) {
-      alert('Categoria, giorno e ora di inizio sono obbligatori.'); return;
+      _avviso('Categoria, giorno e ora di inizio sono obbligatori.'); return;
     }
     if (data.oraFine && data.oraFine <= data.oraInizio) {
-      alert('L\'ora di fine deve essere dopo quella di inizio.'); return;
+      _avviso('L\'ora di fine deve essere dopo quella di inizio.'); return;
     }
 
     var before = _editingAllenamento;
@@ -1511,7 +1516,7 @@
           _diff(before || {}, data, Object.keys(data)));
       })
       .then(function () { btn.disabled = false; renderAllenamenti(); })
-      .catch(function (e) { btn.disabled = false; alert('Errore: ' + e.message); });
+      .catch(function (e) { btn.disabled = false; _avviso('Errore: ' + e.message); });
   });
 
   window.AdminActions.editAllenamento = function (id) { _openAllenamentoForm(id); };
@@ -1526,7 +1531,7 @@
             'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]);
         })
         .then(renderAllenamenti)
-        .catch(function (e) { alert('Errore: ' + e.message); });
+        .catch(function (e) { _avviso('Errore: ' + e.message); });
     });
   };
 

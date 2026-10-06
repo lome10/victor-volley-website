@@ -780,6 +780,26 @@ button { font-family: var(--font-body); cursor: pointer; }
 }
 
 /* ================================================
+   AVVISI A BANNER (Admin.avviso)
+================================================ */
+.avvisi-box {
+  position: fixed; top: 14px; left: 50%; transform: translateX(-50%);
+  width: min(560px, calc(100vw - 24px)); z-index: 2000;
+  display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+}
+.avviso {
+  pointer-events: auto; cursor: pointer; display: flex; align-items: flex-start; gap: 12px;
+  padding: 12px 14px; border-radius: 8px; border-left: 4px solid var(--a-blue);
+  background: var(--a-white); color: var(--a-text); font-size: 14px; line-height: 1.45;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+}
+.avviso--ok     { border-left-color: var(--a-green); }
+.avviso--avviso { border-left-color: #F59E0B; }
+.avviso--errore { border-left-color: var(--a-red); }
+.avviso-testo { flex: 1; white-space: pre-line; overflow-wrap: anywhere; }
+.avviso-x { flex: none; background: none; border: 0; padding: 0 2px; font-size: 20px; line-height: 1; color: #64748B; cursor: pointer; }
+
+/* ================================================
    CONFIRM MODAL
 ================================================ */
 .modal-overlay {
