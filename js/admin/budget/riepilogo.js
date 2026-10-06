@@ -183,11 +183,11 @@
   }
   function _renderStatCards() {
     var n = B._calcNumeri(_oggiLocale()), eur = B._eur;
-    var tot = n.incassato + n.daIncassare, pcSpeso = n.spesePrevisto > 0 ? Math.round(n.speso / n.spesePrevisto * 100) : 0;
+    var tot = n.incassato + n.daIncassare, pcSpeso = n.spese.prev > 0 ? Math.round(n.speso / n.spese.prev * 100) : 0;
     document.getElementById('dgStatRow').innerHTML =
       _kpiPan('Incassato', eur(n.incassato), eur(n.daIncassare) + ' ancora da incassare', '', tot > 0 ? n.incassato / tot * 100 : 0, 'ok') +
       _kpiPan('Da incassare', eur(n.daIncassare), n.ritardoN ? 'di cui ' + eur(n.ritardoEur) + ' in ritardo (' + n.ritardoN + ')' : 'nessun incasso in ritardo', n.ritardoN ? 'neg' : '') +
-      _kpiPan('Speso finora', eur(n.speso), pcSpeso + '% del previsto (' + eur(n.spesePrevisto) + ')', '', pcSpeso) +
+      _kpiPan('Speso finora', eur(n.speso), pcSpeso + '% del preventivato (' + eur(n.spese.prev) + ')', '', pcSpeso) +
       _kpiPan('Ancora da pagare', eur(n.daPagare), n.spese.entro30n ? 'di cui ' + eur(n.spese.entro30eur) + ' scaduti o in scadenza entro 30 giorni' : 'nessuna scadenza nei prossimi 30 giorni', n.spese.entro30n ? 'warn' : '');
     _renderEntrateConfermateDettaglio();
     if (B._renderPanoramicaBlocchi) B._renderPanoramicaBlocchi();

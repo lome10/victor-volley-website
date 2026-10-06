@@ -83,7 +83,7 @@
       ritardoRate: ritardo.filter(function (e) { return e.fonte === 'Rette'; }).length, ritardoTranche: ritardo.filter(function (e) { return e.fonte === 'Sponsor'; }).length,
       speso: r.uscite, spesePrevisto: previstoSpese, daPagare: sp.daPagare,
       inCassa: r.saldo, obiettivo: r.obiettivo, fineStagione: r.entrateConfermate + daIncassare - previstoSpese,
-      senzaPiano: _sponsorSenzaPiano(), spese: sp
+      senzaPiano: _sponsorSenzaPiano(), spese: sp, potenzialeSponsor: Math.round(r.sponsorPotenziali || 0)
     };
   }
 
@@ -120,13 +120,21 @@
   var NON_SQUADRE = ['società'];
   function _norm(s) { return String(s || '').trim().toLowerCase(); }
   function _calcPerSquadra() {
-    var righe = [], nomiSquadre = {};
-    B._categorieAtleti.forEach(function (c) {
-      if (NON_SQUADRE.indexOf(_norm(c.nome)) !== -1) return;
-      nomiSquadre[_norm(c.nome)] = true;
-      var ids = {}; B._atletiRette.forEach(function (a) { if (a.categoriaAtletiId === c.id) ids[a.id] = true; });
+    /* squadre = categorie delle rette + squadre del sito (VV.getCategories), così anche una squadra senza rette
+       (per esempio la Prima Divisione) ha la sua riga con le spese */
+    var righe = [], visti = {}, nomi = B._categorieAtleti.map(function (c) { return { id: c.id, nome: c.nome }; });
+    try { var vv = window.VV; if (vv && vv.getCategories) vv.getCategories().forEach(function (c) { nomi.push({ id: null, nome: c.name }); }); } catch (e) { /* il sito non è caricato: restano le categorie delle rette */ }
+    nomi.forEach(function (c) {
+      var n = _norm(c.nome);
+      if (!n || visti[n] || NON_SQUADRE.indexOf(n) !== -1) { if (c.id && visti[n]) visti[n].ids.push(c.id); return; }
+      var riga = { nome: c.nome, entrate: 0, incassato: 0, spese: 0, ids: c.id ? [c.id] : [] };
+      visti[n] = riga; righe.push(riga);
+    });
+    righe.forEach(function (riga) {
+      var ids = {}; B._atletiRette.forEach(function (a) { if (riga.ids.indexOf(a.categoriaAtletiId) !== -1) ids[a.id] = true; });
       var rate = B._rateAtleti.filter(function (r) { return ids[r.atletaRettaId]; });
-      righe.push({ nome: c.nome, entrate: _somma(rate, function (r) { return +r.importo || 0; }), incassato: _somma(rate, function (r) { return r.pagata ? (+r.importo || 0) : 0; }), spese: 0 });
+      riga.entrate = _somma(rate, function (r) { return +r.importo || 0; });
+      riga.incassato = _somma(rate, function (r) { return r.pagata ? (+r.importo || 0) : 0; });
     });
     var generali = { nome: 'Società e generali', entrate: 0, incassato: 0, spese: 0 };
     B._vociSpesa.forEach(function (v) {
@@ -141,7 +149,8 @@
     generali.entrate = sponsorPrev + tess.assegnate * tess.prezzo;
     generali.incassato = r.sponsorChiusi + r.tessere;
     righe.push(generali);
-    righe.forEach(function (x) { x.margine = x.entrate - x.spese; });
+    righe = righe.filter(function (x) { return x.entrate || x.spese || x.nome === generali.nome; });
+    righe.forEach(function (x) { x.margine = x.entrate - x.spese; delete x.ids; });
     return righe;
   }
 
@@ -213,7 +222,8 @@
     document.getElementById('panCassaLegenda').innerHTML = LEGENDA;
     _disegna(document.getElementById('panCassaSvg'), prev.righe, 220);
     var hp = document.getElementById('heroPrevisto');
-    if (hp) hp.innerHTML = 'Se tutto va come previsto, a fine stagione: <strong>' + B._eurSigned(n.fineStagione) + '</strong>';
+    if (hp) hp.innerHTML = 'Se tutto va come previsto, a fine stagione: <strong>' + B._eurSigned(n.fineStagione) + '</strong>' +
+      (n.potenzialeSponsor > 0 ? ' <span title="Importo stimato per la probabilità di chiusura, degli sponsor ancora in trattativa">(senza contare gli sponsor non ancora chiusi: potenziale ' + B._eur(n.potenzialeSponsor) + ')</span>' : '');
     var sq = _calcPerSquadra();
     document.getElementById('panSquadreBody').innerHTML = sq.map(function (x) {
       return '<tr><td>' + esc(x.nome) + '</td><td class="cs-r">' + B._eur(x.entrate) + '</td><td class="cs-r">' + B._eur(x.spese) + '</td><td class="cs-r ' + (x.margine < 0 ? 'cs-neg' : 'cs-pos') + '">' + B._eurSigned(x.margine) + '</td></tr>';

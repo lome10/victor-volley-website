@@ -243,7 +243,7 @@ function statoCassa(extra) {
     _trimestreIvaDaData: () => null, _aziendaById: (id) => ({ ragioneSociale: 'Azienda ' + id }), _switchBudgetTab: (x) => { B._tabAperta = x; },
     _atletaRettaById: () => null, _sponsorDaIncassare: () => 0, _calcRetteAtleti: () => ({ totIncassato: 0, totPrevisto: 0, righe: [] })
   }, extra || {});
-  const window = { Admin: { budgetShared: B, esc, fmtDate: (d) => d, fmtDateLong: (d) => d, avviso: noop, logWrite: () => Promise.resolve(), diff: () => [] }, AdminActions: {} };
+  const window = { Admin: { budgetShared: B, esc, fmtDate: (d) => d, fmtDateLong: (d) => d, avviso: noop, logWrite: () => Promise.resolve(), diff: () => [] }, AdminActions: {}, VV: B.__VV };
   ['bilancio.js', 'spese.js', 'cassa.js'].forEach((f) => new Function('window', 'document', 'db', fs.readFileSync(path.join(__dirname, '..', 'js', 'admin', 'budget', f), 'utf8'))(window, doc, {}));
   return { B, els };
 }
@@ -278,6 +278,14 @@ t('Cassa: rendimento per squadra («Società» non è una squadra, il resto va i
   assert.deepStrictEqual(sq.map((x) => x.nome), ['Under 13 maschile', 'Società e generali']);
   assert.deepStrictEqual([sq[0].entrate, sq[0].incassato, sq[0].spese, sq[0].margine], [330, 120, 1000, -670]);
   assert.deepStrictEqual([sq[1].entrate, sq[1].incassato, sq[1].spese, sq[1].margine], [3500 + 60, 1500 + 20, 300 + 220 + 100 + 50, 3560 - 670]);
+});
+t('Cassa: una squadra del sito senza rette ha comunque la sua riga con le spese', () => {
+  const { B } = statoCassa({ __VV: { getCategories: () => [{ name: 'Prima Divisione' }, { name: 'Società' }] }, _categorieSpesa: [{ id: 'c1', nome: 'Prima Divisione' }, { id: 'c2', nome: 'Federazione' }], _vociSpesa: [voce({ categoriaSpesaId: 'c1', importoPreventivato: 700 }), voce({ categoriaSpesaId: 'c2', importoPreventivato: 50 })] });
+  const sq = B._calcPerSquadra();
+  const pd = sq.filter((x) => x.nome === 'Prima Divisione')[0];
+  assert.ok(pd && pd.spese === 700 && pd.entrate === 0 && pd.margine === -700, 'riga della Prima Divisione');
+  assert.strictEqual(sq.filter((x) => x.nome === 'Società e generali')[0].spese, 50, 'le altre spese restano nei generali');
+  assert.ok(!sq.some((x) => x.nome === 'Società'), '«Società» non è una squadra');
 });
 t('Cassa: «Da fare» in ordine di urgenza, con la scheda giusta per ciascuno', () => {
   const { B } = statoCassa();
