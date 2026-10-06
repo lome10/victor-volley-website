@@ -1,7 +1,7 @@
 name: Controlli
 
-# Si avvia a ogni push su main e a ogni pull request. Non serve installare nulla:
-# gli script usano solo Node. In locale: npm test
+# Si avvia a ogni push su main e a ogni pull request. Installa i pacchetti (npm ci, da package-lock.json):
+# servono al collaudo del PDF delle ricevute (pdf-lib). In locale: npm test
 on:
   push:
     branches: [main]
@@ -15,4 +15,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - run: npm ci
       - run: npm test
