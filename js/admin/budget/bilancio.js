@@ -193,6 +193,13 @@
     var sel = document.getElementById('bilancioFiltro');
     if (sel) sel.addEventListener('change', _renderBilancio);
     /* clic su una riga del riquadro "Per categoria" = filtra il saldo mensile su quella voce (di nuovo = toglie il filtro) */
+    var navE = document.getElementById('bilEntrateNav');
+    if (navE) navE.addEventListener('click', function (e) {
+      var b = e.target.closest && e.target.closest('[data-ef]');
+      if (!b) return;
+      B._bilEntrateFonte = b.getAttribute('data-ef');
+      _renderBilancio();
+    });
     var card = document.getElementById('bilancioPerCategoria');
     if (card) card.addEventListener('click', function (e) {
       var tr = e.target.closest && e.target.closest('tr[data-filtro]');
@@ -233,7 +240,19 @@
       mesiBody.innerHTML = rows.join('');
     }
 
-    entrateBody.innerHTML = b.entrateList.length ? b.entrateList.map(function (t) {
+    /* Entrate incassate divise per fonte, come nella scheda Entrate: una scelta per fonte, con il totale di ciascuna */
+    var FONTI = [['', 'Tutte'], ['Sponsor', 'Sponsor'], ['Retta atleti', 'Rette atleti'], ['Tessere', 'Tessere'], ['Altre entrate', 'Altre entrate']];
+    var sceltaFonte = B._bilEntrateFonte || '';
+    var navE = document.getElementById('bilEntrateNav');
+    if (navE) {
+      navE.innerHTML = FONTI.map(function (f) {
+        var voci = b.entrateList.filter(function (t) { return !f[0] || t.tipo === f[0]; });
+        var tot = voci.reduce(function (s, t) { return s + (+t.importo || 0); }, 0);
+        return '<button type="button" role="tab" data-ef="' + esc(f[0]) + '" aria-selected="' + (sceltaFonte === f[0]) + '">' + esc(f[1]) + '<span class="en-amt">' + _eur(tot) + ' · ' + voci.length + (voci.length === 1 ? ' voce' : ' voci') + '</span></button>';
+      }).join('');
+    }
+    var elenco = b.entrateList.filter(function (t) { return !sceltaFonte || t.tipo === sceltaFonte; });
+    entrateBody.innerHTML = elenco.length ? elenco.map(function (t) {
       return '<tr>' +
         '<td>' + (t.scadenza ? _fmtDateLong(t.scadenza) : '—') + '</td>' +
         '<td>' + esc(t.tipo) + '</td>' +
@@ -241,7 +260,7 @@
         '<td>' + _eur(t.importo) + '</td>' +
         '<td>' + esc(t.note || '') + '</td>' +
         '</tr>';
-    }).join('') : '<tr><td colspan="5" class="dg-empty">Nessuna entrata incassata per questa stagione.</td></tr>';
+    }).join('') + (sceltaFonte ? '<tr style="font-weight:700"><td colspan="3">Totale ' + esc(sceltaFonte) + '</td><td>' + _eur(elenco.reduce(function (s, t) { return s + (+t.importo || 0); }, 0)) + '</td><td></td></tr>' : '') : '<tr><td colspan="5" class="dg-empty">Nessuna entrata incassata' + (sceltaFonte ? ' da questa fonte' : '') + ' per questa stagione.</td></tr>';
     if (B._renderBilancioSezioni) B._renderBilancioSezioni();
   }
 

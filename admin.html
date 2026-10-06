@@ -1854,7 +1854,7 @@
             <button type="button" role="tab" id="bilTabConf" data-bsub="conf" aria-selected="false">Confronto</button>
           </div>
           <div id="bilSecCons">
-          <div class="dg-toolbar" style="margin:0 0 10px">
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0 0 10px">
             <span class="dg-muted">Per il commercialista (solo ciò che è già incassato o pagato):</span>
             <button type="button" class="dg-btn-ghost dg-btn-sm" onclick="DG.budgetCsv('entrate')">Scarica entrate (CSV)</button>
             <button type="button" class="dg-btn-ghost dg-btn-sm" onclick="DG.budgetCsv('uscite')">Scarica uscite (CSV)</button>
@@ -1905,7 +1905,8 @@
 
           <div class="dg-card" style="margin-top:14px">
             <div class="dg-card-title">Entrate incassate</div>
-            <div class="dg-card-sub">Tranche sponsor, rate atleti, tessere e altre entrate segnate come pagate, per questa stagione.</div>
+            <div class="dg-card-sub">Tranche sponsor, rate atleti, tessere e altre entrate segnate come pagate, per questa stagione. Scegli una fonte per vedere solo le sue.</div>
+            <div id="bilEntrateNav" class="sp-subtabs" role="tablist" aria-label="Fonte delle entrate incassate"></div>
             <div class="dg-table-wrap" style="margin-top:14px">
               <table class="dg-table">
                 <thead>
@@ -2640,7 +2641,7 @@
   <script src="/js/admin/budget/iva.js?v=2b927099"></script>
   <script src="/js/admin/budget/exportpdf.js?v=5d577cf9"></script>
   <script src="/js/admin/budget/cassa.js?v=3a482384"></script>
-  <script src="/js/admin/budget/bilancio.js?v=8f2a295b"></script>
+  <script src="/js/admin/budget/bilancio.js?v=40f4a21f"></script>
   <script src="/js/admin/budget/log.js?v=9343fe64"></script>
   <script src="/js/admin/budget/main.js?v=dbe602c0"></script>
   <script src="/js/admin/password.js?v=ec78580e"></script>
