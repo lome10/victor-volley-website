@@ -190,85 +190,154 @@
     sel.value = B._speseFilterCategoriaId;
   }
 
+  /* ---- NUOVA INTERFACCIA SPESE ----
+     Elenco raggruppato per categoria con lo stato di ogni voce, indicatori in alto e pannello laterale per modificare.
+     Le voci IVA generate (isIva) non stanno nell'elenco: sono nella sotto-scheda IVA e compaiono come badge sulla voce
+     madre. Il nome della voce è il campo `categoria` (nome storico); la categoria vera è `categoriaSpesaId`. */
+  B._speseQ = '';
+  B._speseStato = 'tutti';
+  B._speseGruppiChiusi = {};
+  B._speseSub = 'voci';
+  B._speseDrawerId = null;
+
+  /* data di oggi nel fuso del browser (toISOString darebbe quella UTC: ieri tra mezzanotte e le 2 in Italia) */
+  function _oggiIso() { var d = new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; }; return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); }
+  function _giorniA(dataIso, oggiIso) { return Math.round((new Date(dataIso + 'T00:00:00') - new Date(oggiIso + 'T00:00:00')) / 864e5); }
+
+  /* Stato ricavato dai due importi: pagata solo se c'è un preventivo e il sostenuto lo raggiunge. */
+  function _statoVoce(v) {
+    var p = +v.importoPreventivato || 0, s = +v.importoSostenuto || 0;
+    if (p > 0 && s >= p) return 'pagata';
+    return s > 0 ? 'parziale' : 'da-pagare';
+  }
+  function _residuoVoce(v) { return Math.max(0, (+v.importoPreventivato || 0) - (+v.importoSostenuto || 0)); }
+  /* '' | 'in-scadenza' (entro 30 giorni) | 'scaduta': solo se c'è ancora qualcosa da pagare e una data. */
+  function _urgenzaVoce(v, oggi) {
+    if (!v.dataSpesa || _residuoVoce(v) <= 0) return '';
+    var g = _giorniA(v.dataSpesa, oggi);
+    return g < 0 ? 'scaduta' : (g <= 30 ? 'in-scadenza' : '');
+  }
+  function _etichettaVoce(v, oggi) {
+    var u = _urgenzaVoce(v, oggi);
+    if (u === 'scaduta') return { k: 'scaduta', t: 'Scaduta' };
+    if (u === 'in-scadenza') return { k: 'in-scadenza', t: 'In scadenza' };
+    var s = _statoVoce(v);
+    return { k: s, t: s === 'pagata' ? 'Pagata' : s === 'parziale' ? 'Parziale' : 'Da pagare' };
+  }
+
+  /* Totali della scheda (stessi numeri del Bilancio e della dashboard: comprendono anche le voci IVA). */
+  function _calcSpeseKpi(oggi) {
+    var k = { prev: 0, speso: 0, daPagare: 0, ivaPrev: 0, entro30n: 0, entro30eur: 0, senzaData: 0, anomalie: 0 };
+    B._vociSpesa.forEach(function (v) {
+      var p = +v.importoPreventivato || 0, s = +v.importoSostenuto || 0;
+      k.prev += p; k.speso += s; k.daPagare += Math.max(0, p - s);
+      if (v.isIva) { k.ivaPrev += p; return; }
+      if (_urgenzaVoce(v, oggi)) { k.entro30n++; k.entro30eur += Math.max(0, p - s); }
+      if (!v.dataSpesa && _statoVoce(v) !== 'pagata') k.senzaData++;
+      if (p === 0 && s > 0) k.anomalie++;
+    });
+    return k;
+  }
+
+  function _vociFiltrate(oggi) {
+    var q = B._speseQ.trim().toLowerCase(), f = B._speseFilterCategoriaId, st = B._speseStato;
+    return B._vociSpesa.filter(function (v) {
+      if (v.isIva) return false;
+      if (f === '__none__' ? !!v.categoriaSpesaId : (f && v.categoriaSpesaId !== f)) return false;
+      if (q && ((v.categoria || '') + ' ' + (v.note || '')).toLowerCase().indexOf(q) === -1) return false;
+      var pagata = _statoVoce(v) === 'pagata';
+      if (st === 'pagata') return pagata;
+      if (st === 'da-pagare') return !pagata;
+      if (st === 'in-scadenza') return !!_urgenzaVoce(v, oggi);
+      if (st === 'senza-data') return !v.dataSpesa && !pagata;
+      if (st === 'anomalia') return !(+v.importoPreventivato) && (+v.importoSostenuto) > 0;
+      return true;
+    });
+  }
+
+  function _seasonCorrente() { return B._seasons.find(function (s) { return s.id === B._currentSeasonId; }) || null; }
+
+  function _kpiCard(label, valore, sub, cls, barPct, barCls) {
+    return '<div class="sp-kpi' + (cls ? ' sp-kpi--' + cls : '') + '"><span class="sp-kpi-l">' + label + '</span><span class="sp-kpi-v">' + valore + '</span>' +
+      (barPct != null ? '<div class="sp-bar' + (barCls ? ' sp-bar--' + barCls : '') + '"><i style="width:' + Math.max(0, Math.min(100, barPct)) + '%"></i></div>' : '') +
+      '<span class="sp-kpi-s">' + sub + '</span></div>';
+  }
+
+  function _speseKpiHtml(k, season) {
+    var budget = season && +season.budgetSpese > 0 ? +season.budgetSpese : 0;
+    var pcSp = k.prev > 0 ? Math.round(k.speso / k.prev * 100) : 0;
+    var prevSub = (k.ivaPrev ? 'di cui IVA ' + B._eur(k.ivaPrev) + ' · ' : '') + 'con margine 10%: ' + B._eur(k.prev * 1.1);
+    var quarta = budget
+      ? _kpiCard('Margine sul budget', B._eurSigned(budget - k.prev), 'budget di spesa ' + B._eur(budget) + ' · <button type="button" class="sp-link" onclick="DG.spesaBudgetModifica()">modifica</button>', budget - k.prev < 0 ? 'neg' : 'pos')
+      : '<div class="sp-kpi"><span class="sp-kpi-l">Budget di spesa</span><span class="sp-kpi-s">Imposta un tetto per vedere quanto margine resta.</span>' +
+        '<div class="sp-inline"><input type="number" id="speseBudgetInput" min="0" step="100" placeholder="es. 30000" aria-label="Budget di spesa in euro"><button type="button" class="dg-btn-primary dg-btn-sm" onclick="DG.salvaBudgetSpese()">Salva</button></div></div>';
+    return _kpiCard('Preventivato', B._eur(k.prev), prevSub, '', budget ? k.prev / budget * 100 : null, budget && k.prev > budget ? 'bad' : '') +
+      _kpiCard('Speso finora', B._eur(k.speso), pcSp + '% del preventivato', '', pcSp, 'ok') +
+      _kpiCard('Ancora da pagare', B._eur(k.daPagare), k.entro30n ? 'di cui ' + B._eur(k.entro30eur) + ' scaduti o in scadenza entro 30 giorni' : 'nessuna scadenza nei prossimi 30 giorni', k.entro30n ? 'warn' : '') +
+      quarta;
+  }
+
+  function _speseAlertsHtml(k) {
+    var h = '';
+    if (k.entro30n) h += '<button type="button" class="sp-chip" data-ss="in-scadenza"><span class="sp-dot"></span>' + k.entro30n + (k.entro30n === 1 ? ' scadenza' : ' scadenze') + ' entro 30 giorni</button>';
+    if (k.senzaData) h += '<button type="button" class="sp-chip sp-chip--info" data-ss="senza-data"><span class="sp-dot"></span>' + k.senzaData + (k.senzaData === 1 ? ' voce senza data' : ' voci senza data') + ': non entrano nel Saldo mensile</button>';
+    if (k.anomalie) h += '<button type="button" class="sp-chip sp-chip--bad" data-ss="anomalia"><span class="sp-dot"></span>' + k.anomalie + (k.anomalie === 1 ? ' voce con speso ma senza preventivo' : ' voci con speso ma senza preventivo') + '</button>';
+    return h;
+  }
+
   function _renderSpese() {
+    if (!document.getElementById('speseList')) return;
+    var oggi = _oggiIso(), k = _calcSpeseKpi(oggi);
     _populateSpeseFilterCategoria();
-    _renderSpeseForecast();
     B._renderIvaRiepilogo();
-    var body = document.getElementById('speseBody');
-    var items = B._vociSpesa.filter(function (v) {
-      if (!B._speseFilterCategoriaId) return true;
-      if (B._speseFilterCategoriaId === '__none__') return !v.categoriaSpesaId;
-      return v.categoriaSpesaId === B._speseFilterCategoriaId;
+    document.getElementById('speseKpis').innerHTML = _speseKpiHtml(k, _seasonCorrente());
+    document.getElementById('speseAlerts').innerHTML = _speseAlertsHtml(k);
+    document.querySelectorAll('#speseFilterStato [data-ss]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-ss') === B._speseStato)); });
+    var inVoci = B._speseSub === 'voci';
+    document.getElementById('speseSecVoci').classList.toggle('is-hidden', !inVoci);
+    document.getElementById('speseSecIva').classList.toggle('is-hidden', inVoci);
+    document.getElementById('speseTabVoci').setAttribute('aria-selected', String(inVoci));
+    document.getElementById('speseTabIva').setAttribute('aria-selected', String(!inVoci));
+
+    var items = _vociFiltrate(oggi), per = {}, html = '';
+    items.forEach(function (v) { var key = v.categoriaSpesaId || '__none__'; (per[key] = per[key] || []).push(v); });
+    function sommaPrev(arr) { return arr.reduce(function (t, v) { return t + (+v.importoPreventivato || 0); }, 0); }
+    Object.keys(per).sort(function (a, b) { return sommaPrev(per[b]) - sommaPrev(per[a]); }).forEach(function (key) {
+      var arr = per[key].slice().sort(function (a, b) { return (a.dataSpesa || '9999').localeCompare(b.dataSpesa || '9999'); });
+      var c = key === '__none__' ? null : _categoriaSpesaById(key);
+      var p = sommaPrev(arr), s = arr.reduce(function (t, v) { return t + (+v.importoSostenuto || 0); }, 0), pc = p ? Math.round(s / p * 100) : 0;
+      var aperto = !B._speseGruppiChiusi[key];
+      html += '<button type="button" class="sp-group" data-g="' + esc(key) + '" aria-expanded="' + aperto + '"><span class="sp-chev">▶</span>' +
+        '<span class="sp-gname">' + esc(c ? c.nome : 'Senza categoria') + ' <small>' + arr.length + (arr.length === 1 ? ' voce' : ' voci') + '</small></span>' +
+        '<span class="sp-gtot">previsto <b>' + B._eur(p) + '</b> · speso <b>' + B._eur(s) + '</b></span>' +
+        '<span class="sp-gbar"><div class="sp-bar' + (pc > 100 ? ' sp-bar--bad' : pc > 80 ? ' sp-bar--warn' : '') + '"><i style="width:' + Math.min(100, pc) + '%"></i></div></span><span class="sp-gpc">' + pc + '%</span></button>';
+      if (aperto) arr.forEach(function (v) { html += _rigaVoceHtml(v, oggi); });
     });
-    /* Ogni voce IVA generata da un'altra voce di spesa viene spostata subito
-       dopo la sua genitrice, così il collegamento è visibile a colpo d'occhio
-       (vedi anche il connettore "↳" nella cella categoria qui sotto). */
-    var byId = {};
-    items.forEach(function (v) { byId[v.id] = v; });
-    var isLinkedChild = {};
-    items.forEach(function (p) { if (p.ivaVoceSpesaId && byId[p.ivaVoceSpesaId]) isLinkedChild[p.ivaVoceSpesaId] = true; });
-    var ordered = [];
-    items.forEach(function (v) {
-      if (isLinkedChild[v.id]) return;
-      ordered.push(v);
-      if (v.ivaVoceSpesaId && byId[v.ivaVoceSpesaId]) ordered.push(byId[v.ivaVoceSpesaId]);
-    });
-    items = ordered;
-    if (!items.length) {
-      body.innerHTML = '<tr><td colspan="8" class="dg-empty">' +
-        (B._vociSpesa.length ? 'Nessuna voce di spesa per questa categoria.' : 'Nessuna voce di spesa per questa stagione.') +
-        '</td></tr>';
-      return;
-    }
-    body.innerHTML = items.map(function (v) {
-      var linked = v.isIva && isLinkedChild[v.id];
-      var sub = v.isIva ? [] : _sottospeseOf(v.id);          /* tutte, spese + crediti: solo per l'indicatore "(N)" */
-      var subSpesa = v.isIva ? [] : _sottospeseSpesaOf(v.id); /* solo spese: governano Sostenuto/Preventivato */
-      var expanded = !v.isIva && !!B._speseExpanded[v.id];
-      var toggleBtn = v.isIva ? '' :
-        '<button type="button" class="dg-btn-icon-only" title="Sottospese' + (sub.length ? ' (' + sub.length + ')' : '') + '" onclick="DG.toggleSpesaDettaglio(\'' + v.id + '\')" style="margin-right:2px;flex-shrink:0;transform:rotate(' + (expanded ? 90 : 0) + 'deg)">' + _chevronIconSm() + '</button>';
-      var sostenutoCell = subSpesa.length
-        ? '<input type="number" class="dg-table-input" value="' + Math.round(v.importoSostenuto || 0) + '" disabled title="Calcolato automaticamente dalla somma dei pagati di ' + subSpesa.length + ' sottospes' + (subSpesa.length === 1 ? 'a' : 'e') + '">'
-        : '<input type="number" class="dg-table-input" value="' + (v.importoSostenuto || 0) + '" data-id="' + v.id + '" data-field="importoSostenuto" onchange="DG.saveSpesaField(this)">';
-      var preventivatoCell = (subSpesa.length && _voceHaPreventivatoDaSottospese(v.id))
-        ? '<input type="number" class="dg-table-input" value="' + Math.round(v.importoPreventivato || 0) + '" disabled title="Calcolato automaticamente dalla somma dei preventivati delle sottospese">'
-        : '<input type="number" class="dg-table-input" value="' + (v.importoPreventivato || 0) + '" data-id="' + v.id + '" data-field="importoPreventivato" onchange="DG.saveSpesaField(this)">';
-      var row = '<tr' + (v.isIva ? ' style="background:#F8FAFC"' : '') + '>' +
-        '<td style="display:flex;align-items:center">' + toggleBtn + (linked ? '<span class="dg-iva-link" title="Generata automaticamente dalla voce sopra">↳</span>' : '') +
-        '<input type="text" class="dg-table-input" style="width:180px" value="' + esc(v.categoria) + '" data-id="' + v.id + '" data-field="categoria" onchange="DG.saveSpesaField(this)"></td>' +
-        '<td><select class="dg-table-input" data-id="' + v.id + '" data-field="categoriaSpesaId" onchange="DG.saveSpesaField(this)">' + _categorieSpesaOptionsHtml(v.categoriaSpesaId) + '</select></td>' +
-        '<td>' + preventivatoCell + '</td>' +
-        '<td>' + sostenutoCell + '</td>' +
-        '<td>' + (v.isIva ? '<span class="dg-muted" title="Aliquota applicata sulla voce madre — le voci IVA non generano a loro volta IVA">' +
-            (v.ivaAliquota ? (+v.ivaAliquota).toLocaleString('it-IT') + '%' : '—') + '</span>' :
-          '<input type="number" class="dg-table-input" style="width:70px" min="0" step="1" value="' + (v.ivaAliquota || '') + '" placeholder="0" data-id="' + v.id + '" data-field="ivaAliquota" onchange="DG.saveSpesaField(this)">') + '</td>' +
-        '<td><input type="date" class="dg-table-input" value="' + esc(v.dataSpesa || '') + '" data-id="' + v.id + '" data-field="dataSpesa" onchange="DG.saveSpesaField(this)">' +
-        (v.dataSpesa ? '<div style="font-size:11px;color:var(--dg-muted);margin-top:3px">' + esc(_fmtDateLong(v.dataSpesa)) + '</div>' : '') + '</td>' +
-        '<td><input type="text" class="dg-table-input" style="width:160px" value="' + esc(v.note || '') + '" data-id="' + v.id + '" data-field="note" onchange="DG.saveSpesaField(this)"></td>' +
-        '<td><button class="dg-btn-icon-only" title="Elimina" onclick="DG.deleteSpesa(\'' + v.id + '\')">' + B._delIconSm() + '</button></td>' +
-        '</tr>';
-      return row + (expanded ? _renderSottospeseRow(v) : '');
-    }).join('') + _renderSpeseTotaleRow(items);
+    document.getElementById('speseList').innerHTML = html || '<div class="sp-empty">' + (B._vociSpesa.length ? 'Nessuna voce con questi filtri.' : 'Nessuna voce di spesa per questa stagione.') + '</div>';
+
+    var tp = items.reduce(function (t, v) { return t + (+v.importoPreventivato || 0); }, 0), ts = items.reduce(function (t, v) { return t + (+v.importoSostenuto || 0); }, 0);
+    var ivaTot = B._vociSpesa.reduce(function (t, v) { return t + (v.isIva ? (+v.importoPreventivato || 0) : 0); }, 0);
+    document.getElementById('speseFoot').innerHTML = '<span>Totale' + (items.length !== B._vociSpesa.filter(function (v) { return !v.isIva; }).length ? ' (filtrato)' : '') + '</span>' +
+      '<span>Previsto ' + B._eur(tp) + ' · Speso ' + B._eur(ts) + ' · Da pagare ' + B._eur(items.reduce(function (t, v) { return t + _residuoVoce(v); }, 0)) + '</span>' +
+      (ivaTot ? '<span class="sp-foot-note">IVA collegata (preventivata): ' + B._eur(ivaTot) + ' · vedi la scheda IVA</span>' : '');
+    if (B._speseDrawerId) _renderDrawer();
   }
 
-  /* Riga finale della tabella Spese: l'esito complessivo delle voci mostrate in quel
-     momento (rispetta il filtro per categoria, comprende le voci IVA come il resto
-     del pannello) — Preventivato, Sostenuto e lo scostamento fra i due, in un colpo
-     d'occhio senza dover sommare le righe a mano. */
-  function _renderSpeseTotaleRow(items) {
-    var totPrev = 0, totSost = 0;
-    items.forEach(function (v) { totPrev += (+v.importoPreventivato || 0); totSost += (+v.importoSostenuto || 0); });
-    var totScost = totSost - totPrev;
-    return '<tr class="dg-total-row">' +
-      '<td colspan="2">Totale' + (B._speseFilterCategoriaId ? ' <span class="dg-muted" style="font-weight:400">(categoria filtrata)</span>' : '') + '</td>' +
-      '<td>' + B._eur(totPrev) + '</td>' +
-      '<td>' + B._eur(totSost) + '</td>' +
-      '<td colspan="3" style="color:' + (totScost > 0 ? 'var(--dg-red)' : 'var(--dg-green)') + '">Scostamento ' + (totScost > 0 ? '+' : '') + B._eurSigned(totScost) + '</td>' +
-      '<td></td>' +
-    '</tr>';
+  function _rigaVoceHtml(v, oggi) {
+    var e = _etichettaVoce(v, oggi), p = +v.importoPreventivato || 0, s = +v.importoSostenuto || 0, pcv = p ? Math.round(s / p * 100) : 0;
+    var figlia = v.ivaVoceSpesaId ? B._vociSpesa.find(function (x) { return x.id === v.ivaVoceSpesaId; }) : null;
+    var iva = figlia ? (+figlia.importoPreventivato || 0) : (+v.ivaAliquota > 0 ? p * (+v.ivaAliquota) / 100 : 0);
+    var nSub = _sottospeseOf(v.id).length, gestitaDaSub = _sottospeseSpesaOf(v.id).length > 0;
+    var badge = (iva ? '<span class="sp-b">+ IVA ' + (+v.ivaAliquota || '') + (+v.ivaAliquota ? '% ' : ' ') + B._eur(iva) + '</span>' : '') + (nSub ? '<span class="sp-tag">' + nSub + (nSub === 1 ? ' pagamento' : ' pagamenti') + '</span>' : '');
+    return '<div class="sp-row" tabindex="0" role="button" data-id="' + v.id + '" aria-label="Apri ' + esc(v.categoria) + '">' +
+      '<div class="sp-name"><div class="sp-t">' + esc(v.categoria) + '</div>' + (badge ? '<div class="sp-m">' + badge + '</div>' : '') +
+        '<div class="sp-m sp-m-mobile"><span>' + B._eur(s) + ' / ' + B._eur(p) + '</span><span>' + (v.dataSpesa ? esc(_fmtDate(v.dataSpesa)) : 'senza data') + '</span></div></div>' +
+      '<div class="sp-d">' + (v.dataSpesa ? esc(_fmtDate(v.dataSpesa)) : '<span title="Senza data">—</span>') + '</div>' +
+      '<div class="sp-c">' + B._eur(p) + '</div>' +
+      '<div class="sp-s">' + B._eur(s) + '<div class="sp-bar' + (pcv > 100 ? ' sp-bar--bad' : '') + '"><i style="width:' + Math.min(100, pcv) + '%"></i></div></div>' +
+      '<div class="sp-st"><span class="sp-pill sp-pill--' + e.k + '">' + e.t + '</span></div>' +
+      '<div class="sp-act">' + (_statoVoce(v) === 'pagata' || !p || gestitaDaSub ? '' : '<button type="button" class="dg-btn-ghost dg-btn-sm" data-pay="' + v.id + '">Segna pagata</button>') + '</div></div>';
   }
-
-  function _chevronIconSm() { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="9,6 15,12 9,18"/></svg>'; }
 
   /* Una delle due tabelle (spese o crediti) dentro il dettaglio di una voce: stessa
      struttura, vocabolario diverso — "Preventivato/Pagato" per le spese, "Incasso
@@ -304,44 +373,150 @@
       '</div>';
   }
 
-  /* Riga espandibile inserita subito sotto una voce di spesa: due tabelle (spese e
-     crediti) con le voci reali che la compongono + form di aggiunta rapida per ciascuna.
-     I crediti sono solo un dettaglio informativo qui dentro: non toccano Sostenuto/
-     Preventivato della voce né i totali di Bilancio (l'incasso, se già tracciato altrove
-     — es. sponsor, rette — non va così contato due volte). */
-  function _renderSottospeseRow(v) {
+  /* Dettaglio dei pagamenti di una voce (sottospese e crediti): le due tabelle di prima, ora dentro il pannello laterale.
+     I crediti sono solo un dettaglio informativo: non toccano Sostenuto/Preventivato della voce né i totali di Bilancio
+     (un incasso già tracciato altrove, per esempio sponsor o rette, non va contato due volte). */
+  function _sottospeseInnerHtml(v) {
     var elenco = _sottospeseOf(v.id).slice().sort(function (a, b) { return (a.data || '') < (b.data || '') ? 1 : -1; });
     var spese = elenco.filter(function (s) { return !_isSottospesaCredito(s); });
     var crediti = elenco.filter(_isSottospesaCredito);
-
     var somma = _sommaSottospese(v.id), sommaPrev = _sommaSottospesePreventivate(v.id);
     var daPagare = spese.reduce(function (t, s) { return t + Math.max(0, (+s.importoPreventivato || 0) - (+s.importo || 0)); }, 0);
     var incassato = _sommaSottospeseIncassato(v.id), incassoPrevisto = _sommaSottospeseIncassoPrevisto(v.id);
     var daIncassare = crediti.reduce(function (t, s) { return t + Math.max(0, (+s.importoPreventivato || 0) - (+s.importo || 0)); }, 0);
-
-    var infoLine = 'Dettaglio — "' + esc(v.categoria) + '": pagato €' + somma.toLocaleString('it-IT') + ' su €' + sommaPrev.toLocaleString('it-IT') + ' preventivati nelle spese' +
-      ' · ancora da pagare €' + daPagare.toLocaleString('it-IT') +
-      ' · preventivato voce €' + Number(v.importoPreventivato || 0).toLocaleString('it-IT');
-    if (crediti.length) {
-      infoLine += ' · incassato €' + incassato.toLocaleString('it-IT') + ' su €' + incassoPrevisto.toLocaleString('it-IT') + ' previsti' +
-        ' · ancora da incassare €' + daIncassare.toLocaleString('it-IT') +
-        ' <span title="I crediti sono solo un dettaglio qui dentro: non modificano Sostenuto/Preventivato della voce né i totali di Bilancio.">ⓘ</span>';
-    }
-
-    return '<tr class="dg-spesa-detail-row"><td colspan="8" style="background:#F8FAFC;padding:12px 16px;border-top:1px dashed var(--dg-border)">' +
-      '<div style="font-size:12px;font-weight:700;color:var(--dg-muted)">' + infoLine + '</div>' +
-      _sottospesaTableHtml(v, spese, 'spesa') +
-      _sottospesaTableHtml(v, crediti, 'credito') +
-      '<div class="dg-toolbar" style="margin-top:4px">' +
-        '<button class="dg-btn-ghost dg-btn-sm" onclick="DG.exportSottospesePdf(\'' + v.id + '\')">Esporta PDF</button>' +
-      '</div>' +
-    '</td></tr>';
+    var info = 'Pagato €' + somma.toLocaleString('it-IT') + ' su €' + sommaPrev.toLocaleString('it-IT') + ' preventivati · ancora da pagare €' + daPagare.toLocaleString('it-IT');
+    if (crediti.length) info += ' · incassato €' + incassato.toLocaleString('it-IT') + ' su €' + incassoPrevisto.toLocaleString('it-IT') + ' previsti · da incassare €' + daIncassare.toLocaleString('it-IT') +
+      ' <span title="I crediti sono solo un dettaglio qui dentro: non modificano Sostenuto/Preventivato della voce né i totali di Bilancio.">ⓘ</span>';
+    return '<div class="sp-dr-info">' + info + '</div>' + _sottospesaTableHtml(v, spese, 'spesa') + _sottospesaTableHtml(v, crediti, 'credito') +
+      '<div class="dg-toolbar" style="margin-top:4px"><button type="button" class="dg-btn-ghost dg-btn-sm" onclick="DG.exportSottospesePdf(\'' + v.id + '\')">Esporta PDF</button></div>';
   }
 
-  DG.toggleSpesaDettaglio = function (id) {
-    B._speseExpanded[id] = !B._speseExpanded[id];
-    _renderSpese();
+  /* ---- Pannello laterale ---- */
+  function _drawerRoot() { return document.getElementById('speseDrawerRoot'); }
+  function _chiudiDrawer() { B._speseDrawerId = null; var r = _drawerRoot(); if (r) r.innerHTML = ''; }
+  var CAMPI_BOZZA = { speDNome: 'categoria', speDCat: 'categoriaSpesaId', speDData: 'dataSpesa', speDPrev: 'importoPreventivato', speDSost: 'importoSostenuto', speDIva: 'ivaAliquota', speDNote: 'note' };
+
+  /* Valori già scritti nel pannello, per non perderli quando si aggiunge o cambia un pagamento (il pannello si ridisegna). */
+  function _leggiBozza() {
+    if (!document.getElementById('speDNome')) return null;
+    var b = {};
+    Object.keys(CAMPI_BOZZA).forEach(function (id) { var el = document.getElementById(id); if (el) b[id] = el.value; });
+    return b;
+  }
+
+  function _renderDrawer() {
+    var root = _drawerRoot();
+    var v = B._vociSpesa.find(function (x) { return x.id === B._speseDrawerId; });
+    if (!root || !v) { _chiudiDrawer(); return; }
+    var corpoPrima = root.querySelector('.sp-dr-body'), scroll = corpoPrima ? corpoPrima.scrollTop : 0;
+    var bozza = _leggiBozza(), giaAperto = !!corpoPrima;
+    var val0 = function (id, campo, def) { return bozza && bozza[id] != null ? bozza[id] : (v[campo] == null ? def : v[campo]); };
+    var haSub = _sottospeseSpesaOf(v.id).length > 0, prevDaSub = haSub && _voceHaPreventivatoDaSottospese(v.id);
+    var e = _etichettaVoce(v, _oggiIso());
+    root.innerHTML = '<div class="sp-dr-bg" onclick="DG.speseDrawerChiudi()"></div>' +
+      '<aside class="sp-dr" role="dialog" aria-modal="true" aria-label="Voce di spesa ' + esc(v.categoria) + '">' +
+      '<header class="sp-dr-h"><div><h3>' + esc(v.categoria) + '</h3><span class="sp-pill sp-pill--' + e.k + '">' + e.t + '</span></div><button type="button" class="dg-btn-ghost dg-btn-sm" id="speDClose" onclick="DG.speseDrawerChiudi()">Chiudi</button></header>' +
+      '<div class="sp-dr-body"><div class="sp-grid">' +
+      '<div class="sp-f sp-full"><label for="speDNome">Voce di spesa</label><input type="text" id="speDNome" class="dg-form-input" value="' + esc(val0('speDNome', 'categoria', '')) + '"></div>' +
+      '<div class="sp-f"><label for="speDCat">Categoria</label><select id="speDCat" class="dg-form-input">' + _categorieSpesaOptionsHtml(val0('speDCat', 'categoriaSpesaId', '')) + '</select></div>' +
+      '<div class="sp-f"><label for="speDData">Data o scadenza</label><input type="date" id="speDData" class="dg-form-input" value="' + esc(val0('speDData', 'dataSpesa', '')) + '"><span class="sp-h">Conta nel Saldo mensile; senza data finisce in «Spese senza data».</span></div>' +
+      '<div class="sp-f"><label for="speDPrev">Preventivato (€)</label><input type="number" id="speDPrev" class="dg-form-input" min="0" step="any" value="' + esc(val0('speDPrev', 'importoPreventivato', 0)) + '"' + (prevDaSub ? ' readonly' : '') + '>' + (prevDaSub ? '<span class="sp-h">Somma dei preventivati dei pagamenti qui sotto.</span>' : '') + '</div>' +
+      '<div class="sp-f"><label for="speDSost">Già speso (€)</label><input type="number" id="speDSost" class="dg-form-input" min="0" step="any" value="' + esc(val0('speDSost', 'importoSostenuto', 0)) + '"' + (haSub ? ' readonly' : '') + '>' + (haSub ? '<span class="sp-h">Somma dei pagati dei pagamenti qui sotto.</span>' : '') + '</div>' +
+      '<div class="sp-f"><label for="speDIva">IVA %</label><input type="number" id="speDIva" class="dg-form-input" min="0" step="1" placeholder="0" value="' + esc(val0('speDIva', 'ivaAliquota', '') || '') + '"><span class="sp-h" id="speDIvaH"></span></div>' +
+      '<div class="sp-f sp-full"><label for="speDNote">Note</label><textarea id="speDNote" class="dg-form-input" rows="3">' + esc(val0('speDNote', 'note', '')) + '</textarea></div></div>' +
+      '<div class="sp-sect"><h4>Pagamenti e dettaglio</h4>' + _sottospeseInnerHtml(v) + '</div></div>' +
+      '<footer class="sp-dr-f"><button type="button" class="dg-btn-ghost sp-danger" onclick="DG.speseDrawerElimina()">Elimina</button><span class="sp-sp"></span>' +
+      '<button type="button" class="dg-btn-ghost" onclick="DG.speseDrawerChiudi()">Annulla</button><button type="button" class="dg-btn-primary" onclick="DG.speseDrawerSalva()">Salva</button></footer></aside>';
+    var body = root.querySelector('.sp-dr-body'); if (body) body.scrollTop = scroll;
+    var ivaH = function () {
+      var al = +document.getElementById('speDIva').value || 0, pv = +document.getElementById('speDPrev').value || 0;
+      document.getElementById('speDIvaH').textContent = al > 0 && pv > 0 ? 'IVA stimata ' + B._eur(pv * al / 100) : '';
+    };
+    ['speDIva', 'speDPrev'].forEach(function (id) { document.getElementById(id).addEventListener('input', ivaH); });
+    ivaH();
+    if (!giaAperto) document.getElementById('speDClose').focus();
+  }
+
+  DG.speseDrawerApri = function (id) { B._speseDrawerId = id; _renderDrawer(); };
+  DG.speseDrawerChiudi = _chiudiDrawer;
+
+  DG.speseDrawerSalva = function () {
+    var v = B._vociSpesa.find(function (x) { return x.id === B._speseDrawerId; });
+    if (!v) return;
+    var nome = document.getElementById('speDNome').value.trim();
+    if (!nome) { A.avviso('Scrivi il nome della voce di spesa.'); document.getElementById('speDNome').focus(); return; }
+    var nuovo = {
+      categoria: nome, categoriaSpesaId: document.getElementById('speDCat').value, dataSpesa: document.getElementById('speDData').value,
+      importoPreventivato: +document.getElementById('speDPrev').value || 0, importoSostenuto: +document.getElementById('speDSost').value || 0,
+      ivaAliquota: +document.getElementById('speDIva').value || 0, note: document.getElementById('speDNote').value.trim()
+    };
+    var patch = {};
+    Object.keys(nuovo).forEach(function (k) {
+      var vecchio = k === 'categoria' || k === 'categoriaSpesaId' || k === 'dataSpesa' || k === 'note' ? (v[k] || '') : (+v[k] || 0);
+      if (nuovo[k] !== vecchio) patch[k] = nuovo[k];
+    });
+    if (!Object.keys(patch).length) { _chiudiDrawer(); A.avviso('Nessuna modifica da salvare.'); return; }
+    _salvaCampi(v, patch).then(function () { _chiudiDrawer(); A.avviso('Voce «' + v.categoria + '» salvata.', 'ok'); })
+      .catch(function (e) { A.avviso('Errore: ' + e.message, 'errore'); });
   };
+
+  DG.speseDrawerElimina = function () { if (B._speseDrawerId) DG.deleteSpesa(B._speseDrawerId); };
+
+  /* «Segna pagata»: lo speso diventa il preventivato; se manca la data, vale oggi (serve al Saldo mensile). */
+  DG.spesaSegnaPagata = function (id) {
+    var v = B._vociSpesa.find(function (x) { return x.id === id; });
+    if (!v) return;
+    var senzaData = !v.dataSpesa, patch = { importoSostenuto: +v.importoPreventivato || 0 };
+    if (senzaData) patch.dataSpesa = _oggiIso();
+    _salvaCampi(v, patch).then(function () { A.avviso('«' + v.categoria + '» segnata come pagata' + (senzaData ? ' (data: oggi)' : '') + '.', 'ok'); })
+      .catch(function (e) { A.avviso('Errore: ' + e.message, 'errore'); });
+  };
+
+  /* Budget di spesa della stagione (campo budgetSpese su budgetSeasons): serve al «Margine sul budget». */
+  DG.salvaBudgetSpese = function () {
+    var season = _seasonCorrente(), el = document.getElementById('speseBudgetInput');
+    if (!season || !el) return;
+    var nuovo = +el.value || 0;
+    if (nuovo <= 0) { A.avviso('Scrivi un importo maggiore di zero.'); return; }
+    _scriviBudgetSpese(season, nuovo);
+  };
+  DG.spesaBudgetModifica = function () {
+    var season = _seasonCorrente();
+    if (!season) return;
+    document.getElementById('speseKpis').lastElementChild.outerHTML =
+      '<div class="sp-kpi"><span class="sp-kpi-l">Budget di spesa</span><div class="sp-inline"><input type="number" id="speseBudgetInput" min="0" step="100" value="' + (+season.budgetSpese || '') + '" aria-label="Budget di spesa in euro"><button type="button" class="dg-btn-primary dg-btn-sm" onclick="DG.salvaBudgetSpese()">Salva</button></div></div>';
+    document.getElementById('speseBudgetInput').focus();
+  };
+  function _scriviBudgetSpese(season, nuovo) {
+    var old = { budgetSpese: +season.budgetSpese || 0 };
+    season.budgetSpese = nuovo;
+    db.collection('budgetSeasons').doc(season.id).update({ budgetSpese: nuovo })
+      .then(function () { return _logWrite('obiettivo', season.id, 'Budget di spesa — stagione ' + season.nome, 'update', _diff(old, { budgetSpese: nuovo }, ['budgetSpese'])); })
+      .then(function () { _renderSpese(); A.avviso('Budget di spesa salvato.', 'ok'); })
+      .catch(function (e) { season.budgetSpese = old.budgetSpese; A.avviso('Errore: ' + e.message, 'errore'); });
+  }
+
+  /* ---- Eventi della scheda (un solo ascoltatore, le righe si ridisegnano di continuo) ---- */
+  function _collegaEventiSpese() {
+    var pane = document.getElementById('budgetPaneSpese');
+    if (!pane || pane.dataset.spCollegato) return;
+    pane.dataset.spCollegato = '1';
+    pane.addEventListener('click', function (e) {
+      var x;
+      if ((x = e.target.closest('[data-pay]'))) { DG.spesaSegnaPagata(x.getAttribute('data-pay')); return; }
+      if ((x = e.target.closest('[data-g]'))) { var k = x.getAttribute('data-g'); B._speseGruppiChiusi[k] = !B._speseGruppiChiusi[k]; _renderSpese(); return; }
+      if ((x = e.target.closest('[data-ss]'))) { B._speseStato = x.getAttribute('data-ss'); B._speseSub = 'voci'; _renderSpese(); return; }
+      if ((x = e.target.closest('[data-sptab]'))) { B._speseSub = x.getAttribute('data-sptab'); _renderSpese(); return; }
+      if ((x = e.target.closest('.sp-row[data-id]'))) DG.speseDrawerApri(x.getAttribute('data-id'));
+    });
+    pane.addEventListener('keydown', function (e) {
+      if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('sp-row')) { e.preventDefault(); DG.speseDrawerApri(e.target.getAttribute('data-id')); }
+    });
+    var q = document.getElementById('speseSearch');
+    if (q) q.addEventListener('input', function () { B._speseQ = this.value; _renderSpese(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && B._speseDrawerId && !document.querySelector('.dg-modal:not(.is-hidden)')) _chiudiDrawer(); });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _collegaEventiSpese); else _collegaEventiSpese();
 
   DG.addSottospesa = function (voceId, tipo) {
     tipo = tipo === 'credito' ? 'credito' : 'spesa';
@@ -406,33 +581,28 @@
     });
   };
 
-  DG.saveSpesaField = function (el) {
-    var id = el.dataset.id, field = el.dataset.field;
-    var v = B._vociSpesa.find(function (x) { return x.id === id; });
-    if (!v) return;
-    if (field === 'categoria' && !el.value.trim()) { alert('La voce di spesa non può essere vuota.'); el.value = v.categoria; return; }
-    var isText = field === 'dataSpesa' || field === 'categoriaSpesaId' || field === 'categoria' || field === 'note';
-    var old = {}; old[field] = isText ? (v[field] || '') : (v[field] || 0);
-    var nv = isText ? (field === 'categoria' || field === 'note' ? el.value.trim() : el.value) : (+el.value || 0);
-    v[field] = nv;
-    var patch = {}; patch[field] = nv;
-    var fields = [field];
-    /* Se è la voce IVA stessa (non la sua "genitrice") e la scadenza non è mai stata forzata a mano,
+  /* Salva uno o più campi di una voce di spesa (pannello laterale e «Segna pagata»). Stessa logica di prima: audit log,
+     ricalcolo del trimestre di versamento se si tocca la data di una voce IVA, aggiornamento della voce IVA collegata.
+     Risolve quando tutto è scritto e le schede dipendenti sono ridisegnate; rifiuta con l'errore di Firestore. */
+  function _salvaCampi(v, patch) {
+    var fields = Object.keys(patch), old = {}, testo = ['categoria', 'categoriaSpesaId', 'dataSpesa', 'note'];
+    fields.forEach(function (f) { old[f] = testo.indexOf(f) !== -1 ? (v[f] || '') : (v[f] || 0); });
+    Object.assign(v, patch);
+    /* Se è la voce IVA stessa (non la sua «genitrice») e la scadenza non è mai stata forzata a mano,
        cambiare la data ricalcola in automatico il trimestre di versamento. */
-    if (v.isIva && field === 'dataSpesa' && !v.ivaScadenzaManuale) {
-      var auto = B._trimestreIvaDaData(nv);
-      old.ivaTrimestre = v.ivaTrimestre || ''; old.ivaScadenza = v.ivaScadenza || '';
+    if (v.isIva && 'dataSpesa' in patch && !v.ivaScadenzaManuale) {
+      var auto = B._trimestreIvaDaData(patch.dataSpesa);
+      old.ivaTrimestre = old.ivaTrimestre || ''; old.ivaScadenza = old.ivaScadenza || '';
       v.ivaTrimestre = patch.ivaTrimestre = auto ? auto.trimestre : '';
       v.ivaScadenza = patch.ivaScadenza = auto ? auto.scadenza : '';
       fields.push('ivaTrimestre', 'ivaScadenza');
     }
-    var needsIvaSync = field === 'importoSostenuto' || field === 'importoPreventivato' || field === 'ivaAliquota' || field === 'categoria' || field === 'dataSpesa';
-    db.collection('vociSpesa').doc(id).update(patch)
-      .then(function () { return _logWrite('voceSpesa', id, 'Spesa — ' + v.categoria, 'update', _diff(old, patch, fields)); })
-      .then(function () { return needsIvaSync ? _syncSpesaIva(v) : null; })
-      .then(function () { _renderSpese(); B._renderStatCards(); B._renderCharts(); B._renderBilancio(); })
-      .catch(function (e) { alert('Errore: ' + e.message); });
-  };
+    var serveIva = ['importoSostenuto', 'importoPreventivato', 'ivaAliquota', 'categoria', 'dataSpesa'].some(function (f) { return f in patch; });
+    return db.collection('vociSpesa').doc(v.id).update(patch)
+      .then(function () { return _logWrite('voceSpesa', v.id, 'Spesa — ' + v.categoria, 'update', _diff(old, patch, fields)); })
+      .then(function () { return serveIva ? _syncSpesaIva(v) : null; })
+      .then(function () { _renderSpese(); B._renderStatCards(); B._renderCharts(); B._renderBilancio(); });
+  }
 
   DG.deleteSpesa = function (id) {
     var v = B._vociSpesa.find(function (x) { return x.id === id; });
@@ -459,6 +629,7 @@
           B._sottospese = B._sottospese.filter(function (x) { return x.voceSpesaId !== id; });
           delete B._speseExpanded[id];
           if (genitrice) genitrice.ivaVoceSpesaId = '';
+          if (B._speseDrawerId === id) _chiudiDrawer();
           _renderSpese(); B._renderStatCards(); B._renderCharts(); B._renderBilancio();
         })
         .catch(function (e) { alert('Errore: ' + e.message); });
@@ -572,6 +743,9 @@
   };
 
   /* ---- Esportato per gli altri file del Budget ---- */
+  B._calcSpeseKpi = _calcSpeseKpi;
+  B._statoVoceSpesa = _statoVoce;
+  B._urgenzaVoceSpesa = _urgenzaVoce;
   B._calcSpeseForecast = _calcSpeseForecast;
   B._categoriaSpesaById = _categoriaSpesaById;
   B._categorieSpesaOptionsHtml = _categorieSpesaOptionsHtml;

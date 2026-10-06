@@ -10,7 +10,7 @@
   <link rel="preload" href="/assets/fonts/manrope-400-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/fonts.css?v=c0ba2518">
   <link rel="stylesheet" href="/css/admin.css?v=f8a0a60f">
-  <link rel="stylesheet" href="/css/dirigenti.css?v=8773aab7">
+  <link rel="stylesheet" href="/css/dirigenti.css?v=f5830467">
 </head>
 <body>
 
@@ -1713,13 +1713,43 @@
 
         <!-- ---- Spese ---- -->
         <div id="budgetPaneSpese" class="dg-section is-hidden">
-          <div class="dg-card">
-            <div class="dg-card-title">Preventivato vs Sostenuto</div>
-            <div class="dg-card-sub">Riepilogo di forecasting per questa stagione, per categoria di spesa.</div>
-            <div class="dg-stat-row" id="speseForecastStats" style="margin-top:14px"></div>
-            <div id="speseForecastTable" style="margin-top:14px"></div>
+          <div class="sp-kpis" id="speseKpis"></div>
+          <div class="sp-alerts" id="speseAlerts"></div>
+          <div class="sp-subtabs" role="tablist" aria-label="Sezioni delle spese">
+            <button type="button" role="tab" id="speseTabVoci" data-sptab="voci" aria-selected="true">Voci di spesa</button>
+            <button type="button" role="tab" id="speseTabIva" data-sptab="iva" aria-selected="false">IVA</button>
           </div>
-          <div class="dg-card" style="margin-top:14px">
+          <div id="speseSecVoci">
+            <div class="dg-card sp-card">
+              <div class="sp-toolbar">
+                <input type="search" id="speseSearch" class="dg-select-sm sp-search" placeholder="Cerca una voce" aria-label="Cerca una voce di spesa" autocomplete="off">
+                <select id="speseFilterCategoria" class="dg-select-sm" aria-label="Filtra per categoria">
+                  <option value="">Tutte le categorie</option>
+                </select>
+                <div class="sp-seg" id="speseFilterStato" role="group" aria-label="Filtra per stato">
+                  <button type="button" data-ss="tutti" aria-pressed="true">Tutte</button>
+                  <button type="button" data-ss="da-pagare" aria-pressed="false">Da pagare</button>
+                  <button type="button" data-ss="in-scadenza" aria-pressed="false">In scadenza</button>
+                  <button type="button" data-ss="pagata" aria-pressed="false">Pagate</button>
+                  <button type="button" data-ss="senza-data" aria-pressed="false">Senza data</button>
+                </div>
+                <button id="newSpesaBtn" class="dg-btn-primary dg-btn-sm sp-push">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  Nuova spesa
+                </button>
+                <button id="manageCategorieSpesaBtn" class="dg-btn-ghost dg-btn-sm">Gestisci categorie</button>
+                <button class="dg-btn-ghost dg-btn-sm" onclick="DG.exportSpesePdf()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M9 13h6M9 17h6"/></svg>
+                  Esporta PDF
+                </button>
+              </div>
+              <div class="sp-cols"><span>Voce</span><span>Scadenza</span><span class="sp-r">Previsto</span><span>Speso</span><span>Stato</span><span></span></div>
+              <div id="speseList"></div>
+              <div class="sp-foot" id="speseFoot"></div>
+            </div>
+          </div>
+          <div id="speseSecIva" class="is-hidden">
+          <div class="dg-card">
             <div class="dg-toolbar" style="justify-content:space-between;align-items:flex-start">
               <div>
                 <div class="dg-card-title">Riepilogo IVA</div>
@@ -1736,39 +1766,8 @@
             </div>
             <div id="ivaRiepilogoEsclusi" style="margin-top:10px"></div>
           </div>
-          <div class="dg-toolbar" style="margin-top:14px">
-            <button id="newSpesaBtn" class="dg-btn-primary dg-btn-sm">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Nuova voce
-            </button>
-            <button id="manageCategorieSpesaBtn" class="dg-btn-ghost dg-btn-sm">Gestisci categorie</button>
-            <select id="speseFilterCategoria" class="dg-select-sm" aria-label="Filtra per categoria">
-              <option value="">Tutte le categorie</option>
-            </select>
-            <button class="dg-btn-ghost dg-btn-sm" onclick="DG.exportSpesePdf()" style="margin-left:auto">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M9 13h6M9 17h6"/></svg>
-              Esporta PDF
-            </button>
           </div>
-          <div class="dg-card">
-            <div class="dg-table-wrap">
-              <table class="dg-table">
-                <thead>
-                  <tr>
-                    <th>Voce di spesa</th>
-                    <th>Categoria</th>
-                    <th>Preventivato</th>
-                    <th>Sostenuto</th>
-                    <th>IVA %</th>
-                    <th>Data</th>
-                    <th>Note</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody id="speseBody"><tr><td colspan="8" class="dg-empty">—</td></tr></tbody>
-              </table>
-            </div>
-          </div>
+          <div id="speseDrawerRoot"></div>
         </div>
 
         <!-- ---- Bilancio (entrate vs uscite, per mese) ---- -->
@@ -2497,7 +2496,7 @@
   <script src="/js/admin/budget/materiali.js?v=3202b53a"></script>
   <script src="/js/admin/budget/rette.js?v=411c84cb"></script>
   <script src="/js/admin/budget/tessere.js?v=29a979d9"></script>
-  <script src="/js/admin/budget/spese.js?v=eadc7af1"></script>
+  <script src="/js/admin/budget/spese.js?v=15e58264"></script>
   <script src="/js/admin/budget/iva.js?v=2b927099"></script>
   <script src="/js/admin/budget/exportpdf.js?v=5d577cf9"></script>
   <script src="/js/admin/budget/bilancio.js?v=1704743b"></script>
