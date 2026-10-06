@@ -171,7 +171,9 @@
 
   function _atletaLabel(a) { return 'Atleta — ' + (a.cognome || '') + ' ' + (a.nome || ''); }
 
-  /* Collega un genitore all'atleta: riusa l'account se l'email è già di un genitore. */
+  /* Collega un genitore all'atleta: riusa l'account se l'email è già di un genitore. Senza password (nuovo account)
+     ne mette una casuale che nessuno conosce, e risolve con invita = true: la famiglia sceglierà la sua dal link
+     che riceve per email (vedi _invitaGenitore). Risolve con { uid, invita }. */
   function _linkParent(atleta, nome, email, pwd) {
     email = email.trim().toLowerCase();
     var current = _accessiOf(atleta);
@@ -179,12 +181,13 @@
       return Promise.reject(new Error('Questa email è già collegata all\'atleta.'));
     }
     var known = _findParentUid(email);
-    var getUid;
+    var getUid, invita = false;
     if (known) {
       getUid = Promise.resolve(known);
-    } else if (!pwd || pwd.length < 10) {
-      return Promise.reject(new Error('Nuovo account: la password deve avere almeno 10 caratteri.'));
+    } else if (pwd && pwd.length < 10) {
+      return Promise.reject(new Error('La password deve avere almeno 10 caratteri (oppure lasciala vuota: la famiglia la sceglie dal link via email).'));
     } else {
+      if (!pwd) { pwd = window.Admin.password.genera(20); invita = true; }
       getUid = _createAuthAccount(email, pwd);
     }
     return getUid.then(function (uid) {
@@ -194,8 +197,29 @@
       return db.collection('atleti').doc(atleta.uid).update(upd).then(function () {
         Object.assign(atleta, upd);
         _reconcileAccessi();
-        return _logWrite('atleta', atleta.uid, _atletaLabel(atleta), 'update', _diff({ accessi: before }, upd, ['accessi']));
+        return _logWrite('atleta', atleta.uid, _atletaLabel(atleta), 'update', _diff({ accessi: before }, upd, ['accessi']))
+          .then(function () { return { uid: uid, invita: invita }; });
       });
+    });
+  }
+
+  /* Manda al genitore l'email con il link (monouso, senza scadenza) per scegliere la password: funzione serverless
+     /api/invia-invito, che verifica che chi chiama sia un dirigente. Risolve con l'indirizzo a cui è partita. */
+  function _invitaGenitore(atleta, uid) {
+    return auth.currentUser.getIdToken().then(function (token) {
+      return fetch('/api/invia-invito', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ atletaUid: atleta.uid, uid: uid })
+      });
+    }).then(function (res) {
+      return res.json().catch(function () { return {}; }).then(function (data) {
+        if (!res.ok) throw new Error(data.error || ('Errore ' + res.status));
+        return data.email;
+      });
+    }).then(function (email) {
+      return _logWrite('atleta', atleta.uid, _atletaLabel(atleta), 'update', [{ campo: 'invito account', prima: null, dopo: 'email inviata a ' + email }])
+        .then(function () { return email; });
     });
   }
 
@@ -801,8 +825,8 @@
     if (!nome || !cognome) { alert('Nome e cognome sono obbligatori.'); return; }
     if (!email && !gEmail) { alert('Serve almeno un accesso: atleta o genitore.'); return; }
     if (email && pwd.length < 10) { alert('Accesso atleta: la password deve avere almeno 10 caratteri.'); return; }
-    if (gEmail && !_findParentUid(gEmail) && gPwd.length < 10) {
-      alert('Accesso genitore: è un nuovo account, la password deve avere almeno 10 caratteri.'); return;
+    if (gEmail && gPwd && gPwd.length < 10) {
+      alert('Accesso genitore: la password deve avere almeno 10 caratteri (oppure lasciala vuota: la famiglia la sceglie dal link via email).'); return;
     }
 
     var btn = document.getElementById('atletaFormSave');
@@ -836,7 +860,15 @@
       .then(function () {
         /* 3) accesso genitore (facoltativo): se fallisce, la scheda esiste già */
         if (!gEmail) return null;
-        return _linkParent(atleta, gNome, gEmail, gPwd).catch(function (err) {
+        return _linkParent(atleta, gNome, gEmail, gPwd).then(function (r) {
+          if (!r.invita) return null;
+          return _invitaGenitore(atleta, r.uid).then(function (to) {
+            alert('Atleta creato. Ho inviato a ' + to + ' l\'email con il link per scegliere la password.');
+          }, function (err) {
+            alert('Atleta e account creati, ma l\'email di invito non è partita: ' + ((err && err.message) || 'errore') +
+                  '\nPuoi rimandarla dalla scheda dell\'atleta, tab "Accessi" (icona busta).');
+          });
+        }, function (err) {
           alert('Atleta creato, ma l\'accesso genitore non è stato aggiunto: ' + _authErrorText(err) +
                 '\nPuoi riprovare dalla scheda dell\'atleta, tab "Accessi".');
         });
@@ -1030,6 +1062,9 @@
         '</div>' +
         (isOwn ? '' :
           '<div class="atleta-rate-actions">' +
+            '<button class="btn-icon" onclick="AdminActions.invitaAccesso(\'' + esc(x.uid) + '\')" title="Invia l\'email con il link per scegliere la password">' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><rect x="3" y="5" width="18" height="14" rx="2"/><polyline points="3,7 12,13 21,7"/></svg>' +
+            '</button>' +
             '<button class="btn-icon" onclick="AdminActions.resetAccesso(\'' + esc(x.uid) + '\')" title="Invia email di reset password">' +
               '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>' +
             '</button>' +
@@ -1049,14 +1084,32 @@
     if (!email) { alert('Inserisci l\'email del genitore.'); return; }
     var btn = this;
     btn.disabled = true; btn.textContent = 'Aggiunta…';
-    _linkParent(_editingAtleta, nome, email, pwd)
-      .then(function () {
+    var atleta = _editingAtleta;
+    _linkParent(atleta, nome, email, pwd)
+      .then(function (r) {
         ['accNome', 'accEmail', 'accPassword'].forEach(function (id) { document.getElementById(id).value = ''; });
         _renderAccessiAdmin();
+        if (!r.invita) return null;
+        return _invitaGenitore(atleta, r.uid).then(function (to) {
+          alert('Genitore aggiunto. Ho inviato a ' + to + ' l\'email con il link per scegliere la password.');
+        }, function (err) {
+          alert('Genitore aggiunto, ma l\'email di invito non è partita: ' + ((err && err.message) || 'errore') +
+                '\nRimandala con l\'icona busta accanto al suo nome.');
+        });
       })
       .catch(function (e) { alert('Errore: ' + _authErrorText(e)); })
       .then(function () { btn.disabled = false; btn.textContent = 'Aggiungi'; });
   });
+
+  window.AdminActions.invitaAccesso = function (uid) {
+    if (!_editingAtleta) return;
+    var x = _accessiOf(_editingAtleta).filter(function (a) { return a.uid === uid; })[0];
+    if (!x || !x.email) return;
+    if (!window.confirm('Inviare a ' + x.email + ' l\'email con il link per scegliere la password? I link inviati prima smettono di funzionare.')) return;
+    _invitaGenitore(_editingAtleta, uid)
+      .then(function (to) { alert('Email inviata a ' + to + '. Se non arriva, controlla lo spam.'); })
+      .catch(function (e) { alert('Errore: ' + ((e && e.message) || 'riprova più tardi.')); });
+  };
 
   window.AdminActions.resetAccesso = function (uid) {
     if (!_editingAtleta) return;

@@ -8,6 +8,9 @@
  *      senza motivo: è il caso della vecchia `matches`);
  *   3. ogni raccolta usata è inclusa in BACKUP_COLLECTIONS (js/admin.js), altrimenti il backup è incompleto.
  *
+ * Eccezione al punto 3: SOLO_SERVER, raccolte che il browser non può leggere (regola `if false`) e che quindi
+ * il backup, fatto dal browser di un dirigente, non può includere.
+ *
  * Nomi cercati: collection('x'), _col('x'), le chiavi di `_ids` in js/db.js e BACKUP_COLLECTIONS.
  */
 const fs = require('fs');
@@ -16,6 +19,7 @@ const path = require('path');
 const root = path.join(__dirname, '..');
 const read = (rel) => fs.readFileSync(path.join(root, rel), 'utf8');
 const problems = [];
+const SOLO_SERVER = new Set(['inviti']);
 
 function walk(dir, out) {
   fs.readdirSync(path.join(root, dir), { withFileTypes: true }).forEach((e) => {
@@ -62,7 +66,7 @@ let missing = [];
 if (!bk) problems.push('Non trovo BACKUP_COLLECTIONS in js/admin.js: aggiorna questo controllo.');
 else {
   const inBackup = new Set((bk[1].match(/'([^']+)'/g) || []).map((s) => s.slice(1, -1)));
-  missing = [...used.keys()].filter((n) => !inBackup.has(n)).sort();
+  missing = [...used.keys()].filter((n) => !inBackup.has(n) && !SOLO_SERVER.has(n)).sort();
 }
 
 console.log('Raccolte usate: ' + used.size + ' · regole: ' + ruled.size);

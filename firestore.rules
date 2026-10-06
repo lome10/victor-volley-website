@@ -158,6 +158,10 @@ service cloud.firestore {
     }
     // Registro dei promemoria già spediti (lo scrive solo il server con l'account di servizio): i dirigenti lo leggono.
     match /promemoriaInviati/{id}         { allow read: if isDirigente(); allow write: if false; }
+    // Inviti a scegliere la password (impronta del codice del link): li legge e scrive solo il server con l'account di
+    // servizio. Nessun accesso dal browser, nemmeno ai dirigenti: chi leggesse l'impronta non può ricavarne il codice,
+    // ma non c'è motivo di esporla.
+    match /inviti/{id}                    { allow read, write: if false; }
     match /tessere/{document=**}          { allow read, write: if isDirigente(); }
     match /vociSpesa/{document=**}        { allow read, write: if isDirigente(); }
     match /sottospese/{document=**}       { allow read, write: if isDirigente(); }

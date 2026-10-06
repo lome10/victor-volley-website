@@ -11,6 +11,7 @@
  *   BREVO_API_KEY              chiave API del servizio di invio email (Brevo, server UE)
  *   EMAIL_FROM                 indirizzo del mittente, verificato sul servizio (es. promemoria@victorvolley.it)
  *   EMAIL_FROM_NAME            (facoltativa) nome del mittente, default "ASD Victor Volley"
+ *   EMAIL_REPLY_TO             (facoltativa) indirizzo a cui arrivano le risposte delle famiglie (es. una casella Libero)
  *   SITE_URL                   (facoltativa) default https://www.victorvolley.it
  * Se CRON_SECRET, BREVO_API_KEY o EMAIL_FROM mancano, la funzione non fa nulla e risponde 200 con "skipped":
  * si può pubblicare prima di aver configurato il servizio.
@@ -21,6 +22,7 @@
 const crypto = require('crypto');
 const admin = require('firebase-admin');
 const L = require('./_promemoria-logic');
+const { configEmail, inviaEmail } = require('./_email');
 
 function getApp() {
   if (admin.apps.length) return admin.app();
@@ -34,19 +36,6 @@ function getApp() {
 const hash8 = (s) => crypto.createHash('sha256').update(s).digest('hex').slice(0, 12);
 const mask = (e) => e.replace(/^(.).*@(.).*(\..+)$/, '$1***@$2***$3');
 
-async function inviaEmail(cfg, dest, msg) {
-  const r = await fetch('https://api.brevo.com/v3/smtp/email', {
-    method: 'POST',
-    headers: { 'api-key': cfg.apiKey, 'content-type': 'application/json', accept: 'application/json' },
-    body: JSON.stringify({
-      sender: { name: cfg.fromName, email: cfg.from },
-      to: [{ email: dest.email, name: dest.nome || undefined }],
-      subject: msg.subject, htmlContent: msg.html, textContent: msg.text
-    })
-  });
-  if (!r.ok) throw new Error('Brevo ' + r.status);
-}
-
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'GET' && req.method !== 'POST') {
@@ -59,11 +48,7 @@ module.exports = async function handler(req, res) {
   if (req.headers.authorization !== 'Bearer ' + secret) return res.status(401).json({ error: 'Non autorizzato.' });
 
   const dry = String((req.query && req.query.dry) || '') === '1';
-  const cfg = {
-    apiKey: process.env.BREVO_API_KEY, from: process.env.EMAIL_FROM,
-    fromName: process.env.EMAIL_FROM_NAME || 'ASD Victor Volley',
-    site: process.env.SITE_URL || 'https://www.victorvolley.it'
-  };
+  const cfg = configEmail();
   if (!dry && (!cfg.apiKey || !cfg.from)) return res.status(200).json({ skipped: 'servizio email non configurato' });
 
   let db;
