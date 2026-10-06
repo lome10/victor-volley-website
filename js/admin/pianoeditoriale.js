@@ -88,6 +88,24 @@
     return _peItems.filter(function (it) { return it.id !== exceptId && (it.sponsorIds || []).indexOf(sponsorId) !== -1; }).length;
   }
 
+  /* sponsor collegati a un contenuto, nell'ordine dei loghi del sito */
+  function _peSponsorsOf(it) {
+    var ids = it.sponsorIds || [];
+    return ids.length ? (VV.getSponsors() || []).filter(function (s) { return ids.indexOf(s.id) !== -1; }) : [];
+  }
+  function _peSponsorTitle(it) {
+    var l = _peSponsorsOf(it);
+    return l.length ? ' — Sponsor: ' + l.map(function (s) { return esc(s.nome); }).join(', ') : '';
+  }
+  /* logo piccolo a destra: fino a 2, poi «+N» */
+  function _peSponsorLogos(it) {
+    var l = _peSponsorsOf(it);
+    if (!l.length) return '';
+    return '<span class="pe-chip-logos">' + l.slice(0, 2).map(function (s) {
+      return s.logo ? '<img src="' + esc(s.logo) + '" alt="' + esc(s.nome) + '">' : '<span class="pe-chip-ini">' + esc((s.nome || '?').charAt(0)) + '</span>';
+    }).join('') + (l.length > 2 ? '<span class="pe-chip-more">+' + (l.length - 2) + '</span>' : '') + '</span>';
+  }
+
   function _renderPeSponsorPanel() {
     var box = document.getElementById('peSponsorPanel');
     if (!box) return;
@@ -189,7 +207,7 @@
 
       var chipsHtml = dayItems.map(function (it) {
         var plat = _peItemPlatform(it);
-        return '<div class="pe-chip chip ' + plat.chipClass + '" draggable="true" data-pe-id="' + esc(it.id) + '" onclick="AdminActions.editPianoEditoriale(\'' + it.id + '\')" title="' + esc(it.titolo) + '">' + esc(it.titolo) + '</div>';
+        return '<div class="pe-chip chip ' + plat.chipClass + '" draggable="true" data-pe-id="' + esc(it.id) + '" onclick="AdminActions.editPianoEditoriale(\'' + it.id + '\')" title="' + esc(it.titolo) + _peSponsorTitle(it) + '"><span class="pe-chip-t">' + esc(it.titolo) + '</span>' + _peSponsorLogos(it) + '</div>';
       }).join('');
 
       html +=
@@ -224,7 +242,7 @@
         var plat = _peItemPlatform(it);
         return '<div class="pe-agenda-item ' + plat.chipClass + '" onclick="AdminActions.editPianoEditoriale(\'' + it.id + '\')">' +
           '<div class="pe-agenda-item-top">' +
-            '<span class="pe-agenda-item-title">' + esc(it.titolo) + '</span>' +
+            '<span class="pe-agenda-item-title">' + esc(it.titolo) + '</span>' + _peSponsorLogos(it) +
             (it.ora ? '<span class="pe-agenda-item-time">' + esc(it.ora) + '</span>' : '') +
           '</div>' +
           '<div class="pe-agenda-item-plat">' + esc(plat.label) + '</div>' +
