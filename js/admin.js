@@ -328,7 +328,9 @@
     var albums   = VV.getAlbums();
     var today    = new Date().toISOString().slice(0, 10);
 
-    var future = partite.filter(function (p) { return p.data >= today; });
+    /* prossime partite: dalla più vicina in poi */
+    var future = partite.filter(function (p) { return p.data >= today; })
+      .sort(function (a, b) { return (a.data || '').localeCompare(b.data || ''); });
 
     document.getElementById('dashStats').innerHTML =
       _statCard('📰', articles.length, 'Articoli', '--blue') +
@@ -336,13 +338,15 @@
       _statCard('🖼️', albums.length, 'Album galleria', '--yellow') +
       _statCard('⚽', future.length, 'Prossime partite', '--red');
 
-    var artHtml = articles.slice(0, 5).map(function (a) {
+    /* ultimi articoli: dal più recente (1°) al meno recente (5°), come nell'elenco Articoli */
+    var recenti = articles.slice().sort(function (a, b) { return (b.date || '').localeCompare(a.date || ''); });
+    var artHtml = recenti.slice(0, 5).map(function (a) {
       return '<div class="dash-item"><span class="dash-item-title">' + esc(a.title) + '</span>' +
         '<span class="dash-item-meta">' + VV.formatDateShort(a.date) + '</span></div>';
     }).join('') || '<div class="dash-item"><span class="dash-item-meta">Nessun articolo</span></div>';
 
     var matchHtml = future.slice(0, 5).map(function (m) {
-      return '<div class="dash-item"><span class="dash-item-title">' + esc(m.squadra_casa) + ' vs ' + esc(m.squadra_ospite) + '</span>' +
+      return '<div class="dash-item"><span class="dash-item-title">' + esc(m.squadra_casa || '?') + ' vs ' + esc(m.squadra_ospite || '?') + '</span>' +
         '<span class="dash-item-meta">' + VV.formatDateShort(m.data) + '</span></div>';
     }).join('') || '<div class="dash-item"><span class="dash-item-meta">Nessuna partita</span></div>';
 
