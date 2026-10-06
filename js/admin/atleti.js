@@ -185,6 +185,9 @@
     if (current.some(function (x) { return String(x.email).toLowerCase() === email; })) {
       return Promise.reject(new Error('Questa email è già collegata all\'atleta.'));
     }
+    /* il browser a volte compila da solo il campo «password iniziale» con l'indirizzo email: non è una password scelta,
+       va trattato come campo vuoto (altrimenti l'account nascerebbe con l'email come password e l'invito non partirebbe) */
+    if (pwd && pwd.trim().toLowerCase() === email) pwd = '';
     var known = _findParentUid(email);
     var getUid, invita = false;
     if (known) {
@@ -848,6 +851,7 @@
     var cognome = document.getElementById('atletaCognome').value.trim();
     var email   = document.getElementById('atletaEmail').value.trim().toLowerCase();
     var pwd     = document.getElementById('atletaPassword').value;
+    if (pwd.trim().toLowerCase() === email) pwd = '';   /* campo compilato dal browser con l'email: vale come vuoto */
     var gCognome = document.getElementById('genitoreCognome').value.trim();
     var gNome   = document.getElementById('genitoreNome').value.trim();
     var gEmail  = document.getElementById('genitoreEmail').value.trim().toLowerCase();
@@ -950,6 +954,8 @@
     document.getElementById('newPassword').value     = '';
     document.getElementById('confirmPassword').value = '';
 
+    ['accCognome', 'accNome', 'accEmail', 'accPassword'].forEach(function (id) { document.getElementById(id).value = ''; });   /* via i riempimenti automatici del browser */
+    _accEditUid = null;
     _switchAtletaTab('anagrafica');
     _renderRateAdmin();
     _renderAccessiAdmin();
