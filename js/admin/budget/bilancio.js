@@ -32,7 +32,8 @@
       .map(function (t) {
         var s = B._sponsorizzazioni.find(function (x) { return x.id === t.sponsorizzazioneId; });
         var az = s ? B._aziendaById(s.aziendaId) : null;
-        return { scadenza: t.scadenza, importo: +t.importo || 0, tipo: 'Sponsor', nome: az ? az.ragioneSociale : '—', note: t.note || '' };
+        /* mese dell'incasso = data d'incasso; per le tranche pagate prima che il campo esistesse resta la scadenza */
+        return { scadenza: t.dataIncasso || t.scadenza, importo: +t.importo || 0, tipo: 'Sponsor', nome: az ? az.ragioneSociale : '—', note: t.note || '' };
       });
     /* _atletiRette è già filtrato per la stagione corrente (vedi _loadSeasonScoped). */
     var atletiIds = B._atletiRette.map(function (a) { return a.id; });

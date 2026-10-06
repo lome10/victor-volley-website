@@ -471,6 +471,7 @@
           '<div class="dg-form-grid">' +
           '<div class="dg-form-group"><label class="dg-form-label">Importo (€)</label><input type="number" id="dgTrancheEditImporto" class="dg-form-input" min="0" step="50" value="' + Number(t.importo || 0) + '"></div>' +
           '<div class="dg-form-group"><label class="dg-form-label">Scadenza</label><input type="date" id="dgTrancheEditScadenza" class="dg-form-input" value="' + esc(t.scadenza || '') + '"></div>' +
+          (t.pagato ? '<div class="dg-form-group"><label class="dg-form-label">Data incasso</label><input type="date" id="dgTrancheEditDataIncasso" class="dg-form-input" value="' + esc(t.dataIncasso || '') + '"></div>' : '') +
           '</div>' +
           '<div class="dg-form-group"><label class="dg-form-label">Note</label><input type="text" id="dgTrancheEditNote" class="dg-form-input" value="' + esc(t.note || '') + '"></div>' +
           '<div class="dg-form-actions" style="margin-top:0">' +
@@ -480,8 +481,8 @@
       }
       return '<div class="dg-reminder-item" style="cursor:default">' +
         '<label class="dg-check"><input type="checkbox" ' + (t.pagato ? 'checked' : '') + ' onchange="DG.toggleTranchePagata(\'' + t.id + '\', this.checked)">' +
-        '<span><div class="dg-reminder-azienda">€' + Number(t.importo || 0).toLocaleString('it-IT') + (t.pagato ? ' — pagata' : ' — da pagare') + '</div>' +
-        '<div class="dg-reminder-desc">Scadenza: ' + _fmtDate(t.scadenza) + (t.note ? ' · ' + esc(t.note) : '') + '</div></span></label>' +
+        '<span><div class="dg-reminder-azienda">€' + Number(t.importo || 0).toLocaleString('it-IT') + (t.pagato ? ' — pagata' + (t.dataIncasso ? ' il ' + _fmtDate(t.dataIncasso) : '') : ' — da pagare') + '</div>' +
+        '<div class="dg-reminder-desc">Scadenza: ' + _fmtDate(t.scadenza) + (t.pagato && !t.dataIncasso ? ' · data incasso non indicata (nel Bilancio conta alla scadenza: modificala con la matita)' : '') + (t.note ? ' · ' + esc(t.note) : '') + '</div></span></label>' +
         '<div style="display:flex;gap:4px;flex-shrink:0">' +
         '<button class="dg-btn-icon-only" title="Modifica" onclick="DG.editTrancheStart(\'' + t.id + '\')">' + EDIT_ICON_SM + '</button>' +
         '<button class="dg-btn-icon-only" title="Elimina" onclick="DG.deleteTranche(\'' + t.id + '\')">' + B._delIconSm() + '</button>' +
@@ -534,6 +535,10 @@
     if (!importo || !scadenza) { alert('Importo e scadenza sono obbligatori.'); return; }
     var patch = { importo: importo, scadenza: scadenza, note: val('dgTrancheEditNote').trim() };
     var old = { importo: t.importo, scadenza: t.scadenza, note: t.note };
+    if (t.pagato) {   /* data in cui i soldi sono arrivati davvero: decide il mese nel Bilancio; se si svuota il campo vale oggi */
+      patch.dataIncasso = val('dgTrancheEditDataIncasso') || B._todayISO();
+      old.dataIncasso = t.dataIncasso || '';
+    }
     var az = B._aziendaById(B._curAziendaId);
     var s = B._sponsorizzazioni.find(function (x) { return x.id === t.sponsorizzazioneId; });
     Object.assign(t, patch);
@@ -642,12 +647,14 @@
   DG.toggleTranchePagata = function (id, checked) {
     var t = B._tranche.find(function (x) { return x.id === id; });
     if (!t) return;
-    var old = { pagato: !!t.pagato };
-    t.pagato = checked;
+    /* segnata pagata: la data d'incasso è oggi (modificabile); tolta la spunta, la data si cancella */
+    var old = { pagato: !!t.pagato, dataIncasso: t.dataIncasso || '' };
+    var patch = { pagato: checked, dataIncasso: checked ? (t.dataIncasso || B._todayISO()) : '' };
+    Object.assign(t, patch);
     var az = B._aziendaById(B._curAziendaId);
     var s = B._sponsorizzazioni.find(function (x) { return x.id === t.sponsorizzazioneId; });
-    db.collection('tranchePagamento').doc(id).update({ pagato: checked })
-      .then(function () { return _logWrite('tranchePagamento', id, 'Tranche — ' + (az ? az.ragioneSociale : ''), 'update', _diff(old, { pagato: checked }, ['pagato'])); })
+    db.collection('tranchePagamento').doc(id).update(patch)
+      .then(function () { return _logWrite('tranchePagamento', id, 'Tranche — ' + (az ? az.ragioneSociale : ''), 'update', _diff(old, patch, ['pagato', 'dataIncasso'])); })
       .then(function () { return s ? _syncSponsorIva(s) : null; })
       .then(function () { _refreshAccordionSection('pagamenti'); B._renderStatCards(); B._renderCharts(); B._renderCashflow(); B._renderBilancio(); B._renderSpese(); })
       .catch(function (e) { alert('Errore: ' + e.message); });
