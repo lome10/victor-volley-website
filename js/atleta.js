@@ -681,7 +681,7 @@
     var next = _agenda(a)[0];
     if (!a.categoria) { t.textContent = '—'; s.textContent = 'Squadra non ancora assegnata'; return; }
     if (!next) { t.textContent = 'Nessun impegno'; s.textContent = 'Non ci sono partite o allenamenti in programma'; return; }
-    var d = new Date(next.date + 'T00:00:00').toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' });
+    var d = new Date(next.date + 'T00:00:00').toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
     t.textContent = d.charAt(0).toUpperCase() + d.slice(1) + (next.start ? ' · ' + next.start : '');
     s.textContent = (next.tipo === 'partita' ? next.title : 'Allenamento') + (next.luogo ? ' — ' + next.luogo : '');
   }
