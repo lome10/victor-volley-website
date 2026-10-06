@@ -93,9 +93,37 @@
     bt.textContent = 'Dati ASD';
     bt.addEventListener('click', openAsd);
     document.getElementById('topbarActions').appendChild(bt);
+    var bp = document.createElement('button');
+    bp.className = 'btn-ghost';
+    bp.textContent = 'Anteprima di esempio';
+    bp.title = 'Mostra una ricevuta di esempio con i vostri Dati ASD e la firma, senza emettere né salvare nulla';
+    bp.addEventListener('click', anteprimaEsempio);
+    document.getElementById('topbarActions').appendChild(bp);
     document.getElementById('ricBody').innerHTML =
       '<tr><td colspan="8" style="text-align:center;color:var(--a-muted);padding:20px">Caricamento…</td></tr>';
     ensureLoaded(_renderRegistro);
+  }
+
+  /* Ricevuta di esempio per controllare l'aspetto: usa i Dati ASD e la firma veri ma numero «ESEMPIO», importo e nomi finti.
+     Non scrive nulla (nessun numero consumato, niente nel registro) e non lancia la stampa. */
+  function anteprimaEsempio() {
+    var w = window.RicevutaDoc.openBlank();   /* aperta subito nel clic: dopo l'attesa i popup verrebbero bloccati */
+    if (!w) { A.avviso('Il browser ha bloccato la nuova finestra: consenti i popup per questo sito e riprova.'); return; }
+    ensureLoaded(function () {
+      var oggi = new Date().toISOString().slice(0, 10);
+      var r = {
+        numero: 'ESEMPIO', data: oggi, importo: 150, stato: 'valida', tipoIncasso: 'Quota associativa',
+        causale: 'ESEMPIO — non è una ricevuta valida', modalita: 'Bonifico', riferimento: '', bollo: _bollo(150),
+        pagatore: { nome: 'ROSSI MARIO (esempio)', cf: '', indirizzo: '', ruolo: 'Genitore / tutore' },
+        atleta: { nome: 'Rossi Luca (esempio)', cf: '', dataNascita: '' },
+        asd: { denominazione: _asd.denominazione, codiceFiscale: _asd.codiceFiscale, sede: _asd.sede || '',
+          affiliazione: _asd.affiliazione || '', codiceAffiliazione: _asd.codiceAffiliazione || '', rasd: !!_asd.rasd,
+          luogo: _asd.luogo || '', presidente: _asd.presidente || '', firma: _firma || '' }
+      };
+      w.document.open();
+      w.document.write(window.RicevutaDoc.html(r, window.location.origin));
+      w.document.close();
+    });
   }
 
   function _filtrate() {
