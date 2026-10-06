@@ -132,8 +132,21 @@ function raggruppaPerDestinatario(promemoria, nonVoglionoEmail) {
   return [...per.values()].map((g) => ({ ...g, uids: [...g.uids] }));
 }
 
-function h(s) {
-  return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const E = require('./_email-layout');
+const h = E.h;
+
+/** Una scadenza come scheda: filetto rosso se urgente, ambra altrimenti, etichetta del tipo e testo. */
+function schedaScadenza(v) {
+  const rosso = v.livello === 'red';
+  const colore = rosso ? '#dc2626' : '#f59e0b';
+  const sfondo = rosso ? '#fef2f2' : '#fffbeb';
+  const etichetta = v.tipo === 'certificato' ? 'Certificato medico' : v.tipo === 'rata' ? 'Quota' : 'Scadenza';
+  return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 10px"><tr>' +
+    '<td width="5" bgcolor="' + colore + '" style="width:5px;background:' + colore + ';border-radius:6px 0 0 6px">&nbsp;</td>' +
+    '<td bgcolor="' + sfondo + '" style="background:' + sfondo + ';border-radius:0 6px 6px 0;padding:12px 16px;font-family:' + E.FONT + ';font-size:15px;line-height:1.5;color:#1e293b">' +
+      '<div style="font-size:11px;font-weight:bold;letter-spacing:1.5px;text-transform:uppercase;color:' + colore + ';margin:0 0 4px">' + h(etichetta) + (rosso ? ' · urgente' : '') + '</div>' +
+      h(v.testo) +
+    '</td></tr></table>';
 }
 
 function componiEmail(g, siteUrl) {
@@ -146,14 +159,13 @@ function componiEmail(g, siteUrl) {
     .concat(['', 'Puoi vedere tutto nell’area atleti: ' + link,
       '', 'Se hai già provveduto, ignora questo messaggio. Puoi non ricevere più i promemoria dal tuo account (Il tuo account → Promemoria via email) o scrivendo a victorvolley@libero.it.',
       '', 'ASD Victor Volley']).join('\n');
-  const html = '<div style="font-family:Arial,Helvetica,sans-serif;color:#1e293b;max-width:560px;margin:0 auto">' +
-    '<h2 style="color:#0f172a;margin:0 0 12px">Victor Volley — promemoria scadenze</h2>' +
-    '<p>' + h(saluto) + '</p><p>ecco le scadenze da tenere d’occhio:</p>' +
-    '<ul style="padding-left:18px">' + g.voci.map((v) =>
-      '<li style="margin:8px 0;' + (v.livello === 'red' ? 'color:#b91c1c' : '') + '">' + h(v.testo) + '</li>').join('') + '</ul>' +
-    '<p><a href="' + h(link) + '" style="display:inline-block;background:#0088ff;color:#fff;text-decoration:none;padding:10px 18px;border-radius:6px">Apri l’area atleti</a></p>' +
-    '<p style="font-size:12px;color:#64748b">Se hai già provveduto, ignora questo messaggio. Puoi non ricevere più i promemoria dal tuo account (<em>Il tuo account → Promemoria via email</em>) o scrivendo a <a href="mailto:victorvolley@libero.it">victorvolley@libero.it</a>.</p>' +
-    '<p style="font-size:12px;color:#64748b">ASD Victor Volley</p></div>';
+  const corpo =
+    '<p style="margin:0 0 14px">' + h(saluto) + '</p>' +
+    '<p style="margin:0 0 16px">ecco le scadenze da tenere d’occhio:</p>' +
+    g.voci.map(schedaScadenza).join('') +
+    E.pulsante('Apri l’area atleti', link) +
+    E.riquadro('Se hai già provveduto, ignora questo messaggio. Puoi non ricevere più i promemoria dal tuo account (<em>Il tuo account → Promemoria via email</em>) o scrivendo a <a href="mailto:victorvolley@libero.it" style="color:' + E.AZZURRO + '">victorvolley@libero.it</a>.');
+  const html = E.cornice({ anteprima: n === 1 ? 'Hai 1 scadenza da tenere d’occhio.' : 'Hai ' + n + ' scadenze da tenere d’occhio.', titolo: 'Promemoria scadenze', corpo, site: siteUrl });
   return { subject, text, html };
 }
 
