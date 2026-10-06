@@ -55,7 +55,7 @@ function destinatariDi(a) {
     if (!emailValida(e) || visti.has(e)) return false;
     visti.add(e);
     return true;
-  }).map((x) => ({ uid: x.uid || '', email: String(x.email).trim().toLowerCase(), nome: x.nome || '', ruolo: x.ruolo || '' }));
+  }).map((x) => ({ uid: x.uid || '', email: String(x.email).trim().toLowerCase(), nome: x.prenome || x.nome || '', ruolo: x.ruolo || '' }));
 }
 
 function _giornoLabel(n) { return n === 1 ? '1 giorno' : n + ' giorni'; }

@@ -82,6 +82,12 @@ t('chi ha disattivato i promemoria è escluso', () => {
 });
 
 /* ---- email ---- */
+t('il saluto usa il solo nome (anche due nomi); senza «prenome» resta il nome intero', () => {
+  const con = run([atleta({ accessi: [Object.assign({}, genitore, { nome: 'Palamà Ilaria Ilenia', cognome: 'Palamà', prenome: 'Ilaria Ilenia' })] })], [rata(7)]);
+  assert.strictEqual(con[0].destinatari[0].nome, 'Ilaria Ilenia');
+  const vecchio = run([atleta()], [rata(7)]);
+  assert.strictEqual(vecchio[0].destinatari[0].nome, 'Anna');
+});
 t('oggetto singolare e plurale', () => {
   const uno = L.componiEmail({ email: 'a@b.it', nome: '', voci: [{ testo: 'x', livello: 'orange' }] }, 'https://www.victorvolley.it');
   const due = L.componiEmail({ email: 'a@b.it', nome: '', voci: [{ testo: 'x', livello: 'orange' }, { testo: 'y', livello: 'red' }] }, 'https://www.victorvolley.it/');

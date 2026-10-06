@@ -179,7 +179,7 @@
   /* Collega un genitore all'atleta: riusa l'account se l'email è già di un genitore. Senza password (nuovo account)
      ne mette una casuale che nessuno conosce, e risolve con invita = true: la famiglia sceglierà la sua dal link
      che riceve per email (vedi _invitaGenitore). Risolve con { uid, invita }. */
-  function _linkParent(atleta, nome, email, pwd) {
+  function _linkParent(atleta, cognome, nome, email, pwd) {
     email = email.trim().toLowerCase();
     var current = _accessiOf(atleta);
     if (current.some(function (x) { return String(x.email).toLowerCase() === email; })) {
@@ -197,7 +197,9 @@
     }
     return getUid.then(function (uid) {
       var before  = current.map(function (x) { return Object.assign({}, x); });
-      var accessi = current.concat([{ uid: uid, email: email, ruolo: 'genitore', nome: nome || '' }]);
+      /* nome = «Cognome Nome» come prima (lo leggono elenchi e ricevuta); cognome e prenome separati servono ai saluti */
+      var accessi = current.concat([{ uid: uid, email: email, ruolo: 'genitore', nome: [cognome, nome].filter(Boolean).join(' '),
+        cognome: cognome || '', prenome: nome || '' }]);
       var upd = { accessi: accessi, accessUids: accessi.map(function (x) { return x.uid; }) };
       return db.collection('atleti').doc(atleta.uid).update(upd).then(function () {
         Object.assign(atleta, upd);
@@ -282,14 +284,16 @@
       { k: 'dataIscrizione', l: 'Data di iscrizione', t: 'date' }
     ] },
     { titolo: 'Genitore / tutore 1', campi: [
-      { k: 'tutore1Nome',     l: 'Cognome e nome',  t: 'text', sens: true },
+      { k: 'tutore1Cognome',  l: 'Cognome',         t: 'text', sens: true, csv: 'Genitore 1 — cognome' },
+      { k: 'tutore1Prenome',  l: 'Nome',            t: 'text', sens: true, csv: 'Genitore 1 — nome' },
       { k: 'tutore1Parentela', l: 'Parentela',      t: 'select', o: PARENTELE },
       { k: 'tutore1Telefono', l: 'Telefono',        t: 'tel', sens: true },
       { k: 'tutore1Email',    l: 'Email',           t: 'email', sens: true },
       { k: 'tutore1CodiceFiscale', l: 'Codice fiscale', t: 'text', upper: true, max: 16, sens: true }
     ] },
     { titolo: 'Genitore / tutore 2', campi: [
-      { k: 'tutore2Nome',     l: 'Cognome e nome',  t: 'text', sens: true },
+      { k: 'tutore2Cognome',  l: 'Cognome',         t: 'text', sens: true, csv: 'Genitore 2 — cognome' },
+      { k: 'tutore2Prenome',  l: 'Nome',            t: 'text', sens: true, csv: 'Genitore 2 — nome' },
       { k: 'tutore2Parentela', l: 'Parentela',      t: 'select', o: PARENTELE },
       { k: 'tutore2Telefono', l: 'Telefono',        t: 'tel', sens: true },
       { k: 'tutore2Email',    l: 'Email',           t: 'email', sens: true }
@@ -310,7 +314,24 @@
 
   var ATLETA_CAMPI = [];
   ATLETA_SEZIONI.forEach(function (s) { s.campi.forEach(function (f) { ATLETA_CAMPI.push(f); }); });
-  var ATLETA_SENSIBILI = ATLETA_CAMPI.filter(function (f) { return f.sens; }).map(function (f) { return f.k; });
+  /* tutoreNNome resta salvato come «Cognome Nome» (lo leggono la ricevuta e le esportazioni): si ricalcola dai due campi */
+  var ATLETA_DERIVATI = ['tutore1Nome', 'tutore2Nome'];
+  var ATLETA_SENSIBILI = ATLETA_CAMPI.filter(function (f) { return f.sens; }).map(function (f) { return f.k; }).concat(ATLETA_DERIVATI);
+
+  /* «Palamà Ilaria Ilenia» → cognome «Palamà», nome «Ilaria Ilenia» (la prima parola è il cognome): serve solo per i nomi
+     inseriti quando il campo era unico; chi compila può correggere. */
+  function _dividiNome(s) {
+    var p = String(s || '').trim().split(/\s+/).filter(Boolean);
+    return { cognome: p[0] || '', prenome: p.slice(1).join(' ') };
+  }
+  function _valoreScheda(a, k) {
+    var m = /^(tutore[12])(Cognome|Prenome)$/.exec(k);
+    if (m && a[k] == null && a[m[1] + 'Nome']) {
+      var d = _dividiNome(a[m[1] + 'Nome']);
+      return m[2] === 'Cognome' ? d.cognome : d.prenome;
+    }
+    return a[k];
+  }
 
   function _campoHtml(f, v) {
     var id = 'af_' + f.k;
@@ -337,7 +358,7 @@
   function _atletaFormHtml(a) {
     return ATLETA_SEZIONI.map(function (s) {
       return '<div class="form-group form-full"><h4 class="af-section">' + esc(s.titolo) + '</h4></div>' +
-        s.campi.map(function (f) { return _campoHtml(f, a[f.k]); }).join('');
+        s.campi.map(function (f) { return _campoHtml(f, _valoreScheda(a, f.k)); }).join('');
     }).join('');
   }
 
@@ -382,7 +403,12 @@
     if (err) { msg.textContent = err; msg.className = 'af-msg is-err'; return; }
 
     var pub = {}, riservati = {};
+    ATLETA_DERIVATI.forEach(function (k) {
+      var t = k.slice(0, 7);
+      vals[k] = [vals[t + 'Cognome'], vals[t + 'Prenome']].filter(Boolean).join(' ');
+    });
     ATLETA_CAMPI.forEach(function (f) { (f.pub ? pub : riservati)[f.k] = vals[f.k]; });
+    ATLETA_DERIVATI.forEach(function (k) { riservati[k] = vals[k]; });
 
     var before = Object.assign({}, a);
     var btn = this;
@@ -531,8 +557,9 @@
     confirm('Il file contiene dati personali di minori (codice fiscale, indirizzo, telefoni). Conservalo in un posto sicuro e cancellalo quando non serve più. Scaricare?', function () {
       var cols = [{ k: 'cognome', l: 'Cognome' }, { k: 'nome', l: 'Nome' }];
       ATLETA_CAMPI.forEach(function (f) {
-        if (['nome', 'cognome', 'note', 'infoMediche'].indexOf(f.k) === -1) cols.push({ k: f.k, l: f.l.replace(' *', '') });
+        if (['nome', 'cognome', 'note', 'infoMediche'].indexOf(f.k) === -1) cols.push({ k: f.k, l: f.csv || f.l.replace(' *', '') });
       });
+      cols.push({ k: 'tutore1Nome', l: 'Genitore 1 — cognome e nome' }, { k: 'tutore2Nome', l: 'Genitore 2 — cognome e nome' });
       cols.push({ k: 'certMedicoScadenza', l: 'Scadenza certificato medico' });
       var righe = [cols.map(function (c) { return _csvCell(c.l); }).join(';')].concat(list.map(function (a) {
         return cols.map(function (c) { return _csvCell(a[c.k]); }).join(';');
@@ -808,7 +835,7 @@
         return '<option value="' + esc(c.name) + '">' + esc(c.name) + '</option>';
       }).join('');
     ['atletaNome', 'atletaCognome', 'atletaEmail', 'atletaPassword',
-     'genitoreNome', 'genitoreEmail', 'genitorePassword'].forEach(function (id) {
+     'genitoreCognome', 'genitoreNome', 'genitoreEmail', 'genitorePassword'].forEach(function (id) {
       document.getElementById(id).value = '';
     });
     document.getElementById('atletaCertScadenza').value = '';
@@ -821,6 +848,7 @@
     var cognome = document.getElementById('atletaCognome').value.trim();
     var email   = document.getElementById('atletaEmail').value.trim().toLowerCase();
     var pwd     = document.getElementById('atletaPassword').value;
+    var gCognome = document.getElementById('genitoreCognome').value.trim();
     var gNome   = document.getElementById('genitoreNome').value.trim();
     var gEmail  = document.getElementById('genitoreEmail').value.trim().toLowerCase();
     var gPwd    = document.getElementById('genitorePassword').value;
@@ -865,7 +893,7 @@
       .then(function () {
         /* 3) accesso genitore (facoltativo): se fallisce, la scheda esiste già */
         if (!gEmail) return null;
-        return _linkParent(atleta, gNome, gEmail, gPwd).then(function (r) {
+        return _linkParent(atleta, gCognome, gNome, gEmail, gPwd).then(function (r) {
           if (!r.invita) return null;
           return _invitaGenitore(atleta, r.uid).then(function (to) {
             _avviso('Atleta creato. Ho inviato a ' + to + ' l\'email con il link per scegliere la password.', 'ok');
@@ -1051,6 +1079,7 @@
   });
 
   /* ---- Accessi (atleta + genitori) ---- */
+  var _accEditUid = null;   /* uid del genitore di cui si sta correggendo il nome */
   function _renderAccessiAdmin() {
     var el  = document.getElementById('accessiList');
     var acc = _accessiOf(_editingAtleta);
@@ -1060,6 +1089,19 @@
     }
     el.innerHTML = acc.map(function (x) {
       var isOwn = x.ruolo === 'atleta';
+      if (!isOwn && x.uid === _accEditUid) {
+        var d = _dividiNome(x.nome);
+        var cog = x.cognome != null ? x.cognome : d.cognome, pre = x.prenome != null ? x.prenome : d.prenome;
+        return '<div class="atleta-rate-item"><div class="atleta-rate-info" style="flex:1">' +
+          '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">' +
+            '<input type="text" id="accEditCognome" class="form-input" placeholder="Cognome" value="' + esc(cog) + '" style="flex:1;min-width:150px">' +
+            '<input type="text" id="accEditNome" class="form-input" placeholder="Nome" value="' + esc(pre) + '" style="flex:1;min-width:150px">' +
+          '</div><div class="atleta-rate-meta">' + esc(x.email) + '</div></div>' +
+          '<div class="atleta-rate-actions">' +
+            '<button type="button" class="btn-primary btn-sm" onclick="AdminActions.salvaNomeAccesso(\'' + esc(x.uid) + '\')">Salva</button>' +
+            '<button type="button" class="btn-ghost btn-sm" onclick="AdminActions.annullaNomeAccesso()">Annulla</button>' +
+          '</div></div>';
+      }
       return '<div class="atleta-rate-item">' +
         '<div class="atleta-rate-info">' +
           '<div class="atleta-rate-desc">' + esc(isOwn ? 'Atleta' : ('Genitore' + (x.nome ? ' — ' + x.nome : ''))) + '</div>' +
@@ -1067,6 +1109,7 @@
         '</div>' +
         (isOwn ? '' :
           '<div class="atleta-rate-actions">' +
+            '<button class="btn-icon" onclick="AdminActions.modificaNomeAccesso(\'' + esc(x.uid) + '\')" title="Modifica cognome e nome">' + EDIT_ICON_SM + '</button>' +
             '<button class="btn-icon" onclick="AdminActions.invitaAccesso(\'' + esc(x.uid) + '\')" title="Invia l\'email con il link per scegliere la password">' +
               '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><rect x="3" y="5" width="18" height="14" rx="2"/><polyline points="3,7 12,13 21,7"/></svg>' +
             '</button>' +
@@ -1083,6 +1126,7 @@
 
   document.getElementById('accAdd').addEventListener('click', function () {
     if (!_editingAtleta) return;
+    var cognome = document.getElementById('accCognome').value.trim();
     var nome  = document.getElementById('accNome').value.trim();
     var email = document.getElementById('accEmail').value.trim();
     var pwd   = document.getElementById('accPassword').value;
@@ -1090,9 +1134,9 @@
     var btn = this;
     btn.disabled = true; btn.textContent = 'Aggiunta…';
     var atleta = _editingAtleta;
-    _linkParent(atleta, nome, email, pwd)
+    _linkParent(atleta, cognome, nome, email, pwd)
       .then(function (r) {
-        ['accNome', 'accEmail', 'accPassword'].forEach(function (id) { document.getElementById(id).value = ''; });
+        ['accCognome', 'accNome', 'accEmail', 'accPassword'].forEach(function (id) { document.getElementById(id).value = ''; });
         _renderAccessiAdmin();
         if (!r.invita) return null;
         return _invitaGenitore(atleta, r.uid).then(function (to) {
@@ -1105,6 +1149,27 @@
       .catch(function (e) { _avviso('Errore: ' + _authErrorText(e)); })
       .then(function () { btn.disabled = false; btn.textContent = 'Aggiungi'; });
   });
+
+  /* Correzione di cognome e nome di un genitore già collegato (l'email e l'account non cambiano). */
+  window.AdminActions.modificaNomeAccesso = function (uid) { _accEditUid = uid; _renderAccessiAdmin(); };
+  window.AdminActions.annullaNomeAccesso = function () { _accEditUid = null; _renderAccessiAdmin(); };
+  window.AdminActions.salvaNomeAccesso = function (uid) {
+    var a = _editingAtleta;
+    if (!a) return;
+    var cognome = document.getElementById('accEditCognome').value.trim();
+    var prenome = document.getElementById('accEditNome').value.trim();
+    var prima = _accessiOf(a).map(function (x) { return Object.assign({}, x); });
+    var accessi = _accessiOf(a).map(function (x) {
+      return x.uid === uid ? Object.assign({}, x, { cognome: cognome, prenome: prenome, nome: [cognome, prenome].filter(Boolean).join(' ') }) : x;
+    });
+    db.collection('atleti').doc(a.uid).update({ accessi: accessi }).then(function () {
+      a.accessi = accessi;
+      _accEditUid = null;
+      _reconcileAccessi();
+      _renderAccessiAdmin();
+      return _logWrite('atleta', a.uid, _atletaLabel(a), 'update', _diff({ accessi: prima }, { accessi: accessi }, ['accessi']));
+    }).catch(function (e) { _avviso('Errore: ' + e.message); });
+  };
 
   window.AdminActions.invitaAccesso = function (uid) {
     if (!_editingAtleta) return;

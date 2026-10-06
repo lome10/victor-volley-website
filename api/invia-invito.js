@@ -71,7 +71,8 @@ module.exports = async function handler(req, res) {
 
     try {
       const atletaNome = ((atleta.nome || '') + ' ' + (atleta.cognome || '')).trim();
-      await inviaEmail(cfg, { email, nome: acc.nome }, I.componiInvito({ nome: acc.nome, email, atletaNome }, I.linkInvito(cfg.site, codice), cfg.site));
+      const nomeSaluto = acc.prenome || acc.nome;   // «Ilaria Ilenia», non «Palamà Ilaria Ilenia»
+      await inviaEmail(cfg, { email, nome: nomeSaluto }, I.componiInvito({ nome: nomeSaluto, email, atletaNome }, I.linkInvito(cfg.site, codice), cfg.site));
     } catch (e) {
       await ref.delete().catch(() => {});
       console.error('[invia-invito] invio fallito:', e.message);

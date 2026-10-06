@@ -171,6 +171,13 @@ async function t(nome, fn) { try { await fn(); n++; } catch (e) { console.error(
     const r = await invito({}); process.env.BREVO_API_KEY = k;
     assert.strictEqual(r.code, 503); assert.strictEqual(Object.keys(col('inviti')).length, prima);
   });
+  await t('l’invito saluta con il solo nome (anche se sono due), non con il cognome', async () => {
+    col('atleti').a3 = { nome: 'Matteo', cognome: 'Biasco', accessi: [{ uid: 'g9', email: 'ilaria@example.com', ruolo: 'genitore', nome: 'Palamà Ilaria Ilenia', cognome: 'Palamà', prenome: 'Ilaria Ilenia' }] };
+    const r = await post(invia, { atletaUid: 'a3', uid: 'g9' }, { authorization: 'Bearer tok-dir' });
+    assert.strictEqual(r.code, 200);
+    assert.ok(email.textContent.startsWith('Ciao Ilaria Ilenia,') && !/Palamà/.test(email.textContent.split('\n')[0]), email.textContent.split('\n')[0]);
+    assert.strictEqual(email.to[0].name, 'Ilaria Ilenia');
+  });
   await t('testo dell’email: escape dell’HTML e nessun nome inventato', () => {
     const m = I.componiInvito({ nome: '<b>Anna</b>', email: 'a@example.com', atletaNome: 'Luca "L" Rossi' }, 'https://www.victorvolley.it/imposta-password#t=abc', 'https://www.victorvolley.it');
     assert.ok(!/<b>Anna/.test(m.html) && /&lt;b&gt;Anna/.test(m.html));

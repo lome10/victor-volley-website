@@ -96,6 +96,9 @@ const paginePdf = async (bytes) => { const d = await PDFDocument.load(bytes); re
     assert.deepStrictEqual(R.destinatariRicevuta({ accessi: [g('4', 'luca@example.com', 'atleta', ''), g('2', 'papa@victorvolley.it', 'genitore', '')] }).map((d) => d.email), ['luca@example.com']);
     assert.deepStrictEqual(R.destinatariRicevuta({ accessi: [g('2', 'papa@victorvolley.it', 'genitore', '')] }), []);
     assert.deepStrictEqual(R.destinatariRicevuta({}), []); assert.deepStrictEqual(R.destinatariRicevuta(null), []);
+    /* il saluto usa il solo nome se c'è (due nomi inclusi), altrimenti il nome intero di prima */
+    assert.strictEqual(R.destinatariRicevuta({ accessi: [{ email: 'a@example.com', ruolo: 'genitore', nome: 'Palamà Ilaria Ilenia', cognome: 'Palamà', prenome: 'Ilaria Ilenia' }] })[0].nome, 'Ilaria Ilenia');
+    assert.strictEqual(R.destinatariRicevuta({ accessi: [{ email: 'a@example.com', ruolo: 'genitore', nome: 'Anna' }] })[0].nome, 'Anna');
   });
   await t('testo dell’email: dati giusti, escape, nessun «undefined»', () => {
     const m = R.componiEmailRicevuta(ric({ causale: '<b>x</b> & "y"', atleta: { nome: 'O\'Neil <i>' } }), { nome: '<img onerror=1>' }, 'https://www.victorvolley.it/');

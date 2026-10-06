@@ -11,7 +11,7 @@ function destinatariRicevuta(atleta) {
   const buoni = (ruolo) => acc.filter((x) => x && x.ruolo === ruolo && L.emailValida(x.email));
   const scelti = buoni('genitore').length ? buoni('genitore') : buoni('atleta');
   const visti = new Set();
-  return scelti.map((x) => ({ email: String(x.email).trim().toLowerCase(), nome: x.nome || '' }))
+  return scelti.map((x) => ({ email: String(x.email).trim().toLowerCase(), nome: x.prenome || x.nome || '' }))
     .filter((d) => (visti.has(d.email) ? false : (visti.add(d.email), true)));
 }
 
