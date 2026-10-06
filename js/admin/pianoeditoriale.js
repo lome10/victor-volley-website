@@ -72,8 +72,13 @@
   /* ---- Sponsor collegati ai contenuti, con contatore ---- */
   var PE_TIER_RANK = { gold: 0, silver: 1, bronze: 2 };
   var PE_TIER_LABEL = { gold: 'Gold', silver: 'Silver', bronze: 'Bronze' };
-  function _peSponsors() {
-    return (VV.getSponsors() || []).slice().sort(function (a, b) {
+  /* ordine: più contenuti collegati prima; a parità di contatore, livello e posizione del nastro. exceptId: contenuto da non contare */
+  function _peSponsors(exceptId) {
+    var conta = {};
+    var elenco = (VV.getSponsors() || []).slice();
+    elenco.forEach(function (s) { conta[s.id] = _peSponsorCount(s.id, exceptId == null ? null : exceptId); });
+    return elenco.sort(function (a, b) {
+      if (conta[a.id] !== conta[b.id]) return conta[b.id] - conta[a.id];
       var ta = PE_TIER_RANK[a.livello || 'silver'], tb = PE_TIER_RANK[b.livello || 'silver'];
       return ta !== tb ? ta - tb : (a.order || 0) - (b.order || 0);
     });
@@ -113,7 +118,7 @@
   /* Nel modulo: una casella per sponsor, con il contatore che sale quando la si spunta. */
   function _renderPeSponsorBox(selected, itemId) {
     var box = document.getElementById('peSponsorBox');
-    var list = _peSponsors();
+    var list = _peSponsors(itemId);
     if (!list.length) { box.innerHTML = '<span style="font-size:13px;color:var(--a-muted)">Nessuno sponsor inserito: aggiungili dalla pagina «Sponsor».</span>'; return; }
     box.innerHTML = list.map(function (s) {
       var base = _peSponsorCount(s.id, itemId), on = selected.indexOf(s.id) !== -1;
