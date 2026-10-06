@@ -1819,7 +1819,8 @@ button { font-family: var(--font-body); cursor: pointer; }
 /* PIANO EDITORIALE — logo degli sponsor collegati, piccoli a destra del contenuto */
 .pe-chip { display: flex; align-items: center; gap: 6px; }
 .pe-chip-t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.pe-chip-logos { display: inline-flex; align-items: center; gap: 3px; flex: none; margin-left: auto; }
-.pe-chip-logos img { height: 14px; max-width: 30px; object-fit: contain; background: #fff; border-radius: 3px; padding: 1px 2px; }
-.pe-chip-ini, .pe-chip-more { display: inline-flex; align-items: center; justify-content: center; min-width: 14px; height: 14px; border-radius: 3px; background: #fff; color: #475569; font-size: 9px; font-weight: 700; padding: 0 2px; }
-.pe-agenda-item-top .pe-chip-logos img { height: 18px; max-width: 40px; }
+.pe-chip-logos { display: inline-flex; align-items: center; gap: 4px; flex: none; margin-left: auto; }
+.pe-chip-logos img { height: 24px; width: 52px; object-fit: contain; background: #fff; border: 1px solid #e2e8f0; border-radius: 5px; padding: 2px 4px; box-sizing: border-box; }
+.pe-chip-ini, .pe-chip-more { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; border-radius: 5px; background: #fff; border: 1px solid #e2e8f0; color: #475569; font-size: 11px; font-weight: 700; padding: 0 4px; box-sizing: border-box; }
+.pe-chip:has(.pe-chip-logos) { padding-top: 3px; padding-bottom: 3px; }
+.pe-agenda-item-top .pe-chip-logos img { height: 28px; width: 64px; }
