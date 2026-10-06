@@ -175,13 +175,22 @@
 
   /* Saldo e Differenza da obiettivo sono ora nella hero card (_renderObiettivo);
      qui restano solo i numeri di supporto, senza ripetere quanto già in vista. */
+  /* Indicatori della Panoramica: le definizioni stanno in cassa.js (stesse in Bilancio e Spese). */
+  function _oggiLocale() { var d = new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; }; return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); }
+  function _kpiPan(label, valore, sub, cls, pct, barCls) {
+    return '<div class="sp-kpi' + (cls ? ' sp-kpi--' + cls : '') + '"><span class="sp-kpi-l">' + label + '</span><span class="sp-kpi-v">' + valore + '</span>' +
+      (pct != null ? '<div class="sp-bar' + (barCls ? ' sp-bar--' + barCls : '') + '"><i style="width:' + Math.max(0, Math.min(100, pct)) + '%"></i></div>' : '') + '<span class="sp-kpi-s">' + sub + '</span></div>';
+  }
   function _renderStatCards() {
-    var r = _calcRiepilogo();
+    var n = B._calcNumeri(_oggiLocale()), eur = B._eur;
+    var tot = n.incassato + n.daIncassare, pcSpeso = n.spesePrevisto > 0 ? Math.round(n.speso / n.spesePrevisto * 100) : 0;
     document.getElementById('dgStatRow').innerHTML =
-      _budgetStatCard('Entrate confermate', r.entrateConfermate, '') +
-      _budgetStatCard('Da incassare (sponsor)', r.sponsorDaIncassare, '--orange') +
-      _budgetStatCard('Uscite', r.uscite, '--red');
+      _kpiPan('Incassato', eur(n.incassato), eur(n.daIncassare) + ' ancora da incassare', '', tot > 0 ? n.incassato / tot * 100 : 0, 'ok') +
+      _kpiPan('Da incassare', eur(n.daIncassare), n.ritardoN ? 'di cui ' + eur(n.ritardoEur) + ' in ritardo (' + n.ritardoN + ')' : 'nessun incasso in ritardo', n.ritardoN ? 'neg' : '') +
+      _kpiPan('Speso finora', eur(n.speso), pcSpeso + '% del previsto (' + eur(n.spesePrevisto) + ')', '', pcSpeso) +
+      _kpiPan('Ancora da pagare', eur(n.daPagare), n.spese.entro30n ? 'di cui ' + eur(n.spese.entro30eur) + ' scaduti o in scadenza entro 30 giorni' : 'nessuna scadenza nei prossimi 30 giorni', n.spese.entro30n ? 'warn' : '');
     _renderEntrateConfermateDettaglio();
+    if (B._renderPanoramicaBlocchi) B._renderPanoramicaBlocchi();
   }
 
   /* ---- CHARTS — SVG inline, nessuna libreria esterna ---- */

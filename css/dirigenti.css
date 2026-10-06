@@ -1012,3 +1012,23 @@ input, select, textarea { font-family: inherit; }
   .sp-group { grid-template-columns: 22px 1fr 44px; } .sp-gtot, .sp-gbar { display: none; }
 }
 @media (max-width: 540px) { .sp-grid { grid-template-columns: 1fr; } }
+
+/* ================================================
+   PANORAMICA E BILANCIO — «Da fare», cassa prevista, squadre
+================================================ */
+.cs-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 14px; margin-top: 14px; }
+.cs-card { padding: 16px; min-width: 0; }
+.cs-r { text-align: right; }
+.cs-neg { color: var(--dg-red); font-weight: 700; } .cs-pos { color: var(--dg-green); font-weight: 700; }
+.cs-svg { overflow-x: auto; margin-top: 8px; }
+.cs-svg svg { min-width: 520px; display: block; }
+.cs-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--dg-muted); }
+.cs-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+.cs-todo { list-style: none; margin: 0; padding: 0; }
+.cs-todo li { border-top: 1px solid var(--dg-border); } .cs-todo li:first-child { border-top: 0; }
+.cs-todo-b { display: flex; width: 100%; gap: 10px; align-items: center; text-align: left; border: 0; background: none; padding: 11px 4px; font: inherit; color: var(--dg-text); cursor: pointer; }
+.cs-todo-b:hover { background: #E6F3FF; }
+.cs-dot { width: 10px; height: 10px; border-radius: 99px; flex: none; background: var(--dg-orange); }
+.cs-todo-b--bad .cs-dot { background: var(--dg-red); } .cs-todo-b--info .cs-dot { background: var(--dg-blue); }
+.cs-go { margin-left: auto; color: var(--dg-muted); font-size: 12.5px; white-space: nowrap; }
+@media (max-width: 540px) { .cs-go { display: none; } }

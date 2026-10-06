@@ -10,7 +10,7 @@
   <link rel="preload" href="/assets/fonts/manrope-400-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/fonts.css?v=c0ba2518">
   <link rel="stylesheet" href="/css/admin.css?v=f8a0a60f">
-  <link rel="stylesheet" href="/css/dirigenti.css?v=2724fbf1">
+  <link rel="stylesheet" href="/css/dirigenti.css?v=28d357dc">
 </head>
 <body>
 
@@ -1482,7 +1482,7 @@
       <section id="sectionBudget" class="admin-section is-hidden">
 
         <nav class="budget-subtabs" aria-label="Sezioni Budget &amp; Forecast">
-          <button class="budget-subtab is-active" data-btab="riepilogo">Riepilogo</button>
+          <button class="budget-subtab is-active" data-btab="riepilogo">Panoramica</button>
           <button class="budget-subtab" data-btab="sponsor">Pipeline Sponsor</button>
           <button class="budget-subtab" data-btab="rette">Rette Atleti</button>
           <button class="budget-subtab" data-btab="tessere">Tessere</button>
@@ -1499,6 +1499,7 @@
               <div class="dg-hero-eyebrow" id="obiettivoSeasonNome">—</div>
               <div class="dg-hero-saldo" id="heroSaldo">€0</div>
               <div class="dg-hero-differenza" id="heroDifferenza">—</div>
+              <div class="dg-hero-differenza" id="heroPrevisto"></div>
             </div>
             <div class="dg-obiettivo-input-wrap">
               <span>Obiettivo €</span>
@@ -1512,7 +1513,32 @@
           </div>
         </div>
 
-        <div class="dg-stat-row" id="dgStatRow"></div>
+        <div class="sp-kpis" id="dgStatRow"></div>
+
+        <div class="cs-cols">
+          <div class="dg-card cs-card">
+            <div class="dg-card-title">Da fare</div>
+            <div class="dg-card-sub">Tutto ciò che richiede attenzione, in ordine di urgenza. Clicca per andare al punto giusto.</div>
+            <div id="panDaFare" style="margin-top:8px"></div>
+          </div>
+          <div class="dg-card cs-card">
+            <div class="dg-card-title">Cassa prevista</div>
+            <div class="dg-card-sub">Saldo mese per mese da oggi a fine stagione. Il dettaglio è in Bilancio.</div>
+            <div id="panCassaLegenda" style="margin-top:8px"></div>
+            <div class="cs-svg"><svg id="panCassaSvg" width="100%" role="img" aria-label="Cassa prevista, mese per mese"></svg></div>
+          </div>
+        </div>
+
+        <div class="dg-card cs-card" style="margin-top:14px">
+          <div class="dg-card-title">Quanto rende e quanto costa ogni squadra</div>
+          <div class="dg-card-sub">Rette previste contro spese previste delle categorie con lo stesso nome. Sponsor e tessere stanno sotto «Società e generali».</div>
+          <div class="dg-table-wrap" style="margin-top:10px">
+            <table class="dg-table">
+              <thead><tr><th>Squadra</th><th class="cs-r">Entrate previste</th><th class="cs-r">Spese previste</th><th class="cs-r">Margine</th></tr></thead>
+              <tbody id="panSquadreBody"><tr><td colspan="4" class="dg-empty">—</td></tr></tbody>
+            </table>
+          </div>
+        </div>
 
         <div class="dg-riepilogo-grid">
           <div class="dg-riepilogo-main">
@@ -1715,10 +1741,6 @@
         <div id="budgetPaneSpese" class="dg-section is-hidden">
           <div class="sp-kpis" id="speseKpis"></div>
           <div class="sp-alerts" id="speseAlerts"></div>
-          <div class="sp-subtabs" role="tablist" aria-label="Sezioni delle spese">
-            <button type="button" role="tab" id="speseTabVoci" data-sptab="voci" aria-selected="true">Voci di spesa</button>
-            <button type="button" role="tab" id="speseTabIva" data-sptab="iva" aria-selected="false">IVA</button>
-          </div>
           <div id="speseSecVoci">
             <div class="dg-card sp-card">
               <div class="sp-toolbar">
@@ -1748,30 +1770,17 @@
               <div class="sp-foot" id="speseFoot"></div>
             </div>
           </div>
-          <div id="speseSecIva" class="is-hidden">
-          <div class="dg-card">
-            <div class="dg-toolbar" style="justify-content:space-between;align-items:flex-start">
-              <div>
-                <div class="dg-card-title">Riepilogo IVA</div>
-                <div class="dg-card-sub">Voci IVA generate automaticamente: sugli sponsor "chiusi" (11% dell'importo confermato, già a preventivo alla chiusura; a sostenuto man mano che le tranche vengono incassate) e sulle voci di spesa con "IVA %" impostata. La scadenza di versamento è calcolata in automatico sui 4 trimestri classici (16 mag, 20 ago, 16 nov, 16 mar) in base alla data della voce, ma puoi forzarla a mano. Finché non spunti "Pagata" l'IVA resta nel totale Spese ma non conta come uscita nel Bilancio/flussi di cassa.</div>
-              </div>
-              <button class="dg-btn-ghost dg-btn-sm" style="flex-shrink:0" onclick="DG.migraIvaSponsor()" title="Da lanciare una volta per stagione: applica il calcolo IVA agli sponsor già chiusi in passato e unifica le vecchie voci generate per singola tranche">Ricalcola IVA sponsor</button>
-            </div>
-            <div class="dg-stat-row" id="ivaRiepilogoStats" style="margin-top:14px"></div>
-            <div class="dg-table-wrap" style="margin-top:14px">
-              <table class="dg-table">
-                <thead><tr><th>Voce</th><th>Aliquota</th><th>Preventivato</th><th>Sostenuto</th><th>Data</th><th>Scadenza versamento</th><th>Pagata</th><th></th></tr></thead>
-                <tbody id="ivaRiepilogoBody"><tr><td colspan="8" class="dg-empty">—</td></tr></tbody>
-              </table>
-            </div>
-            <div id="ivaRiepilogoEsclusi" style="margin-top:10px"></div>
-          </div>
-          </div>
           <div id="speseDrawerRoot"></div>
         </div>
 
         <!-- ---- Bilancio (entrate vs uscite, per mese) ---- -->
         <div id="budgetPaneBilancio" class="dg-section is-hidden">
+          <div class="sp-subtabs" role="tablist" aria-label="Sezioni del bilancio" style="margin-top:0">
+            <button type="button" role="tab" id="bilTabCons" data-bsub="cons" aria-selected="true">Consuntivo</button>
+            <button type="button" role="tab" id="bilTabPrev" data-bsub="prev" aria-selected="false">Previsione di cassa</button>
+            <button type="button" role="tab" id="bilTabIva" data-bsub="iva" aria-selected="false">IVA</button>
+          </div>
+          <div id="bilSecCons">
           <div id="bilancioPerCategoria" class="dg-card">
             <div class="dg-card-title">Per categoria</div>
             <div class="dg-card-sub">Da dove arrivano le entrate e dove vanno le uscite in questa stagione. «Incassato» conta solo ciò che è già pagato; «Da incassare» è il previsto non ancora pagato. Clicca una riga per vedere nel saldo mensile solo quella voce.</div>
@@ -1835,14 +1844,42 @@
             </div>
           </div>
 
-          <div class="dg-card" style="margin-top:14px">
-            <div class="dg-card-title">Spese: preventivato vs sostenuto (forecasting)</div>
-            <div class="dg-card-sub">A differenza del saldo mensile qui sopra (soldi realmente mossi), questo riepilogo confronta quanto preventivato con quanto effettivamente speso, per categoria.</div>
-            <div class="dg-stat-row" id="bilancioForecastStats" style="margin-top:14px"></div>
-            <div id="bilancioForecastTable" style="margin-top:14px"></div>
+          </div>
+          <div id="bilSecPrev" class="is-hidden">
+            <div class="dg-card cs-card">
+              <div class="dg-card-title">Previsione di cassa</div>
+              <div class="dg-card-sub">Cosa dovrebbe entrare, cosa dovrebbe uscire e quanto resta in cassa, mese per mese. Parte dal saldo di oggi (incassato meno speso).</div>
+              <div id="prevLegenda" style="margin-top:10px"></div>
+              <div class="cs-svg"><svg id="prevSvg" width="100%" role="img" aria-label="Entrate, uscite e saldo previsti per mese"></svg></div>
+              <p id="prevNote" class="dg-card-sub" style="margin-top:10px"></p>
+              <div class="dg-table-wrap" style="margin-top:10px">
+                <table class="dg-table">
+                  <thead><tr><th>Mese</th><th>Entrate previste</th><th>Uscite previste</th><th>Saldo del mese</th><th>In cassa</th><th></th></tr></thead>
+                  <tbody id="prevBody"><tr><td colspan="6" class="dg-empty">—</td></tr></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div id="bilSecIva" class="is-hidden">
+          <div class="dg-card">
+            <div class="dg-toolbar" style="justify-content:space-between;align-items:flex-start">
+              <div>
+                <div class="dg-card-title">Riepilogo IVA</div>
+                <div class="dg-card-sub">Voci IVA generate automaticamente: sugli sponsor "chiusi" (11% dell'importo confermato, già a preventivo alla chiusura; a sostenuto man mano che le tranche vengono incassate) e sulle voci di spesa con "IVA %" impostata. La scadenza di versamento è calcolata in automatico sui 4 trimestri classici (16 mag, 20 ago, 16 nov, 16 mar) in base alla data della voce, ma puoi forzarla a mano. Finché non spunti "Pagata" l'IVA resta nel totale Spese ma non conta come uscita nel Bilancio/flussi di cassa.</div>
+              </div>
+              <button class="dg-btn-ghost dg-btn-sm" style="flex-shrink:0" onclick="DG.migraIvaSponsor()" title="Da lanciare una volta per stagione: applica il calcolo IVA agli sponsor già chiusi in passato e unifica le vecchie voci generate per singola tranche">Ricalcola IVA sponsor</button>
+            </div>
+            <div class="dg-stat-row" id="ivaRiepilogoStats" style="margin-top:14px"></div>
+            <div class="dg-table-wrap" style="margin-top:14px">
+              <table class="dg-table">
+                <thead><tr><th>Voce</th><th>Aliquota</th><th>Preventivato</th><th>Sostenuto</th><th>Data</th><th>Scadenza versamento</th><th>Pagata</th><th></th></tr></thead>
+                <tbody id="ivaRiepilogoBody"><tr><td colspan="8" class="dg-empty">—</td></tr></tbody>
+              </table>
+            </div>
+            <div id="ivaRiepilogoEsclusi" style="margin-top:10px"></div>
+          </div>
           </div>
         </div>
-
       </section>
 
       <!-- ---- LOG (sola lettura, tutta l'area dirigenti) ---- -->
@@ -2491,15 +2528,16 @@
   <script src="/js/admin/pianoeditoriale.js?v=c6cd1275"></script>
   <script src="/js/admin/bacheca.js?v=e180b759"></script>
   <script src="/js/admin/budget/state.js?v=04a5a992"></script>
-  <script src="/js/admin/budget/riepilogo.js?v=0e9d0db9"></script>
+  <script src="/js/admin/budget/riepilogo.js?v=f45051b5"></script>
   <script src="/js/admin/budget/sponsor.js?v=3169c89d"></script>
   <script src="/js/admin/budget/materiali.js?v=3202b53a"></script>
   <script src="/js/admin/budget/rette.js?v=411c84cb"></script>
   <script src="/js/admin/budget/tessere.js?v=29a979d9"></script>
-  <script src="/js/admin/budget/spese.js?v=50e089ad"></script>
+  <script src="/js/admin/budget/spese.js?v=88290983"></script>
   <script src="/js/admin/budget/iva.js?v=2b927099"></script>
   <script src="/js/admin/budget/exportpdf.js?v=5d577cf9"></script>
-  <script src="/js/admin/budget/bilancio.js?v=1704743b"></script>
+  <script src="/js/admin/budget/cassa.js?v=ebc4aa2e"></script>
+  <script src="/js/admin/budget/bilancio.js?v=d945b9e2"></script>
   <script src="/js/admin/budget/log.js?v=a69cb9fe"></script>
   <script src="/js/admin/budget/main.js?v=6443bdc9"></script>
   <script src="/js/admin/password.js?v=ec78580e"></script>

@@ -189,4 +189,122 @@ t('Spese: pannello laterale, campi bloccati quando speso e preventivato vengono 
   DG.speseDrawerChiudi(); assert.strictEqual(els.speseDrawerRoot.innerHTML, ''); assert.strictEqual(B._speseDrawerId, null);
 });
 
-console.log(process.exitCode ? 'Collaudo fallito.' : 'OK: ' + passed + ' verifiche su Bilancio e scheda Spese.');
+/* ---------- sponsor senza piano di pagamento: entrate senza data ---------- */
+t('Bilancio: uno sponsor chiuso senza tranche va in «Entrate senza data» e i totali tornano', () => {
+  const B = stato({
+    _sponsorizzazioni: [{ id: 'sp1', seasonId: 's1', aziendaId: 'az1', stato: 'chiuso', importoConfermato: 500 }, { id: 'sp2', seasonId: 's1', aziendaId: 'az2', stato: 'chiuso', importoConfermato: 800 }, { id: 'sp3', seasonId: 's1', aziendaId: 'az3', stato: 'prospect', importoConfermato: 900 }],
+    _tranche: [{ sponsorizzazioneId: 'sp2', importo: 800, scadenza: '2026-08-31', pagato: true, dataIncasso: '2026-09-02' }],
+    _vociSpesa: [{ importoSostenuto: 100, dataSpesa: '2026-09-10', categoriaSpesaId: 'c1' }] });
+  const r = B._calcBilancioMensile();
+  const ultima = r.righe[r.righe.length - 1];
+  assert.strictEqual(ultima.label, 'Entrate senza data'); assert.strictEqual(ultima.entrate, 500);
+  assert.strictEqual(r.totEntrate, 1300, 'sponsor con tranche (800) + sponsor senza piano (500); il prospect non conta');
+  assert.strictEqual(r.entrateList[r.entrateList.length - 1].scadenza, '', 'nell’elenco degli incassi la voce senza data sta in fondo');
+  assert.strictEqual(B._calcBilancioMensile('fonte:Sponsor').totEntrate, 1300);
+  assert.strictEqual(B._calcBilancioMensile('cat:c1').totEntrate, 0);
+  assert.strictEqual(B._calcBilancioPerCategoria === undefined, false);
+});
+
+/* ---------- cassa.js: numeri unificati, previsione di cassa, squadre, «Da fare» ---------- */
+function statoCassa(extra) {
+  const { doc, els } = ambienteDom();
+  ['panDaFare', 'panCassaLegenda', 'panCassaSvg', 'heroPrevisto', 'panSquadreBody', 'prevLegenda', 'prevSvg', 'prevNote', 'prevBody'].forEach((id) => doc.getElementById(id));
+  const esc = (x) => String(x == null ? '' : x).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const B = Object.assign({
+    _currentSeasonId: 's1', _seasons: [{ id: 's1', nome: '2026/2027', dataFine: tra(300) }],
+    _sponsorizzazioni: [
+      { id: 'sp1', seasonId: 's1', aziendaId: 'az1', stato: 'chiuso', importoConfermato: 3000 },
+      { id: 'sp2', seasonId: 's1', aziendaId: 'az2', stato: 'chiuso', importoConfermato: 500 },
+      { id: 'sp3', seasonId: 's1', aziendaId: 'az3', stato: 'prospect', importoConfermato: 900 }],
+    _tranche: [
+      { sponsorizzazioneId: 'sp1', importo: 1000, scadenza: tra(-30), pagato: true },
+      { sponsorizzazioneId: 'sp1', importo: 1000, scadenza: tra(-5), pagato: false },
+      { sponsorizzazioneId: 'sp1', importo: 1000, scadenza: tra(40), pagato: false },
+      { sponsorizzazioneId: 'sp3', importo: 700, scadenza: tra(-9), pagato: false }],
+    _categorieAtleti: [{ id: 'k1', nome: 'Under 13 maschile' }, { id: 'k2', nome: 'Società' }],
+    _atletiRette: [{ id: 'a1', nome: 'Luca', cognome: 'Rossi', categoriaAtletiId: 'k1' }],
+    _rateAtleti: [
+      { atletaRettaId: 'a1', importo: 120, scadenza: tra(-60), pagata: true },
+      { atletaRettaId: 'a1', importo: 105, scadenza: tra(-2), pagata: false },
+      { atletaRettaId: 'a1', importo: 105, scadenza: tra(70), pagata: false },
+      { atletaRettaId: 'altro', importo: 999, scadenza: tra(-2), pagata: false }],
+    _tessere: [{ numero: 1, nome: 'Mario', pagata: true }, { numero: 2, nome: 'Anna', pagata: false }, { numero: 3, nome: 'Paolo', pagata: false }, { numero: 4, nome: '', pagata: false }],
+    _categorieSpesa: [{ id: 'c1', nome: 'Under 13 Maschile' }, { id: 'c2', nome: 'Società' }, { id: 'c3', nome: 'Federazione' }],
+    _vociSpesa: [
+      voce({ categoriaSpesaId: 'c1', importoPreventivato: 1000, importoSostenuto: 400, dataSpesa: tra(10) }),
+      voce({ categoriaSpesaId: 'c2', importoPreventivato: 300 }),
+      voce({ categoriaSpesaId: 'c3', isIva: true, importoPreventivato: 220, ivaScadenza: tra(45), pagata: false }),
+      voce({ categoriaSpesaId: 'c3', importoPreventivato: 100, importoSostenuto: 100, dataSpesa: tra(-20) }),
+      voce({ categoriaSpesaId: 'c3', isIva: true, importoPreventivato: 50, importoSostenuto: 50, ivaScadenza: tra(-20), pagata: true })],
+    _calcTessere: () => ({ prezzo: 20, assegnate: 3, pagate: 1, incassato: 20, daIncassare: 40, righe: [] }),
+    _calcRiepilogo: () => ({ entrateConfermate: 1640, saldo: 1240, uscite: 400, sponsorChiusi: 1500, tessere: 20, obiettivo: 0 }),
+    _renderIvaRiepilogo: () => { B._ivaRenderizzata = true; },
+    _renderStatCards: noop, _renderCharts: noop, _renderBilancio: noop, _delIconSm: () => '', _speseFilterCategoriaId: '', _speseExpanded: {},
+    _trimestreIvaDaData: () => null, _aziendaById: (id) => ({ ragioneSociale: 'Azienda ' + id }), _switchBudgetTab: (x) => { B._tabAperta = x; },
+    _atletaRettaById: () => null, _sponsorDaIncassare: () => 0, _calcRetteAtleti: () => ({ totIncassato: 0, totPrevisto: 0, righe: [] })
+  }, extra || {});
+  const window = { Admin: { budgetShared: B, esc, fmtDate: (d) => d, fmtDateLong: (d) => d, avviso: noop, logWrite: () => Promise.resolve(), diff: () => [] }, AdminActions: {} };
+  ['bilancio.js', 'spese.js', 'cassa.js'].forEach((f) => new Function('window', 'document', 'db', fs.readFileSync(path.join(__dirname, '..', 'js', 'admin', 'budget', f), 'utf8'))(window, doc, {}));
+  return { B, els };
+}
+
+t('Cassa: numeri unificati (da incassare, ritardi, previsto a fine stagione)', () => {
+  const { B } = statoCassa();
+  const n = B._calcNumeri(oggi);
+  assert.strictEqual(n.incassato, 1640);
+  assert.strictEqual(n.daIncassare, 1000 + 1000 + 105 + 105 + 2 * 20, 'tranche e rate non pagate dello sponsor chiuso e degli atleti della stagione, più 2 tessere (il prospect e l’atleta di un’altra stagione non contano)');
+  assert.strictEqual(n.ritardoN, 2); assert.strictEqual(n.ritardoEur, 1105); assert.strictEqual(n.ritardoRate, 1); assert.strictEqual(n.ritardoTranche, 1);
+  assert.strictEqual(n.spesePrevisto, 1000 + 300 + 220 + 100 + 50);
+  assert.strictEqual(n.fineStagione, 1640 + n.daIncassare - n.spesePrevisto);
+  assert.deepStrictEqual(n.senzaPiano, { n: 1, eur: 500 });
+  assert.strictEqual(n.inCassa, 1240);
+});
+t('Cassa: previsione mese per mese (scaduto = mese corrente, senza data fuori, IVA versata esclusa)', () => {
+  const { B } = statoCassa();
+  const p = B._calcPrevisioneCassa(oggi);
+  assert.strictEqual(p.righe[0].k, oggi.slice(0, 7));
+  assert.ok(p.righe[0].entrate >= 1105, 'tranche e rata scadute contano nel mese corrente');
+  assert.strictEqual(p.righe.reduce((s, r) => s + r.entrate, 0), 1000 + 105 + 1000 + 105);
+  assert.strictEqual(p.righe.reduce((s, r) => s + r.uscite, 0), 600 + 220, 'residuo della voce con data + IVA da versare; niente voce senza data, niente IVA già versata');
+  assert.strictEqual(p.senzaDataUscite, 300); assert.strictEqual(p.senzaDataEntrate, 40);
+  assert.strictEqual(p.inizio, 1240);
+  assert.strictEqual(p.righe[p.righe.length - 1].saldo, 1240 + 2210 - 820);
+  assert.ok(p.righe.length >= 9, 'arriva a fine stagione');
+  p.righe.reduce((prev, r) => { assert.strictEqual(r.saldo, prev + r.entrate - r.uscite); return r.saldo; }, 1240);
+});
+t('Cassa: rendimento per squadra («Società» non è una squadra, il resto va in «Società e generali»)', () => {
+  const { B } = statoCassa();
+  const sq = B._calcPerSquadra();
+  assert.deepStrictEqual(sq.map((x) => x.nome), ['Under 13 maschile', 'Società e generali']);
+  assert.deepStrictEqual([sq[0].entrate, sq[0].incassato, sq[0].spese, sq[0].margine], [330, 120, 1000, -670]);
+  assert.deepStrictEqual([sq[1].entrate, sq[1].incassato, sq[1].spese, sq[1].margine], [3500 + 60, 1500 + 20, 300 + 220 + 100 + 50, 3560 - 670]);
+});
+t('Cassa: «Da fare» in ordine di urgenza, con la scheda giusta per ciascuno', () => {
+  const { B } = statoCassa();
+  const l = B._calcDaFare(oggi);
+  assert.deepStrictEqual(l.map((x) => x.tab), ['rette', 'spese', 'bilancio', 'sponsor', 'spese', 'tessere']);
+  assert.strictEqual(l[0].liv, 'bad'); assert.ok(/2 incassi in ritardo/.test(l[0].testo));
+  assert.strictEqual(l[1].spese, 'in-scadenza'); assert.strictEqual(l[2].sub, 'iva'); assert.strictEqual(l[4].spese, 'senza-data');
+  assert.ok(/1 sponsor chiuso senza piano/.test(l[3].testo) && /2 tessere assegnate/.test(l[5].testo));
+  B._vaiA(l[1]); assert.strictEqual(B._tabAperta, 'spese'); assert.strictEqual(B._speseStato, 'in-scadenza');
+  B._vaiA(l[2]); assert.strictEqual(B._tabAperta, 'bilancio'); assert.strictEqual(B._bilSub, 'iva');
+});
+t('Cassa cattiva: una cassa che va sotto zero è il primo avviso', () => {
+  const { B } = statoCassa({ _calcRiepilogo: () => ({ entrateConfermate: 100, saldo: -5000, uscite: 5100, sponsorChiusi: 100, tessere: 0, obiettivo: 0 }) });
+  const l = B._calcDaFare(oggi);
+  assert.strictEqual(l[0].liv, 'bad'); assert.ok(/La cassa va sotto zero/.test(l[0].testo)); assert.strictEqual(l[0].sub, 'prev');
+});
+t('Cassa: Panoramica e Bilancio si disegnano (schede, grafico, tabelle)', () => {
+  const { B, els } = statoCassa();
+  B._renderPanoramicaBlocchi();
+  assert.ok(/data-todo="0"/.test(els.panDaFare.innerHTML) && /in ritardo/.test(els.panDaFare.innerHTML));
+  assert.ok(els.panCassaSvg.innerHTML.includes('<polyline') && els.panCassaLegenda.innerHTML.includes('Saldo in cassa'));
+  assert.ok(/Under 13 maschile/.test(els.panSquadreBody.innerHTML) && /Società e generali/.test(els.panSquadreBody.innerHTML));
+  assert.ok(/a fine stagione/.test(els.heroPrevisto.innerHTML));
+  B._bilSub = 'prev'; B._renderBilancioSezioni();
+  assert.ok((els.prevBody.innerHTML.match(/<tr>/g) || []).length >= 9 && els.prevSvg.innerHTML.includes('<polyline'));
+  assert.ok(/di spese senza data non sono incluse/.test(els.prevNote.innerHTML));
+  B._bilSub = 'iva'; B._renderBilancioSezioni(); assert.strictEqual(B._ivaRenderizzata, true);
+});
+
+console.log(process.exitCode ? 'Collaudo fallito.' : 'OK: ' + passed + ' verifiche su Bilancio, Spese e cassa.');

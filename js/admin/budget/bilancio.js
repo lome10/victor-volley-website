@@ -47,7 +47,16 @@
     var entrateTessere = B._calcTessere().righe.map(function (r) {
       return { scadenza: r.dataPagamento, importo: r.importo, tipo: 'Tessere', nome: 'Tessera n. ' + r.numero + ' — ' + r.nome, note: '' };
     });
-    var entrate = entrateSponsor.concat(entrateRette, entrateTessere);
+    /* Sponsor chiusi senza piano di pagamento: contano come incassati per intero (regola storica, vedi _sponsorIncassato),
+       ma non hanno una data. Finiscono in «Entrate senza data», come le spese senza data. */
+    var entrateSenzaPiano = B._sponsorizzazioni.filter(function (s) {
+      return s.seasonId === B._currentSeasonId && s.stato === 'chiuso' && (+s.importoConfermato || 0) > 0 &&
+        !B._tranche.some(function (t) { return t.sponsorizzazioneId === s.id; });
+    }).map(function (s) {
+      var az = B._aziendaById(s.aziendaId);
+      return { scadenza: '', importo: +s.importoConfermato || 0, tipo: 'Sponsor', nome: az ? az.ragioneSociale : '—', note: 'Senza piano di pagamento: importo confermato' };
+    });
+    var entrate = entrateSponsor.concat(entrateSenzaPiano, entrateRette, entrateTessere);
     /* Le voci IVA sono "sostenute" ma non ancora un'uscita di cassa reale finché
        non vengono marcate come versate (v.pagata) nel Riepilogo IVA. */
     var uscite = B._vociSpesa.filter(function (v) { return +v.importoSostenuto > 0 && (!v.isIva || v.pagata); });
@@ -60,10 +69,10 @@
     }
 
     var months = {};
-    var senzaData = 0;
+    var senzaData = 0, entrateSenzaData = 0;
     entrate.forEach(function (t) {
       var k = _monthKey(t.scadenza);
-      if (!k) return;
+      if (!k) { entrateSenzaData += (+t.importo || 0); return; }
       months[k] = months[k] || { entrate: 0, uscite: 0 };
       months[k].entrate += (+t.importo || 0);
     });
@@ -84,13 +93,18 @@
       totEntrate += m.entrate; totUscite += m.uscite;
       return { label: _monthLabel(k), entrate: m.entrate, uscite: m.uscite, saldo: saldo, progressivo: progressivo };
     });
+    if (entrateSenzaData) {
+      progressivo += entrateSenzaData;
+      totEntrate += entrateSenzaData;
+      righe.push({ label: 'Entrate senza data', entrate: entrateSenzaData, uscite: 0, saldo: entrateSenzaData, progressivo: progressivo });
+    }
     if (senzaData) {
       progressivo -= senzaData;
       totUscite += senzaData;
       righe.push({ label: 'Spese senza data', entrate: 0, uscite: senzaData, saldo: -senzaData, progressivo: progressivo });
     }
 
-    var entrateSorted = entrate.slice().sort(function (a, b) { return a.scadenza < b.scadenza ? -1 : 1; });
+    var entrateSorted = entrate.slice().sort(function (a, b) { return (a.scadenza || '9999') < (b.scadenza || '9999') ? -1 : 1; });
     return { righe: righe, totEntrate: totEntrate, totUscite: totUscite, entrateList: entrateSorted };
   }
 
@@ -106,7 +120,7 @@
     var tess = B._calcTessere();
     var entrate = [
       { fonte: 'Sponsor', filtro: 'fonte:Sponsor', incassato: sponsorInc, daIncassare: sponsorDa },
-      { fonte: 'Retta atleti', filtro: 'fonte:Retta atleti', incassato: rette.totIncassato, daIncassare: Math.max(0, rette.totPrevisto - rette.totIncassato) },
+      { fonte: 'Retta atleti', filtro: 'fonte:Retta atleti', incassato: rette.totIncassato, daIncassare: B._incassiAttesi().filter(function (e) { return e.fonte === 'Rette'; }).reduce(function (s, e) { return s + e.importo; }, 0) },
       { fonte: 'Tessere', filtro: 'fonte:Tessere', incassato: tess.incassato, daIncassare: tess.daIncassare }
     ];
     var totEntrate = entrate.reduce(function (s, r) { return s + r.incassato; }, 0);
@@ -216,13 +230,14 @@
 
     entrateBody.innerHTML = b.entrateList.length ? b.entrateList.map(function (t) {
       return '<tr>' +
-        '<td>' + _fmtDateLong(t.scadenza) + '</td>' +
+        '<td>' + (t.scadenza ? _fmtDateLong(t.scadenza) : '—') + '</td>' +
         '<td>' + esc(t.tipo) + '</td>' +
         '<td>' + esc(t.nome) + '</td>' +
         '<td>' + _eur(t.importo) + '</td>' +
         '<td>' + esc(t.note || '') + '</td>' +
         '</tr>';
     }).join('') : '<tr><td colspan="5" class="dg-empty">Nessuna entrata incassata per questa stagione.</td></tr>';
+    if (B._renderBilancioSezioni) B._renderBilancioSezioni();
   }
 
   /* ---- Esportato per gli altri file del Budget ---- */

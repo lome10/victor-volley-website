@@ -197,7 +197,6 @@
   B._speseQ = '';
   B._speseStato = 'tutti';
   B._speseGruppiChiusi = {};
-  B._speseSub = 'voci';
   B._speseDrawerId = null;
 
   /* data di oggi nel fuso del browser (toISOString darebbe quella UTC: ieri tra mezzanotte e le 2 in Italia) */
@@ -290,15 +289,9 @@
     if (!document.getElementById('speseList')) return;
     var oggi = _oggiIso(), k = _calcSpeseKpi(oggi);
     _populateSpeseFilterCategoria();
-    B._renderIvaRiepilogo();
     document.getElementById('speseKpis').innerHTML = _speseKpiHtml(k, _seasonCorrente());
     document.getElementById('speseAlerts').innerHTML = _speseAlertsHtml(k);
     document.querySelectorAll('#speseFilterStato [data-ss]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-ss') === B._speseStato)); });
-    var inVoci = B._speseSub === 'voci';
-    document.getElementById('speseSecVoci').classList.toggle('is-hidden', !inVoci);
-    document.getElementById('speseSecIva').classList.toggle('is-hidden', inVoci);
-    document.getElementById('speseTabVoci').setAttribute('aria-selected', String(inVoci));
-    document.getElementById('speseTabIva').setAttribute('aria-selected', String(!inVoci));
 
     var items = _vociFiltrate(oggi), per = {}, html = '';
     items.forEach(function (v) { var key = v.categoriaSpesaId || '__none__'; (per[key] = per[key] || []).push(v); });
@@ -320,7 +313,7 @@
     var ivaTot = B._vociSpesa.reduce(function (t, v) { return t + (v.isIva ? (+v.importoPreventivato || 0) : 0); }, 0);
     document.getElementById('speseFoot').innerHTML = '<span>Totale' + (items.length !== B._vociSpesa.filter(function (v) { return !v.isIva; }).length ? ' (filtrato)' : '') + '</span>' +
       '<span>Previsto ' + B._eur(tp) + ' · Speso ' + B._eur(ts) + ' · Da pagare ' + B._eur(items.reduce(function (t, v) { return t + _residuoVoce(v); }, 0)) + '</span>' +
-      (ivaTot ? '<span class="sp-foot-note">IVA collegata (preventivata): ' + B._eur(ivaTot) + ' · vedi la scheda IVA</span>' : '');
+      (ivaTot ? '<span class="sp-foot-note">IVA collegata (preventivata): ' + B._eur(ivaTot) + ' · si versa dal Bilancio, sezione IVA</span>' : '');
     if (B._speseDrawerId) _renderDrawer();
   }
 
@@ -506,8 +499,7 @@
       var x;
       if ((x = e.target.closest('[data-pay]'))) { DG.spesaSegnaPagata(x.getAttribute('data-pay')); return; }
       if ((x = e.target.closest('[data-g]'))) { var k = x.getAttribute('data-g'); B._speseGruppiChiusi[k] = !B._speseGruppiChiusi[k]; _renderSpese(); return; }
-      if ((x = e.target.closest('[data-ss]'))) { B._speseStato = x.getAttribute('data-ss'); B._speseSub = 'voci'; _renderSpese(); return; }
-      if ((x = e.target.closest('[data-sptab]'))) { B._speseSub = x.getAttribute('data-sptab'); _renderSpese(); return; }
+      if ((x = e.target.closest('[data-ss]'))) { B._speseStato = x.getAttribute('data-ss'); _renderSpese(); return; }
       if ((x = e.target.closest('.sp-row[data-id]'))) DG.speseDrawerApri(x.getAttribute('data-id'));
     });
     pane.addEventListener('keydown', function (e) {
