@@ -163,6 +163,7 @@ service cloud.firestore {
     // ma non c'è motivo di esporla.
     match /inviti/{id}                    { allow read, write: if false; }
     match /tessere/{document=**}          { allow read, write: if isDirigente(); }
+    match /altreEntrate/{document=**}     { allow read, write: if isDirigente(); }
     match /vociSpesa/{document=**}        { allow read, write: if isDirigente(); }
     match /sottospese/{document=**}       { allow read, write: if isDirigente(); }
     match /categorieSpesa/{document=**}   { allow read, write: if isDirigente(); }

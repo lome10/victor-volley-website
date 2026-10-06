@@ -24,7 +24,7 @@
   function _eurSigned(n) { return (n < 0 ? '-' : '') + '€' + Math.abs(Math.round(n)).toLocaleString('it-IT'); }
 
   /* Calcolo puro (nessun DOM), condiviso da _renderBilancio() e dall'export PDF.
-     filtro (facoltativo): 'fonte:<Sponsor|Retta atleti|Tessere>' tiene solo quelle entrate (e nessuna uscita);
+     filtro (facoltativo): 'fonte:<Sponsor|Retta atleti|Tessere|Altre entrate>' tiene solo quelle entrate (e nessuna uscita);
      'cat:<id categoria spesa>' tiene solo le uscite di quella categoria ('cat:' = senza categoria). */
   function _calcBilancioMensile(filtro) {
     var curIds = B._sponsorizzazioni.filter(function (s) { return s.seasonId === B._currentSeasonId; }).map(function (s) { return s.id; });
@@ -56,7 +56,10 @@
       var az = B._aziendaById(s.aziendaId);
       return { scadenza: '', importo: +s.importoConfermato || 0, tipo: 'Sponsor', nome: az ? az.ragioneSociale : '—', note: 'Senza piano di pagamento: importo confermato' };
     });
-    var entrate = entrateSponsor.concat(entrateSenzaPiano, entrateRette, entrateTessere);
+    var entrateAltre = (B._altreEntrate || []).filter(function (v) { return v.pagata; }).map(function (v) {
+      return { scadenza: v.dataIncasso || v.data || '', importo: +v.importo || 0, tipo: 'Altre entrate', nome: v.descrizione || '—', note: v.note || '' };
+    });
+    var entrate = entrateSponsor.concat(entrateSenzaPiano, entrateRette, entrateTessere, entrateAltre);
     /* Le voci IVA sono "sostenute" ma non ancora un'uscita di cassa reale finché
        non vengono marcate come versate (v.pagata) nel Riepilogo IVA. */
     var uscite = B._vociSpesa.filter(function (v) { return +v.importoSostenuto > 0 && (!v.isIva || v.pagata); });
@@ -118,10 +121,12 @@
     var sponsorDa = curSp.reduce(function (s, x) { return s + B._sponsorDaIncassare(x); }, 0);
     var rette = B._calcRetteAtleti();
     var tess = B._calcTessere();
+    var altre = B._calcAltreEntrate ? B._calcAltreEntrate() : { incassato: 0, daIncassare: 0 };
     var entrate = [
       { fonte: 'Sponsor', filtro: 'fonte:Sponsor', incassato: sponsorInc, daIncassare: sponsorDa },
       { fonte: 'Retta atleti', filtro: 'fonte:Retta atleti', incassato: rette.totIncassato, daIncassare: B._incassiAttesi().filter(function (e) { return e.fonte === 'Rette'; }).reduce(function (s, e) { return s + e.importo; }, 0) },
-      { fonte: 'Tessere', filtro: 'fonte:Tessere', incassato: tess.incassato, daIncassare: tess.daIncassare }
+      { fonte: 'Tessere', filtro: 'fonte:Tessere', incassato: tess.incassato, daIncassare: tess.daIncassare },
+      { fonte: 'Altre entrate', filtro: 'fonte:Altre entrate', incassato: altre.incassato, daIncassare: altre.daIncassare }
     ];
     var totEntrate = entrate.reduce(function (s, r) { return s + r.incassato; }, 0);
     var totDaIncassare = entrate.reduce(function (s, r) { return s + r.daIncassare; }, 0);
@@ -174,7 +179,7 @@
     B._vociSpesa.forEach(function (v) { cats[v.categoriaSpesaId || ''] = true; });
     var opzioni = ['<option value="">Tutto</option>',
       '<optgroup label="Entrate per fonte">',
-      '<option value="fonte:Sponsor">Sponsor</option><option value="fonte:Retta atleti">Rette atleti</option><option value="fonte:Tessere">Tessere</option>',
+      '<option value="fonte:Sponsor">Sponsor</option><option value="fonte:Retta atleti">Rette atleti</option><option value="fonte:Tessere">Tessere</option><option value="fonte:Altre entrate">Altre entrate</option>',
       '</optgroup><optgroup label="Uscite per categoria">'];
     Object.keys(cats).map(function (key) { var c = key ? B._categoriaSpesaById(key) : null; return { key: key, nome: c ? c.nome : 'Senza categoria' }; })
       .sort(function (a, b) { return a.nome.localeCompare(b.nome); })

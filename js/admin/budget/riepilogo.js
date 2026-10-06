@@ -20,15 +20,16 @@
       .reduce(function (s, x) { return s + (+x.importoStimato || 0) * (+x.probabilitaChiusura || 0); }, 0);
     var rette = B._calcRetteAtleti().totIncassato;
     var tessere = B._calcTessere().incassato;
+    var altre = B._calcAltreEntrate ? B._calcAltreEntrate().incassato : 0;
     var uscite = B._vociSpesa.reduce(function (s, v) { return s + (+v.importoSostenuto || 0); }, 0);
-    var entrateConfermate = sponsorChiusi + rette + tessere;
+    var entrateConfermate = sponsorChiusi + rette + tessere + altre;
     var saldo = entrateConfermate - uscite;
     var season = B._seasons.find(function (s) { return s.id === B._currentSeasonId; }) || {};
     var obiettivo = +season.obiettivoSaldo || 0;
     var differenza = saldo - obiettivo;
     var pct = obiettivo > 0 ? Math.round(saldo / obiettivo * 100) : 0;
     return {
-      sponsorChiusi: sponsorChiusi, sponsorDaIncassare: sponsorDaIncassare, sponsorPotenziali: sponsorPotenziali, rette: rette, tessere: tessere, uscite: uscite,
+      sponsorChiusi: sponsorChiusi, sponsorDaIncassare: sponsorDaIncassare, sponsorPotenziali: sponsorPotenziali, rette: rette, tessere: tessere, altre: altre, uscite: uscite,
       entrateConfermate: entrateConfermate, saldo: saldo, obiettivo: obiettivo, differenza: differenza, pct: pct
     };
   }
@@ -44,7 +45,9 @@
     })).concat((function () {
       var t = B._calcTessere();
       return [{ tipo: 'Tessere', nome: t.pagate + (t.pagate === 1 ? ' tessera pagata' : ' tessere pagate') + ' (€' + t.prezzo + ' ciascuna)', importo: t.incassato }];
-    })()).filter(function (r) { return r.importo > 0; });
+    })()).concat(((B._altreEntrate || []).filter(function (v) { return v.pagata; })).map(function (v) {
+      return { tipo: 'Altre entrate', nome: v.descrizione || '—', importo: +v.importo || 0 };
+    })).filter(function (r) { return r.importo > 0; });
     righe.sort(function (a, b) { return b.importo - a.importo; });
     var totale = righe.reduce(function (s, r) { return s + r.importo; }, 0);
     return { righe: righe, totale: totale };
@@ -260,6 +263,7 @@
     document.getElementById('chartDonutEntrate').innerHTML = _svgDonut([
       { label: 'Rette atleti', value: r.rette, color: '#008CFD' },
       { label: 'Tessere', value: r.tessere, color: '#F59E0B' },
+      { label: 'Altre entrate', value: r.altre, color: '#8B5CF6' },
       { label: 'Sponsor chiusi', value: r.sponsorChiusi, color: '#10B981' }
     ], 'Composizione entrate confermate');
 

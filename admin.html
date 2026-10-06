@@ -10,7 +10,7 @@
   <link rel="preload" href="/assets/fonts/manrope-400-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/fonts.css?v=c0ba2518">
   <link rel="stylesheet" href="/css/admin.css?v=f8a0a60f">
-  <link rel="stylesheet" href="/css/dirigenti.css?v=28d357dc">
+  <link rel="stylesheet" href="/css/dirigenti.css?v=1fd509ab">
 </head>
 <body>
 
@@ -1483,12 +1483,18 @@
 
         <nav class="budget-subtabs" aria-label="Sezioni Budget &amp; Forecast">
           <button class="budget-subtab is-active" data-btab="riepilogo">Panoramica</button>
-          <button class="budget-subtab" data-btab="sponsor">Pipeline Sponsor</button>
-          <button class="budget-subtab" data-btab="rette">Rette Atleti</button>
-          <button class="budget-subtab" data-btab="tessere">Tessere</button>
+          <button class="budget-subtab" data-btab="entrate">Entrate</button>
           <button class="budget-subtab" data-btab="spese">Spese</button>
           <button class="budget-subtab" data-btab="bilancio">Bilancio</button>
         </nav>
+
+        <!-- Le quattro fonti di entrata: visibile solo nella scheda Entrate -->
+        <div id="entrateNav" class="sp-subtabs is-hidden" role="tablist" aria-label="Fonti di entrata">
+          <button type="button" data-esub="sponsor" aria-selected="true">Sponsor<span class="en-amt" id="enSponsor"></span></button>
+          <button type="button" data-esub="rette" aria-selected="false">Rette atleti<span class="en-amt" id="enRette"></span></button>
+          <button type="button" data-esub="tessere" aria-selected="false">Tessere<span class="en-amt" id="enTessere"></span></button>
+          <button type="button" data-esub="altre" aria-selected="false">Altre entrate<span class="en-amt" id="enAltre"></span></button>
+        </div>
 
         <div id="budgetPaneRiepilogo" class="dg-section">
 
@@ -1531,7 +1537,7 @@
 
         <div class="dg-card cs-card" style="margin-top:14px">
           <div class="dg-card-title">Quanto rende e quanto costa ogni squadra</div>
-          <div class="dg-card-sub">Rette previste contro spese previste delle categorie con lo stesso nome. Sponsor e tessere stanno sotto «Società e generali».</div>
+          <div class="dg-card-sub">Rette previste contro spese previste delle categorie con lo stesso nome. Sponsor, tessere e altre entrate stanno sotto «Società e generali».</div>
           <div class="dg-table-wrap" style="margin-top:10px">
             <table class="dg-table">
               <thead><tr><th>Squadra</th><th class="cs-r">Entrate previste</th><th class="cs-r">Spese previste</th><th class="cs-r">Margine</th></tr></thead>
@@ -1737,6 +1743,48 @@
           </div>
         </div>
 
+        <!-- ---- Altre entrate ---- -->
+        <div id="budgetPaneAltre" class="dg-section is-hidden">
+          <div class="sp-kpis" id="altreKpis"></div>
+
+          <div class="dg-card" style="margin-top:14px">
+            <div class="dg-toolbar">
+              <div>
+                <div class="dg-card-title">Altre entrate</div>
+                <div class="dg-card-sub">Contributi, incassi da eventi o tornei, donazioni: tutto ciò che non è sponsor, retta o tessera. Conta come incassata solo se la segni tale (con la data d'incasso); altrimenti è «da incassare» alla data prevista.</div>
+              </div>
+              <button id="newAltraBtn" class="dg-btn-primary dg-btn-sm">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Nuova entrata
+              </button>
+            </div>
+
+            <div id="altreForm" class="is-hidden" style="margin-top:14px;padding:14px;border:1px solid var(--dg-border);border-radius:10px">
+              <div class="dg-card-title" id="altreFormTitolo">Nuova entrata</div>
+              <div class="dg-form-grid" style="margin-top:10px">
+                <div class="dg-form-group"><label class="dg-form-label" for="altreDescr">Descrizione *</label><input type="text" id="altreDescr" class="dg-form-input" maxlength="120" placeholder="es. Contributo del Comune"></div>
+                <div class="dg-form-group"><label class="dg-form-label" for="altreTipo">Tipo</label><select id="altreTipo" class="dg-form-input"></select></div>
+                <div class="dg-form-group"><label class="dg-form-label" for="altreImporto">Importo (€) *</label><input type="number" id="altreImporto" class="dg-form-input" min="0" step="0.01"></div>
+                <div class="dg-form-group"><label class="dg-form-label" for="altreData">Data prevista</label><input type="date" id="altreData" class="dg-form-input"></div>
+              </div>
+              <label class="dg-check" style="margin:4px 0 10px"><input type="checkbox" id="altrePagata"> Già incassata</label>
+              <div id="altreIncassoWrap" class="dg-form-group is-hidden" style="max-width:240px"><label class="dg-form-label" for="altreDataIncasso">Data d'incasso</label><input type="date" id="altreDataIncasso" class="dg-form-input"></div>
+              <div class="dg-form-group"><label class="dg-form-label" for="altreNote">Note</label><input type="text" id="altreNote" class="dg-form-input" maxlength="200"></div>
+              <div class="dg-form-actions">
+                <button type="button" id="altreCancel" class="dg-btn-ghost dg-btn-sm">Annulla</button>
+                <button type="button" id="altreSave" class="dg-btn-primary dg-btn-sm">Salva</button>
+              </div>
+            </div>
+
+            <div class="dg-table-wrap" style="margin-top:14px">
+              <table class="dg-table">
+                <thead><tr><th>Descrizione</th><th>Tipo</th><th>Importo</th><th>Data</th><th>Stato</th><th></th></tr></thead>
+                <tbody id="altreBody"><tr><td colspan="6" class="dg-empty">—</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
         <!-- ---- Spese ---- -->
         <div id="budgetPaneSpese" class="dg-section is-hidden">
           <div class="sp-kpis" id="speseKpis"></div>
@@ -1805,7 +1853,7 @@
             <div class="dg-toolbar">
               <div>
                 <div class="dg-card-title">Saldo mensile</div>
-                <div class="dg-card-sub">Entrate = tranche sponsor, rate atleti e tessere segnate come pagate. Uscite = spese con data indicata; quelle senza data sono raggruppate a parte.</div>
+                <div class="dg-card-sub">Entrate = tranche sponsor, rate atleti, tessere e altre entrate segnate come pagate. Uscite = spese con data indicata; quelle senza data sono raggruppate a parte.</div>
               </div>
               <select id="bilancioFiltro" class="dg-select-sm" aria-label="Filtra il saldo mensile per fonte o categoria"><option value="">Tutto</option></select>
             </div>
@@ -1827,7 +1875,7 @@
 
           <div class="dg-card" style="margin-top:14px">
             <div class="dg-card-title">Entrate incassate</div>
-            <div class="dg-card-sub">Tranche sponsor, rate atleti e tessere segnate come pagate, per questa stagione.</div>
+            <div class="dg-card-sub">Tranche sponsor, rate atleti, tessere e altre entrate segnate come pagate, per questa stagione.</div>
             <div class="dg-table-wrap" style="margin-top:14px">
               <table class="dg-table">
                 <thead>
@@ -1909,6 +1957,7 @@
             <option value="attivita">Attività</option>
             <option value="promemoria">Promemoria</option>
             <option value="categoriaAtleti">Categoria Atleti (budget)</option>
+            <option value="altraEntrata">Altra entrata</option>
             <option value="voceSpesa">Voce di Spesa</option>
             <option value="categoriaSpesa">Categoria di Spesa</option>
             <option value="obiettivo">Obiettivo / Stagione</option>
@@ -2522,24 +2571,25 @@
   <script src="/js/db.js?v=258bd128"></script>
   <script src="/js/config.js?v=24603e80"></script>
   <script src="/js/photodb.js?v=9d4a6627"></script>
-  <script src="/js/admin.js?v=6c9efb96"></script>
+  <script src="/js/admin.js?v=909d5d79"></script>
   <script src="/js/admin/atleti.js?v=ddea1737"></script>
   <script src="/js/admin/cms.js?v=1f17cd27"></script>
   <script src="/js/admin/pianoeditoriale.js?v=c6cd1275"></script>
   <script src="/js/admin/bacheca.js?v=e180b759"></script>
-  <script src="/js/admin/budget/state.js?v=04a5a992"></script>
-  <script src="/js/admin/budget/riepilogo.js?v=84874360"></script>
+  <script src="/js/admin/budget/state.js?v=aa87a3e5"></script>
+  <script src="/js/admin/budget/riepilogo.js?v=42899596"></script>
   <script src="/js/admin/budget/sponsor.js?v=3169c89d"></script>
   <script src="/js/admin/budget/materiali.js?v=3202b53a"></script>
   <script src="/js/admin/budget/rette.js?v=411c84cb"></script>
+  <script src="/js/admin/budget/altre.js?v=0fb5f323"></script>
   <script src="/js/admin/budget/tessere.js?v=29a979d9"></script>
   <script src="/js/admin/budget/spese.js?v=88290983"></script>
   <script src="/js/admin/budget/iva.js?v=2b927099"></script>
   <script src="/js/admin/budget/exportpdf.js?v=5d577cf9"></script>
-  <script src="/js/admin/budget/cassa.js?v=b83e5b8e"></script>
-  <script src="/js/admin/budget/bilancio.js?v=d945b9e2"></script>
+  <script src="/js/admin/budget/cassa.js?v=2caf5a71"></script>
+  <script src="/js/admin/budget/bilancio.js?v=8f2a295b"></script>
   <script src="/js/admin/budget/log.js?v=a69cb9fe"></script>
-  <script src="/js/admin/budget/main.js?v=6443bdc9"></script>
+  <script src="/js/admin/budget/main.js?v=dbe602c0"></script>
   <script src="/js/admin/password.js?v=ec78580e"></script>
   <script src="/js/ricevuta-doc.js?v=6cc81c25"></script>
   <script src="/js/admin/ricevute.js?v=431f2560"></script>

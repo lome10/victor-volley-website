@@ -474,6 +474,7 @@ input, select, textarea { font-family: inherit; }
 .dg-badge--contattato    { background: #EFF6FF; color: var(--dg-blue); }
 .dg-badge--in_trattativa { background: #FFFBEB; color: #B45309; }
 .dg-badge--chiuso        { background: #ECFDF5; color: #059669; }
+.dg-badge--ritardo       { background: #FEF2F2; color: #DC2626; }
 .dg-badge--rifiutato     { background: #FEF2F2; color: #B91C1C; opacity: .8; }
 .dg-badge--storico       { background: #F5F3FF; color: #6D28D9; }
 
@@ -1032,3 +1033,7 @@ input, select, textarea { font-family: inherit; }
 .cs-todo-b--bad .cs-dot { background: var(--dg-red); } .cs-todo-b--info .cs-dot { background: var(--dg-blue); }
 .cs-go { margin-left: auto; color: var(--dg-muted); font-size: 12.5px; white-space: nowrap; }
 @media (max-width: 540px) { .cs-go { display: none; } }
+
+/* ENTRATE — navigazione tra le fonti (Sponsor, Rette, Tessere, Altre entrate) */
+.en-amt { display: block; font-size: 11.5px; font-weight: 500; opacity: .75; margin-top: 2px; }
+#entrateNav button { text-align: left; }

@@ -244,7 +244,7 @@ function statoCassa(extra) {
     _atletaRettaById: () => null, _sponsorDaIncassare: () => 0, _calcRetteAtleti: () => ({ totIncassato: 0, totPrevisto: 0, righe: [] })
   }, extra || {});
   const window = { Admin: { budgetShared: B, esc, fmtDate: (d) => d, fmtDateLong: (d) => d, avviso: noop, logWrite: () => Promise.resolve(), diff: () => [] }, AdminActions: {}, VV: B.__VV };
-  ['bilancio.js', 'spese.js', 'cassa.js'].forEach((f) => new Function('window', 'document', 'db', fs.readFileSync(path.join(__dirname, '..', 'js', 'admin', 'budget', f), 'utf8'))(window, doc, {}));
+  ['bilancio.js', 'spese.js', 'altre.js', 'cassa.js'].forEach((f) => new Function('window', 'document', 'db', fs.readFileSync(path.join(__dirname, '..', 'js', 'admin', 'budget', f), 'utf8'))(window, doc, {}));
   return { B, els };
 }
 
@@ -313,6 +313,27 @@ t('Cassa: Panoramica e Bilancio si disegnano (schede, grafico, tabelle)', () => 
   assert.ok((els.prevBody.innerHTML.match(/<tr>/g) || []).length >= 9 && els.prevSvg.innerHTML.includes('<polyline'));
   assert.ok(/di spese senza data non sono incluse/.test(els.prevNote.innerHTML));
   B._bilSub = 'iva'; B._renderBilancioSezioni(); assert.strictEqual(B._ivaRenderizzata, true);
+});
+
+t('Altre entrate: totali, incassi attesi, mese d’incasso, Bilancio e ritardi', () => {
+  const { B } = statoCassa({ _sponsorIncassato: () => 0, _altreEntrate: [
+    { id: 'x1', descrizione: 'Contributo Comune', importo: 500, data: tra(-3), pagata: false },
+    { id: 'x2', descrizione: 'Torneo estivo', importo: 300, data: tra(-40), pagata: true, dataIncasso: '2026-09-12' },
+    { id: 'x3', descrizione: 'Donazione', importo: 50, pagata: false }] });
+  const c = B._calcAltreEntrate();
+  assert.deepStrictEqual([c.incassato, c.daIncassare, c.previsto, c.n], [300, 550, 850, 3]);
+  const att = B._incassiAttesi().filter((e) => e.fonte === 'Altre entrate');
+  assert.deepStrictEqual(att.map((e) => e.importo).sort(), [50, 500]);
+  const n = B._calcNumeri(oggi);
+  assert.strictEqual(n.ritardoAltre, 1, 'solo il contributo con data passata è in ritardo (la donazione non ha data)');
+  assert.strictEqual(n.daIncassare, 1000 + 1000 + 105 + 105 + 2 * 20 + 550);
+  const m = B._calcBilancioMensile();
+  assert.ok(m.entrateList.some((e) => e.tipo === 'Altre entrate' && e.scadenza === '2026-09-12' && e.importo === 300), 'incassata: mese della data d’incasso');
+  assert.ok(!m.entrateList.some((e) => e.nome === 'Contributo Comune'), 'non incassata: fuori dal consuntivo');
+  assert.strictEqual(B._calcBilancioMensile('fonte:Altre entrate').totEntrate, 300);
+  const cat = B._calcBilancioPerCategoria().entrate.filter((e) => e.fonte === 'Altre entrate')[0];
+  assert.deepStrictEqual([cat.incassato, cat.daIncassare], [300, 550]);
+  assert.ok(B._calcDaFare(oggi)[0].testo.indexOf('altra entrata') !== -1);
 });
 
 console.log(process.exitCode ? 'Collaudo fallito.' : 'OK: ' + passed + ' verifiche su Bilancio, Spese e cassa.');

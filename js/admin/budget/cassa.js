@@ -49,6 +49,10 @@
       if (!String(t.nome || '').trim() || t.pagata) return;
       ev.push({ fonte: 'Tessere', nome: 'Tessera n. ' + t.numero, importo: tess.prezzo, scadenza: '' });
     });
+    (B._altreEntrate || []).forEach(function (v) {
+      if (v.pagata) return;
+      ev.push({ fonte: 'Altre entrate', nome: v.descrizione || '—', importo: +v.importo || 0, scadenza: v.data || '' });
+    });
     return ev;
   }
 
@@ -81,6 +85,7 @@
       incassato: r.entrateConfermate, daIncassare: daIncassare,
       ritardoN: ritardo.length, ritardoEur: _somma(ritardo, function (e) { return e.importo; }),
       ritardoRate: ritardo.filter(function (e) { return e.fonte === 'Rette'; }).length, ritardoTranche: ritardo.filter(function (e) { return e.fonte === 'Sponsor'; }).length,
+      ritardoAltre: ritardo.filter(function (e) { return e.fonte === 'Altre entrate'; }).length,
       speso: r.uscite, spesePrevisto: previstoSpese, daPagare: sp.daPagare,
       inCassa: r.saldo, obiettivo: r.obiettivo, fineStagione: r.entrateConfermate + daIncassare - previstoSpese,
       senzaPiano: _sponsorSenzaPiano(), spese: sp, potenzialeSponsor: Math.round(r.sponsorPotenziali || 0)
@@ -146,8 +151,9 @@
     var r = B._calcRiepilogo(), att = _incassiAttesi();
     var sponsorPrev = _somma(B._sponsorizzazioni, function (s) { return s.seasonId === B._currentSeasonId && s.stato === 'chiuso' ? (+s.importoConfermato || 0) : 0; });
     var tess = B._calcTessere();
-    generali.entrate = sponsorPrev + tess.assegnate * tess.prezzo;
-    generali.incassato = r.sponsorChiusi + r.tessere;
+    var altre = B._calcAltreEntrate ? B._calcAltreEntrate() : { previsto: 0 };
+    generali.entrate = sponsorPrev + tess.assegnate * tess.prezzo + altre.previsto;
+    generali.incassato = r.sponsorChiusi + r.tessere + (r.altre || 0);
     righe.push(generali);
     righe = righe.filter(function (x) { return x.entrate || x.spese || x.nome === generali.nome; });
     righe.forEach(function (x) { x.margine = x.entrate - x.spese; delete x.ids; });
@@ -163,7 +169,8 @@
       var parti = [];
       if (n.ritardoRate) parti.push(n.ritardoRate + (n.ritardoRate === 1 ? ' rata atleta' : ' rate atleti'));
       if (n.ritardoTranche) parti.push(n.ritardoTranche + (n.ritardoTranche === 1 ? ' tranche sponsor' : ' tranche sponsor'));
-      out.push({ liv: 'bad', testo: n.ritardoN + (n.ritardoN === 1 ? ' incasso in ritardo' : ' incassi in ritardo') + ' (' + B._eur(n.ritardoEur) + '): ' + parti.join(' e '), tab: n.ritardoRate >= n.ritardoTranche ? 'rette' : 'sponsor', cta: 'Apri' });
+      if (n.ritardoAltre) parti.push(n.ritardoAltre + (n.ritardoAltre === 1 ? ' altra entrata' : ' altre entrate'));
+      out.push({ liv: 'bad', testo: n.ritardoN + (n.ritardoN === 1 ? ' incasso in ritardo' : ' incassi in ritardo') + ' (' + B._eur(n.ritardoEur) + '): ' + parti.join(' e '), tab: (n.ritardoAltre > n.ritardoRate && n.ritardoAltre > n.ritardoTranche) ? 'altre' : n.ritardoRate >= n.ritardoTranche ? 'rette' : 'sponsor', cta: 'Apri' });
     }
     if (n.spese.entro30n) out.push({ liv: 'warn', testo: n.spese.entro30n + (n.spese.entro30n === 1 ? ' spesa scaduta o in scadenza' : ' spese scadute o in scadenza') + ' entro 30 giorni (' + B._eur(n.spese.entro30eur) + ')', tab: 'spese', spese: 'in-scadenza', cta: 'Apri spese' });
     var iva = _ivaDaVersare().map(function (v) { return { scad: _scadenzaIva(v), imp: (+v.importoPreventivato || 0) - (+v.importoSostenuto || 0) }; })

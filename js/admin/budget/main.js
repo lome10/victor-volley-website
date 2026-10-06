@@ -11,9 +11,17 @@
       _renderAtletiRows = A.renderAtletiRows, _renderRateAdmin = A.renderRateAdmin,
       _stagioneCorrenteNome = A.stagioneCorrenteNome, EDIT_ICON_SM = A.EDIT_ICON_SM;
   /* ---- Sotto-tab interne alla sezione "Budget & Forecast" ---- */
+  /* «Entrate» raccoglie quattro fonti: ognuna ha il suo pannello (budgetPaneSponsor, …Rette, …Tessere, …Altre) */
+  var ENTRATE_SUB = ['sponsor', 'rette', 'tessere', 'altre'];
   function _switchBudgetTab(tab) {
+    if (tab === 'entrate') tab = B._entrateSub || 'sponsor';
+    var inEntrate = ENTRATE_SUB.indexOf(tab) !== -1;
+    if (inEntrate) B._entrateSub = tab;
     B._activeBudgetTab = tab;
-    document.querySelectorAll('.budget-subtab').forEach(function (btn) { btn.classList.toggle('is-active', btn.dataset.btab === tab); });
+    var top = inEntrate ? 'entrate' : tab;
+    document.querySelectorAll('.budget-subtab').forEach(function (btn) { btn.classList.toggle('is-active', btn.dataset.btab === top); });
+    document.getElementById('entrateNav').classList.toggle('is-hidden', !inEntrate);
+    document.querySelectorAll('#entrateNav [data-esub]').forEach(function (btn) { btn.setAttribute('aria-selected', String(btn.dataset.esub === tab)); });
     document.querySelectorAll('#sectionBudget > .dg-section').forEach(function (pane) { pane.classList.add('is-hidden'); });
     document.getElementById('budgetPane' + cap(tab)).classList.remove('is-hidden');
     _renderActiveBudgetTab();
@@ -25,7 +33,18 @@
     if (B._activeBudgetTab === 'rette')     B._renderRette();
     if (B._activeBudgetTab === 'spese')     B._renderSpese();
     if (B._activeBudgetTab === 'tessere')   B._renderTessere();
+    if (B._activeBudgetTab === 'altre')     B._renderAltreEntrate();
+    if (ENTRATE_SUB.indexOf(B._activeBudgetTab) !== -1) _renderEntrateNav();
     if (B._activeBudgetTab === 'bilancio')  { B._renderBilancio(); B._renderSpeseForecast(); }
+  }
+
+  /* Etichette della barra delle fonti: incassato su previsto, con le stesse definizioni del Bilancio */
+  function _renderEntrateNav() {
+    var ids = { 'Sponsor': 'enSponsor', 'Retta atleti': 'enRette', 'Tessere': 'enTessere', 'Altre entrate': 'enAltre' };
+    B._calcBilancioPerCategoria().entrate.forEach(function (e) {
+      var el = document.getElementById(ids[e.fonte]);
+      if (el) el.textContent = B._eur(e.incassato) + ' incassati' + (e.daIncassare > 0 ? ' · ' + B._eur(e.daIncassare) + ' da incassare' : '');
+    });
   }
 
   /* ---- CARICAMENTO DATI ---- */
@@ -109,6 +128,11 @@
       db.collection('tessere').where('seasonId', '==', B._currentSeasonId).get().catch(function (e) {
         console.error('[budget] tessere', e);
         return { docs: [] };
+      }),
+      /* Altre entrate: stesso trattamento difensivo (regola da pubblicare per la nuova raccolta). */
+      db.collection('altreEntrate').where('seasonId', '==', B._currentSeasonId).get().catch(function (e) {
+        console.error('[budget] altreEntrate', e);
+        return { docs: [] };
       })
     ]).then(function (res) {
       B._categorieAtleti = res[0].docs.map(_mapDoc);
@@ -116,6 +140,7 @@
       B._atletiRette     = res[2].docs.map(_mapDoc);
       B._sottospese      = res[3].docs.map(_mapDoc);
       B._tessere         = res[4].docs.map(_mapDoc);
+      B._altreEntrate    = res[5].docs.map(_mapDoc);
     });
   }
 
@@ -160,6 +185,9 @@
     document.querySelectorAll('.budget-subtab').forEach(function (btn) {
       btn.addEventListener('click', function () { _switchBudgetTab(btn.dataset.btab); });
     });
+    document.querySelectorAll('#entrateNav [data-esub]').forEach(function (btn) {
+      btn.addEventListener('click', function () { _switchBudgetTab(btn.dataset.esub); });
+    });
 
     var dashBudgetCard = document.getElementById('dashBudgetCard');
     var _goToBudgetRiepilogo = function () { goTo('budget'); _switchBudgetTab('riepilogo'); };
@@ -187,7 +215,7 @@
       B._currentSeasonId = this.value;
       _loadSeasonScoped().then(function () {
         B._renderObiettivo(); B._renderPromemoriaWidget(); B._renderStatCards();
-        B._renderCharts(); B._renderCashflow(); B._renderKanban(); B._renderRette(); B._renderSpese(); B._renderBilancio(); B._renderTessere();
+        B._renderCharts(); B._renderCashflow(); B._renderKanban(); B._renderRette(); B._renderSpese(); B._renderBilancio(); B._renderTessere(); B._renderAltreEntrate(); _renderEntrateNav();
       });
     });
 
@@ -320,6 +348,7 @@
   B._statoColor = _statoColor;
   B._statoLabel = _statoLabel;
   B._switchBudgetTab = _switchBudgetTab;
+  B._renderEntrateNav = _renderEntrateNav;
   B._tipoLabel = _tipoLabel;
   B._todayISO = _todayISO;
 
