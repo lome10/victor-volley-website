@@ -1828,3 +1828,44 @@ button { font-family: var(--font-body); cursor: pointer; }
 .pe-chip-sp { font-size: 10px; font-weight: 700; color: #0f172a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pe-chip-sp::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #008CFD; margin-right: 4px; vertical-align: 1px; }
 .pe-chip:has(.pe-chip-logos) { border-radius: 12px; }
+
+/* ================================================
+   ADMIN DA TELEFONO — bersagli del dito, campi senza zoom, schede e finestre
+   (i dirigenti lo usano da mobile; schermi stretti o a tocco)
+================================================ */
+@media (max-width: 900px), (pointer: coarse) {
+  /* iOS ingrandisce la pagina quando si tocca un campo sotto i 16 px */
+  .form-input, .dg-form-input, select.form-input, textarea.form-input { font-size: 16px; }
+  .form-input, .dg-form-input { min-height: 44px; }
+  textarea.form-input, textarea.dg-form-input { min-height: 0; }
+
+  /* bersagli di almeno 40–44 px, con più aria tra i pulsanti delle tabelle (modifica / cestino) */
+  .btn-primary, .btn-ghost, .btn-danger { min-height: 44px; justify-content: center; }
+  .btn-icon { width: 40px; height: 40px; }
+  .table-actions { gap: 10px; }
+  .btn-sm, .atleti-pill { min-height: 36px; }
+  .admin-nav-item { padding: 13px 12px; }
+  .admin-menu-toggle { width: 44px; height: 44px; }
+  .admin-table td { padding: 12px 12px; }
+  .admin-table th { padding: 10px 12px; }
+}
+
+@media (max-width: 900px) {
+  /* la barra in alto cresce se i pulsanti vanno a capo, invece di tagliarli */
+  .admin-topbar { height: auto; min-height: var(--topbar-h); padding-top: 8px; padding-bottom: 8px; }
+  .admin-topbar h2 { font-size: 18px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1 1 auto; }
+  #topbarActions { flex: 0 1 auto; }
+
+  /* schede dell'atleta: una riga che scorre di lato, senza andare a capo */
+  .atleta-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; scroll-snap-type: x proximity; }
+  .atleta-tabs::-webkit-scrollbar { display: none; }
+  .atleta-tab { flex: 0 0 auto; white-space: nowrap; min-height: 44px; scroll-snap-align: start; }
+
+  /* finestre di conferma e moduli: mai più alti dello schermo, con la tastiera aperta si scorre */
+  .modal-overlay { padding: 12px; align-items: flex-start; overflow-y: auto; }
+  .modal-box { max-height: calc(100vh - 24px); max-height: calc(100dvh - 24px); overflow-y: auto; margin: auto; }
+
+  /* i pulsanti di fondo modulo restano raggiungibili anche nei moduli lunghi */
+  .form-actions { position: sticky; bottom: 0; background: var(--a-bg, #fff); flex-wrap: wrap; padding-bottom: calc(14px + env(safe-area-inset-bottom)); z-index: 5; }
+  .form-actions .btn-primary, .form-actions .btn-ghost { flex: 1 1 140px; }
+}

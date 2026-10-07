@@ -1039,3 +1039,19 @@ a.sp-tag:hover, a.sp-tag:focus-visible { border-color: currentColor; text-decora
 /* ENTRATE — navigazione tra le fonti (Sponsor, Rette, Tessere, Altre entrate) */
 .en-amt { display: block; font-size: 11.5px; font-weight: 500; opacity: .75; margin-top: 2px; }
 #entrateNav button { text-align: left; }
+
+/* ================================================
+   ADMIN DA TELEFONO — Budget: bersagli del dito, pannello e finestre
+================================================ */
+@media (max-width: 900px), (pointer: coarse) {
+  .dg-btn-primary, .dg-btn-ghost { min-height: 44px; justify-content: center; }
+  .dg-btn-sm { min-height: 40px; }
+  .dg-btn-icon-only { width: 40px; height: 40px; }
+  .dg-tab { min-height: 44px; }
+}
+@media (max-width: 600px) {
+  /* 100vh su telefono comprende la barra del browser: il fondo del pannello resterebbe nascosto */
+  .dg-drawer { height: 100vh; height: 100dvh; }
+  .dg-modal { max-height: 88vh; max-height: 88dvh; }
+  .dg-drawer-body { padding-bottom: calc(40px + env(safe-area-inset-bottom)); }
+}
