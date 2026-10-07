@@ -324,6 +324,8 @@
   /* Rigenera il contenuto di una sezione dopo un salvataggio, senza toccare
      quale sezione è aperta (l'utente stava già scrivendo lì dentro). */
   function _refreshAccordionSection(key) {
+    /* le rate cambiano il «pagato / totale» di striscia, schede ed elenco della pipeline: si aggiornano subito */
+    if (key === 'pagamenti') _renderKanban();
     var sec = DRAWER_SECTIONS.find(function (s) { return s.key === key; });
     var body = document.getElementById('dgAccBody-' + key);
     if (!sec || !body) return;
@@ -739,6 +741,7 @@
     var old = { pagato: !!t.pagato, dataIncasso: t.dataIncasso || '' };
     var patch = { pagato: checked, dataIncasso: checked ? (t.dataIncasso || B._todayISO()) : '' };
     Object.assign(t, patch);
+    _renderKanban();   /* subito, senza aspettare il database: pagato / totale si aggiorna al clic */
     var az = B._aziendaById(B._curAziendaId);
     var s = B._sponsorizzazioni.find(function (x) { return x.id === t.sponsorizzazioneId; });
     db.collection('tranchePagamento').doc(id).update(patch)
