@@ -374,7 +374,17 @@
     try { localStorage.setItem(_lastSeenKey(a), iso); } catch (e) { /* storage non disponibile: pazienza */ }
   }
 
+  /* Avviso fissato in alto: `fissato` e, se c'è, `fissatoFino` (AAAA-MM-GG, incluso). */
+  function _fissatoAttivo(v) {
+    if (!v.fissato) return false;
+    if (!v.fissatoFino) return true;
+    var d = new Date(), oggi = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+    return v.fissatoFino >= oggi;
+  }
+
+  /* Gli avvisi fissati sono sempre in vista: non contano tra i non letti. */
   function _isUnread(a, v) {
+    if (_fissatoAttivo(v)) return false;
     var seen = _getLastSeen(a);
     if (!seen) {
       /* primo accesso su questo dispositivo: non segnare come "da leggere" tutto lo storico */
@@ -403,7 +413,9 @@
         if (token !== _avvisiToken) return;
         _avvisi = [];
         snap.forEach(function (d) { _avvisi.push(Object.assign({ id: d.id }, d.data())); });
-        _avvisi.sort(function (x, y) { return (y.createdAt || '').localeCompare(x.createdAt || ''); });
+        _avvisi.sort(function (x, y) {
+          return (_fissatoAttivo(y) - _fissatoAttivo(x)) || (y.createdAt || '').localeCompare(x.createdAt || '');
+        });
         _avvisiError = false;
       })
       .catch(function (e) {
@@ -440,16 +452,22 @@
 
     var seen = _seenBefore || new Date(Date.now() - AVVISI_NUOVI_SENZA_LETTURA_GIORNI * 864e5).toISOString();
 
-    el.innerHTML = _avvisi.map(function (v) {
-      var isNew = (v.createdAt || '') > seen;
+    var nFissati = _avvisi.filter(_fissatoAttivo).length;
+
+    el.innerHTML = _avvisi.map(function (v, i) {
+      var fissato = _fissatoAttivo(v);
+      var isNew = !fissato && (v.createdAt || '') > seen;
+      var titoloSezione = nFissati && i === 0 ? '<h3 class="al-avvisi-sezione">In evidenza</h3>'
+        : nFissati && i === nFissati ? '<h3 class="al-avvisi-sezione">Altri avvisi</h3>' : '';
       var att = v.allegatoUrl && /^https:\/\//i.test(v.allegatoUrl)
         ? '<a href="' + _esc(_driveViewUrl(v.allegatoUrl)) + '" target="_blank" rel="noopener" class="al-btn-ghost al-btn-sm">' +
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>Apri allegato</a>'
         : '';
-      return '<article class="al-card al-avviso' + (v.importante ? ' al-avviso--important' : '') + '">' +
+      return titoloSezione + '<article class="al-card al-avviso' + (v.importante ? ' al-avviso--important' : '') + (fissato ? ' al-avviso--fissato' : '') + '">' +
         '<div class="al-card-body">' +
           '<div class="al-avviso-head">' +
             '<h2 class="al-avviso-title">' + _esc(v.titolo) + '</h2>' +
+            (fissato ? '<span class="al-badge al-badge--blue">Fissato</span>' : '') +
             (isNew ? '<span class="al-badge al-badge--green">Nuovo</span>' : '') +
             (v.importante ? '<span class="al-badge al-badge--red">Importante</span>' : '') +
           '</div>' +
@@ -461,7 +479,8 @@
     }).join('');
 
     /* l'apertura della scheda li segna come letti (su questo dispositivo) */
-    _setLastSeen(a, _avvisi[0].createdAt || new Date().toISOString());
+    var piuRecente = _avvisi.reduce(function (m, v) { return (v.createdAt || '') > m ? v.createdAt : m; }, '');
+    _setLastSeen(a, piuRecente || new Date().toISOString());
   }
 
   /* ---------------- quote: arrivano dal budget (rateAtleti), non dalla scheda ---------------- */

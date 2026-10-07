@@ -321,6 +321,7 @@ button { font-family: inherit; cursor: pointer; }
 .al-badge--green  { background: #ECFDF5; color: #059669; }
 .al-badge--red    { background: #FEF2F2; color: #DC2626; }
 .al-badge--orange { background: #FFFBEB; color: #D97706; }
+.al-badge--blue   { background: #EFF6FF; color: #1D4ED8; }
 
 /* ================================================
    RATE
@@ -722,6 +723,9 @@ button { font-family: inherit; cursor: pointer; }
 .al-avviso-meta { font-size: 12px; color: var(--al-muted); margin: 4px 0 12px; }
 .al-avviso-text { font-size: 14px; line-height: 1.55; overflow-wrap: anywhere; }
 .al-avviso-att { margin-top: 14px; }
+.al-avviso--fissato { background: #F5F9FF; }
+.al-avvisi-sezione { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--al-muted); margin: 18px 2px 8px; }
+.al-avvisi-sezione:first-child { margin-top: 2px; }
 
 /* ================================================
    PRESENZE (ci sarò / non ci sarò)

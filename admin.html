@@ -1199,6 +1199,17 @@
                 <input type="checkbox" id="comImportante"> Avviso importante (evidenziato)
               </label>
             </div>
+            <div class="form-group">
+              <label class="form-label">Fissato in alto</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:14px;padding-top:8px">
+                <input type="checkbox" id="comFissato"> Tieni in cima agli avvisi
+              </label>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="comFissatoFino">Fissato fino al (facoltativo)</label>
+              <input type="date" id="comFissatoFino" class="form-input">
+              <p style="font-size:12px;color:var(--a-muted);margin-top:5px">Senza data resta in cima finché non lo togli. Dopo la data torna un avviso normale.</p>
+            </div>
             <div class="form-group form-full">
               <label class="form-label">Titolo *</label>
               <input type="text" id="comTitolo" class="form-input" maxlength="120" placeholder="es. Allenamento di giovedì annullato">
@@ -2624,7 +2635,7 @@
   <script src="/js/config.js?v=24603e80"></script>
   <script src="/js/photodb.js?v=9d4a6627"></script>
   <script src="/js/admin.js?v=909d5d79"></script>
-  <script src="/js/admin/atleti.js?v=ddea1737"></script>
+  <script src="/js/admin/atleti.js?v=be39bafa"></script>
   <script src="/js/admin/cms.js?v=09f21237"></script>
   <script src="/js/admin/pianoeditoriale.js?v=c60a204c"></script>
   <script src="/js/admin/bacheca.js?v=e180b759"></script>

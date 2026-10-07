@@ -1231,6 +1231,7 @@
   /* ================================================
      AVVISI (collezione `comunicazioni`, letta dall'area atleti)
      { categoria: nome squadra | 'tutte', titolo, testo, importante, allegatoUrl,
+       fissato (bool), fissatoFino (AAAA-MM-GG, facoltativo),
        createdAt (ISO), autore }
   ================================================ */
   var _comunicazioniCache = [];
@@ -1245,7 +1246,9 @@
     db.collection('comunicazioni').get().then(function (snap) {
       _comunicazioniCache = [];
       snap.forEach(function (d) { _comunicazioniCache.push(Object.assign({}, d.data(), { id: d.id })); });
-      _comunicazioniCache.sort(function (a, b) { return (b.createdAt || '').localeCompare(a.createdAt || ''); });
+      _comunicazioniCache.sort(function (a, b) {
+        return (_fissatoAttivo(b) - _fissatoAttivo(a)) || (b.createdAt || '').localeCompare(a.createdAt || '');
+      });
       _renderComunicazioniRows();
     }).catch(function (err) {
       console.error('[Avvisi]', err);
@@ -1256,6 +1259,15 @@
 
   function _destLabel(c) { return c === 'tutte' ? 'Tutta la società' : c; }
 
+  /* Fissato in alto = `fissato` e, se c'è, `fissatoFino` (AAAA-MM-GG, incluso). Stessa regola di js/atleta.js. */
+  function _fissatoAttivo(c) {
+    if (!c.fissato) return false;
+    if (!c.fissatoFino) return true;
+    var d = new Date(), oggi = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+    return c.fissatoFino >= oggi;
+  }
+  var PIN_ICON_SM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M12 17v5M9 3h6l-1 7 3 3v2H7v-2l3-3-1-7z"/></svg>';
+
   function _renderComunicazioniRows() {
     if (!_comunicazioniCache.length) {
       document.getElementById('comunicazioniBody').innerHTML =
@@ -1263,11 +1275,16 @@
       return;
     }
     document.getElementById('comunicazioniBody').innerHTML = _comunicazioniCache.map(function (c) {
+      var fissato = _fissatoAttivo(c);
+      var nota = fissato ? (c.fissatoFino ? 'Fissato fino al ' + _fmtDate(c.fissatoFino) : 'Fissato in alto')
+        : (c.fissato && c.fissatoFino ? 'Fissaggio scaduto il ' + _fmtDate(c.fissatoFino) : '');
       return '<tr>' +
         '<td style="white-space:nowrap">' + _fmtDate((c.createdAt || '').slice(0, 10)) + '</td>' +
         '<td><span class="chip ' + (c.categoria === 'tutte' ? 'chip--gray' : 'chip--blue') + '">' + esc(_destLabel(c.categoria)) + '</span></td>' +
-        '<td><div class="table-title">' + (c.importante ? '<span style="color:var(--a-red)">● </span>' : '') + esc(c.titolo) + '</div></td>' +
+        '<td><div class="table-title">' + (c.importante ? '<span style="color:var(--a-red)">● </span>' : '') + esc(c.titolo) + '</div>' +
+          (nota ? '<div style="font-size:12px;color:var(--a-muted);margin-top:2px">' + (fissato ? PIN_ICON_SM + ' ' : '') + esc(nota) + '</div>' : '') + '</td>' +
         '<td><div class="table-actions">' +
+          '<button class="btn-icon" onclick="AdminActions.pinComunicazione(\'' + esc(c.id) + '\')" title="' + (fissato ? 'Togli dalla cima' : 'Fissa in alto') + '"' + (fissato ? ' style="color:var(--a-blue,#0070d6)"' : '') + '>' + PIN_ICON_SM + '</button>' +
           '<button class="btn-icon" onclick="AdminActions.editComunicazione(\'' + esc(c.id) + '\')" title="Modifica">' + EDIT_ICON_SM + '</button>' +
           '<button class="btn-icon btn-icon--danger" onclick="AdminActions.deleteComunicazione(\'' + esc(c.id) + '\')" title="Elimina">' + DEL_ICON_SM + '</button>' +
         '</div></td>' +
@@ -1287,6 +1304,8 @@
       }).join('');
     document.getElementById('comDest').value         = c.categoria || '';
     document.getElementById('comImportante').checked = !!c.importante;
+    document.getElementById('comFissato').checked    = !!c.fissato;
+    document.getElementById('comFissatoFino').value  = c.fissatoFino || '';
     document.getElementById('comTitolo').value       = c.titolo || '';
     document.getElementById('comTesto').value        = c.testo || '';
     document.getElementById('comAllegato').value     = c.allegatoUrl || '';
@@ -1302,6 +1321,8 @@
       titolo:      document.getElementById('comTitolo').value.trim(),
       testo:       document.getElementById('comTesto').value.trim(),
       importante:  document.getElementById('comImportante').checked,
+      fissato:     document.getElementById('comFissato').checked,
+      fissatoFino: document.getElementById('comFissato').checked ? document.getElementById('comFissatoFino').value : '',
       allegatoUrl: document.getElementById('comAllegato').value.trim(),
       createdAt:   before ? before.createdAt : new Date().toISOString(),
       autore:      before ? (before.autore || '') : (A.dirigenteNome() || '')
@@ -1321,13 +1342,27 @@
     ref.set(data)
       .then(function () {
         return _logWrite('avviso', ref.id, label, before ? 'update' : 'create',
-          _diff(before || {}, data, ['categoria', 'titolo', 'testo', 'importante', 'allegatoUrl']));
+          _diff(before || {}, data, ['categoria', 'titolo', 'testo', 'importante', 'fissato', 'fissatoFino', 'allegatoUrl']));
       })
       .then(function () { btn.disabled = false; renderComunicazioni(); })
       .catch(function (e) { btn.disabled = false; _avviso('Errore: ' + e.message); });
   });
 
   window.AdminActions.editComunicazione = function (id) { _openComunicazioneForm(id); };
+
+  /* Fissa o toglie dalla cima con un clic. Togliendo si azzera anche la data. */
+  window.AdminActions.pinComunicazione = function (id) {
+    var c = _comunicazioniCache.find(function (x) { return x.id === id; });
+    if (!c) return;
+    var prima = { fissato: !!c.fissato, fissatoFino: c.fissatoFino || '' };
+    var dopo = _fissatoAttivo(c) ? { fissato: false, fissatoFino: '' } : { fissato: true, fissatoFino: '' };
+    db.collection('comunicazioni').doc(id).update(dopo)
+      .then(function () {
+        return _logWrite('avviso', id, 'Avviso — ' + c.titolo, 'update', _diff(prima, dopo, ['fissato', 'fissatoFino']));
+      })
+      .then(renderComunicazioni)
+      .catch(function (e) { _avviso('Errore: ' + e.message); });
+  };
 
   window.AdminActions.deleteComunicazione = function (id) {
     var target = _comunicazioniCache.find(function (c) { return c.id === id; });
