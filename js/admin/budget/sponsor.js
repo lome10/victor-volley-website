@@ -53,6 +53,29 @@
     return c.ivaInclusa > 0 ? ' (di cui €' + c.ivaInclusa.toLocaleString('it-IT') + ' di IVA)' : '';
   }
 
+  /* Pagato / totale di uno sponsor chiuso (il totale è l'importo confermato, IVA compresa). */
+  function _sponsorPagato(s) {
+    var tot = +s.importoConfermato || 0, pag = Math.min(_sponsorIncassato(s), tot > 0 ? tot : Infinity);
+    return { pagato: pag, totale: tot, pct: tot > 0 ? Math.round(pag / tot * 100) : 0 };
+  }
+  B._sponsorPagato = _sponsorPagato;
+  function _eurIt(n) { return '€' + Number(n || 0).toLocaleString('it-IT'); }
+
+  /* Riga di riepilogo sopra la pipeline: quanto è stato pagato sul totale degli sponsor chiusi. */
+  function _renderSponsorRecap(cur) {
+    var el = document.getElementById('sponsorRecap');
+    if (!el) return;
+    var chiusi = cur.filter(function (s) { return s.stato === 'chiuso' && (+s.importoConfermato || 0) > 0; });
+    if (!chiusi.length) { el.innerHTML = ''; return; }
+    var tot = 0, pag = 0, completi = 0;
+    chiusi.forEach(function (s) { var p = _sponsorPagato(s); tot += p.totale; pag += p.pagato; if (p.pagato >= p.totale) completi++; });
+    var pct = tot > 0 ? Math.round(pag / tot * 100) : 0;
+    el.innerHTML = '<div class="sp-recap-top"><strong>' + _eurIt(pag) + '</strong> pagati su <strong>' + _eurIt(tot) + '</strong>' +
+      '<span class="sp-recap-pct">' + pct + '%</span>' +
+      '<span class="dg-muted">' + completi + ' di ' + chiusi.length + ' sponsor chiusi pagati per intero · mancano ' + _eurIt(tot - pag) + '</span></div>' +
+      '<div class="pg-bar" role="img" aria-label="' + pct + '% pagato"><i style="width:' + Math.min(100, pct) + '%"></i></div>';
+  }
+
   /* ---- KANBAN SPONSOR ---- */
   function _renderKanban() {
     var onlyMine = document.getElementById('filterMieiSponsor').checked;
@@ -82,6 +105,7 @@
           (s.note ? '<svg class="dg-note-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" title="' + esc(s.note) + '"><path d="M4 4h16v13l-4 4H4z"/><path d="M8 9h8M8 13h5"/></svg>' : '') +
           '</div>' +
           '<div class="dg-kanban-card-importo">€' + Number(importo || 0).toLocaleString('it-IT') + (s.stato === 'chiuso' ? '<small class="dg-muted" style="font-weight:400;font-size:11px">' + esc(_ivaInclusaTesto(importo, s)) + '</small>' : '') + '</div>' +
+          (s.stato === 'chiuso' && (+s.importoConfermato || 0) > 0 ? (function () { var p = _sponsorPagato(s); return '<div class="sp-pay" title="Pagato su totale"><span>' + _eurIt(p.pagato) + ' / ' + _eurIt(p.totale) + '</span><span>' + p.pct + '%</span></div><div class="pg-bar pg-bar--sm"><i style="width:' + Math.min(100, p.pct) + '%"></i></div>'; })() : '') +
           '<div class="dg-kanban-card-bottom">' +
           '<span class="dg-avatar" title="' + esc(resp ? (resp.nome + ' ' + resp.cognome) : 'Non assegnato') + '">' + (resp ? B._initials(resp.nome, resp.cognome) : '?') + '</span>' +
           chip +
@@ -89,6 +113,7 @@
       }).join('');
     });
 
+    _renderSponsorRecap(cur.filter(function (s) { return !onlyMine || s.dirigenteResponsabileId === A.uid(); }));
     B._attachKanbanEvents();
     B._renderPezziSponsor();
     if (B._renderElencoSponsor) B._renderElencoSponsor();

@@ -430,4 +430,14 @@ t('IVA sponsor: importo fisso in € al posto della %, ripartito sulle rate inca
   assert.strictEqual(f(6100, s).versarePct, 16, '800 su 5.000 di imponibile');
 });
 
+t('Pipeline sponsor: pagato / totale con percentuale (mai oltre il 100%)', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', 'js', 'admin', 'budget', 'sponsor.js'), 'utf8').split(String.fromCharCode(13)).join('');
+  const i = src.indexOf('function _sponsorPagato'), j = src.indexOf('B._sponsorPagato =');
+  assert.ok(i > 0 && j > i, 'funzione _sponsorPagato non trovata');
+  const f = (inc) => new Function('_sponsorIncassato', src.slice(i, j) + '; return _sponsorPagato;')(() => inc);
+  assert.deepStrictEqual(f(3050)({ importoConfermato: 6100 }), { pagato: 3050, totale: 6100, pct: 50 });
+  assert.deepStrictEqual(f(7000)({ importoConfermato: 6100 }), { pagato: 6100, totale: 6100, pct: 100 }, 'tranche oltre il totale: si ferma al 100%');
+  assert.deepStrictEqual(f(0)({ importoConfermato: 0 }), { pagato: 0, totale: 0, pct: 0 });
+});
+
 console.log(process.exitCode ? 'Collaudo fallito.' : 'OK: ' + passed + ' verifiche su Bilancio, Spese e cassa.');

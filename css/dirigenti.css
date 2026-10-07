@@ -1055,3 +1055,13 @@ a.sp-tag:hover, a.sp-tag:focus-visible { border-color: currentColor; text-decora
   .dg-modal { max-height: 88vh; max-height: 88dvh; }
   .dg-drawer-body { padding-bottom: calc(40px + env(safe-area-inset-bottom)); }
 }
+
+/* Pipeline sponsor — recap pagato/totale */
+.sp-recap { margin: 0 0 12px; }
+.sp-recap:empty { display: none; }
+.sp-recap-top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; font-size: 14px; margin-bottom: 6px; }
+.sp-recap-pct { font-family: 'Barlow', sans-serif; font-weight: 700; color: var(--dg-blue); }
+.pg-bar { height: 8px; background: var(--dg-border); border-radius: 999px; overflow: hidden; }
+.pg-bar > i { display: block; height: 100%; background: var(--dg-green, #10B981); border-radius: 999px; }
+.pg-bar--sm { height: 5px; margin-top: 4px; }
+.sp-pay { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--dg-muted); margin-top: 6px; }
