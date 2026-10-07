@@ -28,6 +28,7 @@
       return {
         id: s.id, stato: s.stato, nome: az ? az.ragioneSociale : '—', storico: !!(az && B._isStorico(az.id)),
         importo: chiuso ? (+s.importoConfermato || 0) : (+s.importoStimato || 0),
+        ivaInclusa: chiuso && B._sponsorIvaCalc ? B._sponsorIvaCalc(s.importoConfermato, s).ivaInclusa : 0,
         incassato: chiuso ? B._sponsorIncassato(s) : 0, daIncassare: chiuso ? B._sponsorDaIncassare(s) : 0,
         responsabile: resp ? (resp.nome + ' ' + resp.cognome).trim() : '', promemoria: prom ? prom.dataScadenza : '',
         sito: _logoSito(az), _o: ordine[s.stato] == null ? 99 : ordine[s.stato]
@@ -64,7 +65,7 @@
       return '<tr class="sp-elenco-r" data-id="' + esc(r.id) + '" tabindex="0" style="cursor:pointer">' +
         '<td><strong>' + esc(r.nome) + '</strong>' + (r.storico ? ' <span class="dg-badge dg-badge--storico">storico</span>' : '') + '</td>' +
         '<td><span class="dg-badge" style="background:' + B._statoColor(r.stato) + '22;color:' + B._statoColor(r.stato) + '">' + esc(B._statoLabel(r.stato)) + '</span></td>' +
-        '<td class="cs-r">' + B._eur(r.importo) + '</td>' +
+        '<td class="cs-r">' + B._eur(r.importo) + (r.ivaInclusa > 0 ? '<div class="dg-muted" style="font-size:11px">di cui ' + B._eur(r.ivaInclusa) + ' IVA</div>' : '') + '</td>' +
         '<td class="cs-r">' + (r.stato === 'chiuso' ? B._eur(r.incassato) : '—') + '</td>' +
         '<td class="cs-r">' + (r.stato === 'chiuso' ? B._eur(r.daIncassare) : '—') + '</td>' +
         '<td>' + esc(r.responsabile || '—') + '</td>' +

@@ -27,6 +27,22 @@
     return t.reduce(function (sum, x) { return sum + (x.pagato ? 0 : (+x.importo || 0)); }, 0);
   }
 
+  /* IVA di uno sponsor. L'importo confermato è il TOTALE incassato, IVA compresa (es. 6.100 €).
+     ivaInclusaPct = aliquota già dentro quel totale (22 → su 6.100 € ce ne sono 1.100 di IVA); vuoto = nessuna.
+     ivaVersarePct = quanta IVA si versa, in % sull'imponibile (5.000 €): vuoto = 11, come è sempre stato. */
+  function _sponsorIvaCalc(importo, s) {
+    var a = Math.max(0, +s.ivaInclusaPct || 0);
+    var v = (s.ivaVersarePct === '' || s.ivaVersarePct == null || isNaN(+s.ivaVersarePct)) ? 11 : Math.max(0, +s.ivaVersarePct);
+    var tot = +importo || 0, imponibile = a ? tot / (1 + a / 100) : tot;
+    var r = function (n) { return Math.round(n * 100) / 100; };
+    return { aliquotaInclusa: a, versarePct: v, imponibile: r(imponibile), ivaInclusa: r(tot - imponibile), daVersare: r(imponibile * v / 100) };
+  }
+  B._sponsorIvaCalc = _sponsorIvaCalc;
+  function _ivaInclusaTesto(importo, s) {
+    var c = _sponsorIvaCalc(importo, s);
+    return c.ivaInclusa > 0 ? ' (di cui €' + c.ivaInclusa.toLocaleString('it-IT') + ' di IVA)' : '';
+  }
+
   /* ---- KANBAN SPONSOR ---- */
   function _renderKanban() {
     var onlyMine = document.getElementById('filterMieiSponsor').checked;
@@ -55,7 +71,7 @@
           '</span>' +
           (s.note ? '<svg class="dg-note-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" title="' + esc(s.note) + '"><path d="M4 4h16v13l-4 4H4z"/><path d="M8 9h8M8 13h5"/></svg>' : '') +
           '</div>' +
-          '<div class="dg-kanban-card-importo">€' + Number(importo || 0).toLocaleString('it-IT') + '</div>' +
+          '<div class="dg-kanban-card-importo">€' + Number(importo || 0).toLocaleString('it-IT') + (s.stato === 'chiuso' ? '<small class="dg-muted" style="font-weight:400;font-size:11px">' + esc(_ivaInclusaTesto(importo, s)) + '</small>' : '') + '</div>' +
           '<div class="dg-kanban-card-bottom">' +
           '<span class="dg-avatar" title="' + esc(resp ? (resp.nome + ' ' + resp.cognome) : 'Non assegnato') + '">' + (resp ? B._initials(resp.nome, resp.cognome) : '?') + '</span>' +
           chip +
@@ -354,7 +370,10 @@
       '<div class="dg-form-grid">' +
       '<div class="dg-form-group"><label class="dg-form-label">Importo stimato (€)</label><input type="number" id="dgDealStimato" class="dg-form-input" value="' + (s.importoStimato || 0) + '"></div>' +
       '<div class="dg-form-group"><label class="dg-form-label">Probabilità chiusura</label><input type="number" id="dgDealProb" class="dg-form-input" min="0" max="1" step="0.05" value="' + (s.probabilitaChiusura || 0) + '"></div>' +
-      '<div class="dg-form-group"><label class="dg-form-label">Importo confermato (€)</label><input type="number" id="dgDealConfermato" class="dg-form-input" value="' + (s.importoConfermato || 0) + '"></div>' +
+      '<div class="dg-form-group"><label class="dg-form-label">Importo confermato (€, IVA compresa)</label><input type="number" id="dgDealConfermato" class="dg-form-input" value="' + (s.importoConfermato || 0) + '" oninput="DG.dealIvaHint()"></div>' +
+      '<div class="dg-form-group"><label class="dg-form-label">IVA compresa nell\'importo (%)</label><input type="number" id="dgDealIvaIncl" class="dg-form-input" min="0" max="100" step="0.5" placeholder="es. 22 (vuoto = nessuna)" value="' + (+s.ivaInclusaPct || '') + '" oninput="DG.dealIvaHint()"></div>' +
+      '<div class="dg-form-group"><label class="dg-form-label">IVA da versare (% sull\'imponibile)</label><input type="number" id="dgDealIvaVers" class="dg-form-input" min="0" max="100" step="0.5" placeholder="11" value="' + (s.ivaVersarePct === '' || s.ivaVersarePct == null ? '' : s.ivaVersarePct) + '" oninput="DG.dealIvaHint()"></div>' +
+      '<div class="dg-form-group" style="grid-column:1/-1"><span class="dg-muted" id="dgDealIvaHint" style="font-size:12.5px">' + esc(_ivaHintTesto(+s.importoConfermato || 0, s)) + '</span></div>' +
       '<div class="dg-form-group"><label class="dg-form-label">Tipologia</label><select id="dgDealTipologia" class="dg-form-input">' + tipoOptions + '</select></div>' +
       '<div class="dg-form-group"><label class="dg-form-label">Data firma</label><input type="date" id="dgDealFirma" class="dg-form-input" value="' + (s.dataFirma || '') + '"></div>' +
       '<div class="dg-form-group"><label class="dg-form-label">Scadenza</label><input type="date" id="dgDealScadenza" class="dg-form-input" value="' + (s.scadenza || '') + '"></div>' +
@@ -368,6 +387,18 @@
       '</div>';
   }
 
+  /* Riga di spiegazione sotto i campi IVA: imponibile, IVA contenuta e quanta se ne versa. */
+  function _ivaHintTesto(tot, s) {
+    if (!(tot > 0)) return '';
+    var c = _sponsorIvaCalc(tot, s);
+    return (c.ivaInclusa > 0 ? 'Imponibile €' + c.imponibile.toLocaleString('it-IT') + ' + IVA €' + c.ivaInclusa.toLocaleString('it-IT') + ' = €' + tot.toLocaleString('it-IT') + '. ' : '') +
+      'IVA da versare: €' + c.daVersare.toLocaleString('it-IT') + ' (' + c.versarePct.toLocaleString('it-IT') + '% dell\'imponibile), nelle Spese come voce «IVA <azienda>».';
+  }
+  DG.dealIvaHint = function () {
+    var el = document.getElementById('dgDealIvaHint');
+    if (el) el.textContent = _ivaHintTesto(+val('dgDealConfermato') || 0, { ivaInclusaPct: val('dgDealIvaIncl'), ivaVersarePct: val('dgDealIvaVers') });
+  };
+
   DG.saveDeal = function () {
     var s = B._sponsorizzazioni.find(function (x) { return x.id === B._curSponsorId; });
     if (!s) return;
@@ -377,6 +408,8 @@
       importoStimato: +val('dgDealStimato') || 0,
       probabilitaChiusura: +val('dgDealProb') || 0,
       importoConfermato: +val('dgDealConfermato') || 0,
+      ivaInclusaPct: +val('dgDealIvaIncl') || 0,
+      ivaVersarePct: val('dgDealIvaVers') === '' ? '' : (+val('dgDealIvaVers') || 0),
       tipologia: val('dgDealTipologia'),
       dataFirma: val('dgDealFirma'),
       scadenza: val('dgDealScadenza'),
@@ -455,7 +488,7 @@
 
     var summary = '<div class="dg-card" style="margin-bottom:14px;padding:14px 16px">' +
       '<div class="dg-toolbar" style="gap:16px">' +
-      '<div><div class="dg-stat-label">Importo confermato</div><div class="dg-card-title">€' + totale.toLocaleString('it-IT') + '</div></div>' +
+      '<div><div class="dg-stat-label">Importo confermato</div><div class="dg-card-title">€' + totale.toLocaleString('it-IT') + '</div>' + (_sponsorIvaCalc(totale, s).ivaInclusa > 0 ? '<div class="dg-muted" style="font-size:12px">' + esc(_ivaInclusaTesto(totale, s).trim()) + '</div>' : '') + '</div>' +
       '<div><div class="dg-stat-label">Incassato</div><div class="dg-card-title" style="color:var(--dg-green)">€' + incassato.toLocaleString('it-IT') + '</div></div>' +
       '<div><div class="dg-stat-label">Da incassare</div><div class="dg-card-title" style="color:var(--dg-orange)">€' + (pianificato - incassato).toLocaleString('it-IT') + '</div></div>' +
       '</div>' +
@@ -559,10 +592,11 @@
      cambio di stato/importo/tranche invece di generare righe nuove, e si rimuove da sola se
      preventivato e sostenuto tornano entrambi a zero (es. lo stato torna indietro da "chiuso"). */
   function _syncSponsorIva(s) {
-    var preventivato = s.stato === 'chiuso' ? Math.round((+s.importoConfermato || 0) * 0.11 * 100) / 100 : 0;
+    var preventivato = s.stato === 'chiuso' ? _sponsorIvaCalc(s.importoConfermato, s).daVersare : 0;
     var pagate = _trancheOf(s.id).filter(function (t) { return t.pagato; });
     var incassato = pagate.reduce(function (sum, t) { return sum + (+t.importo || 0); }, 0);
-    var sostenuto = Math.round(incassato * 0.11 * 100) / 100;
+    var sostenuto = _sponsorIvaCalc(incassato, s).daVersare;
+    var aliquotaVersata = _sponsorIvaCalc(0, s).versarePct;
     var figlia = s.ivaVoceSpesaId ? B._vociSpesa.find(function (x) { return x.id === s.ivaVoceSpesaId; }) : null;
     var az = B._aziendaById(s.aziendaId);
     var nome = ('IVA ' + (az ? az.ragioneSociale : '')).trim();
@@ -580,7 +614,7 @@
 
     if (figlia) {
       var old = { categoria: figlia.categoria, importoPreventivato: figlia.importoPreventivato, importoSostenuto: figlia.importoSostenuto, ivaAliquota: figlia.ivaAliquota };
-      var patch = { categoria: nome, importoPreventivato: preventivato, importoSostenuto: sostenuto, ivaAliquota: 11 };
+      var patch = { categoria: nome, importoPreventivato: preventivato, importoSostenuto: sostenuto, ivaAliquota: aliquotaVersata };
       return db.collection('vociSpesa').doc(figlia.id).update(patch)
         .then(function () { return _logWrite('voceSpesa', figlia.id, 'Spesa — ' + nome, 'update', _diff(old, patch, Object.keys(patch))); })
         .then(function () { Object.assign(figlia, patch); });
@@ -588,8 +622,8 @@
 
     var data = {
       seasonId: s.seasonId, categoria: nome, categoriaSpesaId: '',
-      importoPreventivato: preventivato, importoSostenuto: sostenuto, ivaAliquota: 11, dataSpesa: '',
-      note: 'IVA 11% generata automaticamente sullo sponsor "' + nome.replace(/^IVA /, '') + '" (preventivo alla chiusura, saldo sulle tranche incassate)',
+      importoPreventivato: preventivato, importoSostenuto: sostenuto, ivaAliquota: aliquotaVersata, dataSpesa: '',
+      note: 'IVA ' + aliquotaVersata + '% generata automaticamente sullo sponsor "' + nome.replace(/^IVA /, '') + '" (preventivo alla chiusura, saldo sulle tranche incassate)',
       isIva: true, pagata: false, ivaEscluso: false, ivaTrimestre: '', ivaScadenza: '', ivaScadenzaManuale: false
     };
     var ref = db.collection('vociSpesa').doc();

@@ -398,4 +398,26 @@ t('Pipeline sponsor in elenco: stato, incassato/da incassare, responsabile, logo
   assert.deepStrictEqual(B._righeElencoSponsor(true, 'd1').map((x) => x.id), ['c1'], '«solo i miei»');
 });
 
+/* ---------- IVA degli sponsor: l'importo confermato è il totale IVA compresa ---------- */
+function ivaSponsor() {
+  const src = fs.readFileSync(path.join(__dirname, '..', 'js', 'admin', 'budget', 'sponsor.js'), 'utf8').split(String.fromCharCode(13)).join('');
+  const i = src.indexOf('function _sponsorIvaCalc'), j = src.indexOf('B._sponsorIvaCalc =');
+  assert.ok(i > 0 && j > i, 'funzione _sponsorIvaCalc non trovata in sponsor.js');
+  return new Function(src.slice(i, j) + '; return _sponsorIvaCalc;')();
+}
+t('IVA sponsor: 6.100 € con IVA 22% compresa → imponibile 5.000, IVA 1.100, da versare 11% = 550', () => {
+  const c = ivaSponsor()(6100, { ivaInclusaPct: 22, ivaVersarePct: 11 });
+  assert.deepStrictEqual([c.imponibile, c.ivaInclusa, c.daVersare, c.versarePct], [5000, 1100, 550, 11]);
+});
+t('IVA sponsor: senza IVA compresa resta il comportamento storico (11% dell’importo)', () => {
+  const f = ivaSponsor();
+  assert.deepStrictEqual([f(1000, {}).ivaInclusa, f(1000, {}).daVersare], [0, 110]);
+  assert.strictEqual(f(1000, { ivaVersarePct: '' }).versarePct, 11, 'campo vuoto = 11');
+  assert.strictEqual(f(1000, { ivaVersarePct: 0 }).daVersare, 0, 'zero è un valore valido: nessuna IVA da versare');
+});
+t('IVA sponsor: una rata incassata ripartisce l’IVA in proporzione', () => {
+  const f = ivaSponsor(), s = { ivaInclusaPct: 22, ivaVersarePct: 11 };
+  assert.strictEqual(f(3050, s).daVersare, 275, 'metà dei 6.100 € → metà dei 550 €');
+});
+
 console.log(process.exitCode ? 'Collaudo fallito.' : 'OK: ' + passed + ' verifiche su Bilancio, Spese e cassa.');
