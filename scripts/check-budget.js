@@ -420,4 +420,14 @@ t('IVA sponsor: una rata incassata ripartisce l’IVA in proporzione', () => {
   assert.strictEqual(f(3050, s).daVersare, 275, 'metà dei 6.100 € → metà dei 550 €');
 });
 
+t('IVA sponsor: importo fisso in € al posto della %, ripartito sulle rate incassate', () => {
+  const f = ivaSponsor();
+  const s = { importoConfermato: 6100, ivaInclusaPct: 22, ivaVersarePct: 11, ivaVersareFisso: 800 };
+  assert.strictEqual(f(6100, s).daVersare, 800, 'vale l’importo fisso, non l’11% (550)');
+  assert.strictEqual(f(3050, s).daVersare, 400, 'metà incassata → metà dell’IVA fissa');
+  assert.strictEqual(f(9000, s).daVersare, 800, 'mai oltre l’importo fisso');
+  assert.strictEqual(f(6100, { importoConfermato: 6100, ivaInclusaPct: 22, ivaVersareFisso: 0 }).daVersare, 550, 'fisso a zero = si usa la %');
+  assert.strictEqual(f(6100, s).versarePct, 16, '800 su 5.000 di imponibile');
+});
+
 console.log(process.exitCode ? 'Collaudo fallito.' : 'OK: ' + passed + ' verifiche su Bilancio, Spese e cassa.');

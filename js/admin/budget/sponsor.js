@@ -30,12 +30,22 @@
   /* IVA di uno sponsor. L'importo confermato è il TOTALE incassato, IVA compresa (es. 6.100 €).
      ivaInclusaPct = aliquota già dentro quel totale (22 → su 6.100 € ce ne sono 1.100 di IVA); vuoto = nessuna.
      ivaVersarePct = quanta IVA si versa, in % sull'imponibile (5.000 €): vuoto = 11, come è sempre stato. */
+  /* ivaVersareFisso = importo REALE in € dell'IVA da versare su tutto lo sponsor: se è compilato vale al posto della %.
+     Su un importo parziale (rate già incassate) si ripartisce in proporzione all'importo confermato. */
   function _sponsorIvaCalc(importo, s) {
     var a = Math.max(0, +s.ivaInclusaPct || 0);
+    var fisso = Math.max(0, +s.ivaVersareFisso || 0);
     var v = (s.ivaVersarePct === '' || s.ivaVersarePct == null || isNaN(+s.ivaVersarePct)) ? 11 : Math.max(0, +s.ivaVersarePct);
     var tot = +importo || 0, imponibile = a ? tot / (1 + a / 100) : tot;
     var r = function (n) { return Math.round(n * 100) / 100; };
-    return { aliquotaInclusa: a, versarePct: v, imponibile: r(imponibile), ivaInclusa: r(tot - imponibile), daVersare: r(imponibile * v / 100) };
+    var daVersare = imponibile * v / 100;
+    if (fisso > 0) {
+      var base = +s.importoConfermato || tot;
+      daVersare = base > 0 ? fisso * Math.min(1, tot / base) : 0;
+      var impTotale = a ? base / (1 + a / 100) : base;
+      v = impTotale > 0 ? r(fisso / impTotale * 100) : 0;
+    }
+    return { aliquotaInclusa: a, versarePct: v, fisso: fisso, imponibile: r(imponibile), ivaInclusa: r(tot - imponibile), daVersare: r(daVersare) };
   }
   B._sponsorIvaCalc = _sponsorIvaCalc;
   function _ivaInclusaTesto(importo, s) {
@@ -373,6 +383,7 @@
       '<div class="dg-form-group"><label class="dg-form-label">Importo confermato (€, IVA compresa)</label><input type="number" id="dgDealConfermato" class="dg-form-input" value="' + (s.importoConfermato || 0) + '" oninput="DG.dealIvaHint()"></div>' +
       '<div class="dg-form-group"><label class="dg-form-label">IVA compresa nell\'importo (%)</label><input type="number" id="dgDealIvaIncl" class="dg-form-input" min="0" max="100" step="0.5" placeholder="es. 22 (vuoto = nessuna)" value="' + (+s.ivaInclusaPct || '') + '" oninput="DG.dealIvaHint()"></div>' +
       '<div class="dg-form-group"><label class="dg-form-label">IVA da versare (% sull\'imponibile)</label><input type="number" id="dgDealIvaVers" class="dg-form-input" min="0" max="100" step="0.5" placeholder="11" value="' + (s.ivaVersarePct === '' || s.ivaVersarePct == null ? '' : s.ivaVersarePct) + '" oninput="DG.dealIvaHint()"></div>' +
+      '<div class="dg-form-group"><label class="dg-form-label">IVA da versare: importo fisso (€)</label><input type="number" id="dgDealIvaFisso" class="dg-form-input" min="0" step="0.01" placeholder="vuoto = usa la %" value="' + (+s.ivaVersareFisso || '') + '" oninput="DG.dealIvaHint()"></div>' +
       '<div class="dg-form-group" style="grid-column:1/-1"><span class="dg-muted" id="dgDealIvaHint" style="font-size:12.5px">' + esc(_ivaHintTesto(+s.importoConfermato || 0, s)) + '</span></div>' +
       '<div class="dg-form-group"><label class="dg-form-label">Tipologia</label><select id="dgDealTipologia" class="dg-form-input">' + tipoOptions + '</select></div>' +
       '<div class="dg-form-group"><label class="dg-form-label">Data firma</label><input type="date" id="dgDealFirma" class="dg-form-input" value="' + (s.dataFirma || '') + '"></div>' +
@@ -392,11 +403,11 @@
     if (!(tot > 0)) return '';
     var c = _sponsorIvaCalc(tot, s);
     return (c.ivaInclusa > 0 ? 'Imponibile €' + c.imponibile.toLocaleString('it-IT') + ' + IVA €' + c.ivaInclusa.toLocaleString('it-IT') + ' = €' + tot.toLocaleString('it-IT') + '. ' : '') +
-      'IVA da versare: €' + c.daVersare.toLocaleString('it-IT') + ' (' + c.versarePct.toLocaleString('it-IT') + '% dell\'imponibile), nelle Spese come voce «IVA <azienda>».';
+      'IVA da versare: €' + c.daVersare.toLocaleString('it-IT') + (c.fisso > 0 ? ' (importo fisso, pari al ' : ' (') + c.versarePct.toLocaleString('it-IT') + '% dell\'imponibile), nelle Spese come voce «IVA <azienda>».';
   }
   DG.dealIvaHint = function () {
     var el = document.getElementById('dgDealIvaHint');
-    if (el) el.textContent = _ivaHintTesto(+val('dgDealConfermato') || 0, { ivaInclusaPct: val('dgDealIvaIncl'), ivaVersarePct: val('dgDealIvaVers') });
+    if (el) el.textContent = _ivaHintTesto(+val('dgDealConfermato') || 0, { ivaInclusaPct: val('dgDealIvaIncl'), ivaVersarePct: val('dgDealIvaVers'), ivaVersareFisso: val('dgDealIvaFisso') });
   };
 
   DG.saveDeal = function () {
@@ -410,6 +421,7 @@
       importoConfermato: +val('dgDealConfermato') || 0,
       ivaInclusaPct: +val('dgDealIvaIncl') || 0,
       ivaVersarePct: val('dgDealIvaVers') === '' ? '' : (+val('dgDealIvaVers') || 0),
+      ivaVersareFisso: +val('dgDealIvaFisso') || 0,
       tipologia: val('dgDealTipologia'),
       dataFirma: val('dgDealFirma'),
       scadenza: val('dgDealScadenza'),
