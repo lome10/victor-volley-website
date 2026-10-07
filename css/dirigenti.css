@@ -971,6 +971,8 @@ input, select, textarea { font-family: inherit; }
 .sp-m { color: var(--dg-muted); font-size: 12px; display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; align-items: center; }
 .sp-b { color: var(--dg-muted); font-size: 11.5px; }
 .sp-tag { background: #F6F9FC; border: 1px solid var(--dg-border); border-radius: 6px; padding: 0 6px; font-size: 11.5px; }
+a.sp-tag { color: inherit; text-decoration: none; }
+a.sp-tag:hover, a.sp-tag:focus-visible { border-color: currentColor; text-decoration: underline; }
 .sp-d { color: var(--dg-muted); font-size: 13px; } .sp-c { text-align: right; font-variant-numeric: tabular-nums; }
 .sp-s { font-variant-numeric: tabular-nums; } .sp-s .sp-bar { margin-top: 4px; }
 .sp-act { text-align: right; } .sp-act .dg-btn-sm { white-space: nowrap; }

@@ -322,7 +322,7 @@
     var figlia = v.ivaVoceSpesaId ? B._vociSpesa.find(function (x) { return x.id === v.ivaVoceSpesaId; }) : null;
     var iva = figlia ? (+figlia.importoPreventivato || 0) : (+v.ivaAliquota > 0 ? p * (+v.ivaAliquota) / 100 : 0);
     var nSub = _sottospeseOf(v.id).length, gestitaDaSub = _sottospeseSpesaOf(v.id).length > 0;
-    var badge = (iva ? '<span class="sp-b">+ IVA ' + (+v.ivaAliquota || '') + (+v.ivaAliquota ? '% ' : ' ') + B._eur(iva) + '</span>' : '') + (_linkValido(v.documentoUrl) ? '<span class="sp-tag" title="C\'è un documento collegato">Documento</span>' : '') + (nSub ? '<span class="sp-tag">' + nSub + (nSub === 1 ? ' pagamento' : ' pagamenti') + '</span>' : '');
+    var badge = (iva ? '<span class="sp-b">+ IVA ' + (+v.ivaAliquota || '') + (+v.ivaAliquota ? '% ' : ' ') + B._eur(iva) + '</span>' : '') + (_linkValido(v.documentoUrl) ? '<a class="sp-tag" href="' + esc(v.documentoUrl) + '" target="_blank" rel="noopener noreferrer" title="Apri la cartella o il documento su Drive">Documenti ↗</a>' : '') + (nSub ? '<span class="sp-tag">' + nSub + (nSub === 1 ? ' pagamento' : ' pagamenti') + '</span>' : '');
     return '<div class="sp-row" tabindex="0" role="button" data-id="' + v.id + '" aria-label="Apri ' + esc(v.categoria) + '">' +
       '<div class="sp-name"><div class="sp-t">' + esc(v.categoria) + '</div>' + (badge ? '<div class="sp-m">' + badge + '</div>' : '') +
         '<div class="sp-m sp-m-mobile"><span>' + B._eur(s) + ' / ' + B._eur(p) + '</span><span>' + (v.dataSpesa ? esc(_fmtDate(v.dataSpesa)) : 'senza data') + '</span></div></div>' +
@@ -418,8 +418,8 @@
       '<div class="sp-f"><label for="speDPrev">Preventivato (€)</label><input type="number" id="speDPrev" class="dg-form-input" min="0" step="any" value="' + esc(val0('speDPrev', 'importoPreventivato', 0)) + '"' + (prevDaSub ? ' readonly' : '') + '>' + (prevDaSub ? '<span class="sp-h">Somma dei preventivati dei pagamenti qui sotto.</span>' : '') + '</div>' +
       '<div class="sp-f"><label for="speDSost">Già speso (€)</label><input type="number" id="speDSost" class="dg-form-input" min="0" step="any" value="' + esc(val0('speDSost', 'importoSostenuto', 0)) + '"' + (haSub ? ' readonly' : '') + '>' + (haSub ? '<span class="sp-h">Somma dei pagati dei pagamenti qui sotto.</span>' : '') + '</div>' +
       '<div class="sp-f"><label for="speDIva">IVA %</label><input type="number" id="speDIva" class="dg-form-input" min="0" step="1" placeholder="0" value="' + esc(val0('speDIva', 'ivaAliquota', '') || '') + '"><span class="sp-h" id="speDIvaH"></span></div>' +
-      '<div class="sp-f sp-full"><label for="speDDoc">Documento (link a fattura o ricevuta)</label><input type="url" id="speDDoc" class="dg-form-input" placeholder="https://drive.google.com/…" value="' + esc(val0('speDDoc', 'documentoUrl', '')) + '">' +
-        (_linkValido(v.documentoUrl) ? '<a class="sp-h" href="' + esc(v.documentoUrl) + '" target="_blank" rel="noopener noreferrer">Apri il documento salvato</a>' : '<span class="sp-h">Incolla il link di Drive, Dropbox o altro: il file resta lì, qui si tiene solo l\'indirizzo.</span>') + '</div>' +
+      '<div class="sp-f sp-full"><label for="speDDoc">Documenti (link Drive alla cartella di questa voce)</label><input type="url" id="speDDoc" class="dg-form-input" placeholder="https://drive.google.com/…" value="' + esc(val0('speDDoc', 'documentoUrl', '')) + '">' +
+        (_linkValido(v.documentoUrl) ? '<a class="sp-h" href="' + esc(v.documentoUrl) + '" target="_blank" rel="noopener noreferrer">Apri su Drive ↗</a>' : '<span class="sp-h">Crea su Drive una cartella per questa voce (fatture, ricevute, contratti), condividila solo con i dirigenti e incolla qui il link. Il file resta su Drive, qui si tiene solo l\'indirizzo.</span>') + '</div>' +
       '<div class="sp-f sp-full"><label for="speDNote">Note</label><textarea id="speDNote" class="dg-form-input" rows="3">' + esc(val0('speDNote', 'note', '')) + '</textarea></div></div>' +
       '<div class="sp-sect"><h4>Pagamenti e dettaglio</h4>' + _sottospeseInnerHtml(v) + '</div></div>' +
       '<footer class="sp-dr-f"><button type="button" class="dg-btn-ghost sp-danger" onclick="DG.speseDrawerElimina()">Elimina</button><span class="sp-sp"></span>' +
@@ -501,6 +501,7 @@
     pane.dataset.spCollegato = '1';
     pane.addEventListener('click', function (e) {
       var x;
+      if (e.target.closest('a[href]')) return;
       if ((x = e.target.closest('[data-pay]'))) { DG.spesaSegnaPagata(x.getAttribute('data-pay')); return; }
       if ((x = e.target.closest('[data-g]'))) { var k = x.getAttribute('data-g'); B._speseGruppiChiusi[k] = !B._speseGruppiChiusi[k]; _renderSpese(); return; }
       if ((x = e.target.closest('[data-ss]'))) { B._speseStato = x.getAttribute('data-ss'); _renderSpese(); return; }
