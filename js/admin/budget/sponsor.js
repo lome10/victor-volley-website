@@ -373,6 +373,7 @@
     var statoOptions = B.STATI.map(function (st) {
       return '<option value="' + st + '"' + (st === s.stato ? ' selected' : '') + '>' + B._statoLabel(st) + '</option>';
     }).join('');
+    var piuIva = (+s.ivaInclusaPct || 0) > 0;
     var tipoOptions = ['denaro', 'servizi', 'materiale'].map(function (t) {
       return '<option value="' + t + '"' + (t === s.tipologia ? ' selected' : '') + '>' + t + '</option>';
     }).join('');
@@ -380,9 +381,8 @@
       '<div class="dg-form-grid">' +
       '<div class="dg-form-group"><label class="dg-form-label">Importo stimato (€)</label><input type="number" id="dgDealStimato" class="dg-form-input" value="' + (s.importoStimato || 0) + '"></div>' +
       '<div class="dg-form-group"><label class="dg-form-label">Probabilità chiusura</label><input type="number" id="dgDealProb" class="dg-form-input" min="0" max="1" step="0.05" value="' + (s.probabilitaChiusura || 0) + '"></div>' +
-      '<div class="dg-form-group"><label class="dg-form-label">Importo confermato (€, IVA compresa)</label><input type="number" id="dgDealConfermato" class="dg-form-input" value="' + (s.importoConfermato || 0) + '" oninput="DG.dealIvaHint()"></div>' +
-      '<div class="dg-form-group"><label class="dg-form-label">Importo senza IVA (€) — scrivi qui l\'imponibile</label><input type="number" id="dgDealImponibile" class="dg-form-input" min="0" step="0.01" placeholder="es. 5000" value="' + (_sponsorIvaCalc(s.importoConfermato, s).ivaInclusa > 0 ? _sponsorIvaCalc(s.importoConfermato, s).imponibile : '') + '" oninput="DG.dealIvaHint(\'imp\')"></div>' +
-      '<div class="dg-form-group"><label class="dg-form-label">IVA compresa nell\'importo (%)</label><input type="number" id="dgDealIvaIncl" class="dg-form-input" min="0" max="100" step="0.5" placeholder="es. 22 (vuoto = nessuna)" value="' + (+s.ivaInclusaPct || '') + '" oninput="DG.dealIvaHint()"></div>' +
+      '<div class="dg-form-group"><label class="dg-form-label">Importo confermato (€)</label><input type="number" id="dgDealConfermato" class="dg-form-input" min="0" step="0.01" value="' + (piuIva ? _sponsorIvaCalc(s.importoConfermato, s).imponibile : (s.importoConfermato || 0)) + '" oninput="DG.dealIvaHint()"></div>' +
+      '<div class="dg-form-group"><label class="dg-form-label">IVA</label><div style="display:flex;align-items:center;gap:10px;min-height:40px"><label style="display:flex;align-items:center;gap:6px;font-weight:600;white-space:nowrap"><input type="checkbox" id="dgDealPiuIva"' + (piuIva ? ' checked' : '') + ' onchange="DG.dealIvaHint()"> + IVA</label><input type="number" id="dgDealIvaIncl" class="dg-form-input" min="0" max="100" step="0.5" style="max-width:90px" value="' + (piuIva ? (+s.ivaInclusaPct || 22) : '') + '"' + (piuIva ? '' : ' disabled') + ' oninput="DG.dealIvaHint()"><span class="dg-muted">%</span></div><span class="dg-muted" style="font-size:12px">Spunta se l\'importo è senza IVA: il totale si calcola da solo.</span></div>' +
       '<div class="dg-form-group"><label class="dg-form-label">IVA da versare (% sull\'imponibile)</label><input type="number" id="dgDealIvaVers" class="dg-form-input" min="0" max="100" step="0.5" placeholder="11" value="' + (s.ivaVersarePct === '' || s.ivaVersarePct == null ? '' : s.ivaVersarePct) + '" oninput="DG.dealIvaHint()"></div>' +
       '<div class="dg-form-group"><label class="dg-form-label">IVA da versare: importo fisso (€)</label><input type="number" id="dgDealIvaFisso" class="dg-form-input" min="0" step="0.01" placeholder="vuoto = usa la %" value="' + (+s.ivaVersareFisso || '') + '" oninput="DG.dealIvaHint()"></div>' +
       '<div class="dg-form-group" style="grid-column:1/-1"><span class="dg-muted" id="dgDealIvaHint" style="font-size:12.5px">' + esc(_ivaHintTesto(+s.importoConfermato || 0, s)) + '</span></div>' +
@@ -406,23 +406,24 @@
     return (c.ivaInclusa > 0 ? 'Imponibile €' + c.imponibile.toLocaleString('it-IT') + ' + IVA €' + c.ivaInclusa.toLocaleString('it-IT') + ' = €' + tot.toLocaleString('it-IT') + '. ' : '') +
       'IVA da versare: €' + c.daVersare.toLocaleString('it-IT') + (c.fisso > 0 ? ' (importo fisso, pari al ' : ' (') + c.versarePct.toLocaleString('it-IT') + '% dell\'imponibile), nelle Spese come voce «IVA <azienda>».';
   }
-  /* src === 'imp': l'utente ha scritto l'imponibile → il totale si ricalcola (IVA 22% se non ne ha indicata una).
-     Altrimenti l'imponibile mostrato si ricalcola dal totale e dall'aliquota. */
-  DG.dealIvaHint = function (src) {
-    var imp = document.getElementById('dgDealImponibile'), conf = document.getElementById('dgDealConfermato'), incl = document.getElementById('dgDealIvaIncl');
-    if (imp && conf && incl) {
-      var a = Math.max(0, +incl.value || 0), r2 = function (n) { return Math.round(n * 100) / 100; };
-      if (src === 'imp') {
-        if (imp.value !== '') {
-          if (!a) { a = 22; incl.value = 22; }
-          conf.value = r2((+imp.value || 0) * (1 + a / 100));
-        }
-      } else {
-        imp.value = (+conf.value > 0 && a > 0) ? r2(+conf.value / (1 + a / 100)) : '';
-      }
+  /* Stato del modulo: con «+ IVA» spuntato l'importo scritto è l'imponibile e il totale (IVA compresa) si calcola da solo. */
+  function _dealIvaStato() {
+    var piu = !!(document.getElementById('dgDealPiuIva') || {}).checked;
+    var a = piu ? (+val('dgDealIvaIncl') || 22) : 0;
+    var importo = +val('dgDealConfermato') || 0;
+    var totale = piu ? Math.round(importo * (1 + a / 100) * 100) / 100 : importo;
+    return { piu: piu, a: a, importo: importo, totale: totale };
+  }
+  DG.dealIvaHint = function () {
+    var incl = document.getElementById('dgDealIvaIncl'), chk = document.getElementById('dgDealPiuIva');
+    if (incl && chk) {
+      incl.disabled = !chk.checked;
+      if (chk.checked && !incl.value) incl.value = 22;
+      if (!chk.checked) incl.value = '';
     }
+    var st = _dealIvaStato();
     var el = document.getElementById('dgDealIvaHint');
-    if (el) el.textContent = _ivaHintTesto(+val('dgDealConfermato') || 0, { ivaInclusaPct: val('dgDealIvaIncl'), ivaVersarePct: val('dgDealIvaVers'), ivaVersareFisso: val('dgDealIvaFisso') });
+    if (el) el.textContent = _ivaHintTesto(st.totale, { ivaInclusaPct: st.a, ivaVersarePct: val('dgDealIvaVers'), ivaVersareFisso: val('dgDealIvaFisso') });
   };
 
   DG.saveDeal = function () {
@@ -433,8 +434,8 @@
       stato: val('dgDealStato'),
       importoStimato: +val('dgDealStimato') || 0,
       probabilitaChiusura: +val('dgDealProb') || 0,
-      importoConfermato: +val('dgDealConfermato') || 0,
-      ivaInclusaPct: +val('dgDealIvaIncl') || 0,
+      importoConfermato: _dealIvaStato().totale,
+      ivaInclusaPct: _dealIvaStato().a,
       ivaVersarePct: val('dgDealIvaVers') === '' ? '' : (+val('dgDealIvaVers') || 0),
       ivaVersareFisso: +val('dgDealIvaFisso') || 0,
       tipologia: val('dgDealTipologia'),
