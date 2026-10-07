@@ -862,6 +862,32 @@
     setTimeout(chiudi, tipo === 'ok' ? 6000 : 12000);
   }
 
+  /* Tabelle compatte da telefono: ogni cella prende come etichetta l'intestazione della sua colonna
+     (la usa il CSS sotto 700 px per mostrare le righe come schede). La cella con .table-title fa da titolo,
+     quella con i pulsanti (.table-actions, senza intestazione) va in alto a destra. Si rifà a ogni
+     ridisegno della tabella; le righe con colspan (gruppi, "nessun dato") non si toccano. */
+  (function () {
+    function etichetta(t) {
+      var ths = [].map.call(t.querySelectorAll('thead th'), function (h) { return h.textContent.trim().split(/ +/).join(' ').split(' (')[0]; });
+      [].forEach.call(t.querySelectorAll('tbody tr'), function (tr) {
+        var tds = [].slice.call(tr.children);
+        if (!tds.length || tds.some(function (c) { return c.colSpan > 1; })) return;
+        var titolo = tr.querySelector('.table-title');
+        var tdTitolo = titolo ? titolo.closest('td') : tds[0];
+        tds.forEach(function (td, i) {
+          if (ths[i]) td.setAttribute('data-label', ths[i]);
+          td.classList.toggle('is-titolo', td === tdTitolo);
+          td.classList.toggle('is-azioni', !ths[i] && !!td.querySelector('.table-actions'));
+        });
+      });
+    }
+    function tutte() { [].forEach.call(document.querySelectorAll('.admin-table'), etichetta); }
+    var inAttesa = false;
+    function pianifica() { if (inAttesa) return; inAttesa = true; requestAnimationFrame(function () { inAttesa = false; tutte(); }); }
+    new MutationObserver(pianifica).observe(document.body, { childList: true, subtree: true });
+    tutte();
+  })();
+
   window.Admin = {
     uid: function () { return _uid; },
     dirigenteNome: function () { return _dirigenteNome; },

@@ -76,6 +76,8 @@ Blocchi in fondo a `css/admin.css` e `css/dirigenti.css` («ADMIN DA TELEFONO»)
 
 **Da provare con F12**: Atleti (elenco, scheda e tab), Avvisi (nuovo avviso con tastiera), Allenamenti, Presenze, Ricevute, Budget (Spese e pannello). Possibili effetti collaterali da guardare: barra in basso dei moduli che copre un campo, titolo troncato, tab che nascondono «Accessi/Sicurezza» a destra (si scorre).
 
+**Passo 2 (2026-10-07): tabelle compatte** — sotto 700 px le 7 tabelle `.admin-table` (Articoli, Calendario, Ricevute, Atleti, Avvisi, Allenamenti, Dirigenti) diventano schede: `js/admin.js` mette su ogni cella l'etichetta della colonna (`data-label`), la cella con `.table-title` fa da titolo e i pulsanti vanno in alto a destra; il CSS è in fondo a `css/admin.css`. Restano a tabella con scorrimento le `.dg-table` del Budget (Rette, Tessere, Bilancio, Log…): da decidere dopo la prova.
+
 **Ancora da fare per l'admin**: righe compatte al posto delle tabelle più usate; percorso rapido per presenze/avvisi/allenamenti; testi sotto 12 px; controllo di ogni sezione dopo la prova.
 
 ## Decisioni dell'utente (2026-10-07)

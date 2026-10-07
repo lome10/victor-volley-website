@@ -1869,3 +1869,24 @@ button { font-family: var(--font-body); cursor: pointer; }
   .form-actions { position: sticky; bottom: 0; background: var(--a-bg, #fff); flex-wrap: wrap; padding-bottom: calc(14px + env(safe-area-inset-bottom)); z-index: 5; }
   .form-actions .btn-primary, .form-actions .btn-ghost { flex: 1 1 140px; }
 }
+
+/* ================================================
+   TABELLE COMPATTE DA TELEFONO — le righe diventano schede (etichette messe da js/admin.js)
+================================================ */
+@media (max-width: 700px) {
+  .admin-table { min-width: 0; display: block; }
+  .admin-table thead { display: none; }
+  .admin-table tbody { display: block; }
+  .admin-table tr { display: flex; flex-direction: column; gap: 5px; position: relative; padding: 12px 14px; border-bottom: 1px solid var(--a-border); }
+  .admin-table tr:last-child { border-bottom: none; }
+  .admin-table td { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 0; border: 0; font-size: 13px; text-align: right; }
+  .admin-table td[data-label]::before { content: attr(data-label); flex: 0 0 auto; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--a-muted); text-align: left; }
+  .admin-table td.is-titolo { order: -1; display: block; text-align: left; margin-bottom: 2px; padding-right: 104px; font-size: 14px; }
+  .admin-table td.is-titolo::before { display: none; }
+  .admin-table td.is-titolo .table-title { max-width: none; }
+  .admin-table td.is-azioni { position: absolute; top: 8px; right: 10px; display: block; padding: 0; }
+  .admin-table td.is-azioni::before { display: none; }
+  .admin-table td[colspan] { display: block; text-align: left; }
+  .admin-table tr:hover td { background: transparent; }
+  .admin-table tr:hover { background: #F8FAFC; }
+}
