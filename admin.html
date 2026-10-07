@@ -1009,6 +1009,7 @@
             <button class="atleta-tab" data-tab="certmedico">Cert. Medico</button>
             <button class="atleta-tab" data-tab="rate">Rate &amp; Quote</button>
             <button class="atleta-tab" data-tab="modulo">Modulo Iscrizione</button>
+            <button class="atleta-tab" data-tab="note">Note</button>
             <button class="atleta-tab" data-tab="accessi">Accessi</button>
             <button class="atleta-tab" data-tab="sicurezza">Sicurezza</button>
           </div>
@@ -1087,6 +1088,21 @@
           </div>
 
           <!-- Tab: Accessi (atleta e genitori che vedono questa scheda) -->
+          <!-- Tab: Note (riservate ai dirigenti, salvate su atletiDati) -->
+          <div id="tabNote" class="atleta-tab-pane is-hidden">
+            <div class="form-grid">
+              <div class="form-group form-full">
+                <label class="form-label" for="detNote">Note interne</label>
+                <textarea id="detNote" class="form-input form-textarea" rows="12" maxlength="5000" placeholder="Appunti su questo atleta: la famiglia non li vede."></textarea>
+                <p style="font-size:12px;color:var(--a-muted);margin-top:5px">Riservate ai dirigenti. Nel registro delle modifiche si vede che sono cambiate, non cosa c'è scritto.</p>
+              </div>
+            </div>
+            <div class="form-actions">
+              <span id="detNoteMsg" class="af-msg" role="status"></span>
+              <button id="detNoteSave" class="btn-primary">Salva note</button>
+            </div>
+          </div>
+
           <div id="tabAccessi" class="atleta-tab-pane is-hidden">
             <div id="accessiList" style="margin-bottom:24px"></div>
             <div class="atleta-add-rata">
@@ -2635,7 +2651,7 @@
   <script src="/js/config.js?v=24603e80"></script>
   <script src="/js/photodb.js?v=9d4a6627"></script>
   <script src="/js/admin.js?v=909d5d79"></script>
-  <script src="/js/admin/atleti.js?v=be39bafa"></script>
+  <script src="/js/admin/atleti.js?v=f70a2fdf"></script>
   <script src="/js/admin/cms.js?v=09f21237"></script>
   <script src="/js/admin/pianoeditoriale.js?v=c60a204c"></script>
   <script src="/js/admin/bacheca.js?v=e180b759"></script>

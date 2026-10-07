@@ -310,8 +310,7 @@
       { k: 'consensoFotoIl',   l: 'Liberatoria foto/video firmata il', t: 'date' }
     ] },
     { titolo: 'Riservato ai dirigenti (le famiglie non lo vedono)', campi: [
-      { k: 'infoMediche', l: 'Info utili in emergenza (allergie, intolleranze…)', t: 'textarea', full: true, sens: true },
-      { k: 'note',        l: 'Note interne', t: 'textarea', full: true, sens: true }
+      { k: 'infoMediche', l: 'Info utili in emergenza (allergie, intolleranze…)', t: 'textarea', full: true, sens: true }
     ] }
   ];
 
@@ -319,7 +318,8 @@
   ATLETA_SEZIONI.forEach(function (s) { s.campi.forEach(function (f) { ATLETA_CAMPI.push(f); }); });
   /* tutoreNNome resta salvato come «Cognome Nome» (lo leggono la ricevuta e le esportazioni): si ricalcola dai due campi */
   var ATLETA_DERIVATI = ['tutore1Nome', 'tutore2Nome'];
-  var ATLETA_SENSIBILI = ATLETA_CAMPI.filter(function (f) { return f.sens; }).map(function (f) { return f.k; }).concat(ATLETA_DERIVATI);
+  /* `note` ha una tab sua (Note), salvata a parte su atletiDati: resta fuori dal log come gli altri dati riservati */
+  var ATLETA_SENSIBILI = ATLETA_CAMPI.filter(function (f) { return f.sens; }).map(function (f) { return f.k; }).concat(ATLETA_DERIVATI, ['note']);
 
   /* «Palamà Ilaria Ilenia» → cognome «Palamà», nome «Ilaria Ilenia» (la prima parola è il cognome): serve solo per i nomi
      inseriti quando il campo era unico; chi compila può correggere. */
@@ -935,6 +935,9 @@
     document.getElementById('detAnagraficaFields').innerHTML = _atletaFormHtml(_editingAtleta);
     document.getElementById('detAnagraficaMsg').textContent = '';
 
+    document.getElementById('detNote').value = _editingAtleta.note || '';
+    document.getElementById('detNoteMsg').textContent = '';
+
     document.getElementById('detCertScadenza').value = _editingAtleta.certMedicoScadenza || '';
     var certUrl = _editingAtleta.certMedicoUrl || '';
     document.getElementById('certPdfUrl').value = certUrl;
@@ -965,7 +968,7 @@
     document.querySelectorAll('.atleta-tab').forEach(function (btn) {
       btn.classList.toggle('is-active', btn.dataset.tab === tab);
     });
-    ['tabAnagrafica', 'tabCertmedico', 'tabRate', 'tabModulo', 'tabAccessi', 'tabSicurezza'].forEach(function (id) {
+    ['tabAnagrafica', 'tabCertmedico', 'tabRate', 'tabModulo', 'tabNote', 'tabAccessi', 'tabSicurezza'].forEach(function (id) {
       document.getElementById(id).classList.add('is-hidden');
     });
     document.getElementById('tab' + cap(tab)).classList.remove('is-hidden');
@@ -991,6 +994,27 @@
       .update({ certMedicoScadenza: scadenza, certMedicoUrl: url })
       .then(function () { return _logWrite('atleta', _editingAtleta.uid, 'Atleta — ' + _editingAtleta.cognome + ' ' + _editingAtleta.nome, 'update', _diff(before, { certMedicoScadenza: scadenza, certMedicoUrl: url }, ['certMedicoScadenza', 'certMedicoUrl'])); })
       .catch(function (e) { _avviso('Errore: ' + e.message); });
+  });
+
+  /* ---- Salva note (riservate ai dirigenti: stanno solo su atletiDati) ---- */
+  document.getElementById('detNoteSave').addEventListener('click', function () {
+    var a = _editingAtleta;
+    if (!a) return;
+    var testo = document.getElementById('detNote').value.trim();
+    var prima = a.note || '';
+    var msg = document.getElementById('detNoteMsg');
+    var btn = this;
+    btn.disabled = true;
+    msg.textContent = '';
+    db.collection('atletiDati').doc(a.uid).set({ note: testo }, { merge: true })
+      .then(function () {
+        a.note = testo;
+        document.getElementById('detNote').value = testo;
+        msg.textContent = 'Salvato.'; msg.className = 'af-msg is-ok';
+        return prima === testo ? null : _logWrite('atleta', a.uid, _atletaLabel(a), 'update', _diff({ note: prima }, { note: testo }, ['note']));
+      })
+      .catch(function (e) { msg.textContent = 'Errore: ' + e.message; msg.className = 'af-msg is-err'; })
+      .then(function () { btn.disabled = false; });
   });
 
   /* ---- Salva modulo iscrizione ---- */
