@@ -1909,6 +1909,7 @@ button { font-family: var(--font-body); cursor: pointer; }
 .taglie-chip b { color: var(--a-blue); margin-left: 2px; }
 .taglie-chip--senza { color: #B45309; border-color: #FCD9A8; }
 .taglie-vuoto { font-size: 12px; color: var(--a-muted); }
+.taglie-head-row th { background: #F8FAFC; font-size: 10.5px; padding: 6px 12px; }
 .taglie-th { cursor: grab; user-select: none; }
 .taglie-th.is-dragging { opacity: .4; }
 .taglie-th.is-drag-over { box-shadow: inset 3px 0 0 var(--a-blue); background: #E8F3FF; }

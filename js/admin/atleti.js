@@ -667,6 +667,8 @@
       _aggiornaToggleTutte(gruppi.filter(function (cat) {
         return list.some(function (a) { return cat === '__none__' ? !a.categoria : a.categoria === cat; });
       }));
+      /* intestazioni ripetute sotto ogni categoria, così non serve risalire in cima alla tabella */
+      var rigaIntest = '<tr class="taglie-head-row"><th>Atleta</th>' + voci.map(function (v) { return '<th>' + esc(v) + '</th>'; }).join('') + '</tr>';
       righe = gruppi.map(function (cat) {
         var membri = list.filter(function (a) { return cat === '__none__' ? !a.categoria : a.categoria === cat; });
         if (!membri.length) return '';
@@ -675,7 +677,7 @@
         return '<tr class="atleti-group' + (chiuso ? ' is-closed' : '') + '" data-cat="' + esc(cat) + '" tabindex="0" role="button" aria-expanded="' + (chiuso ? 'false' : 'true') + '">' +
           '<td colspan="' + (voci.length + 1) + '"><span class="atleti-group-chev" aria-hidden="true"></span><strong>' + esc(cat === '__none__' ? 'Senza categoria' : cat) + '</strong>' +
           '<span>' + membri.length + (membri.length === 1 ? ' atleta' : ' atleti') + (mancano ? ' · ' + mancano + ' da indicare' : ' · tutto indicato') + '</span></td></tr>' +
-          (chiuso ? '' : membri.map(function (a) { return _rigaTaglieHtml(a, voci); }).join(''));
+          (chiuso ? '' : rigaIntest + membri.map(function (a) { return _rigaTaglieHtml(a, voci); }).join(''));
       }).join('');
     }
     box.innerHTML = chips + _matriceEsclusioniHtml(voci) + '<div id="taglieRiepilogo">' + _riepilogoTaglie(list, voci) + '</div>' +
