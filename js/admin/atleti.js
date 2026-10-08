@@ -528,10 +528,83 @@
     b.dataset.gruppi = JSON.stringify(gruppiVisibili);
   }
 
+  /* ---- Vista «Taglie»: una colonna per ogni voce di abbigliamento del Budget (Materiali sponsor →
+     colonne della stagione corrente), una riga per atleta. La taglia sta su atletiDati.taglie
+     { voce: taglia }; gli atleti nuovi compaiono da soli perché la vista legge la stessa lista. ---- */
+  var _atletiVista = 'elenco';
+
+  function _vociAbbigliamento() {
+    var s = _bs().seasons.find(function (x) { return x.id === _bs().currentSeasonId; });
+    return s && Array.isArray(s.pezziSponsor) ? s.pezziSponsor.slice() : [];
+  }
+
+  function _tagliaOf(a, voce) {
+    return a.taglie && a.taglie[voce] ? String(a.taglie[voce]) : '';
+  }
+
+  function _riepilogoTaglie(list, voci) {
+    return '<div class="taglie-riepilogo">' + voci.map(function (v) {
+      var n = {}, senza = 0;
+      list.forEach(function (a) { var t = _tagliaOf(a, v); if (t) n[t] = (n[t] || 0) + 1; else senza++; });
+      var ordine = TAGLIE_ATLETA.filter(function (t) { return t && n[t]; });
+      Object.keys(n).forEach(function (t) { if (ordine.indexOf(t) === -1) ordine.push(t); });
+      return '<div class="taglie-riepilogo-voce"><strong>' + esc(v) + '</strong>' +
+        (ordine.length ? ordine.map(function (t) { return '<span class="taglie-chip">' + esc(t) + ' <b>' + n[t] + '</b></span>'; }).join('') : '<span class="taglie-vuoto">nessuna taglia</span>') +
+        (senza ? '<span class="taglie-chip taglie-chip--senza">da indicare <b>' + senza + '</b></span>' : '') + '</div>';
+    }).join('') + '</div>';
+  }
+
+  function _renderTaglie() {
+    var box = document.getElementById('atletiTaglie');
+    var voci = _vociAbbigliamento();
+    var list = _atletiFiltrati();
+    var ordCat = _categorieElenco();
+    list.sort(function (x, y) {
+      var cx = x.categoria ? ordCat.indexOf(x.categoria) : 999, cy = y.categoria ? ordCat.indexOf(y.categoria) : 999;
+      return cx - cy;
+    });
+    document.getElementById('atletiSummary').textContent = list.length + (list.length === 1 ? ' atleta' : ' atleti') +
+      (voci.length ? ' · ' + voci.length + (voci.length === 1 ? ' voce' : ' voci') + ' di abbigliamento' : '');
+    if (!voci.length) {
+      box.innerHTML = '<div class="empty-state"><p>Nessuna voce di abbigliamento per la stagione ' + esc(_stagioneCorrenteNome() || 'corrente') +
+        '. Le voci sono le colonne di Budget → Materiali sponsor: aggiungile lì e compariranno qui.</p></div>';
+      return;
+    }
+    if (!list.length) { box.innerHTML = '<div class="empty-state"><p>Nessun atleta corrisponde ai filtri.</p></div>'; return; }
+    var conCat = !_atletiCat;
+    var head = '<tr><th>Atleta</th>' + (conCat ? '<th>Categoria</th>' : '') + voci.map(function (v) { return '<th>' + esc(v) + '</th>'; }).join('') + '</tr>';
+    var righe = list.map(function (a) {
+      return '<tr><td><div class="table-title">' + esc(a.cognome) + ' ' + esc(a.nome) + '</div></td>' +
+        (conCat ? '<td>' + (a.categoria ? esc(a.categoria) : '—') + '</td>' : '') +
+        voci.map(function (v) {
+          var cur = _tagliaOf(a, v);
+          var opts = TAGLIE_ATLETA.slice();
+          if (cur && opts.indexOf(cur) === -1) opts.push(cur);
+          return '<td><select class="form-input taglia-sel" data-uid="' + esc(a.uid) + '" data-voce="' + esc(v) + '" aria-label="' + esc(v + ' — ' + a.cognome + ' ' + a.nome) + '">' +
+            opts.map(function (t) { return '<option value="' + esc(t) + '"' + (t === cur ? ' selected' : '') + '>' + (t ? esc(t) : '—') + '</option>'; }).join('') + '</select></td>';
+        }).join('') + '</tr>';
+    }).join('');
+    box.innerHTML = '<div id="taglieRiepilogo">' + _riepilogoTaglie(list, voci) + '</div>' +
+      '<div class="admin-table-wrap"><table class="admin-table taglie-table"><thead>' + head + '</thead><tbody>' + righe + '</tbody></table></div>';
+  }
+
+  function _applicaVistaAtleti() {
+    var taglie = _atletiVista === 'taglie';
+    document.getElementById('atletiElencoWrap').classList.toggle('is-hidden', taglie);
+    document.getElementById('atletiTaglie').classList.toggle('is-hidden', !taglie);
+    Array.prototype.forEach.call(document.querySelectorAll('#atletiVista .atleti-pill'), function (b) {
+      b.classList.toggle('is-active', b.dataset.vista === _atletiVista);
+    });
+    document.getElementById('atletiExport').textContent = taglie ? 'Esporta taglie (CSV)' : 'Esporta CSV';
+    document.getElementById('atletiExport').title = taglie ? 'Scarica le taglie mostrate in CSV (Excel)' : 'Scarica l\'elenco mostrato in CSV (Excel)';
+    _renderAtletiRows();
+  }
+
   function _renderAtletiRows() {
     var body = document.getElementById('atletiBody');
     _renderAtletiCats();
     _aggiornaToggleTutte([]);
+    if (_atletiVista === 'taglie') { _renderTaglie(); return; }
     if (!_atletiCache.length) {
       document.getElementById('atletiSummary').textContent = '';
       body.innerHTML = '<tr><td colspan="6"><div class="empty-state"><p>Nessun atleta registrato.</p></div></td></tr>';
@@ -573,6 +646,34 @@
     var again = document.querySelector('#atletiBody tr.atleti-group[data-cat="' + (window.CSS && CSS.escape ? CSS.escape(cat) : cat) + '"]');
     if (again) again.focus();
   }
+  document.getElementById('atletiVista').addEventListener('click', function (e) {
+    var b = e.target.closest('.atleti-pill');
+    if (!b || b.dataset.vista === _atletiVista) return;
+    _atletiVista = b.dataset.vista;
+    _applicaVistaAtleti();
+  });
+
+  document.getElementById('atletiTaglie').addEventListener('change', function (e) {
+    var sel = e.target.closest('.taglia-sel');
+    if (!sel) return;
+    var a = _atletiCache.find(function (x) { return x.uid === sel.dataset.uid; });
+    if (!a) return;
+    var voce = sel.dataset.voce, prima = _tagliaOf(a, voce), dopo = sel.value;
+    var patch = { taglie: {} };
+    patch.taglie[voce] = dopo;
+    sel.disabled = true;
+    db.collection('atletiDati').doc(a.uid).set(patch, { merge: true }).then(function () {
+      a.taglie = Object.assign({}, a.taglie || {});
+      a.taglie[voce] = dopo;
+      var riep = document.getElementById('taglieRiepilogo');
+      if (riep) riep.innerHTML = _riepilogoTaglie(_atletiFiltrati(), _vociAbbigliamento());
+      return _logWrite('atleta', a.uid, _atletaLabel(a), 'update', [{ campo: 'Taglia — ' + voce, prima: prima || null, dopo: dopo || null }]);
+    }).catch(function (err) {
+      sel.value = prima;
+      _avviso('Taglia non salvata: ' + err.message);
+    }).then(function () { sel.disabled = false; });
+  });
+
   document.getElementById('atletiToggleAll').addEventListener('click', function () {
     var gruppi = JSON.parse(this.dataset.gruppi || '[]');
     if (this.dataset.azione === 'apri') _atletiChiuse = _atletiChiuse.filter(function (c) { return gruppi.indexOf(c) === -1; });
@@ -607,7 +708,23 @@
     return /[";\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
   }
 
+  function _esportaTaglieCsv() {
+    var voci = _vociAbbigliamento(), list = _atletiFiltrati();
+    if (!voci.length || !list.length) { _avviso('Nessuna taglia da esportare.'); return; }
+    var righe = [['Cognome', 'Nome', 'Categoria'].concat(voci).map(_csvCell).join(';')].concat(list.map(function (a) {
+      return [a.cognome, a.nome, a.categoria || ''].concat(voci.map(function (v) { return _tagliaOf(a, v); })).map(_csvCell).join(';');
+    }));
+    var blob = new Blob(['\uFEFF' + righe.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    var url = URL.createObjectURL(blob), link = document.createElement('a');
+    var slug = (_atletiCat && _atletiCat !== '__none__' ? _atletiCat : 'tutti').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    link.href = url;
+    link.download = 'taglie-' + slug + '-' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
   function _esportaAtletiCsv() {
+    if (_atletiVista === 'taglie') { _esportaTaglieCsv(); return; }
     var list = _atletiFiltrati();
     if (!list.length) { _avviso('Nessun atleta da esportare.'); return; }
     confirm('Il file contiene dati personali di minori (codice fiscale, indirizzo, telefoni). Conservalo in un posto sicuro e cancellalo quando non serve più. Scaricare?', function () {

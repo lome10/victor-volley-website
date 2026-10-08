@@ -1895,3 +1895,13 @@ button { font-family: var(--font-body); cursor: pointer; }
   .admin-table tr:hover td { background: transparent; }
   .admin-table tr:hover { background: #F8FAFC; }
 }
+
+/* Atleti → vista Taglie */
+.taglie-riepilogo { display: flex; flex-direction: column; gap: 8px; margin: 0 0 14px; padding: 12px 14px; background: var(--a-card); border: 1px solid var(--a-border); border-radius: 10px; }
+.taglie-riepilogo-voce { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; }
+.taglie-riepilogo-voce strong { min-width: 130px; font-family: var(--font-head); }
+.taglie-chip { background: var(--a-bg); border: 1px solid var(--a-border); border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 600; }
+.taglie-chip b { color: var(--a-blue); margin-left: 2px; }
+.taglie-chip--senza { color: #B45309; border-color: #FCD9A8; }
+.taglie-vuoto { font-size: 12px; color: var(--a-muted); }
+.taglie-table td .taglia-sel { min-width: 92px; padding: 6px 8px; }
