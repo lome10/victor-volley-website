@@ -1905,3 +1905,8 @@ button { font-family: var(--font-body); cursor: pointer; }
 .taglie-chip--senza { color: #B45309; border-color: #FCD9A8; }
 .taglie-vuoto { font-size: 12px; color: var(--a-muted); }
 .taglie-table td .taglia-sel { min-width: 92px; padding: 6px 8px; }
+.taglie-voci { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 12px; }
+.taglie-voci-lbl { font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--a-muted); margin-right: 4px; }
+.taglie-voce-chip { font: inherit; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 999px; cursor: pointer; border: 1px solid var(--a-blue); background: var(--a-blue); color: #fff; }
+.taglie-voce-chip.is-off { background: var(--a-card); color: var(--a-muted); border-color: var(--a-border); text-decoration: line-through; }
+.taglie-voce-chip:hover { opacity: .85; }

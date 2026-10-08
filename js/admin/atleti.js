@@ -533,9 +533,36 @@
      { voce: taglia }; gli atleti nuovi compaiono da soli perché la vista legge la stessa lista. ---- */
   var _atletiVista = 'elenco';
 
-  function _vociAbbigliamento() {
-    var s = _bs().seasons.find(function (x) { return x.id === _bs().currentSeasonId; });
+  function _stagioneBudget() {
+    return _bs().seasons.find(function (x) { return x.id === _bs().currentSeasonId; }) || null;
+  }
+
+  /* Tutte le voci della stagione corrente (colonne di Materiali sponsor). */
+  function _vociTutte() {
+    var s = _stagioneBudget();
     return s && Array.isArray(s.pezziSponsor) ? s.pezziSponsor.slice() : [];
+  }
+
+  /* Voci che non servono in questa vista (gadget, striscioni…): si scelgono dai pulsanti sopra la tabella. */
+  function _vociNascoste() {
+    var s = _stagioneBudget();
+    return s && Array.isArray(s.taglieNascoste) ? s.taglieNascoste : [];
+  }
+
+  function _vociAbbigliamento() {
+    var nascoste = _vociNascoste();
+    return _vociTutte().filter(function (v) { return nascoste.indexOf(v) === -1; });
+  }
+
+  function _vociChipsHtml() {
+    var nascoste = _vociNascoste();
+    return '<div class="taglie-voci" role="group" aria-label="Voci mostrate">' +
+      '<span class="taglie-voci-lbl">Voci mostrate</span>' +
+      _vociTutte().map(function (v) {
+        var off = nascoste.indexOf(v) !== -1;
+        return '<button type="button" class="taglie-voce-chip' + (off ? ' is-off' : '') + '" data-voce="' + esc(v) + '" aria-pressed="' + (off ? 'false' : 'true') + '" title="' +
+          (off ? 'Nascosta: clicca per mostrarla' : 'Mostrata: clicca per nasconderla') + '">' + esc(v) + '</button>';
+      }).join('') + '</div>';
   }
 
   function _tagliaOf(a, voce) {
@@ -557,6 +584,8 @@
   function _renderTaglie() {
     var box = document.getElementById('atletiTaglie');
     var voci = _vociAbbigliamento();
+    var tutte = _vociTutte();
+    var chips = tutte.length ? _vociChipsHtml() : '';
     var list = _atletiFiltrati();
     var ordCat = _categorieElenco();
     list.sort(function (x, y) {
@@ -565,12 +594,16 @@
     });
     document.getElementById('atletiSummary').textContent = list.length + (list.length === 1 ? ' atleta' : ' atleti') +
       (voci.length ? ' · ' + voci.length + (voci.length === 1 ? ' voce' : ' voci') + ' di abbigliamento' : '');
-    if (!voci.length) {
+    if (!tutte.length) {
       box.innerHTML = '<div class="empty-state"><p>Nessuna voce di abbigliamento per la stagione ' + esc(_stagioneCorrenteNome() || 'corrente') +
         '. Le voci sono le colonne di Budget → Materiali sponsor: aggiungile lì e compariranno qui.</p></div>';
       return;
     }
-    if (!list.length) { box.innerHTML = '<div class="empty-state"><p>Nessun atleta corrisponde ai filtri.</p></div>'; return; }
+    if (!voci.length) {
+      box.innerHTML = chips + '<div class="empty-state"><p>Tutte le voci sono nascoste: riattiva quelle che ti servono con i pulsanti qui sopra.</p></div>';
+      return;
+    }
+    if (!list.length) { box.innerHTML = chips + '<div class="empty-state"><p>Nessun atleta corrisponde ai filtri.</p></div>'; return; }
     var conCat = !_atletiCat;
     var head = '<tr><th>Atleta</th>' + (conCat ? '<th>Categoria</th>' : '') + voci.map(function (v) { return '<th>' + esc(v) + '</th>'; }).join('') + '</tr>';
     var righe = list.map(function (a) {
@@ -584,7 +617,7 @@
             opts.map(function (t) { return '<option value="' + esc(t) + '"' + (t === cur ? ' selected' : '') + '>' + (t ? esc(t) : '—') + '</option>'; }).join('') + '</select></td>';
         }).join('') + '</tr>';
     }).join('');
-    box.innerHTML = '<div id="taglieRiepilogo">' + _riepilogoTaglie(list, voci) + '</div>' +
+    box.innerHTML = chips + '<div id="taglieRiepilogo">' + _riepilogoTaglie(list, voci) + '</div>' +
       '<div class="admin-table-wrap"><table class="admin-table taglie-table"><thead>' + head + '</thead><tbody>' + righe + '</tbody></table></div>';
   }
 
@@ -651,6 +684,23 @@
     if (!b || b.dataset.vista === _atletiVista) return;
     _atletiVista = b.dataset.vista;
     _applicaVistaAtleti();
+  });
+
+  document.getElementById('atletiTaglie').addEventListener('click', function (e) {
+    var chip = e.target.closest('.taglie-voce-chip');
+    if (!chip) return;
+    var s = _stagioneBudget();
+    if (!s) return;
+    var voce = chip.dataset.voce;
+    var prima = _vociNascoste().slice();
+    var dopo = prima.indexOf(voce) === -1 ? prima.concat([voce]) : prima.filter(function (v) { return v !== voce; });
+    s.taglieNascoste = dopo;
+    _renderTaglie();
+    db.collection('budgetSeasons').doc(s.id).update({ taglieNascoste: dopo }).catch(function (err) {
+      s.taglieNascoste = prima;
+      _renderTaglie();
+      _avviso('Impossibile salvare la scelta: ' + err.message);
+    });
   });
 
   document.getElementById('atletiTaglie').addEventListener('change', function (e) {
