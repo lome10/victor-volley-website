@@ -14,13 +14,13 @@
     var pct   = document.getElementById('splashPercent');
     if (!splash || !pct) return;
 
-    var DURATION = 1500;
+    var DURATION = 600;
     var start    = null;
 
     var safetyTimer = setTimeout(function () {
       sessionStorage.setItem(STORAGE_KEY, '1');
       hideSplash(false);
-    }, 2400);
+    }, 1500);
 
     function step(ts) {
       if (!start) start = ts;

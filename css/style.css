@@ -3941,6 +3941,8 @@ button[type="submit"][aria-busy="true"] { opacity: 0.7; cursor: progress; }
 .deco-ball--a { width: 220px; right: -40px; top: 50%; transform: translateY(-50%); }
 .deco-ball--b { width: 160px; left: -20px; bottom: -20px; opacity: 0.04; }
 .container--raised { position: relative; z-index: 1; }
+/* palline decorative: su schermi stretti escono dal bordo e pesano senza servire */
+@media (max-width: 768px) { .deco-ball { display: none; } }
 
 /* ---- Partner ---- */
 .sponsor-cta-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 64px; align-items: center; }

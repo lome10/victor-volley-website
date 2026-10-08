@@ -251,3 +251,6 @@ Modello Excel del dirigente analizzato; scelte dell'utente: importo libero (una 
 
 ### 2026-10-08 — Controllo statico CSS da telefono (nessuna prova a schermo: il browser automatico non emula la larghezza)
 - Trovati e corretti: barra strumenti Atleti (ricerca + 4 pulsanti) senza `flex-wrap` → ora va a capo sotto 700 px; le tabelle Taglie (molte colonne, select da 44 px) sarebbero diventate schede lunghissime → classe `tab-scroll` le lascia tabelle con scorrimento laterale (regola `.admin-table:not(.tab-scroll)`). Resta da provare con F12.
+
+### 2026-10-08 — Mobile pubblico: splash e palline
+- Splash accorciata da 1,5 s a 600 ms (`js/splash.js`, timer di sicurezza 1,5 s). Palline `.deco-ball` nascoste sotto 768 px (`css/style.css`). Il `defer` agli script della home NON serve: sono già a fine `<body>`. Immagini Cloudinary già con `f_auto,q_auto`. Resta aperto: Firestore 344 KB in tutte le pagine pubbliche (lavoro più grosso), rimisura Lighthouse mobile (era 49/100).
