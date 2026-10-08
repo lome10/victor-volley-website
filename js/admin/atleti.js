@@ -656,32 +656,36 @@
     }
     if (!list.length) { box.innerHTML = chips + '<div class="empty-state"><p>Nessun atleta corrisponde ai filtri.</p></div>'; return; }
 
-    var head = '<tr><th>Atleta</th>' + voci.map(function (v) { return '<th>' + esc(v) + '</th>'; }).join('') + '</tr>';
-    var righe;
+    /* Colonne per categoria: una voce tolta dalla matrice «Voci per categoria» non compare per quella categoria. */
+    function vociDi(cat) { return voci.filter(function (v) { return cat === '__none__' || !_esclusa(cat, v); }); }
+    function intest(vc, cls) { return '<tr' + (cls ? ' class="' + cls + '"' : '') + '><th>Atleta</th>' + vc.map(function (v) { return '<th>' + esc(v) + '</th>'; }).join('') + '</tr>'; }
+    var tabelle;
     if (_atletiCat) {
-      righe = list.map(function (a) { return _rigaTaglieHtml(a, voci); }).join('');
+      var vc1 = vociDi(_atletiCat);
+      tabelle = '<div class="admin-table-wrap"><table class="admin-table tab-scroll taglie-table"><thead>' + intest(vc1) + '</thead><tbody>' +
+        list.map(function (a) { return _rigaTaglieHtml(a, vc1); }).join('') + '</tbody></table></div>';
     } else {
-      /* «Tutte»: come nell'elenco, una sezione per categoria che si apre e si chiude. */
+      /* «Tutte»: una sezione per categoria che si apre e si chiude, ognuna con le sue colonne. */
       var q = (_atletiQuery || '').trim();
       var gruppi = _categorieElenco().concat(['__none__']);
       _aggiornaToggleTutte(gruppi.filter(function (cat) {
         return list.some(function (a) { return cat === '__none__' ? !a.categoria : a.categoria === cat; });
       }));
-      /* intestazioni ripetute sotto ogni categoria, così non serve risalire in cima alla tabella */
-      var rigaIntest = '<tr class="taglie-head-row"><th>Atleta</th>' + voci.map(function (v) { return '<th>' + esc(v) + '</th>'; }).join('') + '</tr>';
-      righe = gruppi.map(function (cat) {
+      tabelle = gruppi.map(function (cat) {
         var membri = list.filter(function (a) { return cat === '__none__' ? !a.categoria : a.categoria === cat; });
         if (!membri.length) return '';
+        var vc = vociDi(cat);
         var chiuso = !q && _atletiChiuse.indexOf(cat) !== -1;
-        var mancano = _daIndicare(membri, voci);
-        return '<tr class="atleti-group' + (chiuso ? ' is-closed' : '') + '" data-cat="' + esc(cat) + '" tabindex="0" role="button" aria-expanded="' + (chiuso ? 'false' : 'true') + '">' +
-          '<td colspan="' + (voci.length + 1) + '"><span class="atleti-group-chev" aria-hidden="true"></span><strong>' + esc(cat === '__none__' ? 'Senza categoria' : cat) + '</strong>' +
+        var mancano = _daIndicare(membri, vc);
+        return '<div class="admin-table-wrap taglie-gruppo"><table class="admin-table tab-scroll taglie-table"><tbody>' +
+          '<tr class="atleti-group' + (chiuso ? ' is-closed' : '') + '" data-cat="' + esc(cat) + '" tabindex="0" role="button" aria-expanded="' + (chiuso ? 'false' : 'true') + '">' +
+          '<td colspan="' + (vc.length + 1) + '"><span class="atleti-group-chev" aria-hidden="true"></span><strong>' + esc(cat === '__none__' ? 'Senza categoria' : cat) + '</strong>' +
           '<span>' + membri.length + (membri.length === 1 ? ' atleta' : ' atleti') + (mancano ? ' · ' + mancano + ' da indicare' : ' · tutto indicato') + '</span></td></tr>' +
-          (chiuso ? '' : rigaIntest + membri.map(function (a) { return _rigaTaglieHtml(a, voci); }).join(''));
+          (chiuso ? '' : intest(vc, 'taglie-head-row') + membri.map(function (a) { return _rigaTaglieHtml(a, vc); }).join('')) +
+          '</tbody></table></div>';
       }).join('');
     }
-    box.innerHTML = chips + _matriceEsclusioniHtml(voci) + '<div id="taglieRiepilogo">' + _riepilogoTaglie(list, voci) + '</div>' +
-      '<div class="admin-table-wrap"><table class="admin-table tab-scroll taglie-table"><thead>' + head + '</thead><tbody>' + righe + '</tbody></table></div>';
+    box.innerHTML = chips + _matriceEsclusioniHtml(voci) + '<div id="taglieRiepilogo">' + _riepilogoTaglie(list, voci) + '</div>' + tabelle;
   }
 
   function _applicaVistaAtleti() {
