@@ -568,10 +568,15 @@
   /* Zaino e borsone non hanno taglia: per queste voci la cella è solo Sì / No. */
   var VOCI_SI_NO = /\b(zain[oi]|borson[ei])\b/i;
   function _isSiNo(voce) { return VOCI_SI_NO.test(String(voce)); }
-  function _scalaVoce(voce) { return _isSiNo(voce) ? ['', 'Sì', 'No'] : TAGLIE_ATLETA; }
+  /* TAGLIE_ATLETA è fatta di coppie [valore, etichetta] per il modulo scheda: qui servono i soli valori */
+  var TAGLIE_VALORI = TAGLIE_ATLETA.map(function (c) { return c[0]; });
+  function _scalaVoce(voce) { return _isSiNo(voce) ? ['', 'Sì', 'No'] : TAGLIE_VALORI; }
 
   function _tagliaOf(a, voce) {
-    return a.taglie && a.taglie[voce] ? String(a.taglie[voce]) : '';
+    var t = a.taglie && a.taglie[voce] ? String(a.taglie[voce]).trim() : '';
+    /* valori salvati per errore dal menu come «M,M»: si leggono come «M» */
+    var m = /^(.+),\1$/.exec(t);
+    return m ? m[1] : t;
   }
 
   /* Voci non previste per una categoria (es. il giubbotto solo alle categorie maggiori):
