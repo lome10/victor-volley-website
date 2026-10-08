@@ -63,9 +63,8 @@ Piano: file separati caricati in ordine, namespace comune `window.Admin`, nessun
 - [x] Spezzato in `js/admin/budget/{state,riepilogo,sponsor,materiali,rette,spese,iva,exportpdf,bilancio,log,main}.js` (320–870 righe l'uno). Stato e funzioni condivise passano da `Admin.budgetShared` (`B._nome`); `state.js` va caricato per primo, `main.js` per ultimo. Controlli statici e simulati OK; provato nel browser il 2026-10-05 ✔.
 - [x] Estratto `js/admin/atleti.js` (1.476 righe: atleti, iscrizione e rate, avvisi, presenze, allenamenti), espone `Admin.atleti`; helper di data e `showSubview`/`setTopbarBtn` restano nel nucleo ed escono da `window.Admin`. Provato nel browser il 2026-10-05 ✔.
 - [x] Estratto `js/admin/cms.js` (1.906 righe: articoli, calendario, galleria, upload Cloudinary, squadre, stagioni, maglia, sponsor del sito e i metodi di `AdminActions` per questi). Espone `Admin.cms`; il nucleo crea `window.AdminActions = {}` e cms.js lo riempie con `Object.assign`. `scripts/check-admin.js` aggiornato per trovare il letterale in `cms.js`. Provato nel browser il 2026-10-05 ✔.
-- [ ] Lasciare in `core.js` bootstrap, navigazione, utility, audit log, modali.
-- [ ] Cache-busting `?v=` per ogni nuovo file.
-- [ ] Valutare uno strato dati: oggi ci sono 143 chiamate dirette a `db.collection()`.
+- [x] Nucleo rimasto in `admin.js` (909 righe; `core.js` non esiste e non serve). Cache-busting `?v=` già gestito da `scripts/stamp-versions.js` (2026-10-08).
+- [ ] Valutare uno strato dati: oggi ci sono circa 160 chiamate dirette a `db.collection()` sparse in `js/admin/` (facoltativo, solo pulizia).
 
 ### Pulizia codice morto
 - [x] Eliminato `data/giocatori.json` (nessun riferimento).
@@ -92,7 +91,9 @@ Piano: file separati caricati in ordine, namespace comune `window.Admin`, nessun
 - [x] Sostituita la Cloud Function: email di reset (client) + funzione Vercel `api/set-athlete-password.js`. Rimossi `functions/`, `firebase-functions-compat.js`, `_FUNCTIONS_DEPLOYED`.
 - [x] **Configurata `FIREBASE_SERVICE_ACCOUNT` su Vercel** (verificato da fuori: la funzione risponde 405/401 e non 500, quindi vede la chiave; file della chiave cancellato dall'utente) (Firebase Console → Impostazioni progetto → Account di servizio → Genera nuova chiave privata; incollare il JSON intero nella variabile d'ambiente, rifare il deploy, poi cancellare il file scaricato). Senza, la password a mano risponde "Funzione non configurata"; l'email di reset funziona comunque.
 - [x] Provato in produzione dall'utente: reset email (atleta e genitore) e password a mano funzionano.
-- [ ] `npm audit` segnala 9 vulnerabilità moderate nelle dipendenze indirette di `firebase-admin` (`@google-cloud/storage`, ecc.), non usate dalla funzione: ricontrollare ai prossimi aggiornamenti.
+- [x] `npm audit`: 10 vulnerabilità (2 alte, `node-forge`) risolte il 2026-10-08 passando a `firebase-admin` 14.5.0 (0 vulnerabilità). Nella v14 non esistono più `admin.apps`, `admin.credential`, `app.auth()`: `api/_firebase.js` ora usa l'API modulare e restituisce `{auth(), firestore()}`; `promemoria.js` e `set-athlete-password.js` usano lo stesso `getApp`. Test e caricamento dei 5 endpoint OK, **non provato in produzione** (dopo il deploy: «Genera password» o invito, e una ricevuta di prova).
+- [ ] Revisione `innerHTML`: 192 occorrenze tra `admin.js` e `js/admin/` (2026-10-08).
+- [x] Allegati alle spese: fatti come link Drive per voce (commit 75985b9), niente Storage. Loghi sito→aziende fatto (3a4ec74). Resta solo il menu «⋯» (non fatto).
 - [ ] Form per inserire i risultati del girone senza passare dal JSON (proposto, non richiesto).
 
 ---

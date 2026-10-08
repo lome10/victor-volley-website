@@ -16,16 +16,7 @@
  * Variabile d'ambiente richiesta su Vercel: FIREBASE_SERVICE_ACCOUNT, con il JSON
  * dell'account di servizio Firebase incollato per intero. Non va mai nel repository.
  */
-const admin = require('firebase-admin');
-
-function getApp() {
-  if (admin.apps.length) return admin.app();
-  const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
-  if (!raw) throw new Error('FIREBASE_SERVICE_ACCOUNT non configurata');
-  const key = JSON.parse(raw);
-  if (key.private_key) key.private_key = key.private_key.replace(/\\n/g, '\n');
-  return admin.initializeApp({ credential: admin.credential.cert(key) });
-}
+const { getApp } = require('./_firebase');
 
 function fail(res, status, message) {
   res.setHeader('Cache-Control', 'no-store');

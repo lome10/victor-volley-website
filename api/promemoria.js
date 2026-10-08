@@ -20,18 +20,9 @@
  * rispedito. I genitori che hanno disattivato i promemoria (notifiche/{uid}.email == false) sono esclusi.
  */
 const crypto = require('crypto');
-const admin = require('firebase-admin');
+const { getApp } = require('./_firebase');
 const L = require('./_promemoria-logic');
 const { configEmail, inviaEmail } = require('./_email');
-
-function getApp() {
-  if (admin.apps.length) return admin.app();
-  const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
-  if (!raw) throw new Error('FIREBASE_SERVICE_ACCOUNT non configurata');
-  const key = JSON.parse(raw);
-  if (key.private_key) key.private_key = key.private_key.replace(/\\n/g, '\n');
-  return admin.initializeApp({ credential: admin.credential.cert(key) });
-}
 
 const hash8 = (s) => crypto.createHash('sha256').update(s).digest('hex').slice(0, 12);
 const mask = (e) => e.replace(/^(.).*@(.).*(\..+)$/, '$1***@$2***$3');
