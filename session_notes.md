@@ -263,3 +263,6 @@ Modello Excel del dirigente analizzato; scelte dell'utente: importo libero (una 
 
 ### 2026-10-08 — Fix: taglie doppie «M,M» nella vista Taglie
 - Bug mio: `_scalaVoce` restituiva le coppie [valore, etichetta] di `TAGLIE_ATLETA`, quindi il menu salvava «M,M» / «8 anni,8 anni». Ora usa `TAGLIE_VALORI` (solo valori) e `_tagliaOf` legge «X,X» come «X». Nei dati veri c'era 1 valore «M,M» (Maglia Gara), non riscritto: si corregge da solo alla prossima modifica. Le altre voci erano tutte vuote.
+
+### 2026-10-08 — Materiali sponsor: aggiunte «Giacca tuta» e «Pantalone tuta»
+- Aggiunte a `budgetSeasons/<2026/2027>.pezziSponsor` (diventano colonne nella vista Taglie). **Da fare dopo (deciso dall'utente):** eliminare o nascondere la voce «Tuta» (ha prezzi/quantità nel Budget → Materiali: guardarli prima).
