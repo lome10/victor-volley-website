@@ -272,3 +272,6 @@ Modello Excel del dirigente analizzato; scelte dell'utente: importo libero (una 
 - Vista Taglie «Tutte»: intestazioni delle colonne ripetute sotto ogni categoria (`tr.taglie-head-row`); solo quella in cima è trascinabile.
 - Il drag and drop delle colonne Taglie è ora nelle intestazioni della matrice «Voci per categoria» (non più nella tabella principale): spostando le colonne lì si riflette sotto.
 - Vista Taglie: le voci tolte in «Voci per categoria» spariscono dalla griglia (non più «n/d»): con «Tutte» ogni categoria è una tabella a sé con le sole colonne che riceve (intestazioni proprie); con una categoria sola, solo le sue colonne. Il riepilogo continua a escluderle.
+
+### 2026-10-08 — Home: galleria a mosaico (primo pezzo del redesign)
+- Prototipo redesign home: https://claude.ai/artifact/A6kfWf1TakJivxuogQ8hFH (privato, dati finti). L'utente ha scelto di implementare per ora SOLO la galleria. Fatto: `js/pages/index-3.js` (7 foto: grande, alta, larga, 4 quadrate; con meno di 7 foto tutte quadrate), `PhotoDB.sized(id, w, h)` in `js/photodb.js` (ritagli Cloudinary a misura), CSS in `css/style.css` (4 colonne, 2 su mobile). Resto del redesign (hero, numeri, news, squadre, partner, CTA) in attesa di decisione.

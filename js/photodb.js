@@ -154,6 +154,11 @@
       });
     },
 
+    /* URL di un ritaglio a misura (w × h px) per le anteprime che non sono 4:3, es. il mosaico della home. */
+    sized: function (photoId, w, h) {
+      return _url('c_fill,g_auto,w_' + w + ',h_' + h + ',f_auto,q_auto', photoId);
+    },
+
     /* Foto di un album, con gli URL già pronti (thumb per la griglia, url per il lightbox). cb(array) */
     getPhotos: function (albumId, cb) {
       var album = global.VV.getAlbum(albumId);

@@ -1,6 +1,16 @@
 /* Victor Volley — script della pagina index.html (3), estratto dall'HTML per la Content-Security-Policy. */
 (function () {
-  var MAX = 8;
+  var MAX = 7;
+  /* Forma di ogni tessera del mosaico (colonne × righe) e ritaglio richiesto a Cloudinary: grande, alta, due quadrate, larga, due quadrate. */
+  var FORME = [
+    { cls: 'is-big',  w: 900, h: 900 },
+    { cls: 'is-tall', w: 450, h: 900 },
+    { cls: '',        w: 450, h: 450 },
+    { cls: '',        w: 450, h: 450 },
+    { cls: 'is-wide', w: 900, h: 450 },
+    { cls: '',        w: 450, h: 450 },
+    { cls: '',        w: 450, h: 450 }
+  ];
   /* Indici ben distribuiti nell'album (primo, metà, terzi…), così non sono le prime foto in fila. */
   function spread(n, count) {
     var out = [], seen = {};
@@ -28,9 +38,11 @@
       [album.date ? VV.formatDateShort(album.date) : '', photos.length + ' foto']
         .filter(Boolean).join(' · ');
     document.getElementById('galleryPreviewLink').href = href;
-    document.getElementById('galleryPreviewGrid').innerHTML = picks.map(function (p) {
-      return '<a class="gallery-preview-item" href="' + href + '" aria-label="' + esc('Apri album: ' + album.title) + '">' +
-        '<img src="' + p.thumb + '" alt="' + esc(album.title) + '" loading="lazy" decoding="async">' +
+    document.getElementById('galleryPreviewGrid').innerHTML = picks.map(function (p, i) {
+      /* con meno di 7 foto il mosaico lascerebbe buchi: tessere tutte quadrate */
+      var f = picks.length === MAX ? FORME[i] : { cls: '', w: 450, h: 450 };
+      return '<a class="gallery-preview-item ' + f.cls + '" href="' + href + '" aria-label="' + esc('Apri album: ' + album.title) + '">' +
+        '<img src="' + PhotoDB.sized(p.id, f.w, f.h) + '" alt="' + esc(album.title) + '" width="' + f.w + '" height="' + f.h + '" loading="lazy" decoding="async">' +
       '</a>';
     }).join('');
     document.getElementById('galleryPreviewSection').style.display = '';
