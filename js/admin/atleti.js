@@ -608,9 +608,9 @@
     var cats = _categorieElenco().filter(function (c) { return _atletiCache.some(function (a) { return a.categoria === c; }); });
     if (!cats.length) return '';
     return '<details class="taglie-escl" id="taglieEscl"' + (_taglieEsclAperto ? ' open' : '') + '><summary>Voci per categoria</summary>' +
-      '<p class="taglie-escl-hint">Togli la spunta dove una categoria non riceve quel capo: nella tabella diventa «n/d» e non entra nel riepilogo.</p>' +
+      '<p class="taglie-escl-hint">Togli la spunta dove una categoria non riceve quel capo: nella tabella diventa «n/d» e non entra nel riepilogo. Trascina le intestazioni per cambiare l’ordine delle colonne.</p>' +
       '<div class="admin-table-wrap"><table class="admin-table tab-scroll taglie-escl-table"><thead><tr><th>Categoria</th>' +
-      voci.map(function (v) { return '<th>' + esc(v) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      voci.map(function (v) { return '<th class="taglie-th" draggable="true" data-voce="' + esc(v) + '" title="Trascina per spostare la colonna">' + esc(v) + '</th>'; }).join('') + '</tr></thead><tbody>' +
       cats.map(function (c) {
         return '<tr><td><div class="table-title">' + esc(c) + '</div></td>' + voci.map(function (v) {
           return '<td><input type="checkbox" class="taglie-escl-cb" data-cat="' + esc(c) + '" data-voce="' + esc(v) + '"' + (_esclusa(c, v) ? '' : ' checked') +
@@ -656,7 +656,7 @@
     }
     if (!list.length) { box.innerHTML = chips + '<div class="empty-state"><p>Nessun atleta corrisponde ai filtri.</p></div>'; return; }
 
-    var head = '<tr><th>Atleta</th>' + voci.map(function (v) { return '<th class="taglie-th" draggable="true" data-voce="' + esc(v) + '" title="Trascina per spostare la colonna">' + esc(v) + '</th>'; }).join('') + '</tr>';
+    var head = '<tr><th>Atleta</th>' + voci.map(function (v) { return '<th>' + esc(v) + '</th>'; }).join('') + '</tr>';
     var righe;
     if (_atletiCat) {
       righe = list.map(function (a) { return _rigaTaglieHtml(a, voci); }).join('');
@@ -767,7 +767,7 @@
     });
   });
 
-  /* Trascina le intestazioni per cambiare l'ordine delle colonne. L'ordine è quello di pezziSponsor
+  /* Trascina le intestazioni della matrice «Voci per categoria» per cambiare l'ordine delle colonne (anche nella tabella sotto). L'ordine è quello di pezziSponsor
      (stesse voci di Budget → Materiali sponsor, che seguono lo stesso ordine); i dati stanno sotto il nome, non la posizione. */
   var _trascinaVoce = null;
   function _taglieThDa(e) { return e.target && e.target.closest ? e.target.closest('th.taglie-th') : null; }

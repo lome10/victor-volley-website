@@ -270,3 +270,4 @@ Modello Excel del dirigente analizzato; scelte dell'utente: importo libero (una 
 ### 2026-10-08 — Atleti → Taglie: colonne trascinabili
 - Intestazioni `th.taglie-th` con drag and drop (HTML5, solo mouse/desktop; su touch non funziona): spostano la voce in `budgetSeasons.pezziSponsor`, quindi cambia anche l'ordine in Budget → Materiali sponsor (i dati stanno sotto il nome, non la posizione). Salvataggio con rollback e avviso in caso di errore. Per il telefono si possono aggiungere frecce ◀ ▶.
 - Vista Taglie «Tutte»: intestazioni delle colonne ripetute sotto ogni categoria (`tr.taglie-head-row`); solo quella in cima è trascinabile.
+- Il drag and drop delle colonne Taglie è ora nelle intestazioni della matrice «Voci per categoria» (non più nella tabella principale): spostando le colonne lì si riflette sotto.
