@@ -566,7 +566,7 @@
   }
 
   /* Zaino e borsone non hanno taglia: per queste voci la cella è solo Sì / No. */
-  var VOCI_SI_NO = /b(zain[oi]|borson[ei])b/i;
+  var VOCI_SI_NO = /\b(zain[oi]|borson[ei])\b/i;
   function _isSiNo(voce) { return VOCI_SI_NO.test(String(voce)); }
   function _scalaVoce(voce) { return _isSiNo(voce) ? ['', 'Sì', 'No'] : TAGLIE_ATLETA; }
 
