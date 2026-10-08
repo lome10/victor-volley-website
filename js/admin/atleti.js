@@ -684,8 +684,7 @@
     Array.prototype.forEach.call(document.querySelectorAll('#atletiVista .atleti-pill'), function (b) {
       b.classList.toggle('is-active', b.dataset.vista === _atletiVista);
     });
-    document.getElementById('atletiExport').textContent = taglie ? 'Esporta taglie (CSV)' : 'Esporta CSV';
-    document.getElementById('atletiExport').title = taglie ? 'Scarica le taglie mostrate in CSV (Excel)' : 'Scarica l\'elenco mostrato in CSV (Excel)';
+    document.getElementById('atletiExport').title = taglie ? 'Scarica le taglie mostrate in CSV' : "Scarica l'elenco mostrato in CSV";
     _renderAtletiRows();
   }
 
@@ -841,54 +840,95 @@
     _renderAtletiRows();
   });
 
-  /* ---- Esporta l'elenco filtrato in CSV (apribile con Excel) ---- */
+  /* ---- Esporta l'elenco filtrato: CSV, Excel (.xls) e PDF ---- */
   function _csvCell(v) {
     var s = v == null ? '' : String(v);
     return /[";\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
   }
 
-  function _esportaTaglieCsv() {
-    var voci = _vociAbbigliamento(), list = _atletiFiltrati();
-    if (!voci.length || !list.length) { _avviso('Nessuna taglia da esportare.'); return; }
-    var righe = [['Cognome', 'Nome', 'Categoria'].concat(voci).map(_csvCell).join(';')].concat(list.map(function (a) {
-      return [a.cognome, a.nome, a.categoria || ''].concat(voci.map(function (v) { return _esclusa(a.categoria, v) ? 'n/d' : _tagliaOf(a, v); })).map(_csvCell).join(';');
-    }));
-    var blob = new Blob(['\uFEFF' + righe.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  function _slugExport() {
+    return (_atletiCat && _atletiCat !== '__none__' ? _atletiCat : 'tutti').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  }
+
+  function _scarica(contenuto, mime, nome) {
+    var blob = new Blob([contenuto], { type: mime });
     var url = URL.createObjectURL(blob), link = document.createElement('a');
-    var slug = (_atletiCat && _atletiCat !== '__none__' ? _atletiCat : 'tutti').toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    link.href = url;
-    link.download = 'taglie-' + slug + '-' + new Date().toISOString().slice(0, 10) + '.csv';
+    link.href = url; link.download = nome;
     document.body.appendChild(link); link.click(); document.body.removeChild(link);
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
   }
 
-  function _esportaAtletiCsv() {
-    if (_atletiVista === 'taglie') { _esportaTaglieCsv(); return; }
+  /* Dati da esportare nella vista corrente: { titolo, base, head[], righe[][], sensibile } oppure null */
+  function _datiExport() {
     var list = _atletiFiltrati();
-    if (!list.length) { _avviso('Nessun atleta da esportare.'); return; }
-    confirm('Il file contiene dati personali di minori (codice fiscale, indirizzo, telefoni). Conservalo in un posto sicuro e cancellalo quando non serve più. Scaricare?', function () {
-      var cols = [{ k: 'cognome', l: 'Cognome' }, { k: 'nome', l: 'Nome' }];
-      ATLETA_CAMPI.forEach(function (f) {
-        if (['nome', 'cognome', 'note', 'infoMediche'].indexOf(f.k) === -1) cols.push({ k: f.k, l: f.csv || f.l.replace(' *', '') });
-      });
-      cols.push({ k: 'tutore1Nome', l: 'Genitore 1 — cognome e nome' }, { k: 'tutore2Nome', l: 'Genitore 2 — cognome e nome' });
-      cols.push({ k: 'certMedicoScadenza', l: 'Scadenza certificato medico' });
-      var righe = [cols.map(function (c) { return _csvCell(c.l); }).join(';')].concat(list.map(function (a) {
-        return cols.map(function (c) { return _csvCell(a[c.k]); }).join(';');
-      }));
-      var blob = new Blob(['﻿' + righe.join('\r\n')], { type: 'text/csv;charset=utf-8' });
-      var url  = URL.createObjectURL(blob);
-      var link = document.createElement('a');
-      var slug = (_atletiCat && _atletiCat !== '__none__' ? _atletiCat : 'tutti').toLowerCase().replace(/[^a-z0-9]+/g, '-');
-      link.href = url;
-      link.download = 'atleti-' + slug + '-' + new Date().toISOString().slice(0, 10) + '.csv';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    var slug = _slugExport(), cat = _atletiCat && _atletiCat !== '__none__' ? _atletiCat : 'Tutte le categorie';
+    if (_atletiVista === 'taglie') {
+      var voci = _vociAbbigliamento();
+      if (!voci.length || !list.length) { _avviso('Nessuna taglia da esportare.'); return null; }
+      return {
+        titolo: 'Taglie — ' + cat, base: 'taglie-' + slug, sensibile: false,
+        head: ['Cognome', 'Nome', 'Categoria'].concat(voci),
+        righe: list.map(function (a) {
+          return [a.cognome, a.nome, a.categoria || ''].concat(voci.map(function (v) { return _esclusa(a.categoria, v) ? 'n/d' : _tagliaOf(a, v); }));
+        })
+      };
+    }
+    if (!list.length) { _avviso('Nessun atleta da esportare.'); return null; }
+    var cols = [{ k: 'cognome', l: 'Cognome' }, { k: 'nome', l: 'Nome' }];
+    ATLETA_CAMPI.forEach(function (f) {
+      if (['nome', 'cognome', 'note', 'infoMediche'].indexOf(f.k) === -1) cols.push({ k: f.k, l: f.csv || f.l.replace(' *', '') });
     });
+    cols.push({ k: 'tutore1Nome', l: 'Genitore 1 — cognome e nome' }, { k: 'tutore2Nome', l: 'Genitore 2 — cognome e nome' });
+    cols.push({ k: 'certMedicoScadenza', l: 'Scadenza certificato medico' });
+    return {
+      titolo: 'Atleti — ' + cat, base: 'atleti-' + slug, sensibile: true,
+      head: cols.map(function (c) { return c.l; }),
+      righe: list.map(function (a) { return cols.map(function (c) { return a[c.k] == null ? '' : a[c.k]; }); })
+    };
   }
-  document.getElementById('atletiExport').addEventListener('click', _esportaAtletiCsv);
+
+  function _htmlTabella(d, thStyle, tdStyle) {
+    return '<table border="1"><thead><tr>' + d.head.map(function (h) { return '<th' + thStyle + '>' + esc(h) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      d.righe.map(function (r) { return '<tr>' + r.map(function (c) { return '<td' + tdStyle + '>' + esc(String(c)) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>';
+  }
+
+  function _esporta(formato) {
+    var d = _datiExport();
+    if (!d) return;
+    var run = function () {
+      var nome = d.base + '-' + new Date().toISOString().slice(0, 10);
+      if (formato === 'csv') {
+        var righe = [d.head.map(_csvCell).join(';')].concat(d.righe.map(function (r) { return r.map(_csvCell).join(';'); }));
+        _scarica('﻿' + righe.join('\r\n'), 'text/csv;charset=utf-8', nome + '.csv');
+      } else if (formato === 'xls') {
+        /* Tabella HTML con intestazione Excel: si apre direttamente in Excel; celle come testo (CF e telefoni restano interi) */
+        var foglio = d.titolo.replace(/[\\\/?*\[\]:]/g, '').slice(0, 31);
+        var html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="UTF-8">' +
+          '<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>' + esc(foglio) + '</x:Name></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body>' +
+          _htmlTabella(d, ' style="background:#e6e6e6"', ' style="mso-number-format:\'@\'"') + '</body></html>';
+        _scarica('﻿' + html, 'application/vnd.ms-excel;charset=utf-8', nome + '.xls');
+      } else {
+        var w = window.open('', '_blank');
+        if (!w) { _avviso('Il browser ha bloccato la finestra: consenti i popup e riprova.'); return; }
+        var wide = d.head.length > 8;
+        var doc = '<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>' + esc(d.titolo) + ' — Victor Volley</title><style>' +
+          '@page{size:A4 ' + (wide ? 'landscape' : 'portrait') + ';margin:12mm}' +
+          'body{font-family:Arial,sans-serif;color:#111;margin:0}h1{font-size:16px;margin:0 0 2px}p{margin:0 0 10px;font-size:11px;color:#555}' +
+          'table{width:100%;border-collapse:collapse;font-size:' + (wide ? '7' : '10') + 'px}' +
+          'th,td{border:1px solid #bbb;padding:3px 4px;text-align:left;vertical-align:top;word-break:break-word}' +
+          'th{background:#eee}thead{display:table-header-group}tr{page-break-inside:avoid}</style></head><body>' +
+          '<h1>' + esc(d.titolo) + '</h1><p>Victor Volley — ' + d.righe.length + ' righe — ' + new Date().toLocaleDateString('it-IT') + '</p>' +
+          _htmlTabella(d, '', '') + '</body></html>';
+        w.document.open(); w.document.write(doc); w.document.close();
+        setTimeout(function () { w.focus(); w.print(); }, 300);
+      }
+    };
+    if (d.sensibile) confirm('Il file contiene dati personali di minori (codice fiscale, indirizzo, telefoni). Conservalo in un posto sicuro e cancellalo quando non serve più. Procedere?', run);
+    else run();
+  }
+  document.getElementById('atletiExport').addEventListener('click', function () { _esporta('csv'); });
+  document.getElementById('atletiExportXls').addEventListener('click', function () { _esporta('xls'); });
+  document.getElementById('atletiExportPdf').addEventListener('click', function () { _esporta('pdf'); });
 
   /* ================================================
      ISCRIZIONE ALLA STAGIONE E RATE — una sola fonte, il budget

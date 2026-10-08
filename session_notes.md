@@ -3,7 +3,7 @@
 File di coordinamento: va aggiornato **alla fine di ogni sessione** e **ad ogni cambiamento**.
 Ordine: stato attuale → da fare → da verificare → decisioni → registro sessioni.
 
-Ultimo aggiornamento: 2026-10-06 (fine sessione)
+Ultimo aggiornamento: 2026-10-08 (export Excel e PDF area Atleti)
 
 ---
 
@@ -242,3 +242,6 @@ Modello Excel del dirigente analizzato; scelte dell'utente: importo libero (una 
 - **Verificato dopo il push (2026-10-06):** `.vercelignore` funziona anche per i deploy da GitHub: tutti i file di lavoro (note, piani, docs, scripts, firestore.rules, firebase.json, .github) rispondono 404; sito, API e asset continuano a rispondere come prima (sito 200, `/api/promemoria` → `skipped` senza secret, `/api/set-athlete-password` GET → 405).
 - **Piano editoriale — sponsor collegati (2026-10-07):** campo `sponsorIds` (id dei loghi del sito) su ogni contenuto di `pianoEditoriale`; nel modulo una casella per sponsor col contatore che sale quando la spunti; sotto il calendario il pannello «Visibilità per sponsor» (contenuti collegati e pubblicati, clic = filtra il calendario). Bilancio: pulsanti CSV affiancati e «Entrate incassate» divise per fonte (Tutte/Sponsor/Rette/Tessere/Altre). Salvataggio dei collegamenti non provato su dati veri.
 - **Piano editoriale — rifiniture (2026-10-07):** contatore sponsor ordinato dal più al meno collegato; trascinamento dei contenuti su un altro giorno (solo desktop, aggiorna solo `data`, loggato; provato dall'utente); sui contenuti con sponsor: nome sotto il titolo + logo piccolo a destra (il solo logo era illeggibile). Da telefono (elenco) solo il logo. **Stato a fine sessione:** tutto su main, nessun lavoro in sospeso nel codice. **In sospeso per scelta dell'utente:** segnare pagate le 17 tranche sponsor scadute e pulizia dei dati di prova (atleta «Prova Famiglia Test», rate, allenamento, avviso, account Firebase del genitore di prova); backup non ancora fatto (serve prima di creare la prima stagione nuova); collegare i loghi del sito alle aziende (nessuno collegato); prova da telefono delle schede nuove del Budget; menu «⋯» e allegati veri alle spese (Storage) non fatti.
+
+### 2026-10-08 — Area Atleti: export Excel e PDF
+- `js/admin/atleti.js`: export unificato (`_datiExport` + `_esporta('csv'|'xls'|'pdf')`) per elenco e vista Taglie. Excel = tabella HTML `.xls` (celle testo); PDF = finestra di stampa A4 (landscape se >8 colonne), come in `budget/exportpdf.js`. Pulsanti `atletiExportXls` / `atletiExportPdf` in `admin.html`. Non ancora provato dall'utente né committato.
