@@ -161,7 +161,8 @@
     bodyU.innerHTML = (c.uscite.length ? c.uscite.map(function (r) {
       return riga(r, '<td>' + esc(r.nome) + '</td><td>' + _eur(r.sostenuto) + '</td><td>' + _pct(r.sostenuto, c.totUscite) + '</td>');
     }).join('') : '<tr><td colspan="3" class="dg-empty">Nessuna uscita registrata per questa stagione.</td></tr>') +
-      '<tr style="font-weight:700"><td>Totale uscite</td><td>' + _eur(c.totUscite) + '</td><td>' + (c.totUscite > 0 ? '100%' : '—') + '</td></tr>';
+      '<tr style="font-weight:700"><td>Totale uscite</td><td>' + _eur(c.totUscite) + '</td><td>' + (c.totUscite > 0 ? '100%' : '—') + '</td></tr>' +
+      '<tr><td colspan="3" class="dg-muted" style="font-size:12px">Solo spese sostenute; l\'IVA conta quando è versata, quindi il totale può essere più basso di «Speso finora» nella Panoramica.</td></tr>';
     var saldoEl = document.getElementById('bilancioCatSaldo');
     if (saldoEl) {
       saldoEl.innerHTML = 'Saldo (entrate incassate − uscite): <strong style="color:' + (c.saldo < 0 ? 'var(--dg-red)' : 'var(--dg-green)') + '">' + _eurSigned(c.saldo) + '</strong>';

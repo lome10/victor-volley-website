@@ -282,7 +282,7 @@
   }
 
   function _cashflowStats() {
-    var curIds = B._sponsorizzazioni.filter(function (s) { return s.seasonId === B._currentSeasonId; }).map(function (s) { return s.id; });
+    var curIds = B._sponsorizzazioni.filter(function (s) { return s.seasonId === B._currentSeasonId && s.stato === 'chiuso'; }).map(function (s) { return s.id; });
     var list = B._tranche.filter(function (t) { return curIds.indexOf(t.sponsorizzazioneId) !== -1; });
     var pagate = list.filter(function (t) { return t.pagato; });
     var daPagare = list.filter(function (t) { return !t.pagato; });

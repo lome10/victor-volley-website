@@ -245,3 +245,6 @@ Modello Excel del dirigente analizzato; scelte dell'utente: importo libero (una 
 
 ### 2026-10-08 — Area Atleti: export Excel e PDF
 - `js/admin/atleti.js`: export unificato (`_datiExport` + `_esporta('csv'|'xls'|'pdf')`) per elenco e vista Taglie. Excel = tabella HTML `.xls` (celle testo); PDF = finestra di stampa A4 (landscape se >8 colonne), come in `budget/exportpdf.js`. Pulsanti `atletiExportXls` / `atletiExportPdf` in `admin.html`. Provato dall'utente ✔ (2026-10-08), committato e pubblicato (309821b).
+
+### 2026-10-08 — Budget: controllo dati veri in sola lettura
+- Entrate/incassato tornano tra Panoramica, Entrate e Bilancio. Differenza €110 sul «da incassare» sponsor = piano di Gesco incompleto, sistemato dall'utente. Card «Incassi sponsor» (Panoramica) ora conta solo sponsor chiusi (`_cashflowStats`); nota sul totale uscite del Bilancio (IVA non versata esclusa, scelta di progetto: Bilancio = cassa, Panoramica = sostenuto).
