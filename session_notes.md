@@ -3,7 +3,7 @@
 File di coordinamento: va aggiornato **alla fine di ogni sessione** e **ad ogni cambiamento**.
 Ordine: stato attuale → da fare → da verificare → decisioni → registro sessioni.
 
-Ultimo aggiornamento: 2026-10-08 (export Excel e PDF area Atleti)
+Ultimo aggiornamento: 2026-10-08 (fine sessione: export Atleti, controllo Budget, mobile)
 
 ---
 
@@ -254,3 +254,9 @@ Modello Excel del dirigente analizzato; scelte dell'utente: importo libero (una 
 
 ### 2026-10-08 — Mobile pubblico: splash e palline
 - Splash accorciata da 1,5 s a 600 ms (`js/splash.js`, timer di sicurezza 1,5 s). Palline `.deco-ball` nascoste sotto 768 px (`css/style.css`). Il `defer` agli script della home NON serve: sono già a fine `<body>`. Immagini Cloudinary già con `f_auto,q_auto`. Resta aperto: Firestore 344 KB in tutte le pagine pubbliche (lavoro più grosso), rimisura Lighthouse mobile (era 49/100).
+
+### 2026-10-08 — Fine sessione: in sospeso
+- **Lighthouse mobile home (2026-10-08, dopo splash a 600 ms): 73/100**, FCP 1,5 s, **LCP 6,3 s**, TBT 0, CLS 0,091, 1.164 KiB. LCP = anteprima video maglia (`maglia-video-poster`, YouTube sddefault 87 KB) caricata da `js/pages/index-4.js` solo a `load` (attesa ~1,1 s). **Da fare:** caricarla subito/lazy con dimensioni fisse e rimisurare (`npx lighthouse https://www.victorvolley.it/ --only-categories=performance --form-factor mobile`); poi `assets/team-bg-2.webp` (215 KB) più piccolo su mobile, `assets/logo.png` (65 KB) più leggero, Firestore 344 KB (42 KB inutilizzati), `style.css` render-blocking ~170 ms.
+- **Prova mobile con F12 ancora da fare** (il browser automatico non emula la larghezza): Atleti (elenco, scheda, Taglie, export), Avvisi, Presenze, Ricevute, Budget (Spese e pannello). Dubbi: `btn-sm`/`atleti-pill` a 36 px, sfondo della barra `.form-actions` fissa.
+- **Budget:** tranche da €250 di uno sponsor non chiuso (resta nei dati, ora esclusa dalla card Incassi sponsor); 26 spese senza data (€2.619); 3 voci con speso e senza preventivo (es. Iscrizione u19); 10 incassi sponsor in ritardo (€9.850); 4→3 tessere non pagate; IVA €915 da versare entro il 16/11/2026; Prima Divisione senza rette previste (spese €7.800). Prima di creare la stagione nuova: «Esporta backup».
+- **Altro aperto:** prova invito password e primo incasso con ricevuta vera; push FCM (serve chiave VAPID); modifiche del 2026-10-07 (avvisi fissati, tab Note, IVA sponsor, tabelle compatte) da provare nel browser.
