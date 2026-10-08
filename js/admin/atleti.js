@@ -604,7 +604,7 @@
     if (!cats.length) return '';
     return '<details class="taglie-escl" id="taglieEscl"' + (_taglieEsclAperto ? ' open' : '') + '><summary>Voci per categoria</summary>' +
       '<p class="taglie-escl-hint">Togli la spunta dove una categoria non riceve quel capo: nella tabella diventa «n/d» e non entra nel riepilogo.</p>' +
-      '<div class="admin-table-wrap"><table class="admin-table taglie-escl-table"><thead><tr><th>Categoria</th>' +
+      '<div class="admin-table-wrap"><table class="admin-table tab-scroll taglie-escl-table"><thead><tr><th>Categoria</th>' +
       voci.map(function (v) { return '<th>' + esc(v) + '</th>'; }).join('') + '</tr></thead><tbody>' +
       cats.map(function (c) {
         return '<tr><td><div class="table-title">' + esc(c) + '</div></td>' + voci.map(function (v) {
@@ -674,7 +674,7 @@
       }).join('');
     }
     box.innerHTML = chips + _matriceEsclusioniHtml(voci) + '<div id="taglieRiepilogo">' + _riepilogoTaglie(list, voci) + '</div>' +
-      '<div class="admin-table-wrap"><table class="admin-table taglie-table"><thead>' + head + '</thead><tbody>' + righe + '</tbody></table></div>';
+      '<div class="admin-table-wrap"><table class="admin-table tab-scroll taglie-table"><thead>' + head + '</thead><tbody>' + righe + '</tbody></table></div>';
   }
 
   function _applicaVistaAtleti() {

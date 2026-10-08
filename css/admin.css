@@ -1746,6 +1746,11 @@ button { font-family: var(--font-body); cursor: pointer; }
 ================================================ */
 .atleti-toolbar { display: flex; gap: 10px; margin-bottom: 14px; }
 .atleti-toolbar .form-input { flex: 1; max-width: 360px; }
+@media (max-width: 700px) {
+  .atleti-toolbar { flex-wrap: wrap; }
+  .atleti-toolbar .form-input { flex: 1 1 100%; max-width: none; }
+  .atleti-toolbar .btn-ghost { flex: 1 1 calc(50% - 5px); }
+}
 .atleti-cats { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
 .atleti-pill {
   display: inline-flex; align-items: center; gap: 6px;
@@ -1879,21 +1884,21 @@ button { font-family: var(--font-body); cursor: pointer; }
    TABELLE COMPATTE DA TELEFONO — le righe diventano schede (etichette messe da js/admin.js)
 ================================================ */
 @media (max-width: 700px) {
-  .admin-table { min-width: 0; display: block; }
-  .admin-table thead { display: none; }
-  .admin-table tbody { display: block; }
-  .admin-table tr { display: flex; flex-direction: column; gap: 5px; position: relative; padding: 12px 14px; border-bottom: 1px solid var(--a-border); }
-  .admin-table tr:last-child { border-bottom: none; }
-  .admin-table td { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 0; border: 0; font-size: 13px; text-align: right; }
-  .admin-table td[data-label]::before { content: attr(data-label); flex: 0 0 auto; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--a-muted); text-align: left; }
-  .admin-table td.is-titolo { order: -1; display: block; text-align: left; margin-bottom: 2px; padding-right: 104px; font-size: 14px; }
-  .admin-table td.is-titolo::before { display: none; }
-  .admin-table td.is-titolo .table-title { max-width: none; }
-  .admin-table td.is-azioni { position: absolute; top: 8px; right: 10px; display: block; padding: 0; }
-  .admin-table td.is-azioni::before { display: none; }
-  .admin-table td[colspan] { display: block; text-align: left; }
-  .admin-table tr:hover td { background: transparent; }
-  .admin-table tr:hover { background: #F8FAFC; }
+  .admin-table:not(.tab-scroll) { min-width: 0; display: block; }
+  .admin-table:not(.tab-scroll) thead { display: none; }
+  .admin-table:not(.tab-scroll) tbody { display: block; }
+  .admin-table:not(.tab-scroll) tr { display: flex; flex-direction: column; gap: 5px; position: relative; padding: 12px 14px; border-bottom: 1px solid var(--a-border); }
+  .admin-table:not(.tab-scroll) tr:last-child { border-bottom: none; }
+  .admin-table:not(.tab-scroll) td { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 0; border: 0; font-size: 13px; text-align: right; }
+  .admin-table:not(.tab-scroll) td[data-label]::before { content: attr(data-label); flex: 0 0 auto; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--a-muted); text-align: left; }
+  .admin-table:not(.tab-scroll) td.is-titolo { order: -1; display: block; text-align: left; margin-bottom: 2px; padding-right: 104px; font-size: 14px; }
+  .admin-table:not(.tab-scroll) td.is-titolo::before { display: none; }
+  .admin-table:not(.tab-scroll) td.is-titolo .table-title { max-width: none; }
+  .admin-table:not(.tab-scroll) td.is-azioni { position: absolute; top: 8px; right: 10px; display: block; padding: 0; }
+  .admin-table:not(.tab-scroll) td.is-azioni::before { display: none; }
+  .admin-table:not(.tab-scroll) td[colspan] { display: block; text-align: left; }
+  .admin-table:not(.tab-scroll) tr:hover td { background: transparent; }
+  .admin-table:not(.tab-scroll) tr:hover { background: #F8FAFC; }
 }
 
 /* Atleti → vista Taglie */

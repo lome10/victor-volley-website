@@ -248,3 +248,6 @@ Modello Excel del dirigente analizzato; scelte dell'utente: importo libero (una 
 
 ### 2026-10-08 — Budget: controllo dati veri in sola lettura
 - Entrate/incassato tornano tra Panoramica, Entrate e Bilancio. Differenza €110 sul «da incassare» sponsor = piano di Gesco incompleto, sistemato dall'utente. Card «Incassi sponsor» (Panoramica) ora conta solo sponsor chiusi (`_cashflowStats`); nota sul totale uscite del Bilancio (IVA non versata esclusa, scelta di progetto: Bilancio = cassa, Panoramica = sostenuto).
+
+### 2026-10-08 — Controllo statico CSS da telefono (nessuna prova a schermo: il browser automatico non emula la larghezza)
+- Trovati e corretti: barra strumenti Atleti (ricerca + 4 pulsanti) senza `flex-wrap` → ora va a capo sotto 700 px; le tabelle Taglie (molte colonne, select da 44 px) sarebbero diventate schede lunghissime → classe `tab-scroll` le lascia tabelle con scorrimento laterale (regola `.admin-table:not(.tab-scroll)`). Resta da provare con F12.
