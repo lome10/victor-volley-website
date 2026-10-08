@@ -161,17 +161,26 @@
       <div class="hero-cards-track" id="heroCardsTrack"></div>
     </section>
 
-    <!-- 3quater. GALLERIA — anteprima con foto vere (album più recenti); nascosta se non ci sono foto -->
-    <section class="section section--alt" id="galleryPreviewSection" aria-labelledby="gallery-preview-title" style="display:none">
+    <!-- 5. ULTIME NEWS ========================================= -->
+    <section class="section section--dark" aria-labelledby="news-title">
       <div class="container">
         <div class="section-heading">
-          <h2 id="gallery-preview-title">Galleria foto</h2>
-          <p id="galleryPreviewSubtitle"></p>
+          <h2 id="news-title">Ultime news</h2>
+          <p>Comunicati, risultati e aggiornamenti dalla societ&agrave;</p>
         </div>
-        <div class="gallery-preview-grid gallery-preview-grid--gap" id="galleryPreviewGrid"><div class="skel skel-gallery" aria-hidden="true"></div><div class="skel skel-gallery" aria-hidden="true"></div><div class="skel skel-gallery" aria-hidden="true"></div><div class="skel skel-gallery" aria-hidden="true"></div></div>
-        <div class="u-text-center">
-          <a href="/galleria" id="galleryPreviewLink" class="btn btn--outline">Vedi l'album completo</a>
-        </div>
+      </div>
+      <div class="news-cards" aria-label="Ultime news">
+        <div class="news-cards-track" id="newsCardsTrack"><div class="hero-card skel" aria-hidden="true"></div><div class="hero-card skel" aria-hidden="true"></div><div class="hero-card skel" aria-hidden="true"></div></div>
+        <button class="news-cards-arrow news-cards-arrow--prev" id="newsCardsPrev" aria-label="News precedenti" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><polyline points="15,18 9,12 15,6"/></svg>
+        </button>
+        <button class="news-cards-arrow news-cards-arrow--next" id="newsCardsNext" aria-label="News successive">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><polyline points="9,18 15,12 9,6"/></svg>
+        </button>
+        <div class="news-dots-mobile" id="newsDotsMobile"></div>
+      </div>
+      <div class="section-eyebrow-center">
+        <a href="/news" class="btn btn--outline-white">Tutte le news</a>
       </div>
     </section>
 
@@ -194,26 +203,17 @@
       </div>
     </section>
 
-    <!-- 5. ULTIME NEWS ========================================= -->
-    <section class="section section--dark" aria-labelledby="news-title">
+    <!-- 3quater. GALLERIA — anteprima con foto vere (album più recenti); nascosta se non ci sono foto -->
+    <section class="section section--alt" id="galleryPreviewSection" aria-labelledby="gallery-preview-title" style="display:none">
       <div class="container">
         <div class="section-heading">
-          <h2 id="news-title">Ultime news</h2>
-          <p>Comunicati, risultati e aggiornamenti dalla societ&agrave;</p>
+          <h2 id="gallery-preview-title">Galleria foto</h2>
+          <p id="galleryPreviewSubtitle"></p>
         </div>
-      </div>
-      <div class="news-cards" aria-label="Ultime news">
-        <div class="news-cards-track" id="newsCardsTrack"><div class="hero-card skel" aria-hidden="true"></div><div class="hero-card skel" aria-hidden="true"></div><div class="hero-card skel" aria-hidden="true"></div></div>
-        <button class="news-cards-arrow news-cards-arrow--prev" id="newsCardsPrev" aria-label="News precedenti" disabled>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><polyline points="15,18 9,12 15,6"/></svg>
-        </button>
-        <button class="news-cards-arrow news-cards-arrow--next" id="newsCardsNext" aria-label="News successive">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><polyline points="9,18 15,12 9,6"/></svg>
-        </button>
-        <div class="news-dots-mobile" id="newsDotsMobile"></div>
-      </div>
-      <div class="section-eyebrow-center">
-        <a href="/news" class="btn btn--outline-white">Tutte le news</a>
+        <div class="gallery-preview-grid gallery-preview-grid--gap" id="galleryPreviewGrid"><div class="skel skel-gallery" aria-hidden="true"></div><div class="skel skel-gallery" aria-hidden="true"></div><div class="skel skel-gallery" aria-hidden="true"></div><div class="skel skel-gallery" aria-hidden="true"></div></div>
+        <div class="u-text-center">
+          <a href="/galleria" id="galleryPreviewLink" class="btn btn--outline">Vedi l'album completo</a>
+        </div>
       </div>
     </section>
 
