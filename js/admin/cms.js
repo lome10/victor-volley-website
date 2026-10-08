@@ -737,9 +737,9 @@
     PhotoDB.getCovers(albumIds, function (covers) {
       grid.innerHTML = albums.map(function (album) {
         var thumb = covers[album.id]
-          ? '<img src="' + covers[album.id] + '" alt="">'
+          ? '<img src="' + esc(covers[album.id]) + '" alt="">'
           : '<div class="album-thumb-placeholder">🖼️</div>';
-        return '<div class="album-card" data-id="' + album.id + '">' +
+        return '<div class="album-card" data-id="' + esc(album.id) + '">' +
           '<div class="album-thumb">' + thumb + '</div>' +
           '<div class="album-info">' +
             '<div class="album-title">' + esc(album.title) + '</div>' +
@@ -794,7 +794,7 @@
       }
       grid.innerHTML = photos.map(function (p) {
         return '<div class="photo-item">' +
-          '<img src="' + p.thumb + '" alt="' + esc(p.name) + '" loading="lazy" decoding="async">' +
+          '<img src="' + esc(p.thumb) + '" alt="' + esc(p.name) + '" loading="lazy" decoding="async">' +
           '<div class="photo-item-overlay">' +
             '<button class="photo-delete" data-pid="' + esc(p.id) + '" onclick="AdminActions.deletePhoto(this.dataset.pid)">Elimina</button>' +
           '</div>' +
