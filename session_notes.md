@@ -275,3 +275,4 @@ Modello Excel del dirigente analizzato; scelte dell'utente: importo libero (una 
 
 ### 2026-10-08 — Home: galleria a mosaico (primo pezzo del redesign)
 - Prototipo redesign home: https://claude.ai/artifact/A6kfWf1TakJivxuogQ8hFH (privato, dati finti). L'utente ha scelto di implementare per ora SOLO la galleria. Fatto: `js/pages/index-3.js` (7 foto: grande, alta, larga, 4 quadrate; con meno di 7 foto tutte quadrate), `PhotoDB.sized(id, w, h)` in `js/photodb.js` (ritagli Cloudinary a misura), CSS in `css/style.css` (4 colonne, 2 su mobile). Resto del redesign (hero, numeri, news, squadre, partner, CTA) in attesa di decisione.
+- Home: tolta la sezione «Articoli in evidenza» (3 hero card) e il file `js/pages/index-6.js` (decisione dell'utente 2026-10-08). L'opzione «in evidenza» 1-3 negli articoli dell'admin (`heroOrder`, `js/admin/cms.js`) ora non ha effetto sulla home; il CSS `.hero-cards` resta (non toccato).
