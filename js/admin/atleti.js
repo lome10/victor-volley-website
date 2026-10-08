@@ -515,9 +515,23 @@
     '</tr>';
   }
 
+  /* Pulsante «Comprimi/Espandi tutte»: solo nella vista «Tutte», senza ricerca. */
+  function _aggiornaToggleTutte(gruppiVisibili) {
+    var b = document.getElementById('atletiToggleAll');
+    if (!b) return;
+    var mostra = !_atletiCat && !(_atletiQuery || '').trim() && gruppiVisibili.length > 0;
+    b.style.display = mostra ? '' : 'none';
+    if (!mostra) return;
+    var tuttiChiusi = gruppiVisibili.every(function (c) { return _atletiChiuse.indexOf(c) !== -1; });
+    b.textContent = tuttiChiusi ? 'Espandi tutte' : 'Comprimi tutte';
+    b.dataset.azione = tuttiChiusi ? 'apri' : 'chiudi';
+    b.dataset.gruppi = JSON.stringify(gruppiVisibili);
+  }
+
   function _renderAtletiRows() {
     var body = document.getElementById('atletiBody');
     _renderAtletiCats();
+    _aggiornaToggleTutte([]);
     if (!_atletiCache.length) {
       document.getElementById('atletiSummary').textContent = '';
       body.innerHTML = '<tr><td colspan="6"><div class="empty-state"><p>Nessun atleta registrato.</p></div></td></tr>';
@@ -537,6 +551,9 @@
     /* "Tutte": elenco diviso per categoria, ciascuna con il proprio riepilogo */
     var q = (_atletiQuery || '').trim();
     var gruppi = _categorieElenco().concat(['__none__']);
+    _aggiornaToggleTutte(gruppi.filter(function (cat) {
+      return list.some(function (a) { return cat === '__none__' ? !a.categoria : a.categoria === cat; });
+    }));
     body.innerHTML = gruppi.map(function (cat) {
       var membri = list.filter(function (a) { return cat === '__none__' ? !a.categoria : a.categoria === cat; });
       if (!membri.length) return '';
@@ -556,6 +573,13 @@
     var again = document.querySelector('#atletiBody tr.atleti-group[data-cat="' + (window.CSS && CSS.escape ? CSS.escape(cat) : cat) + '"]');
     if (again) again.focus();
   }
+  document.getElementById('atletiToggleAll').addEventListener('click', function () {
+    var gruppi = JSON.parse(this.dataset.gruppi || '[]');
+    if (this.dataset.azione === 'apri') _atletiChiuse = _atletiChiuse.filter(function (c) { return gruppi.indexOf(c) === -1; });
+    else gruppi.forEach(function (c) { if (_atletiChiuse.indexOf(c) === -1) _atletiChiuse.push(c); });
+    _salvaAtletiChiuse();
+    _renderAtletiRows();
+  });
   document.getElementById('atletiBody').addEventListener('click', function (e) {
     var tr = e.target.closest('tr.atleti-group');
     if (tr) _toggleGruppoAtleti(tr);
