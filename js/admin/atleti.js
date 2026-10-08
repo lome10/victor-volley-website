@@ -574,10 +574,21 @@
     return a.taglie && a.taglie[voce] ? String(a.taglie[voce]) : '';
   }
 
+  /* Voci non previste per una categoria (es. il giubbotto solo alle categorie maggiori):
+     stagione.taglieEscluse = { categoria: [voce, …] }. Nella tabella la cella diventa «n/d» e non conta nel riepilogo. */
+  function _esclusa(categoria, voce) {
+    var s = _stagioneBudget();
+    var m = s && s.taglieEscluse && categoria ? s.taglieEscluse[categoria] : null;
+    return !!(m && m.indexOf(voce) !== -1);
+  }
+
   function _riepilogoTaglie(list, voci) {
     return '<div class="taglie-riepilogo">' + voci.map(function (v) {
       var n = {}, senza = 0;
-      list.forEach(function (a) { var t = _tagliaOf(a, v); if (t) n[t] = (n[t] || 0) + 1; else senza++; });
+      list.forEach(function (a) {
+        if (_esclusa(a.categoria, v)) return;
+        var t = _tagliaOf(a, v); if (t) n[t] = (n[t] || 0) + 1; else senza++;
+      });
       var ordine = _scalaVoce(v).filter(function (t) { return t && n[t]; });
       Object.keys(n).forEach(function (t) { if (ordine.indexOf(t) === -1) ordine.push(t); });
       return '<div class="taglie-riepilogo-voce"><strong>' + esc(v) + '</strong>' +
@@ -586,17 +597,47 @@
     }).join('') + '</div>';
   }
 
+  /* Matrice «Voci per categoria»: una spunta per ogni categoria e voce. */
+  var _taglieEsclAperto = false;
+  function _matriceEsclusioniHtml(voci) {
+    var cats = _categorieElenco().filter(function (c) { return _atletiCache.some(function (a) { return a.categoria === c; }); });
+    if (!cats.length) return '';
+    return '<details class="taglie-escl" id="taglieEscl"' + (_taglieEsclAperto ? ' open' : '') + '><summary>Voci per categoria</summary>' +
+      '<p class="taglie-escl-hint">Togli la spunta dove una categoria non riceve quel capo: nella tabella diventa «n/d» e non entra nel riepilogo.</p>' +
+      '<div class="admin-table-wrap"><table class="admin-table taglie-escl-table"><thead><tr><th>Categoria</th>' +
+      voci.map(function (v) { return '<th>' + esc(v) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      cats.map(function (c) {
+        return '<tr><td><div class="table-title">' + esc(c) + '</div></td>' + voci.map(function (v) {
+          return '<td><input type="checkbox" class="taglie-escl-cb" data-cat="' + esc(c) + '" data-voce="' + esc(v) + '"' + (_esclusa(c, v) ? '' : ' checked') +
+            ' aria-label="' + esc(c + ' riceve ' + v) + '"></td>';
+        }).join('') + '</tr>';
+      }).join('') + '</tbody></table></div></details>';
+  }
+
+  function _rigaTaglieHtml(a, voci) {
+    return '<tr><td><div class="table-title">' + esc(a.cognome) + ' ' + esc(a.nome) + '</div></td>' +
+      voci.map(function (v) {
+        if (_esclusa(a.categoria, v)) return '<td class="taglia-na" title="Voce non prevista per questa categoria">n/d</td>';
+        var cur = _tagliaOf(a, v);
+        var opts = _scalaVoce(v).slice();
+        if (cur && opts.indexOf(cur) === -1) opts.push(cur);
+        return '<td><select class="form-input taglia-sel" data-uid="' + esc(a.uid) + '" data-voce="' + esc(v) + '" aria-label="' + esc(v + ' — ' + a.cognome + ' ' + a.nome) + '">' +
+          opts.map(function (t) { return '<option value="' + esc(t) + '"' + (t === cur ? ' selected' : '') + '>' + (t ? esc(t) : '—') + '</option>'; }).join('') + '</select></td>';
+      }).join('') + '</tr>';
+  }
+
+  function _daIndicare(membri, voci) {
+    var n = 0;
+    membri.forEach(function (a) { voci.forEach(function (v) { if (!_esclusa(a.categoria, v) && !_tagliaOf(a, v)) n++; }); });
+    return n;
+  }
+
   function _renderTaglie() {
     var box = document.getElementById('atletiTaglie');
     var voci = _vociAbbigliamento();
     var tutte = _vociTutte();
     var chips = tutte.length ? _vociChipsHtml() : '';
     var list = _atletiFiltrati();
-    var ordCat = _categorieElenco();
-    list.sort(function (x, y) {
-      var cx = x.categoria ? ordCat.indexOf(x.categoria) : 999, cy = y.categoria ? ordCat.indexOf(y.categoria) : 999;
-      return cx - cy;
-    });
     document.getElementById('atletiSummary').textContent = list.length + (list.length === 1 ? ' atleta' : ' atleti') +
       (voci.length ? ' · ' + voci.length + (voci.length === 1 ? ' voce' : ' voci') + ' di abbigliamento' : '');
     if (!tutte.length) {
@@ -609,20 +650,30 @@
       return;
     }
     if (!list.length) { box.innerHTML = chips + '<div class="empty-state"><p>Nessun atleta corrisponde ai filtri.</p></div>'; return; }
-    var conCat = !_atletiCat;
-    var head = '<tr><th>Atleta</th>' + (conCat ? '<th>Categoria</th>' : '') + voci.map(function (v) { return '<th>' + esc(v) + '</th>'; }).join('') + '</tr>';
-    var righe = list.map(function (a) {
-      return '<tr><td><div class="table-title">' + esc(a.cognome) + ' ' + esc(a.nome) + '</div></td>' +
-        (conCat ? '<td>' + (a.categoria ? esc(a.categoria) : '—') + '</td>' : '') +
-        voci.map(function (v) {
-          var cur = _tagliaOf(a, v);
-          var opts = _scalaVoce(v).slice();
-          if (cur && opts.indexOf(cur) === -1) opts.push(cur);
-          return '<td><select class="form-input taglia-sel" data-uid="' + esc(a.uid) + '" data-voce="' + esc(v) + '" aria-label="' + esc(v + ' — ' + a.cognome + ' ' + a.nome) + '">' +
-            opts.map(function (t) { return '<option value="' + esc(t) + '"' + (t === cur ? ' selected' : '') + '>' + (t ? esc(t) : '—') + '</option>'; }).join('') + '</select></td>';
-        }).join('') + '</tr>';
-    }).join('');
-    box.innerHTML = chips + '<div id="taglieRiepilogo">' + _riepilogoTaglie(list, voci) + '</div>' +
+
+    var head = '<tr><th>Atleta</th>' + voci.map(function (v) { return '<th>' + esc(v) + '</th>'; }).join('') + '</tr>';
+    var righe;
+    if (_atletiCat) {
+      righe = list.map(function (a) { return _rigaTaglieHtml(a, voci); }).join('');
+    } else {
+      /* «Tutte»: come nell'elenco, una sezione per categoria che si apre e si chiude. */
+      var q = (_atletiQuery || '').trim();
+      var gruppi = _categorieElenco().concat(['__none__']);
+      _aggiornaToggleTutte(gruppi.filter(function (cat) {
+        return list.some(function (a) { return cat === '__none__' ? !a.categoria : a.categoria === cat; });
+      }));
+      righe = gruppi.map(function (cat) {
+        var membri = list.filter(function (a) { return cat === '__none__' ? !a.categoria : a.categoria === cat; });
+        if (!membri.length) return '';
+        var chiuso = !q && _atletiChiuse.indexOf(cat) !== -1;
+        var mancano = _daIndicare(membri, voci);
+        return '<tr class="atleti-group' + (chiuso ? ' is-closed' : '') + '" data-cat="' + esc(cat) + '" tabindex="0" role="button" aria-expanded="' + (chiuso ? 'false' : 'true') + '">' +
+          '<td colspan="' + (voci.length + 1) + '"><span class="atleti-group-chev" aria-hidden="true"></span><strong>' + esc(cat === '__none__' ? 'Senza categoria' : cat) + '</strong>' +
+          '<span>' + membri.length + (membri.length === 1 ? ' atleta' : ' atleti') + (mancano ? ' · ' + mancano + ' da indicare' : ' · tutto indicato') + '</span></td></tr>' +
+          (chiuso ? '' : membri.map(function (a) { return _rigaTaglieHtml(a, voci); }).join(''));
+      }).join('');
+    }
+    box.innerHTML = chips + _matriceEsclusioniHtml(voci) + '<div id="taglieRiepilogo">' + _riepilogoTaglie(list, voci) + '</div>' +
       '<div class="admin-table-wrap"><table class="admin-table taglie-table"><thead>' + head + '</thead><tbody>' + righe + '</tbody></table></div>';
   }
 
@@ -681,7 +732,7 @@
     if (i === -1) _atletiChiuse.push(cat); else _atletiChiuse.splice(i, 1);
     _salvaAtletiChiuse();
     _renderAtletiRows();
-    var again = document.querySelector('#atletiBody tr.atleti-group[data-cat="' + (window.CSS && CSS.escape ? CSS.escape(cat) : cat) + '"]');
+    var again = document.querySelector('tr.atleti-group[data-cat="' + (window.CSS && CSS.escape ? CSS.escape(cat) : cat) + '"]');
     if (again) again.focus();
   }
   document.getElementById('atletiVista').addEventListener('click', function (e) {
@@ -692,6 +743,8 @@
   });
 
   document.getElementById('atletiTaglie').addEventListener('click', function (e) {
+    var gr = e.target.closest('tr.atleti-group');
+    if (gr) { _toggleGruppoAtleti(gr); return; }
     var chip = e.target.closest('.taglie-voce-chip');
     if (!chip) return;
     var s = _stagioneBudget();
@@ -708,7 +761,38 @@
     });
   });
 
+  document.getElementById('atletiTaglie').addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    var gr = e.target.closest('tr.atleti-group');
+    if (gr) { e.preventDefault(); _toggleGruppoAtleti(gr); }
+  });
+  /* «toggle» non risale: lo si ascolta in cattura per ricordare se la matrice è aperta. */
+  document.getElementById('atletiTaglie').addEventListener('toggle', function (e) {
+    if (e.target && e.target.id === 'taglieEscl') _taglieEsclAperto = e.target.open;
+  }, true);
+
   document.getElementById('atletiTaglie').addEventListener('change', function (e) {
+    var cb = e.target.closest('.taglie-escl-cb');
+    if (cb) {
+      var st = _stagioneBudget();
+      if (!st) return;
+      var cat = cb.dataset.cat, voce = cb.dataset.voce;
+      var prima = st.taglieEscluse || {};
+      var dopo = {};
+      Object.keys(prima).forEach(function (k) { dopo[k] = prima[k].slice(); });
+      var arr = dopo[cat] || [];
+      if (cb.checked) arr = arr.filter(function (v) { return v !== voce; });
+      else if (arr.indexOf(voce) === -1) arr.push(voce);
+      if (arr.length) dopo[cat] = arr; else delete dopo[cat];
+      st.taglieEscluse = dopo;
+      _renderTaglie();
+      db.collection('budgetSeasons').doc(st.id).update({ taglieEscluse: dopo }).catch(function (err) {
+        st.taglieEscluse = prima;
+        _renderTaglie();
+        _avviso('Impossibile salvare la scelta: ' + err.message);
+      });
+      return;
+    }
     var sel = e.target.closest('.taglia-sel');
     if (!sel) return;
     var a = _atletiCache.find(function (x) { return x.uid === sel.dataset.uid; });
@@ -767,7 +851,7 @@
     var voci = _vociAbbigliamento(), list = _atletiFiltrati();
     if (!voci.length || !list.length) { _avviso('Nessuna taglia da esportare.'); return; }
     var righe = [['Cognome', 'Nome', 'Categoria'].concat(voci).map(_csvCell).join(';')].concat(list.map(function (a) {
-      return [a.cognome, a.nome, a.categoria || ''].concat(voci.map(function (v) { return _tagliaOf(a, v); })).map(_csvCell).join(';');
+      return [a.cognome, a.nome, a.categoria || ''].concat(voci.map(function (v) { return _esclusa(a.categoria, v) ? 'n/d' : _tagliaOf(a, v); })).map(_csvCell).join(';');
     }));
     var blob = new Blob(['\uFEFF' + righe.join('\r\n')], { type: 'text/csv;charset=utf-8' });
     var url = URL.createObjectURL(blob), link = document.createElement('a');
