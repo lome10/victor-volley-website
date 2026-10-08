@@ -60,7 +60,7 @@
   }
 
   function logoEl(s, cls) {
-    if (s && s.logo) return '<img loading="lazy" decoding="async" src="' + esc(s.logo) + '" alt="' + esc(s.nome) + '" class="' + esc(cls) + '">';
+    if (s && s.logo) return '<img loading="lazy" decoding="async" src="' + esc(VV.imgUrl(s.logo, 240)) + '" alt="' + esc(s.nome) + '" class="' + esc(cls) + '">';
     return '<span class="' + esc(cls) + '--init">' + esc((s && s.nome || '?').charAt(0).toUpperCase()) + '</span>';
   }
 
@@ -140,7 +140,7 @@
         '<td class="gc-pos">' + (i + 1) + '</td>' +
         '<td class="gc-name">' +
           (s.logo
-            ? '<img loading="lazy" decoding="async" src="' + esc(s.logo) + '" class="gc-logo" alt="">'
+            ? '<img loading="lazy" decoding="async" src="' + esc(VV.imgUrl(s.logo, 160)) + '" class="gc-logo" alt="">'
             : '<span class="gc-logo-init">' + esc((s.nome || '?').charAt(0)) + '</span>') +
           '<span class="gc-name-text">' + esc(s.nome) + '</span>' +
         '</td>' +

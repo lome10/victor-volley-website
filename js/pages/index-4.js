@@ -31,7 +31,7 @@
     document.getElementById('magliaTeaserSection').classList.add('maglia-teaser--video');
     var box = document.getElementById('magliaVideo');
     var safeTitle = (title || 'Presentazione maglia').replace(/"/g, '&quot;');
-    var poster = '<img class="maglia-video-poster" src="https://i.ytimg.com/vi/' + id + '/maxresdefault.jpg" alt="" decoding="async" ' +
+    var poster = '<img class="maglia-video-poster" src="https://i.ytimg.com/vi/' + id + '/sddefault.jpg" alt="" decoding="async" ' +
       'data-fallback="https://i.ytimg.com/vi/' + id + '/hqdefault.jpg">';
     box.innerHTML = poster;
     box.hidden = false;
@@ -68,18 +68,28 @@
       });
     }
 
-    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    /* Con il risparmio dati attivo niente autoplay: il video parte solo dal pulsante. */
+    var saveData = !!(navigator.connection && navigator.connection.saveData);
+    if (saveData || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
       box.innerHTML = '<button type="button" class="maglia-video-play" aria-label="Guarda il video: ' + safeTitle + '">' + poster +
         '<span class="maglia-video-btn" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30"><path fill="currentColor" d="M8 5v14l11-7z"/></svg></span></button>';
       box.querySelector('button').addEventListener('click', function () { load(false); });
       return;
     }
 
-    if (!('IntersectionObserver' in window)) { load(true); return; }
+    /* Il video (diversi MB) parte solo a pagina caricata, così non compete con immagini e testi della prima schermata. */
+    var pending = false;
+    function loadAfterPageLoad() {
+      if (iframe || pending) return;
+      pending = true;
+      var go = function () { setTimeout(function () { if (!iframe) load(true); }, 600); };
+      if (document.readyState === 'complete') go(); else window.addEventListener('load', go);
+    }
+    if (!('IntersectionObserver' in window)) { loadAfterPageLoad(); return; }
     new IntersectionObserver(function (entries) {
       entries.forEach(function (e) {
         if (e.isIntersecting) {
-          if (!iframe) load(true);
+          if (!iframe) loadAfterPageLoad();
           else if (pausedByUs) { pausedByUs = false; command('playVideo'); }
         } else if (iframe) {
           pausedByUs = true;
@@ -89,11 +99,17 @@
     }, { rootMargin: '150px 0px', threshold: 0.25 }).observe(box);
   }
 
+  /* Se i dati non arrivano, la sezione non deve lasciare un vuoto. */
+  setTimeout(function () {
+    var s = document.getElementById('magliaTeaserSection');
+    if (s && s.classList.contains('is-pending')) { s.classList.remove('is-pending'); s.style.display = 'none'; }
+  }, 8000);
+
   DB.load(['maglia'], function () {
     var m = VV.getMaglia();
     var section = document.getElementById('magliaTeaserSection');
-    if (!m.enabled) return;
-    section.style.display = '';
+    if (!m.enabled) { section.classList.remove('is-pending'); section.style.display = 'none'; return; }
+    section.classList.remove('is-pending'); section.style.display = '';
 
     document.getElementById('maglia-title').textContent = m.title || '';
     document.getElementById('magliaTeaserSubtitle').textContent = m.subtitle || '';

@@ -15,7 +15,7 @@
       var goldGrid = document.getElementById('sponsorGoldGrid');
       goldGrid.innerHTML = gold.map(function (s) {
         var inner = s.logo
-          ? '<img loading="lazy" decoding="async" src="' + esc(s.logo) + '" alt="' + esc(s.nome) + '" class="sponsor-card-logo">'
+          ? '<img loading="lazy" decoding="async" src="' + esc(VV.imgUrl(s.logo, 400)) + '" alt="' + esc(s.nome) + '" class="sponsor-card-logo">'
           : '<div class="sponsor-card-name">' + esc(s.nome) + '</div>';
         var cls = 'sponsor-card sponsor-card--gold reveal';
         return VV.safeUrl(s.url)
@@ -33,7 +33,7 @@
       var ticker = document.getElementById('sponsorTicker');
       var track  = document.getElementById('sponsorTickerTrack');
       function makeItem(s) {
-        var inner = '<img loading="lazy" decoding="async" src="' + esc(s.logo) + '" alt="' + esc(s.nome) + '" class="spt-logo">';
+        var inner = '<img loading="lazy" decoding="async" src="' + esc(VV.imgUrl(s.logo, 400)) + '" alt="' + esc(s.nome) + '" class="spt-logo">';
         return VV.safeUrl(s.url)
           ? '<a href="' + esc(VV.safeUrl(s.url)) + '" class="spt-item" target="_blank" rel="noopener">' + inner + '</a>'
           : '<div class="spt-item">' + inner + '</div>';

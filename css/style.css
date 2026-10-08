@@ -2352,6 +2352,12 @@ main, footer.site-footer {
 
 /* Variante con video: occupa tutta la sezione, da bordo a bordo (niente riquadro centrato).
    Titolo e sottotitolo sono sovrapposti in alto sul video (su mobile tornano sopra, vedi sotto). */
+/* In attesa dei dati la sezione resta nascosta; su telefono/tablet riserva lo spazio del video (16:9) per non
+   spostare le hero card quando compare (CLS). Se la maglia è disattivata, index-4.js la toglie del tutto. */
+.maglia-teaser.is-pending { display: none; }
+@media (max-width: 900px) {
+  .maglia-teaser.is-pending { display: block; visibility: hidden; min-height: 56.25vw; }
+}
 .maglia-teaser--video { padding-top: 0; padding-bottom: 0; }
 .maglia-teaser--video > .container { max-width: none; width: 100%; padding: 0; }
 .maglia-teaser--video .maglia-glow { display: none; }

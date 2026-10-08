@@ -348,7 +348,7 @@
         function logoHtml(nome, src) {
           var resolved = src || LOGO_MAP[(nome || '').toLowerCase().trim()];
           return resolved
-            ? '<img loading="lazy" decoding="async" src="' + esc(resolved) + '" alt="' + esc(nome) + '" class="partite-card-logo-img">'
+            ? '<img loading="lazy" decoding="async" src="' + esc(window.VV ? VV.imgUrl(resolved, 160) : resolved) + '" alt="' + esc(nome) + '" class="partite-card-logo-img">'
             : '<span class="partite-card-logo-init">' + esc((nome || '?').charAt(0).toUpperCase()) + '</span>';
         }
         function teamEl(nome, src) {

@@ -16,7 +16,7 @@
   function logoHtml(nome, logoSrc) {
     var src = logoSrc || LOGO_MAP[(nome || '').toLowerCase().trim()];
     return src
-      ? '<img loading="lazy" decoding="async" src="' + esc(src) + '" alt="' + esc(nome) + '" class="partite-card-logo-img">'
+      ? '<img loading="lazy" decoding="async" src="' + esc(window.VV ? VV.imgUrl(src, 160) : src) + '" alt="' + esc(nome) + '" class="partite-card-logo-img">'
       : '<span class="partite-card-logo-init">' + esc((nome || '?').charAt(0).toUpperCase()) + '</span>';
   }
 
