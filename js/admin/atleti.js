@@ -565,6 +565,11 @@
       }).join('') + '</div>';
   }
 
+  /* Zaino e borsone non hanno taglia: per queste voci la cella è solo Sì / No. */
+  var VOCI_SI_NO = /b(zain[oi]|borson[ei])b/i;
+  function _isSiNo(voce) { return VOCI_SI_NO.test(String(voce)); }
+  function _scalaVoce(voce) { return _isSiNo(voce) ? ['', 'Sì', 'No'] : TAGLIE_ATLETA; }
+
   function _tagliaOf(a, voce) {
     return a.taglie && a.taglie[voce] ? String(a.taglie[voce]) : '';
   }
@@ -573,7 +578,7 @@
     return '<div class="taglie-riepilogo">' + voci.map(function (v) {
       var n = {}, senza = 0;
       list.forEach(function (a) { var t = _tagliaOf(a, v); if (t) n[t] = (n[t] || 0) + 1; else senza++; });
-      var ordine = TAGLIE_ATLETA.filter(function (t) { return t && n[t]; });
+      var ordine = _scalaVoce(v).filter(function (t) { return t && n[t]; });
       Object.keys(n).forEach(function (t) { if (ordine.indexOf(t) === -1) ordine.push(t); });
       return '<div class="taglie-riepilogo-voce"><strong>' + esc(v) + '</strong>' +
         (ordine.length ? ordine.map(function (t) { return '<span class="taglie-chip">' + esc(t) + ' <b>' + n[t] + '</b></span>'; }).join('') : '<span class="taglie-vuoto">nessuna taglia</span>') +
@@ -611,7 +616,7 @@
         (conCat ? '<td>' + (a.categoria ? esc(a.categoria) : '—') + '</td>' : '') +
         voci.map(function (v) {
           var cur = _tagliaOf(a, v);
-          var opts = TAGLIE_ATLETA.slice();
+          var opts = _scalaVoce(v).slice();
           if (cur && opts.indexOf(cur) === -1) opts.push(cur);
           return '<td><select class="form-input taglia-sel" data-uid="' + esc(a.uid) + '" data-voce="' + esc(v) + '" aria-label="' + esc(v + ' — ' + a.cognome + ' ' + a.nome) + '">' +
             opts.map(function (t) { return '<option value="' + esc(t) + '"' + (t === cur ? ' selected' : '') + '>' + (t ? esc(t) : '—') + '</option>'; }).join('') + '</select></td>';
