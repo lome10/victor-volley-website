@@ -1762,6 +1762,11 @@ button { font-family: var(--font-body); cursor: pointer; }
 .admin-table tr.atleti-group td { background: var(--a-bg); border-bottom: 1px solid var(--a-border); padding: 10px 14px; }
 .admin-table tr.atleti-group td strong { font-family: var(--font-head); font-size: 14px; margin-right: 12px; }
 .admin-table tr.atleti-group td span { font-size: 12px; color: var(--a-muted); }
+.admin-table tr.atleti-group { cursor: pointer; user-select: none; }
+.admin-table tr.atleti-group:hover td { background: var(--a-border); }
+.admin-table tr.atleti-group:focus-visible td { outline: 2px solid var(--a-blue, #0070D6); outline-offset: -2px; }
+.atleti-group-chev { display: inline-block; width: 8px; height: 8px; margin-right: 10px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: translateY(-2px) rotate(45deg); transition: transform .15s ease; }
+.admin-table tr.atleti-group.is-closed .atleti-group-chev { transform: translateX(-2px) rotate(-45deg); }
 .af-section {
   font-family: var(--font-head); font-size: 13px; font-weight: 700; color: var(--a-text);
   text-transform: uppercase; letter-spacing: .05em;

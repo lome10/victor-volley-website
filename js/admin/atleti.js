@@ -440,6 +440,13 @@
   /* ---- Lista per categoria ---- */
   var _atletiCat   = '';   /* '' = tutte, '__none__' = senza categoria, altrimenti il nome */
   var _atletiQuery = '';
+  /* Categorie chiuse nella vista «Tutte» (si ricordano tra una visita e l'altra). */
+  var _atletiChiuse = (function () {
+    try { var v = JSON.parse(localStorage.getItem('vv_atleti_chiuse') || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; }
+  })();
+  function _salvaAtletiChiuse() {
+    try { localStorage.setItem('vv_atleti_chiuse', JSON.stringify(_atletiChiuse)); } catch (e) { /* senza storage resta valido finché la pagina è aperta */ }
+  }
 
   function _categorieElenco() {
     var names = VV.getCategories(true).map(function (c) { return c.name; });
@@ -528,14 +535,36 @@
       return;
     }
     /* "Tutte": elenco diviso per categoria, ciascuna con il proprio riepilogo */
+    var q = (_atletiQuery || '').trim();
     var gruppi = _categorieElenco().concat(['__none__']);
     body.innerHTML = gruppi.map(function (cat) {
       var membri = list.filter(function (a) { return cat === '__none__' ? !a.categoria : a.categoria === cat; });
       if (!membri.length) return '';
-      return '<tr class="atleti-group"><td colspan="6"><strong>' + esc(cat === '__none__' ? 'Senza categoria' : cat) + '</strong>' +
-        '<span>' + esc(_atletiAvvisi(membri)) + '</span></td></tr>' + membri.map(_atletaRowHtml).join('');
+      /* Con una ricerca in corso i gruppi restano aperti, così i risultati si vedono. */
+      var chiuso = !q && _atletiChiuse.indexOf(cat) !== -1;
+      return '<tr class="atleti-group' + (chiuso ? ' is-closed' : '') + '" data-cat="' + esc(cat) + '" tabindex="0" role="button" aria-expanded="' + (chiuso ? 'false' : 'true') + '">' +
+        '<td colspan="6"><span class="atleti-group-chev" aria-hidden="true"></span><strong>' + esc(cat === '__none__' ? 'Senza categoria' : cat) + '</strong>' +
+        '<span>' + esc(_atletiAvvisi(membri)) + '</span></td></tr>' + (chiuso ? '' : membri.map(_atletaRowHtml).join(''));
     }).join('');
   }
+
+  function _toggleGruppoAtleti(tr) {
+    var cat = tr.dataset.cat, i = _atletiChiuse.indexOf(cat);
+    if (i === -1) _atletiChiuse.push(cat); else _atletiChiuse.splice(i, 1);
+    _salvaAtletiChiuse();
+    _renderAtletiRows();
+    var again = document.querySelector('#atletiBody tr.atleti-group[data-cat="' + (window.CSS && CSS.escape ? CSS.escape(cat) : cat) + '"]');
+    if (again) again.focus();
+  }
+  document.getElementById('atletiBody').addEventListener('click', function (e) {
+    var tr = e.target.closest('tr.atleti-group');
+    if (tr) _toggleGruppoAtleti(tr);
+  });
+  document.getElementById('atletiBody').addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    var tr = e.target.closest('tr.atleti-group');
+    if (tr) { e.preventDefault(); _toggleGruppoAtleti(tr); }
+  });
 
   document.getElementById('atletiSearch').addEventListener('input', function () {
     _atletiQuery = this.value;
