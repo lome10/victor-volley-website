@@ -656,7 +656,7 @@
     }
     if (!list.length) { box.innerHTML = chips + '<div class="empty-state"><p>Nessun atleta corrisponde ai filtri.</p></div>'; return; }
 
-    var head = '<tr><th>Atleta</th>' + voci.map(function (v) { return '<th>' + esc(v) + '</th>'; }).join('') + '</tr>';
+    var head = '<tr><th>Atleta</th>' + voci.map(function (v) { return '<th class="taglie-th" draggable="true" data-voce="' + esc(v) + '" title="Trascina per spostare la colonna">' + esc(v) + '</th>'; }).join('') + '</tr>';
     var righe;
     if (_atletiCat) {
       righe = list.map(function (a) { return _rigaTaglieHtml(a, voci); }).join('');
@@ -762,6 +762,55 @@
       s.taglieNascoste = prima;
       _renderTaglie();
       _avviso('Impossibile salvare la scelta: ' + err.message);
+    });
+  });
+
+  /* Trascina le intestazioni per cambiare l'ordine delle colonne. L'ordine è quello di pezziSponsor
+     (stesse voci di Budget → Materiali sponsor, che seguono lo stesso ordine); i dati stanno sotto il nome, non la posizione. */
+  var _trascinaVoce = null;
+  function _taglieThDa(e) { return e.target && e.target.closest ? e.target.closest('th.taglie-th') : null; }
+  function _taglieClearDrag() {
+    Array.prototype.forEach.call(document.querySelectorAll('#atletiTaglie .is-dragging, #atletiTaglie .is-drag-over'), function (el) {
+      el.classList.remove('is-dragging', 'is-drag-over');
+    });
+  }
+  var _boxTaglie = document.getElementById('atletiTaglie');
+  _boxTaglie.addEventListener('dragstart', function (e) {
+    var th = _taglieThDa(e);
+    if (!th) return;
+    _trascinaVoce = th.dataset.voce;
+    th.classList.add('is-dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    try { e.dataTransfer.setData('text/plain', _trascinaVoce); } catch (_) {}
+  });
+  _boxTaglie.addEventListener('dragover', function (e) {
+    var th = _taglieThDa(e);
+    if (!th || _trascinaVoce == null) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    Array.prototype.forEach.call(document.querySelectorAll('#atletiTaglie .is-drag-over'), function (el) { el.classList.remove('is-drag-over'); });
+    if (th.dataset.voce !== _trascinaVoce) th.classList.add('is-drag-over');
+  });
+  _boxTaglie.addEventListener('dragend', function () { _trascinaVoce = null; _taglieClearDrag(); });
+  _boxTaglie.addEventListener('drop', function (e) {
+    var th = _taglieThDa(e);
+    if (!th || _trascinaVoce == null) return;
+    e.preventDefault();
+    var da = _trascinaVoce, a = th.dataset.voce;
+    _trascinaVoce = null; _taglieClearDrag();
+    if (da === a) return;
+    var st = _stagioneBudget();
+    if (!st || !Array.isArray(st.pezziSponsor)) return;
+    var prima = st.pezziSponsor.slice(), dopo = prima.filter(function (v) { return v !== da; });
+    var pos = dopo.indexOf(a);
+    if (prima.indexOf(da) === -1 || pos === -1) return;
+    dopo.splice(pos, 0, da);
+    st.pezziSponsor = dopo;
+    _renderTaglie();
+    db.collection('budgetSeasons').doc(st.id).update({ pezziSponsor: dopo }).catch(function (err) {
+      st.pezziSponsor = prima;
+      _renderTaglie();
+      _avviso("Impossibile salvare l'ordine delle colonne: " + err.message);
     });
   });
 

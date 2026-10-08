@@ -1909,6 +1909,9 @@ button { font-family: var(--font-body); cursor: pointer; }
 .taglie-chip b { color: var(--a-blue); margin-left: 2px; }
 .taglie-chip--senza { color: #B45309; border-color: #FCD9A8; }
 .taglie-vuoto { font-size: 12px; color: var(--a-muted); }
+.taglie-th { cursor: grab; user-select: none; }
+.taglie-th.is-dragging { opacity: .4; }
+.taglie-th.is-drag-over { box-shadow: inset 3px 0 0 var(--a-blue); background: #E8F3FF; }
 .taglie-table td .taglia-sel { min-width: 92px; padding: 6px 8px; }
 .taglie-voci { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 12px; }
 .taglie-voci-lbl { font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--a-muted); margin-right: 4px; }

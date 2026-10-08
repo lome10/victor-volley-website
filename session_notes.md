@@ -266,3 +266,6 @@ Modello Excel del dirigente analizzato; scelte dell'utente: importo libero (una 
 
 ### 2026-10-08 — Materiali sponsor: aggiunte «Giacca tuta» e «Pantalone tuta»
 - Aggiunte a `budgetSeasons/<2026/2027>.pezziSponsor` (diventano colonne nella vista Taglie). **Da fare dopo (deciso dall'utente):** eliminare o nascondere la voce «Tuta» (ha prezzi/quantità nel Budget → Materiali: guardarli prima).
+
+### 2026-10-08 — Atleti → Taglie: colonne trascinabili
+- Intestazioni `th.taglie-th` con drag and drop (HTML5, solo mouse/desktop; su touch non funziona): spostano la voce in `budgetSeasons.pezziSponsor`, quindi cambia anche l'ordine in Budget → Materiali sponsor (i dati stanno sotto il nome, non la posizione). Salvataggio con rollback e avviso in caso di errore. Per il telefono si possono aggiungere frecce ◀ ▶.
