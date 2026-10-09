@@ -290,3 +290,14 @@ Modello Excel del dirigente analizzato; scelte dell'utente: importo libero (una 
 
 ### 2026-10-09 — Aperto: voci «chiavi palestre» segnate pagate
 - Non risolto: dal codice la logica è corretta (sottospesa «Pagata» se Pagato > 0 e senza preventivo maggiore; voce «Pagata» se preventivo > 0 e speso lo raggiunge). Probabile importo finito nel campo «Pagato» invece che «Preventivato». Serve vedere le sottospese nel Budget → Spese e il registro modifiche.
+
+### 2026-10-09 — Accessi: «Scollega» anche per l'accesso dell'atleta
+- Nella scheda atleta (`js/admin/atleti.js`, `_renderAccessiAdmin`) l'accesso con ruolo «Atleta» non aveva pulsanti; ora ha il cestino «Scollega» (`removeAccesso`), come i genitori. Modifica nome, invito e reset restano solo per i genitori. Commit `965b164`.
+- **Aperto:** cambiare l'email di un account (es. Eduardo Lupo, atleta) non è possibile: serve una funzione server (Firebase Auth) tipo «Cambia email», oppure scollegare e ricollegare come genitore. L'utente deve scegliere.
+
+### 2026-10-09 — Taglie: gruppo «Dirigenti» (non sono atleti)
+- Vista Atleti → Taglie, solo con «Tutte»: in fondo un gruppo «Dirigenti» con i nomi della raccolta `dirigenti` (account con accesso all'Area Dirigenti), stesse colonne e stessi menu. La taglia sta in `dirigenti/{uid}.taglie` (set con merge); non toccano `atleti`/`atletiDati`, l'elenco atleti, i filtri o i conteggi. Registro modifiche: tipo `dirigente`. Rispetta la ricerca per nome; incluso nel CSV (categoria «Dirigenti»). Chiave gruppo `__dirigenti__` (`DIR_GRUPPO`), si apre/chiude come le categorie.
+- «Voci per categoria»: riga «Dirigenti» per togliere le voci che non ricevono (`taglieEscluse['__dirigenti__']`). Il riepilogo per voce in alto conta SOLO gli atleti (scelta dell'utente: gruppo a parte). Commit `e49cc89`, `ef0632e`. Non provato nel browser. Chi non ha ancora l'accesso all'Area Dirigenti non compare.
+
+### Regola di lavoro
+- Aggiornare `session_notes.md` a OGNI modifica (richiesta esplicita dell'utente, 2026-10-09), prima del commit. Dopo modifiche a file JS/CSS caricati dal sito, lanciare `node scripts/stamp-versions.js` (altrimenti il controllo CI fallisce).
