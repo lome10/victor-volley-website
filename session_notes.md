@@ -325,3 +325,6 @@ Modello Excel del dirigente analizzato; scelte dell'utente: importo libero (una 
 ### 2026-10-09 — Export Taglie: matrice categoria × voce
 - `js/admin/atleti.js`: «Cosa esportare» è ora una tabella con una riga per categoria (anche «Senza categoria» e «Dirigenti») e una colonna per voce, una spunta per cella. Clic sul nome di una categoria o di una voce attiva/toglie l'intera riga/colonna. Le celle «n/d» (voce non prevista dalla matrice «Voci per categoria») non sono selezionabili. Stato `_expEscl = { chiaveGruppo: [voci escluse] }` (solo in memoria).
 - CSV/Excel: colonne = unione delle voci scelte; le celle escluse restano vuote. PDF: una tabella per categoria con le sole sue voci (intestazione propria, ripetuta a ogni pagina), orizzontale se una tabella ha più di 6 voci; il Riepilogo capi conta solo le celle incluse (dirigenti compresi). Chi non ha nessuna voce attiva sparisce dal file; se non resta nulla: avviso. `_raggruppaPdf` ora restituisce anche `chiave`. Non provato nel browser.
+
+### 2026-10-09 — Chiuso: email di Eduardo Lupo
+- L'utente ha già cambiato l'email di Eduardo Lupo (atleta) da sé: tutto ok. Non serve più la funzione «Cambia email» né il giro scollega/ricollega; la voce «Aperti» sopra sul cambio email è chiusa (la funzione server resta un'idea da riprendere solo se capiterà di nuovo).
