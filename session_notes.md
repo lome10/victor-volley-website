@@ -278,3 +278,15 @@ Modello Excel del dirigente analizzato; scelte dell'utente: importo libero (una 
 
 - Home: sezione «Articoli in evidenza» (3 hero card) NASCOSTA con `style="display:none"` su `<section class="hero-cards">` in `index.html` (decisione utente 2026-10-08); codice e `js/pages/index-6.js` intatti. Per ripristinarla basta togliere lo style. L'opzione «in evidenza» 1-3 degli articoli nell'admin (`heroOrder`) resta ma ora non si vede in home.
 - Home: scambiati gli ordini di «Ultime news» e «Galleria foto». Ordine ora: barra partite, maglia, (hero cards nascoste), news, prossime partite, galleria, (squadre nascoste), sponsor, CTA.
+
+### 2026-10-09 — Categoria rinominata: atleti allineati
+- Bug: la categoria è salvata come testo (il nome) in `atleti`, `allenamenti`, `presenze`, `comunicazioni` e `categorieAtleti.nome`: rinominandola in Squadre gli atleti restavano col vecchio nome e la lista mostrava due categorie. `js/admin/cms.js` (`_propagaRinomina`) ora riscrive il nome in quelle raccolte quando si salva una categoria rinominata. NON toccate le partite (`_col('partite')`, salvataggio diverso): da controllare.
+- `js/admin/atleti.js`: al caricamento della lista, il nome di categoria che coincide con uno ufficiale a meno di maiuscole/spazi viene riportato al nome ufficiale (anche su Firestore). Caso reale: «Under 13 Femminile» / «Under 13 femminile». Non provato nel browser.
+
+### 2026-10-09 — Fix: errore 500 su `/api/invia-invito` (e sulle altre funzioni con firebase-admin)
+- Causa (log Vercel): `ERR_REQUIRE_ESM: require() of ES Module jose/dist/webapi/index.js from jwks-rsa/src/utils.js`. Il commit `ee4e475` (firebase-admin 14.5.0) ha portato `jwks-rsa` 4 → `jose` 6, solo ESM, che il runtime Vercel non carica con `require()`. La funzione moriva al caricamento (283 ms).
+- Rimedio: `"overrides": { "jose": "^5.10.0" }` in `package.json` (jose 5 ha il formato CommonJS; `jwks-rsa` usa solo `importJWK` e `exportSPKI`). Verificato in locale con `--no-experimental-require-module`. Commit `2ab5958`. **Da provare dopo il deploy:** invio invito, invio ricevuta, set-athlete-password. Quando si aggiorna firebase-admin: ricontrollare che non torni `jose` 6.
+- Accesso ai log: con l'estensione Chrome collegata, https://vercel.com/lometk/victor-volley-website/logs (filtri via URL non validi: usare la pagina).
+
+### 2026-10-09 — Aperto: voci «chiavi palestre» segnate pagate
+- Non risolto: dal codice la logica è corretta (sottospesa «Pagata» se Pagato > 0 e senza preventivo maggiore; voce «Pagata» se preventivo > 0 e speso lo raggiunge). Probabile importo finito nel campo «Pagato» invece che «Preventivato». Serve vedere le sottospese nel Budget → Spese e il registro modifiche.
