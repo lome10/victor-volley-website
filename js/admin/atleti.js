@@ -268,7 +268,7 @@
   ================================================ */
   var RUOLI_ATLETA  = [['', '—'], ['Palleggiatore', 'Palleggiatore/trice'], ['Laterale', 'Laterale'], ['Opposto', 'Opposto'],
                        ['Centrale', 'Centrale'], ['Libero', 'Libero'], ['Universale', 'Universale']];
-  var TAGLIE_ATLETA = ['', '6 anni', '8 anni', '10 anni', '12 anni', '14 anni', 'XS', 'S', 'M', 'L', 'XL', 'XXL']
+  var TAGLIE_ATLETA = ['', '6 anni', '8 anni', '10 anni', '12 anni', '14 anni', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL']
                         .map(function (t) { return [t, t || '—']; });
   var PARENTELE     = [['', '—'], ['Madre', 'Madre'], ['Padre', 'Padre'], ['Tutore', 'Tutore/trice'], ['Altro', 'Altro']];
 
