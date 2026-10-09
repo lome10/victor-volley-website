@@ -546,6 +546,28 @@
      { voce: taglia }; gli atleti nuovi compaiono da soli perché la vista legge la stessa lista. ---- */
   var _atletiVista = 'elenco';
 
+  /* Dirigenti (account con accesso all'Area Dirigenti): compaiono SOLO in questa vista, come gruppo a parte.
+     Non sono atleti: stanno in `dirigenti/{uid}` e la taglia in `dirigenti/{uid}.taglie`, mai in `atleti`. */
+  var DIR_GRUPPO = '__dirigenti__';
+  var _dirigentiTaglie = null;   /* null = non ancora caricati */
+  function _caricaDirigentiTaglie() {
+    if (_dirigentiTaglie) return;
+    _dirigentiTaglie = [];
+    db.collection('dirigenti').get().then(function (snap) {
+      _dirigentiTaglie = snap.docs.map(function (d) {
+        var x = d.data();
+        return { uid: d.id, nome: x.nome || '', cognome: x.cognome || '', categoria: DIR_GRUPPO, taglie: x.taglie || {}, dirigente: true };
+      }).sort(function (a, b) { return (a.cognome + ' ' + a.nome).localeCompare(b.cognome + ' ' + b.nome, 'it'); });
+      if (_atletiVista === 'taglie') _renderTaglie();
+    }).catch(function (e) { _dirigentiTaglie = null; console.error('[Atleti] dirigenti taglie', e); });
+  }
+  /* Solo con «Tutte» le categorie; segue la ricerca per nome. */
+  function _dirigentiFiltrati() {
+    if (_atletiCat || !_dirigentiTaglie) return [];
+    var q = _atletiQuery.trim().toLowerCase();
+    return _dirigentiTaglie.filter(function (d) { return !q || (d.cognome + ' ' + d.nome).toLowerCase().indexOf(q) !== -1; });
+  }
+
   function _stagioneBudget() {
     return _bs().seasons.find(function (x) { return x.id === _bs().currentSeasonId; }) || null;
   }
@@ -639,7 +661,7 @@
         var cur = _tagliaOf(a, v);
         var opts = _scalaVoce(v).slice();
         if (cur && opts.indexOf(cur) === -1) opts.push(cur);
-        return '<td><select class="form-input taglia-sel" data-uid="' + esc(a.uid) + '" data-voce="' + esc(v) + '" aria-label="' + esc(v + ' — ' + a.cognome + ' ' + a.nome) + '">' +
+        return '<td><select class="form-input taglia-sel" data-uid="' + esc(a.uid) + '"' + (a.dirigente ? ' data-dir="1"' : '') + ' data-voce="' + esc(v) + '" aria-label="' + esc(v + ' — ' + a.cognome + ' ' + a.nome) + '">' +
           opts.map(function (t) { return '<option value="' + esc(t) + '"' + (t === cur ? ' selected' : '') + '>' + (t ? esc(t) : '—') + '</option>'; }).join('') + '</select></td>';
       }).join('') + '</tr>';
   }
@@ -655,8 +677,11 @@
     var voci = _vociAbbigliamento();
     var tutte = _vociTutte();
     var chips = tutte.length ? _vociChipsHtml() : '';
+    _caricaDirigentiTaglie();
     var list = _atletiFiltrati();
+    var dir = _dirigentiFiltrati();
     document.getElementById('atletiSummary').textContent = list.length + (list.length === 1 ? ' atleta' : ' atleti') +
+      (dir.length ? ' + ' + dir.length + (dir.length === 1 ? ' dirigente' : ' dirigenti') : '') +
       (voci.length ? ' · ' + voci.length + (voci.length === 1 ? ' voce' : ' voci') + ' di abbigliamento' : '');
     if (!tutte.length) {
       box.innerHTML = '<div class="empty-state"><p>Nessuna voce di abbigliamento per la stagione ' + esc(_stagioneCorrenteNome() || 'corrente') +
@@ -667,11 +692,11 @@
       box.innerHTML = chips + '<div class="empty-state"><p>Tutte le voci sono nascoste: riattiva quelle che ti servono con i pulsanti qui sopra.</p></div>';
       return;
     }
-    if (!list.length) { box.innerHTML = chips + '<div class="empty-state"><p>Nessun atleta corrisponde ai filtri.</p></div>'; return; }
+    if (!list.length && !dir.length) { box.innerHTML = chips + '<div class="empty-state"><p>Nessun atleta corrisponde ai filtri.</p></div>'; return; }
 
     /* Colonne per categoria: una voce tolta dalla matrice «Voci per categoria» non compare per quella categoria. */
     function vociDi(cat) { return voci.filter(function (v) { return cat === '__none__' || !_esclusa(cat, v); }); }
-    function intest(vc, cls) { return '<tr' + (cls ? ' class="' + cls + '"' : '') + '><th>Atleta</th>' + vc.map(function (v) { return '<th>' + esc(v) + '</th>'; }).join('') + '</tr>'; }
+    function intest(vc, cls, cat) { return '<tr' + (cls ? ' class="' + cls + '"' : '') + '><th>' + (cat === DIR_GRUPPO ? 'Dirigente' : 'Atleta') + '</th>' + vc.map(function (v) { return '<th>' + esc(v) + '</th>'; }).join('') + '</tr>'; }
     var tabelle;
     if (_atletiCat) {
       var vc1 = vociDi(_atletiCat);
@@ -681,20 +706,22 @@
       /* «Tutte»: una sezione per categoria che si apre e si chiude, ognuna con le sue colonne. */
       var q = (_atletiQuery || '').trim();
       var gruppi = _categorieElenco().concat(['__none__']);
-      _aggiornaToggleTutte(gruppi.filter(function (cat) {
-        return list.some(function (a) { return cat === '__none__' ? !a.categoria : a.categoria === cat; });
-      }));
+      var membriDi = function (cat) {
+        return cat === DIR_GRUPPO ? dir : list.filter(function (a) { return cat === '__none__' ? !a.categoria : a.categoria === cat; });
+      };
+      gruppi.push(DIR_GRUPPO);
+      _aggiornaToggleTutte(gruppi.filter(function (cat) { return membriDi(cat).length; }));
       tabelle = gruppi.map(function (cat) {
-        var membri = list.filter(function (a) { return cat === '__none__' ? !a.categoria : a.categoria === cat; });
+        var membri = membriDi(cat);
         if (!membri.length) return '';
         var vc = vociDi(cat);
         var chiuso = !q && _atletiChiuse.indexOf(cat) !== -1;
         var mancano = _daIndicare(membri, vc);
         return '<div class="admin-table-wrap taglie-gruppo"><table class="admin-table tab-scroll taglie-table"><tbody>' +
           '<tr class="atleti-group' + (chiuso ? ' is-closed' : '') + '" data-cat="' + esc(cat) + '" tabindex="0" role="button" aria-expanded="' + (chiuso ? 'false' : 'true') + '">' +
-          '<td colspan="' + (vc.length + 1) + '"><span class="atleti-group-chev" aria-hidden="true"></span><strong>' + esc(cat === '__none__' ? 'Senza categoria' : cat) + '</strong>' +
-          '<span>' + membri.length + (membri.length === 1 ? ' atleta' : ' atleti') + (mancano ? ' · ' + mancano + ' da indicare' : ' · tutto indicato') + '</span></td></tr>' +
-          (chiuso ? '' : intest(vc, 'taglie-head-row') + membri.map(function (a) { return _rigaTaglieHtml(a, vc); }).join('')) +
+          '<td colspan="' + (vc.length + 1) + '"><span class="atleti-group-chev" aria-hidden="true"></span><strong>' + esc(cat === '__none__' ? 'Senza categoria' : cat === DIR_GRUPPO ? 'Dirigenti' : cat) + '</strong>' +
+          '<span>' + membri.length + (cat === DIR_GRUPPO ? (membri.length === 1 ? ' persona' : ' persone') : (membri.length === 1 ? ' atleta' : ' atleti')) + (mancano ? ' · ' + mancano + ' da indicare' : ' · tutto indicato') + '</span></td></tr>' +
+          (chiuso ? '' : intest(vc, 'taglie-head-row', cat) + membri.map(function (a) { return _rigaTaglieHtml(a, vc); }).join('')) +
           '</tbody></table></div>';
       }).join('');
     }
@@ -867,18 +894,19 @@
     }
     var sel = e.target.closest('.taglia-sel');
     if (!sel) return;
-    var a = _atletiCache.find(function (x) { return x.uid === sel.dataset.uid; });
+    var isDir = !!sel.dataset.dir;
+    var a = (isDir ? (_dirigentiTaglie || []) : _atletiCache).find(function (x) { return x.uid === sel.dataset.uid; });
     if (!a) return;
     var voce = sel.dataset.voce, prima = _tagliaOf(a, voce), dopo = sel.value;
     var patch = { taglie: {} };
     patch.taglie[voce] = dopo;
     sel.disabled = true;
-    db.collection('atletiDati').doc(a.uid).set(patch, { merge: true }).then(function () {
+    db.collection(isDir ? 'dirigenti' : 'atletiDati').doc(a.uid).set(patch, { merge: true }).then(function () {
       a.taglie = Object.assign({}, a.taglie || {});
       a.taglie[voce] = dopo;
       var riep = document.getElementById('taglieRiepilogo');
       if (riep) riep.innerHTML = _riepilogoTaglie(_atletiFiltrati(), _vociAbbigliamento());
-      return _logWrite('atleta', a.uid, _atletaLabel(a), 'update', [{ campo: 'Taglia — ' + voce, prima: prima || null, dopo: dopo || null }]);
+      return _logWrite(isDir ? 'dirigente' : 'atleta', a.uid, isDir ? 'Dirigente — ' + a.cognome + ' ' + a.nome : _atletaLabel(a), 'update', [{ campo: 'Taglia — ' + voce, prima: prima || null, dopo: dopo || null }]);
     }).catch(function (err) {
       sel.value = prima;
       _avviso('Taglia non salvata: ' + err.message);
@@ -937,12 +965,13 @@
     var slug = _slugExport(), cat = _atletiCat && _atletiCat !== '__none__' ? _atletiCat : 'Tutte le categorie';
     if (_atletiVista === 'taglie') {
       var voci = _vociAbbigliamento();
-      if (!voci.length || !list.length) { _avviso('Nessuna taglia da esportare.'); return null; }
+      var dirEs = _dirigentiFiltrati();
+      if (!voci.length || (!list.length && !dirEs.length)) { _avviso('Nessuna taglia da esportare.'); return null; }
       return {
         titolo: 'Taglie — ' + cat, base: 'taglie-' + slug, sensibile: false,
         head: ['Cognome', 'Nome', 'Categoria'].concat(voci),
-        righe: list.map(function (a) {
-          return [a.cognome, a.nome, a.categoria || ''].concat(voci.map(function (v) { return _esclusa(a.categoria, v) ? 'n/d' : _tagliaOf(a, v); }));
+        righe: list.concat(dirEs).map(function (a) {
+          return [a.cognome, a.nome, a.dirigente ? 'Dirigenti' : (a.categoria || '')].concat(voci.map(function (v) { return _esclusa(a.categoria, v) ? 'n/d' : _tagliaOf(a, v); }));
         })
       };
     }
