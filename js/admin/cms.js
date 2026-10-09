@@ -1464,8 +1464,35 @@
       showInSquadre: document.getElementById('catShowInSquadre').checked,
       active:        document.getElementById('catActive').checked
     });
+    var vecchio = _catEditing && _catEditing.name;
     DB.saveCategory(cat, renderSquadre);
+    if (vecchio && vecchio !== name) _propagaRinomina(vecchio, name);
   });
+
+  /* Atleti, allenamenti, presenze e comunicazioni salvano la categoria come testo (il nome):
+     rinominandola vanno allineati, altrimenti la lista atleti mostra due categorie diverse. */
+  function _propagaRinomina(da, a) {
+    var fdb = window.db;
+    if (!fdb) return;
+    ['atleti', 'allenamenti', 'presenze', 'comunicazioni'].forEach(function (col) {
+      fdb.collection(col).where('categoria', '==', da).get().then(function (snap) {
+        var docs = snap.docs, p = Promise.resolve();
+        for (var i = 0; i < docs.length; i += 400) {
+          (function (chunk) {
+            p = p.then(function () {
+              var b = fdb.batch();
+              chunk.forEach(function (d) { b.update(d.ref, { categoria: a }); });
+              return b.commit();
+            });
+          })(docs.slice(i, i + 400));
+        }
+        return p;
+      }).catch(function (e) { console.error('[Categoria] rinomina ' + col, e); });
+    });
+    fdb.collection('categorieAtleti').where('nome', '==', da).get().then(function (snap) {
+      snap.docs.forEach(function (d) { d.ref.update({ nome: a }); });
+    }).catch(function (e) { console.error('[Categoria] rinomina categorieAtleti', e); });
+  }
 
   document.getElementById('catCancel').addEventListener('click', renderSquadre);
 

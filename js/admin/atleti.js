@@ -40,6 +40,19 @@
       res[0].forEach(function (doc) {
         _atletiCache.push(Object.assign({}, dati[doc.id] || {}, doc.data(), { uid: doc.id }));
       });
+      /* Stessa categoria scritta con maiuscole/spazi diversi (es. dopo una rinomina): riallinea al nome ufficiale. */
+      var ufficiali = {};
+      VV.getCategories().forEach(function (c) { ufficiali[(c.name || '').trim().toLowerCase()] = c.name; });
+      _atletiCache.forEach(function (a) {
+        var ok = a.categoria && ufficiali[a.categoria.trim().toLowerCase()];
+        if (ok && ok !== a.categoria) {
+          a.categoria = ok;
+          db.collection('atleti').doc(a.uid).update({ categoria: ok }).catch(function (e) { console.error('[Atleti] riallinea categoria', e); });
+          db.collection('atletiDati').doc(a.uid).get().then(function (d) {
+            if (d.exists && d.data().categoria !== undefined) return d.ref.update({ categoria: ok });
+          }).catch(function () {});
+        }
+      });
       _renderAtletiRows();
       if (_pendingOpenAtleta) { var daAprire = _pendingOpenAtleta; _pendingOpenAtleta = null; _openAtletaDetail(daAprire); }
       _migrateAccessiAtleti();
