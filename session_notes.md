@@ -312,3 +312,7 @@ Modello Excel del dirigente analizzato; scelte dell'utente: importo libero (una 
 
 ### 2026-10-09 — Taglie: aggiunte 3XL e 4XL
 - `TAGLIE_ATLETA` in `js/admin/atleti.js`: dopo XXL ora ci sono 3XL e 4XL. Valgono per i menu della vista Taglie, per il riepilogo (stesso ordine) e per «Taglia divisa» nella scheda atleta. Nessun dato esistente cambia.
+
+### 2026-10-09 — PDF atleti: ritocchi di impaginazione
+- Richiesta dell'utente su `_htmlPdfAtleti` (`js/admin/atleti.js`): tolte le etichette «N persone / N voci», tolto «Generato il», tolti «ASD» e «Area Dirigenti»; in intestazione «Victor Volley» grande e centrato (logo a sinistra, «Stagione 2026/2027» a destra, presa da `_stagioneCorrenteNome()`); titolo centrato; il numero di atleti sta ora a sinistra accanto al nome della categoria («Under 13 · 12 atleti», «Dirigenti · N persone»).
+- Nuovo «Riepilogo capi» (solo PDF Taglie), sotto il titolo: per ogni voce le taglie con quanti ne servono, «da indicare» e totale. Conta TUTTE le righe esportate, dirigenti compresi e rispettando «Cosa esportare» (diverso dal riepilogo a schermo, che conta solo gli atleti). Non provato in stampa vera.

@@ -1008,12 +1008,17 @@
   function _htmlPdfAtleti(d) {
     var p = d.pdf, logo = location.origin + '/assets/logo.png', fonts = location.origin + '/css/fonts.css';
     var stagione = (typeof _stagioneCorrenteNome === 'function' && _stagioneCorrenteNome()) || '';
-    var oggi = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
     var colspan = p.head.length;
-    var tot = p.gruppi.reduce(function (n, g) { return n + g.righe.length; }, 0);
+    var recap = !p.recap || !p.recap.length ? '' :
+      '<h2>Riepilogo capi</h2><table class="recap"><thead><tr><th>Capo</th><th>Taglie</th><th class="c">Totale</th></tr></thead><tbody>' +
+      p.recap.map(function (r) {
+        return '<tr><td class="nm">' + esc(r.voce) + '</td><td>' +
+          (r.taglie.length ? r.taglie.map(function (t) { return '<span class="chip">' + esc(t[0]) + ' <b>' + t[1] + '</b></span>'; }).join('') : '<span class="vuoto">nessuna taglia</span>') +
+          (r.senza ? '<span class="chip chip-senza">da indicare <b>' + r.senza + '</b></span>' : '') + '</td><td class="c"><b>' + r.totale + '</b></td></tr>';
+      }).join('') + '</tbody></table>';
     var thead = '<thead><tr>' + p.head.map(function (h, i) { return '<th' + (i === 0 ? '' : ' class="c"') + '>' + esc(h) + '</th>'; }).join('') + '</tr></thead>';
     var corpo = p.gruppi.map(function (g) {
-      return '<tr class="gr"><td colspan="' + colspan + '"><strong>' + esc(g.nome) + '</strong><span>' + g.righe.length + (g.righe.length === 1 ? ' persona' : ' persone') + '</span></td></tr>' +
+      return '<tr class="gr"><td colspan="' + colspan + '"><strong>' + esc(g.nome) + '</strong><span>' + g.righe.length + (g.nome === 'Dirigenti' ? (g.righe.length === 1 ? ' persona' : ' persone') : (g.righe.length === 1 ? ' atleta' : ' atleti')) + '</span></td></tr>' +
         g.righe.map(function (r) {
           return '<tr>' + r.map(function (c, i) {
             var t = String(c == null ? '' : c);
@@ -1023,24 +1028,24 @@
     }).join('');
     var css = '@page{size:A4 ' + (p.landscape ? 'landscape' : 'portrait') + ';margin:14mm 12mm 16mm;@bottom-left{content:"Victor Volley — ' + esc(p.tipo) + '";font:9px Arial,sans-serif;color:#64748B}@bottom-right{content:"Pagina " counter(page) " di " counter(pages);font:9px Arial,sans-serif;color:#64748B}}' +
       '*{box-sizing:border-box}body{font-family:"Manrope",Arial,Helvetica,sans-serif;color:#1E293B;margin:0;font-size:11px;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
-      '.letterhead{display:flex;align-items:center;justify-content:space-between;gap:16px;background:linear-gradient(135deg,#0F172A 0%,#1E3A5F 100%);color:#fff;padding:14px 18px;border-radius:10px;margin-bottom:14px}' +
-      '.brand{display:flex;align-items:center;gap:12px}.logo{width:44px;height:44px;object-fit:contain;border-radius:8px;background:#fff;padding:3px}' +
-      '.club{font-family:"Barlow",Arial,sans-serif;font-weight:700;font-size:18px}.sub{font-size:9.5px;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.06em;margin-top:1px}' +
-      '.meta{text-align:right;font-size:10px;color:rgba(255,255,255,.85);line-height:1.5}.meta strong{color:#fff}' +
-      'h1{font-family:"Barlow",Arial,sans-serif;font-size:20px;margin:0 0 6px;color:#0F172A}' +
-      '.tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;padding-bottom:10px;border-bottom:2px solid #E2E8F0}.tag{font-size:10px;background:#F1F5F9;color:#475569;border-radius:999px;padding:2px 10px;font-weight:600}' +
+      '.letterhead{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px;background:linear-gradient(135deg,#0F172A 0%,#1E3A5F 100%);color:#fff;padding:14px 18px;border-radius:10px;margin-bottom:14px}' +
+      '.logo{width:56px;height:56px;object-fit:contain;border-radius:10px;background:#fff;padding:4px}' +
+      '.club{font-family:"Barlow",Arial,sans-serif;font-weight:800;font-size:34px;letter-spacing:.02em;text-align:center;line-height:1}' +
+      '.meta{text-align:right;font-size:12px;color:rgba(255,255,255,.9);line-height:1.4}.meta strong{color:#fff;font-size:14px}' +
+      'h1{font-family:"Barlow",Arial,sans-serif;font-size:21px;margin:0 0 12px;padding-bottom:10px;border-bottom:2px solid #E2E8F0;color:#0F172A;text-align:center}' +
+      'h2{font-family:"Barlow",Arial,sans-serif;font-size:14px;margin:0 0 6px;color:#0F172A;text-align:center}' +
+      'table.recap{margin-bottom:16px}table.recap td{vertical-align:middle}' +
+      '.chip{display:inline-block;background:#EEF4FB;border:1px solid #D3E2F3;color:#053063;border-radius:999px;padding:1px 9px;margin:1px 4px 1px 0;font-size:10.5px;font-weight:600}.chip b{color:#0F172A}.chip-senza{background:#FEF3C7;border-color:#FCD34D;color:#92400E}' +
       'table{width:100%;border-collapse:collapse}thead{display:table-header-group}' +
       'th{background:#0F172A;color:#fff;font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;text-align:left;padding:6px 7px;font-weight:700}th.c,td.c{text-align:center}' +
       'td{padding:5px 7px;border-bottom:1px solid #E2E8F0;vertical-align:middle}tr{page-break-inside:avoid}' +
       'tbody tr:not(.gr):nth-child(even) td{background:#F8FAFC}td.nm{font-weight:600}td.na{color:#94A3B8}.vuoto{color:#CBD5E1}' +
-      'tr.gr td{background:#E8F1FB;border-bottom:1px solid #BFD6F2;padding:6px 8px;page-break-after:avoid;color:#053063}tr.gr span{float:right;font-size:10px;color:#475569;font-weight:600}';
+      'tr.gr td{background:#E8F1FB;border-bottom:1px solid #BFD6F2;padding:6px 8px;page-break-after:avoid;color:#053063}tr.gr span{margin-left:10px;font-size:10px;color:#475569;font-weight:600}';
     return '<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>' + esc(d.titolo) + ' — Victor Volley</title>' +
       '<link rel="stylesheet" href="' + fonts + '"><style>' + css + '</style></head><body>' +
-      '<header class="letterhead"><div class="brand"><img class="logo" src="' + logo + '" alt=""><div><div class="club">Victor Volley</div><div class="sub">ASD &middot; Area Dirigenti</div></div></div>' +
-      '<div class="meta"><div><strong>' + esc(p.tipo) + '</strong></div>' + (stagione ? '<div>Stagione <strong>' + esc(stagione) + '</strong></div>' : '') + '<div>Generato il <strong>' + esc(oggi) + '</strong></div></div></header>' +
-      '<h1>' + esc(d.titolo) + '</h1><div class="tags"><span class="tag">' + tot + (tot === 1 ? ' persona' : ' persone') + '</span>' +
-      p.tags.map(function (t) { return '<span class="tag">' + esc(t) + '</span>'; }).join('') + '</div>' +
-      '<table>' + thead + '<tbody>' + corpo + '</tbody></table></body></html>';
+      '<header class="letterhead"><div><img class="logo" src="' + logo + '" alt=""></div><div class="club">Victor Volley</div>' +
+      '<div class="meta">' + (stagione ? 'Stagione<br><strong>' + esc(stagione) + '</strong>' : '') + '</div></header>' +
+      '<h1>' + esc(d.titolo) + '</h1>' + recap + '<table>' + thead + '<tbody>' + corpo + '</tbody></table></body></html>';
   }
 
   /* Dati da esportare nella vista corrente: { titolo, base, head[], righe[][], sensibile } oppure null */
@@ -1056,7 +1061,17 @@
       var tuttiTaglie = list.concat(dirEs);
       var pdfTaglie = {
         tipo: 'Elenco taglie', landscape: voci.length > 6, head: ['Cognome e nome'].concat(voci),
-        tags: voci.length ? [voci.length + (voci.length === 1 ? ' voce' : ' voci')] : [],
+        recap: voci.map(function (v) {
+          var n = {}, senza = 0, totale = 0;
+          tuttiTaglie.forEach(function (a) {
+            if (_esclusa(a.categoria, v)) return;
+            var t = _tagliaOf(a, v);
+            if (t) { n[t] = (n[t] || 0) + 1; totale++; } else senza++;
+          });
+          var ordine = _scalaVoce(v).filter(function (t) { return t && n[t]; });
+          Object.keys(n).forEach(function (t) { if (ordine.indexOf(t) === -1) ordine.push(t); });
+          return { voce: v, taglie: ordine.map(function (t) { return [t, n[t]]; }), senza: senza, totale: totale };
+        }),
         gruppi: _raggruppaPdf(tuttiTaglie).map(function (g) {
           return { nome: g.nome, righe: g.membri.map(function (a) {
             return [((a.cognome || '') + ' ' + (a.nome || '')).trim()].concat(voci.map(function (v) { return _esclusa(a.categoria, v) ? 'n/d' : _tagliaOf(a, v); }));
@@ -1082,7 +1097,6 @@
     var pdfElenco = {
       tipo: 'Elenco atleti', landscape: true,
       head: ['Atleta', 'Nato il', 'Ruolo', 'Maglia', 'Telefono', 'Genitore 1', 'Tel. genitore 1', 'Cert. medico fino al'],
-      tags: [],
       gruppi: _raggruppaPdf(list).map(function (g) {
         return { nome: g.nome, righe: g.membri.map(function (a) {
           return [((a.cognome || '') + ' ' + (a.nome || '')).trim(), _dataIt(a.dataNascita), a.ruolo || '', a.numeroMaglia || '', a.telefono || '',
