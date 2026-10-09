@@ -1559,19 +1559,19 @@
           '<div class="atleta-rate-desc">' + esc(isOwn ? 'Atleta' : ('Genitore' + (x.nome ? ' — ' + x.nome : ''))) + '</div>' +
           '<div class="atleta-rate-meta">' + esc(x.email) + '</div>' +
         '</div>' +
+        '<div class="atleta-rate-actions">' +
         (isOwn ? '' :
-          '<div class="atleta-rate-actions">' +
             '<button class="btn-icon" onclick="AdminActions.modificaNomeAccesso(\'' + esc(x.uid) + '\')" title="Modifica cognome e nome">' + EDIT_ICON_SM + '</button>' +
             '<button class="btn-icon" onclick="AdminActions.invitaAccesso(\'' + esc(x.uid) + '\')" title="Invia l\'email con il link per scegliere la password">' +
               '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><rect x="3" y="5" width="18" height="14" rx="2"/><polyline points="3,7 12,13 21,7"/></svg>' +
             '</button>' +
             '<button class="btn-icon" onclick="AdminActions.resetAccesso(\'' + esc(x.uid) + '\')" title="Invia email di reset password">' +
               '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>' +
-            '</button>' +
-            '<button class="btn-icon btn-icon--danger" onclick="AdminActions.removeAccesso(\'' + esc(x.uid) + '\')" title="Scollega">' +
-              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>' +
-            '</button>' +
-          '</div>') +
+            '</button>') +
+          '<button class="btn-icon btn-icon--danger" onclick="AdminActions.removeAccesso(\'' + esc(x.uid) + '\')" title="Scollega (revoca l\'accesso)">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>' +
+          '</button>' +
+        '</div>' +
       '</div>';
     }).join('');
   }
@@ -1645,7 +1645,7 @@
   window.AdminActions.removeAccesso = function (uid) {
     if (!_editingAtleta) return;
     confirm(
-      'Scollegare questo genitore dall\'atleta? Non vedrà più la sua scheda. L\'account resta su Firebase e le altre schede collegate non cambiano.',
+      'Scollegare questo accesso dall\'atleta? Non vedrà più la sua scheda. L\'account resta su Firebase e le altre schede collegate non cambiano.',
       function () {
         var before  = _accessiOf(_editingAtleta).map(function (x) { return Object.assign({}, x); });
         var accessi = before.filter(function (x) { return x.uid !== uid; });
