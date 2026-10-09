@@ -991,6 +991,58 @@
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
   }
 
+  /* ---- PDF impaginato: carta intestata con logo, titolo, righe per gruppo (categoria) e numero di pagina ---- */
+  function _dataIt(iso) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || '');
+    return m ? m[3] + '/' + m[2] + '/' + m[1] : (iso || '');
+  }
+  /* Persone divise per categoria nell'ordine della lista; i dirigenti per ultimi. → [{ nome, membri }] */
+  function _raggruppaPdf(persone) {
+    var ordine = _categorieElenco().concat(['__none__', DIR_GRUPPO]);
+    return ordine.map(function (c) {
+      var membri = persone.filter(function (a) { return (a.dirigente ? DIR_GRUPPO : (a.categoria || '__none__')) === c; })
+        .sort(function (x, y) { return ((x.cognome || '') + ' ' + (x.nome || '')).localeCompare((y.cognome || '') + ' ' + (y.nome || ''), 'it'); });
+      return { nome: _nomeGruppo(c), membri: membri };
+    }).filter(function (g) { return g.membri.length; });
+  }
+  function _htmlPdfAtleti(d) {
+    var p = d.pdf, logo = location.origin + '/assets/logo.png', fonts = location.origin + '/css/fonts.css';
+    var stagione = (typeof _stagioneCorrenteNome === 'function' && _stagioneCorrenteNome()) || '';
+    var oggi = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
+    var colspan = p.head.length;
+    var tot = p.gruppi.reduce(function (n, g) { return n + g.righe.length; }, 0);
+    var thead = '<thead><tr>' + p.head.map(function (h, i) { return '<th' + (i === 0 ? '' : ' class="c"') + '>' + esc(h) + '</th>'; }).join('') + '</tr></thead>';
+    var corpo = p.gruppi.map(function (g) {
+      return '<tr class="gr"><td colspan="' + colspan + '"><strong>' + esc(g.nome) + '</strong><span>' + g.righe.length + (g.righe.length === 1 ? ' persona' : ' persone') + '</span></td></tr>' +
+        g.righe.map(function (r) {
+          return '<tr>' + r.map(function (c, i) {
+            var t = String(c == null ? '' : c);
+            return '<td' + (i === 0 ? ' class="nm"' : ' class="c' + (t === 'n/d' ? ' na' : '') + '"') + '>' + (t ? esc(t) : '<span class="vuoto">—</span>') + '</td>';
+          }).join('') + '</tr>';
+        }).join('');
+    }).join('');
+    var css = '@page{size:A4 ' + (p.landscape ? 'landscape' : 'portrait') + ';margin:14mm 12mm 16mm;@bottom-left{content:"Victor Volley — ' + esc(p.tipo) + '";font:9px Arial,sans-serif;color:#64748B}@bottom-right{content:"Pagina " counter(page) " di " counter(pages);font:9px Arial,sans-serif;color:#64748B}}' +
+      '*{box-sizing:border-box}body{font-family:"Manrope",Arial,Helvetica,sans-serif;color:#1E293B;margin:0;font-size:11px;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+      '.letterhead{display:flex;align-items:center;justify-content:space-between;gap:16px;background:linear-gradient(135deg,#0F172A 0%,#1E3A5F 100%);color:#fff;padding:14px 18px;border-radius:10px;margin-bottom:14px}' +
+      '.brand{display:flex;align-items:center;gap:12px}.logo{width:44px;height:44px;object-fit:contain;border-radius:8px;background:#fff;padding:3px}' +
+      '.club{font-family:"Barlow",Arial,sans-serif;font-weight:700;font-size:18px}.sub{font-size:9.5px;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.06em;margin-top:1px}' +
+      '.meta{text-align:right;font-size:10px;color:rgba(255,255,255,.85);line-height:1.5}.meta strong{color:#fff}' +
+      'h1{font-family:"Barlow",Arial,sans-serif;font-size:20px;margin:0 0 6px;color:#0F172A}' +
+      '.tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;padding-bottom:10px;border-bottom:2px solid #E2E8F0}.tag{font-size:10px;background:#F1F5F9;color:#475569;border-radius:999px;padding:2px 10px;font-weight:600}' +
+      'table{width:100%;border-collapse:collapse}thead{display:table-header-group}' +
+      'th{background:#0F172A;color:#fff;font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;text-align:left;padding:6px 7px;font-weight:700}th.c,td.c{text-align:center}' +
+      'td{padding:5px 7px;border-bottom:1px solid #E2E8F0;vertical-align:middle}tr{page-break-inside:avoid}' +
+      'tbody tr:not(.gr):nth-child(even) td{background:#F8FAFC}td.nm{font-weight:600}td.na{color:#94A3B8}.vuoto{color:#CBD5E1}' +
+      'tr.gr td{background:#E8F1FB;border-bottom:1px solid #BFD6F2;padding:6px 8px;page-break-after:avoid;color:#053063}tr.gr span{float:right;font-size:10px;color:#475569;font-weight:600}';
+    return '<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>' + esc(d.titolo) + ' — Victor Volley</title>' +
+      '<link rel="stylesheet" href="' + fonts + '"><style>' + css + '</style></head><body>' +
+      '<header class="letterhead"><div class="brand"><img class="logo" src="' + logo + '" alt=""><div><div class="club">Victor Volley</div><div class="sub">ASD &middot; Area Dirigenti</div></div></div>' +
+      '<div class="meta"><div><strong>' + esc(p.tipo) + '</strong></div>' + (stagione ? '<div>Stagione <strong>' + esc(stagione) + '</strong></div>' : '') + '<div>Generato il <strong>' + esc(oggi) + '</strong></div></div></header>' +
+      '<h1>' + esc(d.titolo) + '</h1><div class="tags"><span class="tag">' + tot + (tot === 1 ? ' persona' : ' persone') + '</span>' +
+      p.tags.map(function (t) { return '<span class="tag">' + esc(t) + '</span>'; }).join('') + '</div>' +
+      '<table>' + thead + '<tbody>' + corpo + '</tbody></table></body></html>';
+  }
+
   /* Dati da esportare nella vista corrente: { titolo, base, head[], righe[][], sensibile } oppure null */
   function _datiExport() {
     var list = _atletiFiltrati();
@@ -1001,7 +1053,18 @@
       list = list.filter(inCat);
       var dirEs = _dirigentiFiltrati().filter(inCat);
       if (!voci.length || (!list.length && !dirEs.length)) { _avviso('Nessuna taglia da esportare: controlla «Cosa esportare».'); return null; }
+      var tuttiTaglie = list.concat(dirEs);
+      var pdfTaglie = {
+        tipo: 'Elenco taglie', landscape: voci.length > 6, head: ['Cognome e nome'].concat(voci),
+        tags: voci.length ? [voci.length + (voci.length === 1 ? ' voce' : ' voci')] : [],
+        gruppi: _raggruppaPdf(tuttiTaglie).map(function (g) {
+          return { nome: g.nome, righe: g.membri.map(function (a) {
+            return [((a.cognome || '') + ' ' + (a.nome || '')).trim()].concat(voci.map(function (v) { return _esclusa(a.categoria, v) ? 'n/d' : _tagliaOf(a, v); }));
+          }) };
+        })
+      };
       return {
+        pdf: pdfTaglie,
         titolo: 'Taglie — ' + cat, base: 'taglie-' + slug, sensibile: false,
         head: ['Cognome', 'Nome', 'Categoria'].concat(voci),
         righe: list.concat(dirEs).map(function (a) {
@@ -1016,7 +1079,19 @@
     });
     cols.push({ k: 'tutore1Nome', l: 'Genitore 1 — cognome e nome' }, { k: 'tutore2Nome', l: 'Genitore 2 — cognome e nome' });
     cols.push({ k: 'certMedicoScadenza', l: 'Scadenza certificato medico' });
+    var pdfElenco = {
+      tipo: 'Elenco atleti', landscape: true,
+      head: ['Atleta', 'Nato il', 'Ruolo', 'Maglia', 'Telefono', 'Genitore 1', 'Tel. genitore 1', 'Cert. medico fino al'],
+      tags: [],
+      gruppi: _raggruppaPdf(list).map(function (g) {
+        return { nome: g.nome, righe: g.membri.map(function (a) {
+          return [((a.cognome || '') + ' ' + (a.nome || '')).trim(), _dataIt(a.dataNascita), a.ruolo || '', a.numeroMaglia || '', a.telefono || '',
+                  ((a.tutore1Cognome || '') + ' ' + (a.tutore1Prenome || '')).trim() || a.tutore1Nome || '', a.tutore1Telefono || '', _dataIt(a.certMedicoScadenza)];
+        }) };
+      })
+    };
     return {
+      pdf: pdfElenco,
       titolo: 'Atleti — ' + cat, base: 'atleti-' + slug, sensibile: true,
       head: cols.map(function (c) { return c.l; }),
       righe: list.map(function (a) { return cols.map(function (c) { return a[c.k] == null ? '' : a[c.k]; }); })
@@ -1046,17 +1121,12 @@
       } else {
         var w = window.open('', '_blank');
         if (!w) { _avviso('Il browser ha bloccato la finestra: consenti i popup e riprova.'); return; }
-        var wide = d.head.length > 8;
-        var doc = '<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>' + esc(d.titolo) + ' — Victor Volley</title><style>' +
-          '@page{size:A4 ' + (wide ? 'landscape' : 'portrait') + ';margin:12mm}' +
-          'body{font-family:Arial,sans-serif;color:#111;margin:0}h1{font-size:16px;margin:0 0 2px}p{margin:0 0 10px;font-size:11px;color:#555}' +
-          'table{width:100%;border-collapse:collapse;font-size:' + (wide ? '7' : '10') + 'px}' +
-          'th,td{border:1px solid #bbb;padding:3px 4px;text-align:left;vertical-align:top;word-break:break-word}' +
-          'th{background:#eee}thead{display:table-header-group}tr{page-break-inside:avoid}</style></head><body>' +
-          '<h1>' + esc(d.titolo) + '</h1><p>Victor Volley — ' + d.righe.length + ' righe — ' + new Date().toLocaleDateString('it-IT') + '</p>' +
-          _htmlTabella(d, '', '') + '</body></html>';
-        w.document.open(); w.document.write(doc); w.document.close();
-        setTimeout(function () { w.focus(); w.print(); }, 300);
+        w.document.open(); w.document.write(_htmlPdfAtleti(d)); w.document.close();
+        /* stampa dopo il caricamento di logo e font; se non arriva l'evento, parte comunque dopo 2 secondi */
+        var stampato = false;
+        var stampa = function () { if (stampato) return; stampato = true; w.focus(); w.print(); };
+        w.addEventListener('load', function () { setTimeout(stampa, 250); });
+        setTimeout(stampa, 2000);
       }
     };
     if (d.sensibile) confirm('Il file contiene dati personali di minori (codice fiscale, indirizzo, telefoni). Conservalo in un posto sicuro e cancellalo quando non serve più. Procedere?', run);
