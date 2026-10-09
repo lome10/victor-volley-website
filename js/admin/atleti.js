@@ -641,15 +641,16 @@
   var _taglieEsclAperto = false;
   function _matriceEsclusioniHtml(voci) {
     var cats = _categorieElenco().filter(function (c) { return _atletiCache.some(function (a) { return a.categoria === c; }); });
+    if (_dirigentiTaglie && _dirigentiTaglie.length) cats.push(DIR_GRUPPO);
     if (!cats.length) return '';
     return '<details class="taglie-escl" id="taglieEscl"' + (_taglieEsclAperto ? ' open' : '') + '><summary>Voci per categoria</summary>' +
       '<p class="taglie-escl-hint">Togli la spunta dove una categoria non riceve quel capo: nella tabella diventa «n/d» e non entra nel riepilogo. Trascina le intestazioni per cambiare l’ordine delle colonne.</p>' +
       '<div class="admin-table-wrap"><table class="admin-table tab-scroll taglie-escl-table"><thead><tr><th>Categoria</th>' +
       voci.map(function (v) { return '<th class="taglie-th" draggable="true" data-voce="' + esc(v) + '" title="Trascina per spostare la colonna">' + esc(v) + '</th>'; }).join('') + '</tr></thead><tbody>' +
       cats.map(function (c) {
-        return '<tr><td><div class="table-title">' + esc(c) + '</div></td>' + voci.map(function (v) {
+        return '<tr><td><div class="table-title">' + esc(c === DIR_GRUPPO ? 'Dirigenti' : c) + '</div></td>' + voci.map(function (v) {
           return '<td><input type="checkbox" class="taglie-escl-cb" data-cat="' + esc(c) + '" data-voce="' + esc(v) + '"' + (_esclusa(c, v) ? '' : ' checked') +
-            ' aria-label="' + esc(c + ' riceve ' + v) + '"></td>';
+            ' aria-label="' + esc((c === DIR_GRUPPO ? 'Dirigenti' : c) + ' riceve ' + v) + '"></td>';
         }).join('') + '</tr>';
       }).join('') + '</tbody></table></div></details>';
   }
