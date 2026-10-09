@@ -301,3 +301,7 @@ Modello Excel del dirigente analizzato; scelte dell'utente: importo libero (una 
 
 ### Regola di lavoro
 - Aggiornare `session_notes.md` a OGNI modifica (richiesta esplicita dell'utente, 2026-10-09), prima del commit. Dopo modifiche a file JS/CSS caricati dal sito, lanciare `node scripts/stamp-versions.js` (altrimenti il controllo CI fallisce).
+
+### 2026-10-09 — Taglie: pannello «Cosa esportare»
+- Vista Taglie (`js/admin/atleti.js`, `css/admin.css`): sezione richiudibile «Cosa esportare» con le spunte delle categorie (anche «Senza categoria» e «Dirigenti») e delle voci. Si memorizza ciò che è ESCLUSO (`_expEsclCat`, `_expEsclVoci`, solo in memoria: si azzerano ricaricando la pagina), così le voci/categorie nuove entrano da sole. Vale per CSV, Excel e PDF, in aggiunta a ricerca e categoria scelta; i dirigenti restano visibili solo con «Tutte». Se tutto è escluso: avviso «Nessuna taglia da esportare». Non provato nel browser.
+- Verificato dal vivo (www.victorvolley.it, dopo il deploy): il gruppo «Dirigenti» e la riga in «Voci per categoria» compaiono. Se non si vede, ricarica forzata (Ctrl+F5): i file JS hanno `?v=` ma la pagina admin può restare in cache.

@@ -637,6 +637,29 @@
     }).join('') + '</div>';
   }
 
+  /* Pannello «Cosa esportare»: categorie e voci da lasciare fuori dai file CSV / Excel / PDF della vista Taglie.
+     Si memorizza ciò che è ESCLUSO, così una voce o una categoria nuova entra da sola. Si somma a ciò che è mostrato
+     (ricerca, categoria scelta); i dirigenti compaiono solo con «Tutte». */
+  var _expEsclCat = [], _expEsclVoci = [], _expAperto = false;
+  function _gruppiExport() {
+    var cats = _categorieElenco().filter(function (c) { return _atletiCache.some(function (a) { return a.categoria === c; }); });
+    if (_atletiCache.some(function (a) { return !a.categoria; })) cats.push('__none__');
+    if (_dirigentiTaglie && _dirigentiTaglie.length) cats.push(DIR_GRUPPO);
+    return cats;
+  }
+  function _nomeGruppo(c) { return c === '__none__' ? 'Senza categoria' : c === DIR_GRUPPO ? 'Dirigenti' : c; }
+  function _pannelloExportHtml(voci) {
+    function cb(tipo, val, label, off) {
+      return '<label class="taglie-exp-cb"><input type="checkbox" class="taglie-exp-in" data-tipo="' + tipo + '" data-val="' + esc(val) + '"' + (off ? '' : ' checked') + '> ' + esc(label) + '</label>';
+    }
+    return '<details class="taglie-escl" id="taglieExp"' + (_expAperto ? ' open' : '') + '><summary>Cosa esportare</summary>' +
+      '<p class="taglie-escl-hint">Togli la spunta a ciò che non vuoi nel file (Esporta CSV, Excel o PDF). Vale in aggiunta a ciò che stai vedendo.</p>' +
+      '<div class="taglie-exp"><div><strong>Categorie</strong>' +
+        _gruppiExport().map(function (c) { return cb('cat', c, _nomeGruppo(c), _expEsclCat.indexOf(c) !== -1); }).join('') + '</div>' +
+      '<div><strong>Voci</strong>' +
+        voci.map(function (v) { return cb('voce', v, v, _expEsclVoci.indexOf(v) !== -1); }).join('') + '</div></div></details>';
+  }
+
   /* Matrice «Voci per categoria»: una spunta per ogni categoria e voce. */
   var _taglieEsclAperto = false;
   function _matriceEsclusioniHtml(voci) {
@@ -726,7 +749,7 @@
           '</tbody></table></div>';
       }).join('');
     }
-    box.innerHTML = chips + _matriceEsclusioniHtml(voci) + '<div id="taglieRiepilogo">' + _riepilogoTaglie(list, voci) + '</div>' + tabelle;
+    box.innerHTML = chips + _pannelloExportHtml(voci) + _matriceEsclusioniHtml(voci) + '<div id="taglieRiepilogo">' + _riepilogoTaglie(list, voci) + '</div>' + tabelle;
   }
 
   function _applicaVistaAtleti() {
@@ -869,9 +892,17 @@
   /* «toggle» non risale: lo si ascolta in cattura per ricordare se la matrice è aperta. */
   document.getElementById('atletiTaglie').addEventListener('toggle', function (e) {
     if (e.target && e.target.id === 'taglieEscl') _taglieEsclAperto = e.target.open;
+    if (e.target && e.target.id === 'taglieExp') _expAperto = e.target.open;
   }, true);
 
   document.getElementById('atletiTaglie').addEventListener('change', function (e) {
+    var ex = e.target.closest('.taglie-exp-in');
+    if (ex) {
+      var arr = ex.dataset.tipo === 'cat' ? _expEsclCat : _expEsclVoci, i = arr.indexOf(ex.dataset.val);
+      if (ex.checked && i !== -1) arr.splice(i, 1);
+      else if (!ex.checked && i === -1) arr.push(ex.dataset.val);
+      return;
+    }
     var cb = e.target.closest('.taglie-escl-cb');
     if (cb) {
       var st = _stagioneBudget();
@@ -965,9 +996,11 @@
     var list = _atletiFiltrati();
     var slug = _slugExport(), cat = _atletiCat && _atletiCat !== '__none__' ? _atletiCat : 'Tutte le categorie';
     if (_atletiVista === 'taglie') {
-      var voci = _vociAbbigliamento();
-      var dirEs = _dirigentiFiltrati();
-      if (!voci.length || (!list.length && !dirEs.length)) { _avviso('Nessuna taglia da esportare.'); return null; }
+      var voci = _vociAbbigliamento().filter(function (v) { return _expEsclVoci.indexOf(v) === -1; });
+      var inCat = function (a) { return _expEsclCat.indexOf(a.dirigente ? DIR_GRUPPO : (a.categoria || '__none__')) === -1; };
+      list = list.filter(inCat);
+      var dirEs = _dirigentiFiltrati().filter(inCat);
+      if (!voci.length || (!list.length && !dirEs.length)) { _avviso('Nessuna taglia da esportare: controlla «Cosa esportare».'); return null; }
       return {
         titolo: 'Taglie — ' + cat, base: 'taglie-' + slug, sensibile: false,
         head: ['Cognome', 'Nome', 'Categoria'].concat(voci),
