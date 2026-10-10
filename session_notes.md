@@ -332,3 +332,9 @@ Modello Excel del dirigente analizzato; scelte dell'utente: importo libero (una 
 ### 2026-10-10 — Taglie: «Dirigenti» e «Cosa esportare» si azzeravano
 - Causa 1: la riga Dirigenti di «Voci per categoria» salvava su `budgetSeasons.taglieEscluse` con la chiave `__dirigenti__`; Firestore riserva i nomi `__x__`, quindi il salvataggio falliva e la spunta tornava com'era. Ora `_chiaveEscl()` in `js/admin/atleti.js` salva sotto `Dirigenti` (in memoria resta `DIR_GRUPPO`).
 - Causa 2: la matrice «Cosa esportare» (`_expEscl`) stava solo in memoria e si azzerava a ogni ricarica. Ora è in `localStorage` (`vv_taglie_exp_escl`), per browser. Non provato nel browser.
+
+### 2026-10-10 — Verifiche dell'utente e pulizia
+- Provati dall'utente nel browser e ok: taglie 3XL/4XL, Scollega, invio invito, export Taglie, Brevo/email, monolite `admin.js`, prestazioni mobile. Le voci «Da provare dopo il deploy» del 2026-10-09 sono chiuse.
+- Rimossa da `budgetSeasons.taglieEscluse` la chiave residua «Under 13 Femminile» (F maiuscola).
+- Promemoria: dopo ogni modifica a JS/CSS lanciare `node scripts/stamp-versions.js`, altrimenti i `?v=` in HTML non cambiano e il browser serve il file vecchio.
+- Ancora aperti: voci «chiavi palestre» segnate pagate (servono Preventivato/Pagato/Stato), partite del calendario non toccate dalla rinomina categoria.
