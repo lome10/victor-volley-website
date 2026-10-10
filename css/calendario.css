@@ -276,64 +276,93 @@
 .fixture-ics { margin-left: auto; flex-shrink: 0; min-height: 44px; padding: 0 12px; font-size: 12px; }
 .fixture-row-venue:has(.fixture-ics) { padding-top: 2px; }
 
-/* ---- Tutte le partite del girone (tendina sotto le card della Victor) ---- */
-.cal-girone-wrap { padding: 4px 2px 8px; }
+/* ---- Barra fissa: prossima partita + sponsor (sempre visibile mentre si scorre) ---- */
+.cal-sticky {
+  position: sticky; top: var(--topbar-h, 0px); z-index: 40;
+  background: rgba(5, 14, 31, 0.94); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(255,255,255,0.12);
+}
+.cal-sticky.is-empty { display: none; }
+.cal-sticky-in { display: flex; align-items: center; justify-content: space-between; gap: 14px; min-height: 60px; padding-top: 6px; padding-bottom: 6px; }
+.cal-next {
+  display: flex; flex-direction: column; gap: 1px; min-width: 0; text-align: left;
+  background: none; border: 0; padding: 4px 6px; margin-left: -6px; border-radius: 8px; color: #fff; font: inherit; cursor: pointer;
+}
+button.cal-next:hover { background: rgba(255,255,255,0.06); }
+button.cal-next:focus-visible { outline: 3px solid var(--c-azzurro); outline-offset: 2px; }
+.cal-next--none { cursor: default; opacity: 0.8; }
+.cal-next-lbl { font: 700 10px var(--sport-font-display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--sport-azzurro-dim); }
+.cal-next-main { display: flex; align-items: baseline; gap: 4px 12px; flex-wrap: wrap; min-width: 0; }
+.cal-next-when { font: 800 15px var(--font-heading); white-space: nowrap; }
+.cal-next-teams { font: 600 13px var(--font-body); color: rgba(255,255,255,0.82); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Sponsor: etichetta + riquadro bianco col logo (i loghi sono pensati per fondo chiaro) */
+.cal-spon { display: inline-flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.cal-spon-lbl { font: 700 10px var(--sport-font-display); letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.7); }
+.cal-spon-tile { display: inline-flex; background: #fff; border-radius: 10px; padding: 3px; box-shadow: 0 0 0 1px rgba(255,255,255,0.25); }
+.cal-spon-link:focus-visible { outline: 3px solid var(--c-azzurro); outline-offset: 2px; }
+.cal-spon-logo { display: block; height: 46px; width: auto; max-width: 150px; object-fit: contain; border-radius: 7px; }
+
+/* ---- Calendario del girone: tutte le giornate sempre in vista ---- */
+.cal-girone-wrap { padding: 22px 2px 8px; }
 .cal-girone-wrap.is-hidden { display: none; }
-.cal-girone {
-  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; overflow: hidden;
-}
-.cal-girone-sum {
-  display: flex; align-items: center; gap: 12px 16px; flex-wrap: wrap; min-height: 56px; padding: 10px 18px;
-  cursor: pointer; list-style: none; color: #fff;
-}
-.cal-girone-sum::-webkit-details-marker { display: none; }
-.cal-girone-sum:focus-visible { outline: 3px solid var(--c-azzurro); outline-offset: -3px; }
-.cal-girone-sum-text { display: flex; flex-direction: column; gap: 2px; font: 800 15px var(--font-heading); }
-.cal-girone-sum-text small { font: 500 12px var(--font-body); color: rgba(255,255,255,0.65); }
-.cal-girone-chev {
-  width: 9px; height: 9px; margin-left: 4px; flex-shrink: 0;
-  border-right: 2px solid rgba(255,255,255,0.7); border-bottom: 2px solid rgba(255,255,255,0.7);
-  transform: rotate(45deg); transition: transform 0.2s ease;
-}
-.cal-girone[open] .cal-girone-chev { transform: rotate(-135deg); }
-.cal-girone-sum:hover { background: rgba(255,255,255,0.04); }
+/* Dove il girone ha le partite, l'elenco di card della Victor e il filtro lasciano il posto alle giornate */
+.cal-cat-panel.has-girone [data-role="fixtures"],
+.cal-cat-panel.has-girone .cal-team-filter,
+.cal-cat-panel.has-girone [data-role="jump-next"] { display: none !important; }
+.cal-cat-panel.has-girone .cal-toolbar { justify-content: flex-end; }
 
-/* Sponsor del blocco: etichetta + logo su fondo chiaro (i loghi sono pensati per fondo bianco) */
-.cal-girone-spon { display: inline-flex; align-items: center; gap: 10px; margin-left: auto; }
-.cal-girone-spon-lbl { font: 700 10px var(--sport-font-display); letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.6); }
-.cal-girone-spon-logo { height: 48px; width: auto; max-width: 150px; object-fit: contain; background: rgba(255,255,255,0.95); border-radius: 8px; padding: 3px 6px; }
-.cal-girone-spon-link { display: inline-flex; border-radius: 8px; }
-.cal-girone-spon-link:focus-visible { outline: 3px solid var(--c-azzurro); outline-offset: 2px; }
-.cal-girone-spon--foot { display: flex; justify-content: flex-end; margin: 4px 0 0; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.08); }
-
-.cal-girone-body { padding: 4px 18px 18px; border-top: 1px solid rgba(255,255,255,0.08); }
-.gp-giornata { padding-top: 14px; }
-.gp-giornata-title { margin: 0 0 8px; font: 700 11px var(--sport-font-display); letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.6); }
-.gp-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.gp-giornata { padding-top: 22px; }
+.gp-giornata:first-child { padding-top: 0; }
+.gp-giornata-head { display: flex; align-items: baseline; gap: 12px; padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.14); }
+.gp-giornata-title { margin: 0; font: 800 18px var(--font-heading); color: #fff; }
+.gp-giornata-range { font: 600 13px var(--font-body); color: rgba(255,255,255,0.65); }
+.gp-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .gp-row {
-  display: grid; grid-template-columns: 104px minmax(0, 1fr) 48px minmax(0, 1fr); align-items: center; gap: 4px 10px;
-  padding: 9px 12px; border-radius: 10px; background: rgba(255,255,255,0.025); color: rgba(255,255,255,0.72); font-size: 13px;
+  display: grid; grid-template-columns: 112px minmax(0, 1fr) 46px minmax(0, 1fr); align-items: center; gap: 6px 12px;
+  padding: 12px 14px; border-radius: 12px; scroll-margin-top: 150px;
+  background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); color: rgba(255,255,255,0.78); font-size: 14px;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
-.gp-row--vv { background: rgba(0,140,253,0.1); color: #fff; }
-.gp-when { font-size: 12px; color: rgba(255,255,255,0.62); white-space: nowrap; }
-.gp-row--vv .gp-when { color: rgba(255,255,255,0.8); }
-.gp-team { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.gp-row--vv { background: rgba(0,140,253,0.14); border-color: rgba(0,140,253,0.4); color: #fff; }
+.gp-row--next { background: rgba(0,140,253,0.24); border-color: var(--c-azzurro); }
+.gp-row.is-flash { background: rgba(0,140,253,0.4); }
+.gp-when { display: flex; flex-direction: column; gap: 3px; font-size: 12.5px; font-weight: 600; color: rgba(255,255,255,0.7); }
+.gp-row--vv .gp-when { color: rgba(255,255,255,0.92); }
+.gp-next-tag { align-self: flex-start; padding: 2px 8px; border-radius: 99px; background: var(--c-azzurro); color: #fff; font: 800 10px var(--sport-font-display); letter-spacing: 0.08em; text-transform: uppercase; }
+.gp-team { display: flex; align-items: center; gap: 9px; min-width: 0; }
 .gp-team--casa { flex-direction: row-reverse; text-align: right; }
+.gp-logo { width: 28px; height: 28px; border-radius: 6px; object-fit: contain; background: rgba(255,255,255,0.92); padding: 2px; flex-shrink: 0; }
+.gp-logo--init { display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.08); font: 700 12px var(--font-body); color: rgba(255,255,255,0.55); padding: 0; }
 .gp-team-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
 .gp-team.is-win .gp-team-name { font-weight: 800; color: #fff; }
-.gp-team--vv .gp-team-name { color: var(--sport-azzurro-dim); font-weight: 800; }
-.gp-score { text-align: center; font: 800 13px var(--sport-font-display); color: rgba(255,255,255,0.6); }
-.gp-venue { grid-column: 2 / -1; display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 11.5px; color: rgba(255,255,255,0.55); }
-.gp-venue span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.gp-riposa { margin: 8px 12px 0; font-size: 12px; color: rgba(255,255,255,0.55); }
+.gp-team--vv .gp-team-name { color: #fff; font-weight: 800; }
+.gp-score { text-align: center; font: 800 14px var(--sport-font-display); color: rgba(255,255,255,0.65); }
+.gp-venue { grid-column: 2 / -1; display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 12px; color: rgba(255,255,255,0.62); }
+.gp-venue-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1 1 auto; }
+.gp-cal {
+  margin-left: auto; flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; border-radius: 99px;
+  font: 600 12px var(--font-body); color: var(--c-azzurro); background: rgba(0,140,253,0.12); border: 1px solid rgba(0,140,253,0.3); text-decoration: none; white-space: nowrap;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.gp-cal:hover { background: var(--c-azzurro); color: #fff; }
+.gp-cal:focus-visible { outline: 3px solid var(--c-azzurro); outline-offset: 2px; }
+.gp-riposa { margin: 8px 4px 0; font-size: 12.5px; color: rgba(255,255,255,0.6); }
 
+@media (max-width: 900px) {
+  .cal-sticky-in { min-height: 56px; }
+}
 @media (max-width: 600px) {
-  .cal-girone-sum { padding: 10px 14px; }
-  .cal-girone-spon { margin-left: 0; width: 100%; order: 3; }
-  .cal-girone-chev { margin-left: auto; }
-  .cal-girone-body { padding: 4px 12px 14px; }
-  .gp-row { grid-template-columns: minmax(0, 1fr) 40px minmax(0, 1fr); padding: 10px; }
+  .cal-sticky-in { gap: 10px; min-height: 52px; }
+  .cal-spon-lbl { display: none; }
+  .cal-spon-logo { height: 38px; max-width: 110px; }
+  .cal-next-teams { font-size: 12px; }
+  .gp-row { grid-template-columns: minmax(0, 1fr) 40px minmax(0, 1fr); padding: 11px 10px; scroll-margin-top: 120px; }
   .gp-when, .gp-venue { grid-column: 1 / -1; }
+  .gp-when { flex-direction: row; align-items: center; gap: 8px; }
+  .gp-logo, .gp-logo--init { display: none; }
+  .gp-team--casa { justify-content: flex-start; }
+  .gp-giornata-title { font-size: 16px; }
 }
 
 /* Le colonne della griglia possono restringersi sotto la larghezza dei contenuti (palazzetto lungo + «Aggiungi al calendario»):
@@ -347,7 +376,9 @@
   .cal-team-filter { flex-wrap: wrap; width: 100%; max-width: 100%; }
   .cal-team-filter select { flex: 1 1 200px; min-width: 0; width: 100%; }
 }
-@media (max-width: 600px) {
-  .gp-team .stand-logo, .gp-team .stand-logo-init { display: none; }
-  .gp-team--casa { justify-content: flex-start; }
+
+/* La classifica resta fissa a destra, ma sotto la barra «Prossima partita / sponsor» */
+.cal-cols--split .cal-col-right { top: calc(var(--topbar-h, 0px) + 66px); }
+@media (max-width: 900px) {
+  .cal-cols--split .cal-col-right { top: auto; }
 }

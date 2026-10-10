@@ -27,7 +27,7 @@
   <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
   <link rel="stylesheet" href="/css/fonts.css?v=c0ba2518">
   <link rel="stylesheet" href="css/style.css?v=804f4a22">
-  <link rel="stylesheet" href="css/calendario.css?v=ead7c932">
+  <link rel="stylesheet" href="css/calendario.css?v=c2374f23">
 </head>
 <body>
 
@@ -62,6 +62,9 @@
 
     <div class="cal-dark-zone">
 
+      <!-- Barra fissa: prossima partita + sponsor (riempita da calendario-1.js) -->
+      <div class="cal-sticky is-empty" id="calSticky"></div>
+
       <!-- Tab: categoria -->
       <div class="container cal-tabs-row">
         <div class="cal-switch-group cal-switch-group--cat" role="tablist" aria-label="Categoria" id="calCatNav"></div>
@@ -90,7 +93,7 @@
   <script src="js/main.js?v=cddbff55"></script>
   <script src="js/girone.js?v=18a86101"></script>
 
-  <script src="js/pages/calendario-1.js?v=eedfa5e5"></script>
+  <script src="js/pages/calendario-1.js?v=6fae828c"></script>
   <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

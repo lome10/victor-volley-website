@@ -148,6 +148,7 @@
       p.classList.toggle('is-hidden', p.dataset.cat !== cat);
     });
     if (history.replaceState) history.replaceState(null, '', '#' + cat);
+    if (onCatChange) onCatChange();
   }
 
   /* ================================================
@@ -181,47 +182,58 @@
     }).catch(function (e) { console.warn('[calendario] classifica non disponibile:', e); });
   }
 
-  /* ---- Tutte le partite del girone (a tendina, sotto le card della Victor) ----
+  /* ---- Calendario del girone: tutte le giornate, sempre in vista ----
      Legge le partite del girone (siteData/girone), non quelle del calendario: ci sono anche
-     le partite tra le altre squadre. Lo sponsor del blocco si cerca per nome tra gli sponsor del sito. */
+     le partite tra le altre squadre. Dove il girone ha partite sostituisce l'elenco di card della Victor
+     (classe has-girone sul pannello). Lo sponsor si cerca per nome tra gli sponsor del sito. */
   var SPONSOR_GIRONE = 'Puglia in food';
   var MESI_BREVI = ['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
   var GIORNI_BREVI = ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
+  var onCatChange = null;   /* la barra fissa si aggiorna al cambio di categoria (lo imposta la parte dentro DB.loadOrError) */
 
   function sponsorGirone() {
     var key = VV.teamKey(SPONSOR_GIRONE);
     return VV.getSponsors().filter(function (s) { return VV.teamKey(s.nome) === key && s.logo; })[0] || null;
   }
 
-  function sponsorBadgeHtml(sp, cls, conLink) {
+  function sponsorTileHtml(sp) {
     if (!sp) return '';
-    var img = '<img loading="lazy" decoding="async" src="' + esc(VV.imgUrl(sp.logo, 160)) + '" alt="' + esc(sp.nome) + '" class="cal-girone-spon-logo">';
-    var url = conLink && /^https?:\/\//.test(sp.url || '') ? sp.url : '';
-    return '<span class="' + cls + '"><span class="cal-girone-spon-lbl">Presentato da</span>' +
-      (url ? '<a href="' + esc(url) + '" target="_blank" rel="noopener sponsored" class="cal-girone-spon-link">' + img + '</a>' : img) + '</span>';
+    var img = '<img decoding="async" src="' + esc(VV.imgUrl(sp.logo, 160)) + '" alt="' + esc(sp.nome) + '" class="cal-spon-logo">';
+    var url = /^https?:\/\//.test(sp.url || '') ? sp.url : '';
+    return '<span class="cal-spon"><span class="cal-spon-lbl">Presentato da</span>' +
+      (url ? '<a href="' + esc(url) + '" target="_blank" rel="noopener sponsored" class="cal-spon-tile cal-spon-link">' + img + '</a>' : '<span class="cal-spon-tile">' + img + '</span>') + '</span>';
+  }
+
+  function dataBreve(dateStr, ora) {
+    var d = dateStr ? new Date(dateStr + 'T00:00:00') : null;
+    if (!d || isNaN(d)) return 'Data da definire';
+    return GIORNI_BREVI[d.getDay()] + ' ' + d.getDate() + ' ' + MESI_BREVI[d.getMonth()] + (ora ? ' · ' + ora : '');
   }
 
   function gironeTeam(squadre, id) {
     var s = Girone.squadraById(squadre, id);
     var logo = s.logo
-      ? '<img loading="lazy" decoding="async" src="' + esc(s.logo) + '" class="stand-logo" alt="">'
-      : '<span class="stand-logo-init">' + esc((s.nome || '?').charAt(0).toUpperCase()) + '</span>';
+      ? '<img loading="lazy" decoding="async" src="' + esc(s.logo) + '" class="gp-logo" alt="">'
+      : '<span class="gp-logo gp-logo--init">' + esc((s.nome || '?').charAt(0).toUpperCase()) + '</span>';
     return { s: s, html: logo + '<span class="gp-team-name">' + esc(s.nome) + '</span>' };
   }
 
-  function gironePartitaRow(m, squadre) {
+  function gironePartitaRow(m, squadre, isNext, categoria) {
     var c = gironeTeam(squadre, m.squadra_casa), o = gironeTeam(squadre, m.squadra_ospite);
     var vv = c.s.home || o.s.home;
     var hasScore = m.set_casa != null && m.set_ospite != null;
     var casaWins = hasScore && +m.set_casa > +m.set_ospite;
-    var d = m.data ? new Date(m.data + 'T00:00:00') : null;
-    var when = d ? GIORNI_BREVI[d.getDay()] + ' ' + d.getDate() + ' ' + MESI_BREVI[d.getMonth()] + (m.ora ? ' · ' + esc(m.ora) : '') : 'Data da definire';
-    return '<li class="gp-row' + (vv ? ' gp-row--vv' : '') + '">' +
-      '<span class="gp-when">' + when + '</span>' +
+    var cal = '';
+    if (vv && !hasScore && /^\d{4}-\d{2}-\d{2}$/.test(m.data || '')) {
+      var link = gcalUrl({ data: m.data, ora: m.ora, squadra_casa: c.s.nome, squadra_ospite: o.s.nome, palazzetto: m.palazzetto, categoria: categoria });
+      cal = '<a class="gp-cal" href="' + esc(link) + '" target="_blank" rel="noopener noreferrer" aria-label="' + esc('Aggiungi a Google Calendar: ' + c.s.nome + ' - ' + o.s.nome) + '">' + CAL_ICON + '<span>Aggiungi</span></a>';
+    }
+    return '<li class="gp-row' + (vv ? ' gp-row--vv' : '') + (isNext ? ' gp-row--next' : '') + '">' +
+      '<span class="gp-when">' + (isNext ? '<b class="gp-next-tag">Prossima</b>' : '') + esc(dataBreve(m.data, m.ora)) + '</span>' +
       '<span class="gp-team gp-team--casa' + (casaWins ? ' is-win' : '') + (c.s.home ? ' gp-team--vv' : '') + '">' + c.html + '</span>' +
       '<span class="gp-score">' + (hasScore ? esc(m.set_casa) + ' – ' + esc(m.set_ospite) : 'vs') + '</span>' +
       '<span class="gp-team gp-team--ospite' + (hasScore && !casaWins ? ' is-win' : '') + (o.s.home ? ' gp-team--vv' : '') + '">' + o.html + '</span>' +
-      (m.palazzetto ? '<span class="gp-venue">' + PIN_ICON + '<span>' + esc(m.palazzetto) + '</span></span>' : '') +
+      (m.palazzetto || cal ? '<span class="gp-venue">' + (m.palazzetto ? PIN_ICON + '<span class="gp-venue-text">' + esc(m.palazzetto) + '</span>' : '') + cal + '</span>' : '') +
     '</li>';
   }
 
@@ -229,9 +241,18 @@
     var wrap = panel.querySelector('[data-role="girone-wrap"]');
     if (!wrap) return;
     var partite = (girone.partite || []).filter(function (m) { return m.squadra_casa && m.squadra_ospite; });
-    if (!partite.length) { wrap.classList.add('is-hidden'); wrap.innerHTML = ''; return; }
+    if (!partite.length) { wrap.classList.add('is-hidden'); wrap.innerHTML = ''; panel.classList.remove('has-girone'); return; }
 
     var ordina = function (a, b) { return (a.data || '').localeCompare(b.data || '') || (a.ora || '').localeCompare(b.ora || ''); };
+    var oggi = new Date().toISOString().slice(0, 10);
+    var squadre = girone.squadre;
+    var isVVm = function (m) {
+      var c = Girone.squadraById(squadre, m.squadra_casa), o = Girone.squadraById(squadre, m.squadra_ospite);
+      return !!(c.home || o.home);
+    };
+    /* La prossima partita della Victor: la prima senza risultato da oggi in poi */
+    var prossima = partite.filter(function (m) { return isVVm(m) && m.set_casa == null && (m.data || '') >= oggi; }).sort(ordina)[0] || null;
+
     var giornate = [], perG = {};
     partite.slice().sort(ordina).forEach(function (m) {
       var k = m.giornata || 0;
@@ -240,28 +261,24 @@
     });
     giornate.sort(function (a, b) { return a - b; });
 
-    var sp = sponsorGirone();
-    var corpo = giornate.map(function (k) {
-      var lista = perG[k].sort(ordina);
-      var gioca = {};
-      lista.forEach(function (m) { gioca[m.squadra_casa] = gioca[m.squadra_ospite] = true; });
-      var riposa = girone.squadre.filter(function (s) { return !gioca[s.id]; }).map(function (s) { return s.nome; });
-      return '<section class="gp-giornata">' +
-        '<h3 class="gp-giornata-title">' + (k ? k + 'ª giornata' : 'Partite') + '</h3>' +
-        '<ul class="gp-list">' + lista.map(function (m) { return gironePartitaRow(m, girone.squadre); }).join('') + '</ul>' +
-        (k && riposa.length ? '<p class="gp-riposa">Riposa: ' + esc(riposa.join(', ')) + '</p>' : '') +
-      '</section>';
-    }).join('');
-
-    var apertoPrima = wrap.querySelector('details') && wrap.querySelector('details').open;
-    wrap.innerHTML = '<details class="cal-girone"' + (apertoPrima ? ' open' : '') + '>' +
-      '<summary class="cal-girone-sum"><span class="cal-girone-sum-text">Tutte le partite del girone' +
-        (girone.girone ? ' ' + esc(girone.girone) : '') + '<small>' + partite.length + ' partite · ' + giornate.length + ' giornate</small></span>' +
-        sponsorBadgeHtml(sp, 'cal-girone-spon', false) +
-        '<span class="cal-girone-chev" aria-hidden="true"></span></summary>' +
-      '<div class="cal-girone-body">' + corpo + (sp ? sponsorBadgeHtml(sp, 'cal-girone-spon cal-girone-spon--foot', true) : '') + '</div>' +
-    '</details>';
+    wrap.innerHTML = giornate.map(function (k) {
+        var lista = perG[k].sort(ordina);
+        var gioca = {};
+        lista.forEach(function (m) { gioca[m.squadra_casa] = gioca[m.squadra_ospite] = true; });
+        var riposa = squadre.filter(function (s) { return !gioca[s.id]; }).map(function (s) { return s.nome; });
+        var primo = lista[0].data, ultimo = lista[lista.length - 1].data;
+        var d1 = primo ? new Date(primo + 'T00:00:00') : null, d2 = ultimo ? new Date(ultimo + 'T00:00:00') : null;
+        var range = d1 && d2 ? (d1.getTime() === d2.getTime() ? d1.getDate() + ' ' + MESI_BREVI[d1.getMonth()]
+          : d1.getMonth() === d2.getMonth() ? d1.getDate() + '–' + d2.getDate() + ' ' + MESI_BREVI[d1.getMonth()]
+          : d1.getDate() + ' ' + MESI_BREVI[d1.getMonth()] + ' – ' + d2.getDate() + ' ' + MESI_BREVI[d2.getMonth()]) : '';
+        return '<section class="gp-giornata">' +
+          '<div class="gp-giornata-head"><h3 class="gp-giornata-title">' + (k ? k + 'ª giornata' : 'Partite') + '</h3>' + (range ? '<span class="gp-giornata-range">' + esc(range) + '</span>' : '') + '</div>' +
+          '<ul class="gp-list">' + lista.map(function (m) { return gironePartitaRow(m, squadre, m === prossima, girone.categoria); }).join('') + '</ul>' +
+          (k && riposa.length ? '<p class="gp-riposa">Riposa: ' + esc(riposa.join(', ')) + '</p>' : '') +
+        '</section>';
+      }).join('');
     wrap.classList.remove('is-hidden');
+    panel.classList.add('has-girone');
   }
 
   function renderGirone(girone) {
@@ -450,7 +467,38 @@
         downloadIcs(future, 'victor-volley-' + s + (scelta ? '-' + slug(scelta) : '') + '.ics');
       };
     });
+    renderSticky();
   }
+
+  /* ---- Barra fissa: prossima partita della categoria + sponsor (sempre visibili mentre si scorre) ---- */
+  function renderSticky() {
+    var bar = document.getElementById('calSticky');
+    if (!bar) return;
+    var next = allPartite
+      .filter(function (p) { return inSeason(p, activeSeason.id) && slug(p.categoria) === activeCat && !isPast(p) && hasValidData(p); })
+      .sort(function (a, b) { return a.data === b.data ? (a.ora || '').localeCompare(b.ora || '') : a.data.localeCompare(b.data); })[0];
+    var nextHtml = next
+      ? '<button type="button" class="cal-next" data-role="next-go" aria-label="Vai alla prossima partita">' +
+          '<span class="cal-next-lbl">Prossima partita</span>' +
+          '<span class="cal-next-main"><span class="cal-next-when">' + esc(dataBreve(next.data, next.ora)) + '</span>' +
+          '<span class="cal-next-teams">' + esc(next.squadra_casa) + ' – ' + esc(next.squadra_ospite) + '</span></span>' +
+        '</button>'
+      : '<span class="cal-next cal-next--none"><span class="cal-next-lbl">Prossima partita</span><span class="cal-next-main"><span class="cal-next-teams">Calendario in arrivo</span></span></span>';
+    var spon = sponsorTileHtml(sponsorGirone());
+    bar.innerHTML = '<div class="container cal-sticky-in">' + nextHtml + spon + '</div>';
+    bar.classList.toggle('is-empty', !next && !spon);
+  }
+  onCatChange = renderSticky;
+
+  document.getElementById('calSticky').addEventListener('click', function (e) {
+    if (!e.target.closest('[data-role="next-go"]')) return;
+    var panel = document.querySelector('.cal-cat-panel:not(.is-hidden)');
+    var row = panel && (panel.querySelector('.gp-row--next') || panel.querySelector('.fixture-row--next'));
+    if (!row) return;
+    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    row.classList.add('is-flash');
+    setTimeout(function () { row.classList.remove('is-flash'); }, 1800);
+  });
 
   /* Cambio squadra nel filtro */
   var panelsEl = document.getElementById('calCatPanels');
