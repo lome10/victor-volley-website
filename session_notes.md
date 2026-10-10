@@ -338,3 +338,7 @@ Modello Excel del dirigente analizzato; scelte dell'utente: importo libero (una 
 - Rimossa da `budgetSeasons.taglieEscluse` la chiave residua «Under 13 Femminile» (F maiuscola).
 - Promemoria: dopo ogni modifica a JS/CSS lanciare `node scripts/stamp-versions.js`, altrimenti i `?v=` in HTML non cambiano e il browser serve il file vecchio.
 - Ancora aperti: voci «chiavi palestre» segnate pagate (servono Preventivato/Pagato/Stato), partite del calendario non toccate dalla rinomina categoria.
+
+### 2026-10-10 — Chiuso: voci «chiavi palestre»
+- L'utente ha chiesto di darle per fatte: la voce «Aperti» sulle «chiavi palestre» (servivano Preventivato/Pagato/Stato delle sottospese) è chiusa. Non è stato toccato nessun dato nel Budget.
+- Prossimo lavoro: calendario Under 19, che l'utente fornirà. Resta aperto solo: partite del calendario non toccate dalla rinomina categoria.
