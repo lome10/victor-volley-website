@@ -328,3 +328,7 @@ Modello Excel del dirigente analizzato; scelte dell'utente: importo libero (una 
 
 ### 2026-10-09 — Chiuso: email di Eduardo Lupo
 - L'utente ha già cambiato l'email di Eduardo Lupo (atleta) da sé: tutto ok. Non serve più la funzione «Cambia email» né il giro scollega/ricollega; la voce «Aperti» sopra sul cambio email è chiusa (la funzione server resta un'idea da riprendere solo se capiterà di nuovo).
+
+### 2026-10-10 — Taglie: «Dirigenti» e «Cosa esportare» si azzeravano
+- Causa 1: la riga Dirigenti di «Voci per categoria» salvava su `budgetSeasons.taglieEscluse` con la chiave `__dirigenti__`; Firestore riserva i nomi `__x__`, quindi il salvataggio falliva e la spunta tornava com'era. Ora `_chiaveEscl()` in `js/admin/atleti.js` salva sotto `Dirigenti` (in memoria resta `DIR_GRUPPO`).
+- Causa 2: la matrice «Cosa esportare» (`_expEscl`) stava solo in memoria e si azzerava a ogni ricarica. Ora è in `localStorage` (`vv_taglie_exp_escl`), per browser. Non provato nel browser.

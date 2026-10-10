@@ -616,9 +616,11 @@
 
   /* Voci non previste per una categoria (es. il giubbotto solo alle categorie maggiori):
      stagione.taglieEscluse = { categoria: [voce, …] }. Nella tabella la cella diventa «n/d» e non conta nel riepilogo. */
+  /* Firestore riserva i nomi di campo del tipo «__x__»: i dirigenti si salvano sotto «Dirigenti». */
+  function _chiaveEscl(categoria) { return categoria === DIR_GRUPPO ? 'Dirigenti' : categoria; }
   function _esclusa(categoria, voce) {
     var s = _stagioneBudget();
-    var m = s && s.taglieEscluse && categoria ? s.taglieEscluse[categoria] : null;
+    var m = s && s.taglieEscluse && categoria ? s.taglieEscluse[_chiaveEscl(categoria)] : null;
     return !!(m && m.indexOf(voce) !== -1);
   }
 
@@ -640,12 +642,18 @@
   /* Pannello «Cosa esportare»: matrice categoria × voce per i file CSV / Excel / PDF della vista Taglie.
      Si memorizza ciò che è ESCLUSO ({ chiaveGruppo: [voci] }), così una voce o una categoria nuova entra da sola.
      Si somma a ciò che è mostrato (ricerca, categoria scelta); i dirigenti compaiono solo con «Tutte». */
-  var _expEscl = {}, _expAperto = false;
+  var _expEscl = (function () {
+    try { var v = JSON.parse(localStorage.getItem('vv_taglie_exp_escl') || '{}'); return v && typeof v === 'object' && !Array.isArray(v) ? v : {}; } catch (e) { return {}; }
+  })(), _expAperto = false;
+  function _salvaExpEscl() {
+    try { localStorage.setItem('vv_taglie_exp_escl', JSON.stringify(_expEscl)); } catch (e) { /* senza storage vale finché la pagina è aperta */ }
+  }
   function _expOff(cat, voce) { return (_expEscl[cat] || []).indexOf(voce) !== -1; }
   function _expSet(cat, voce, on) {
     var a = _expEscl[cat] = _expEscl[cat] || [], i = a.indexOf(voce);
     if (on && i !== -1) a.splice(i, 1);
     else if (!on && i === -1) a.push(voce);
+    _salvaExpEscl();
   }
   /* Chiave del gruppo di una persona (categoria, '__none__' o dirigenti) */
   function _chiaveGruppo(a) { return a.dirigente ? DIR_GRUPPO : (a.categoria || '__none__'); }
@@ -929,7 +937,7 @@
     if (cb) {
       var st = _stagioneBudget();
       if (!st) return;
-      var cat = cb.dataset.cat, voce = cb.dataset.voce;
+      var cat = _chiaveEscl(cb.dataset.cat), voce = cb.dataset.voce;
       var prima = st.taglieEscluse || {};
       var dopo = {};
       Object.keys(prima).forEach(function (k) { dopo[k] = prima[k].slice(); });
