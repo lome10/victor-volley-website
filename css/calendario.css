@@ -275,3 +275,79 @@
 .fixture-row-venue-text { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .fixture-ics { margin-left: auto; flex-shrink: 0; min-height: 44px; padding: 0 12px; font-size: 12px; }
 .fixture-row-venue:has(.fixture-ics) { padding-top: 2px; }
+
+/* ---- Tutte le partite del girone (tendina sotto le card della Victor) ---- */
+.cal-girone-wrap { padding: 4px 2px 8px; }
+.cal-girone-wrap.is-hidden { display: none; }
+.cal-girone {
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; overflow: hidden;
+}
+.cal-girone-sum {
+  display: flex; align-items: center; gap: 12px 16px; flex-wrap: wrap; min-height: 56px; padding: 10px 18px;
+  cursor: pointer; list-style: none; color: #fff;
+}
+.cal-girone-sum::-webkit-details-marker { display: none; }
+.cal-girone-sum:focus-visible { outline: 3px solid var(--c-azzurro); outline-offset: -3px; }
+.cal-girone-sum-text { display: flex; flex-direction: column; gap: 2px; font: 800 15px var(--font-heading); }
+.cal-girone-sum-text small { font: 500 12px var(--font-body); color: rgba(255,255,255,0.65); }
+.cal-girone-chev {
+  width: 9px; height: 9px; margin-left: 4px; flex-shrink: 0;
+  border-right: 2px solid rgba(255,255,255,0.7); border-bottom: 2px solid rgba(255,255,255,0.7);
+  transform: rotate(45deg); transition: transform 0.2s ease;
+}
+.cal-girone[open] .cal-girone-chev { transform: rotate(-135deg); }
+.cal-girone-sum:hover { background: rgba(255,255,255,0.04); }
+
+/* Sponsor del blocco: etichetta + logo su fondo chiaro (i loghi sono pensati per fondo bianco) */
+.cal-girone-spon { display: inline-flex; align-items: center; gap: 10px; margin-left: auto; }
+.cal-girone-spon-lbl { font: 700 10px var(--sport-font-display); letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.6); }
+.cal-girone-spon-logo { height: 48px; width: auto; max-width: 150px; object-fit: contain; background: rgba(255,255,255,0.95); border-radius: 8px; padding: 3px 6px; }
+.cal-girone-spon-link { display: inline-flex; border-radius: 8px; }
+.cal-girone-spon-link:focus-visible { outline: 3px solid var(--c-azzurro); outline-offset: 2px; }
+.cal-girone-spon--foot { display: flex; justify-content: flex-end; margin: 4px 0 0; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.08); }
+
+.cal-girone-body { padding: 4px 18px 18px; border-top: 1px solid rgba(255,255,255,0.08); }
+.gp-giornata { padding-top: 14px; }
+.gp-giornata-title { margin: 0 0 8px; font: 700 11px var(--sport-font-display); letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.6); }
+.gp-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.gp-row {
+  display: grid; grid-template-columns: 104px minmax(0, 1fr) 48px minmax(0, 1fr); align-items: center; gap: 4px 10px;
+  padding: 9px 12px; border-radius: 10px; background: rgba(255,255,255,0.025); color: rgba(255,255,255,0.72); font-size: 13px;
+}
+.gp-row--vv { background: rgba(0,140,253,0.1); color: #fff; }
+.gp-when { font-size: 12px; color: rgba(255,255,255,0.62); white-space: nowrap; }
+.gp-row--vv .gp-when { color: rgba(255,255,255,0.8); }
+.gp-team { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.gp-team--casa { flex-direction: row-reverse; text-align: right; }
+.gp-team-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.gp-team.is-win .gp-team-name { font-weight: 800; color: #fff; }
+.gp-team--vv .gp-team-name { color: var(--sport-azzurro-dim); font-weight: 800; }
+.gp-score { text-align: center; font: 800 13px var(--sport-font-display); color: rgba(255,255,255,0.6); }
+.gp-venue { grid-column: 2 / -1; display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 11.5px; color: rgba(255,255,255,0.55); }
+.gp-venue span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gp-riposa { margin: 8px 12px 0; font-size: 12px; color: rgba(255,255,255,0.55); }
+
+@media (max-width: 600px) {
+  .cal-girone-sum { padding: 10px 14px; }
+  .cal-girone-spon { margin-left: 0; width: 100%; order: 3; }
+  .cal-girone-chev { margin-left: auto; }
+  .cal-girone-body { padding: 4px 12px 14px; }
+  .gp-row { grid-template-columns: minmax(0, 1fr) 40px minmax(0, 1fr); padding: 10px; }
+  .gp-when, .gp-venue { grid-column: 1 / -1; }
+}
+
+/* Le colonne della griglia possono restringersi sotto la larghezza dei contenuti (palazzetto lungo + «Aggiungi al calendario»):
+   senza, su telefono la pagina scorreva in orizzontale. */
+.cal-cols > .cal-col-left, .cal-cols > .cal-col-right { min-width: 0; }
+@media (max-width: 900px) {
+  .cal-cols--split { grid-template-columns: minmax(0, 1fr); }
+  .fixture-row-venue { flex-wrap: wrap; }
+}
+@media (max-width: 600px) {
+  .cal-team-filter { flex-wrap: wrap; width: 100%; max-width: 100%; }
+  .cal-team-filter select { flex: 1 1 200px; min-width: 0; width: 100%; }
+}
+@media (max-width: 600px) {
+  .gp-team .stand-logo, .gp-team .stand-logo-init { display: none; }
+  .gp-team--casa { justify-content: flex-start; }
+}

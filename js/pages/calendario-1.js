@@ -124,6 +124,7 @@
                 '<button type="button" class="cal-ics-all" data-role="ics-all">' + CAL_ICON + ' Aggiungi tutte al calendario</button>' +
               '</div>' +
               '<div class="fixture-list" data-role="fixtures"></div>' +
+              '<div class="cal-girone-wrap is-hidden" data-role="girone-wrap"></div>' +
             '</div>' +
           '</div>' +
           '<div class="cal-col-right is-hidden" data-role="classifica-wrap">' +
@@ -180,6 +181,89 @@
     }).catch(function (e) { console.warn('[calendario] classifica non disponibile:', e); });
   }
 
+  /* ---- Tutte le partite del girone (a tendina, sotto le card della Victor) ----
+     Legge le partite del girone (siteData/girone), non quelle del calendario: ci sono anche
+     le partite tra le altre squadre. Lo sponsor del blocco si cerca per nome tra gli sponsor del sito. */
+  var SPONSOR_GIRONE = 'Puglia in food';
+  var MESI_BREVI = ['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
+  var GIORNI_BREVI = ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
+
+  function sponsorGirone() {
+    var key = VV.teamKey(SPONSOR_GIRONE);
+    return VV.getSponsors().filter(function (s) { return VV.teamKey(s.nome) === key && s.logo; })[0] || null;
+  }
+
+  function sponsorBadgeHtml(sp, cls, conLink) {
+    if (!sp) return '';
+    var img = '<img loading="lazy" decoding="async" src="' + esc(VV.imgUrl(sp.logo, 160)) + '" alt="' + esc(sp.nome) + '" class="cal-girone-spon-logo">';
+    var url = conLink && /^https?:\/\//.test(sp.url || '') ? sp.url : '';
+    return '<span class="' + cls + '"><span class="cal-girone-spon-lbl">Presentato da</span>' +
+      (url ? '<a href="' + esc(url) + '" target="_blank" rel="noopener sponsored" class="cal-girone-spon-link">' + img + '</a>' : img) + '</span>';
+  }
+
+  function gironeTeam(squadre, id) {
+    var s = Girone.squadraById(squadre, id);
+    var logo = s.logo
+      ? '<img loading="lazy" decoding="async" src="' + esc(s.logo) + '" class="stand-logo" alt="">'
+      : '<span class="stand-logo-init">' + esc((s.nome || '?').charAt(0).toUpperCase()) + '</span>';
+    return { s: s, html: logo + '<span class="gp-team-name">' + esc(s.nome) + '</span>' };
+  }
+
+  function gironePartitaRow(m, squadre) {
+    var c = gironeTeam(squadre, m.squadra_casa), o = gironeTeam(squadre, m.squadra_ospite);
+    var vv = c.s.home || o.s.home;
+    var hasScore = m.set_casa != null && m.set_ospite != null;
+    var casaWins = hasScore && +m.set_casa > +m.set_ospite;
+    var d = m.data ? new Date(m.data + 'T00:00:00') : null;
+    var when = d ? GIORNI_BREVI[d.getDay()] + ' ' + d.getDate() + ' ' + MESI_BREVI[d.getMonth()] + (m.ora ? ' · ' + esc(m.ora) : '') : 'Data da definire';
+    return '<li class="gp-row' + (vv ? ' gp-row--vv' : '') + '">' +
+      '<span class="gp-when">' + when + '</span>' +
+      '<span class="gp-team gp-team--casa' + (casaWins ? ' is-win' : '') + (c.s.home ? ' gp-team--vv' : '') + '">' + c.html + '</span>' +
+      '<span class="gp-score">' + (hasScore ? esc(m.set_casa) + ' – ' + esc(m.set_ospite) : 'vs') + '</span>' +
+      '<span class="gp-team gp-team--ospite' + (hasScore && !casaWins ? ' is-win' : '') + (o.s.home ? ' gp-team--vv' : '') + '">' + o.html + '</span>' +
+      (m.palazzetto ? '<span class="gp-venue">' + PIN_ICON + '<span>' + esc(m.palazzetto) + '</span></span>' : '') +
+    '</li>';
+  }
+
+  function renderGironePartite(girone, panel) {
+    var wrap = panel.querySelector('[data-role="girone-wrap"]');
+    if (!wrap) return;
+    var partite = (girone.partite || []).filter(function (m) { return m.squadra_casa && m.squadra_ospite; });
+    if (!partite.length) { wrap.classList.add('is-hidden'); wrap.innerHTML = ''; return; }
+
+    var ordina = function (a, b) { return (a.data || '').localeCompare(b.data || '') || (a.ora || '').localeCompare(b.ora || ''); };
+    var giornate = [], perG = {};
+    partite.slice().sort(ordina).forEach(function (m) {
+      var k = m.giornata || 0;
+      if (!perG[k]) { perG[k] = []; giornate.push(k); }
+      perG[k].push(m);
+    });
+    giornate.sort(function (a, b) { return a - b; });
+
+    var sp = sponsorGirone();
+    var corpo = giornate.map(function (k) {
+      var lista = perG[k].sort(ordina);
+      var gioca = {};
+      lista.forEach(function (m) { gioca[m.squadra_casa] = gioca[m.squadra_ospite] = true; });
+      var riposa = girone.squadre.filter(function (s) { return !gioca[s.id]; }).map(function (s) { return s.nome; });
+      return '<section class="gp-giornata">' +
+        '<h3 class="gp-giornata-title">' + (k ? k + 'ª giornata' : 'Partite') + '</h3>' +
+        '<ul class="gp-list">' + lista.map(function (m) { return gironePartitaRow(m, girone.squadre); }).join('') + '</ul>' +
+        (k && riposa.length ? '<p class="gp-riposa">Riposa: ' + esc(riposa.join(', ')) + '</p>' : '') +
+      '</section>';
+    }).join('');
+
+    var apertoPrima = wrap.querySelector('details') && wrap.querySelector('details').open;
+    wrap.innerHTML = '<details class="cal-girone"' + (apertoPrima ? ' open' : '') + '>' +
+      '<summary class="cal-girone-sum"><span class="cal-girone-sum-text">Tutte le partite del girone' +
+        (girone.girone ? ' ' + esc(girone.girone) : '') + '<small>' + partite.length + ' partite · ' + giornate.length + ' giornate</small></span>' +
+        sponsorBadgeHtml(sp, 'cal-girone-spon', false) +
+        '<span class="cal-girone-chev" aria-hidden="true"></span></summary>' +
+      '<div class="cal-girone-body">' + corpo + (sp ? sponsorBadgeHtml(sp, 'cal-girone-spon cal-girone-spon--foot', true) : '') + '</div>' +
+    '</details>';
+    wrap.classList.remove('is-hidden');
+  }
+
   function renderGirone(girone) {
     if (!girone || !girone.categoria || girone.squadre.length < 2) return;
 
@@ -214,6 +298,7 @@
 
     block.classList.remove('is-hidden');
     panel.querySelector('[data-role="cols"]').classList.add('cal-cols--split');
+    renderGironePartite(girone, panel);
   }
 
   /* ================================================
@@ -235,7 +320,7 @@
     return cats;
   }
 
-  DB.loadOrError(['seasons', 'partite'], 'calCatPanels', function () {
+  DB.loadOrError(['seasons', 'partite', 'sponsors'], 'calCatPanels', function () {
   var seasons      = VV.getSeasons();
   var activeSeason = VV.getCurrentSeason() || seasons[0];
   if (!activeSeason) { document.getElementById('calCatPanels').innerHTML = '<div class="container">' + VV.emptyStateHtml('Calendario in arrivo', 'Le date saranno pubblicate appena la federazione le comunica.') + '</div>'; return; }
