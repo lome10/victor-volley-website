@@ -1474,7 +1474,7 @@
   function _propagaRinomina(da, a) {
     var fdb = window.db;
     if (!fdb) return;
-    ['atleti', 'allenamenti', 'presenze', 'comunicazioni'].forEach(function (col) {
+    ['atleti', 'allenamenti', 'presenze', 'comunicazioni', 'partite'].forEach(function (col) {
       fdb.collection(col).where('categoria', '==', da).get().then(function (snap) {
         var docs = snap.docs, p = Promise.resolve();
         for (var i = 0; i < docs.length; i += 400) {
