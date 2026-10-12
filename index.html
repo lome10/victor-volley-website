@@ -70,7 +70,7 @@
   <link rel="preconnect" href="https://i.ytimg.com">
   <link rel="preconnect" href="https://res.cloudinary.com">
   <link rel="stylesheet" href="/css/fonts.css?v=c0ba2518">
-  <link rel="stylesheet" href="css/style.css?v=804f4a22">
+  <link rel="stylesheet" href="css/style.css?v=1ab6a067">
 </head>
 <body>
 
@@ -191,7 +191,12 @@
           <h2 id="partite-title">Prossime partite</h2>
           <p>Il calendario aggiornato delle nostre squadre</p>
         </div>
-        <!-- Prima Divisione: featured card + classifica girone -->
+        <!-- Toggle categoria: stessa struttura (card + classifica) per Prima Divisione e Under 19 -->
+        <div class="gir-toggle" id="gironeToggle" role="tablist" aria-label="Categoria">
+          <button type="button" class="gir-toggle-btn is-active" role="tab" aria-selected="true" data-cat="Prima Divisione">Prima Divisione</button>
+          <button type="button" class="gir-toggle-btn" role="tab" aria-selected="false" data-cat="Under 19">Under 19</button>
+        </div>
+        <!-- Featured card + classifica girone della categoria scelta -->
         <div class="girone-row">
           <div id="gironeFeatured" class="girone-featured"></div>
           <div id="gironeClassifica" class="girone-classifica"></div>
@@ -306,8 +311,8 @@
   <script src="js/animations.js?v=71d13765"></script>
   <script src="js/main.js?v=cddbff55"></script>
   <script src="js/config.js?v=24603e80"></script>
-  <script src="js/partite-live.js?v=a3442fc3"></script>
-  <script src="js/girone.js?v=9c37d648"></script>
+  <script src="js/partite-live.js?v=1ef15c6c"></script>
+  <script src="js/girone.js?v=08083e00"></script>
 
   <!-- Sponsor di prova, solo in locale: caricato SOLO su localhost/127.0.0.1 (vedi
        js/dev-sponsor-fixture.js), così in produzione il file non viene nemmeno richiesto. -->

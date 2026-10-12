@@ -234,42 +234,65 @@
     var elCl   = document.getElementById('gironeClassifica');
     if (!elFeat && !elCl) return;
 
-    loadGironi()
-      .then(function (gironi) {
-        /* La home mostra la Prima Squadra: girone di Prima Divisione. */
-        var girone = gironi.filter(function (g) { return g.categoria === 'Prima Divisione'; })[0];
+    /* La home ha un toggle di categoria (Prima Divisione / Under 19): stessa
+       struttura, cambia girone e prossima partita. */
+    var cat = 'Prima Divisione', gironi = null, dbOk = false, tickOn = false;
+    var elTog = document.getElementById('gironeToggle');
 
-        /* Homepage — classifica gestita a mano via girone.json (il Calendario
-           registra solo le partite della Prima Squadra, non l'intero girone,
-           quindi da lì non è calcolabile una classifica vera). */
-        if (elCl && girone && girone.squadre.length > 1) {
+    function paint() {
+      var girone = gironi && gironi.filter(function (g) { return g.categoria === cat; })[0];
+
+      /* Classifica calcolata dalle partite del girone (girone.json / siteData/girone). */
+      if (elCl && gironi) {
+        if (girone && girone.squadre.length > 1) {
           var homeSquadra = girone.squadre.filter(function (s) { return s.home; })[0];
           elCl.innerHTML = renderClassifica(calcolaClassifica(girone), girone.squadre, girone, homeSquadra ? homeSquadra.id : null);
+        } else {
+          elCl.innerHTML = '';
         }
+      }
 
-        /* La card "Prossima partita" invece legge dal calendario reale
-           (stagione corrente + Prima Divisione), non più da girone.json. */
-        if (elFeat && window.DB && typeof DB.load === 'function') {
-          DB.load(['partite', 'seasons'], function () {
-            var season   = VV.getCurrentSeason();
-            var todayStr = new Date().toISOString().slice(0, 10);
-            var next = VV.getPartite().filter(function (p) {
-              return p.categoria === 'Prima Divisione'
-                && (!season || p.stagione === season.id)
-                && p.stato !== 'conclusa'
-                && p.data >= todayStr;
-            }).sort(function (a, b) { return a.data > b.data ? 1 : -1; })[0];
+      /* La card "Prossima partita" legge dal calendario reale
+         (stagione corrente + categoria scelta), non da girone.json. */
+      if (elFeat && dbOk) {
+        var season   = VV.getCurrentSeason();
+        var todayStr = new Date().toISOString().slice(0, 10);
+        var next = VV.getPartite().filter(function (p) {
+          return p.categoria === cat
+            && (!season || p.stagione === season.id)
+            && p.stato !== 'conclusa'
+            && p.data >= todayStr;
+        }).sort(function (a, b) { return a.data > b.data ? 1 : -1; })[0];
 
-            elFeat.innerHTML = next
-              ? renderFeatured(next)
-              : '<div class="gf-empty">Calendario in arrivo: le date della Prima Divisione saranno pubblicate appena disponibili.</div>';
-            tick();
-            setInterval(tick, 60000);
-          });
-        }
+        elFeat.innerHTML = next
+          ? renderFeatured(next)
+          : '<div class="gf-empty">Calendario in arrivo: le date di ' + esc(cat) + ' saranno pubblicate appena disponibili.</div>';
+        tick();
+        if (!tickOn) { tickOn = true; setInterval(tick, 60000); }
+      }
+    }
 
-      })
+    if (elTog) {
+      elTog.addEventListener('click', function (e) {
+        var btn = e.target.closest('.gir-toggle-btn');
+        if (!btn || btn.getAttribute('data-cat') === cat) return;
+        cat = btn.getAttribute('data-cat');
+        elTog.querySelectorAll('.gir-toggle-btn').forEach(function (b) {
+          var on = b === btn;
+          b.classList.toggle('is-active', on);
+          b.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        paint();
+      });
+    }
+
+    loadGironi()
+      .then(function (g) { gironi = g; paint(); })
       .catch(function (e) { console.warn('[girone] fetch failed:', e); });
+
+    if (elFeat && window.DB && typeof DB.load === 'function') {
+      DB.load(['partite', 'seasons'], function () { dbOk = true; paint(); });
+    }
   }
 
   if (document.readyState === 'loading') {
