@@ -72,6 +72,15 @@
   /* Card "prossima partita" per una partita reale del calendario (collection
      "partite"): squadra_casa/ospite sono nomi liberi, non id di un elenco
      squadre, e i loghi sono già sul match (logo_casa/logo_ospite). */
+  /* Un lato della card: come nel referto, la squadra di casa sta a sinistra e
+     la ospite a destra (quindi in trasferta la Victor va a destra). */
+  function gfTeam(t, isVV, right) {
+    return '<div class="gf-team' + (right ? ' gf-team--opp' : '') + '">' +
+      '<div class="gf-logo">' + logoEl(t, 'gf-logo-img') + '</div>' +
+      '<span class="gf-tname' + (isVV ? ' gf-tname--vv' : '') + '">' + esc(t.nome) + '</span>' +
+    '</div>';
+  }
+
   function renderFeatured(match) {
     var isHome = _isVV(match.squadra_casa);
     var vv  = { nome: isHome ? match.squadra_casa : match.squadra_ospite, logo: isHome ? match.logo_casa : match.logo_ospite };
@@ -95,15 +104,9 @@
         '<span class="gf-date">' + esc(formatData(match.data, match.ora)) + '</span>' +
       '</div>' +
       '<div class="gf-body">' +
-        '<div class="gf-team">' +
-          '<div class="gf-logo">' + logoEl(vv, 'gf-logo-img') + '</div>' +
-          '<span class="gf-tname gf-tname--vv">' + esc(vv.nome) + '</span>' +
-        '</div>' +
+        gfTeam(isHome ? vv : avv, isHome, false) +
         '<div class="gf-vs">VS</div>' +
-        '<div class="gf-team gf-team--opp">' +
-          '<div class="gf-logo">' + logoEl(avv, 'gf-logo-img') + '</div>' +
-          '<span class="gf-tname">' + esc(avv.nome) + '</span>' +
-        '</div>' +
+        gfTeam(isHome ? avv : vv, !isHome, true) +
       '</div>' +
       (match.palazzetto
         ? '<div class="gf-venue">' + pin + esc(match.palazzetto) + '</div>'
