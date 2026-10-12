@@ -1827,6 +1827,11 @@ main, footer.site-footer {
 .gc-stat { text-align: center; width: 28px; color: #777; }
 .gc-pts  { text-align: center; width: 36px; font-weight: 700; color: #111; }
 
+/* Telefono: solo i punti (V e P nascoste), così i nomi hanno più spazio */
+@media (max-width: 600px) {
+  .gc-table .gc-stat { display: none; }
+}
+
 .gc-logo {
   width: 20px; height: 20px;
   object-fit: contain; border-radius: 3px; flex-shrink: 0;
