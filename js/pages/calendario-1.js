@@ -204,6 +204,13 @@
       (url ? '<a href="' + esc(url) + '" target="_blank" rel="noopener sponsored" class="cal-spon-tile cal-spon-link">' + img + '</a>' : '<span class="cal-spon-tile">' + img + '</span>') + '</span>';
   }
 
+  /* Barra fissa: giorno e mese per esteso («Domenica 1 Novembre · 11:00») */
+  function dataEstesa(dateStr, ora) {
+    var d = dateStr ? new Date(dateStr + 'T00:00:00') : null;
+    if (!d || isNaN(d)) return 'Data da definire';
+    return GIORNI[d.getDay()] + ' ' + d.getDate() + ' ' + MESI[d.getMonth()] + (ora ? ' · ' + ora : '');
+  }
+
   function dataBreve(dateStr, ora) {
     var d = dateStr ? new Date(dateStr + 'T00:00:00') : null;
     if (!d || isNaN(d)) return 'Data da definire';
@@ -480,7 +487,7 @@
     var nextHtml = next
       ? '<button type="button" class="cal-next" data-role="next-go" aria-label="Vai alla prossima partita">' +
           '<span class="cal-next-lbl">Prossima partita</span>' +
-          '<span class="cal-next-main"><span class="cal-next-when">' + esc(dataBreve(next.data, next.ora)) + '</span>' +
+          '<span class="cal-next-main"><span class="cal-next-when">' + esc(dataEstesa(next.data, next.ora)) + '</span>' +
           '<span class="cal-next-teams">' + esc(next.squadra_casa) + ' – ' + esc(next.squadra_ospite) + '</span></span>' +
         '</button>'
       : '<span class="cal-next cal-next--none"><span class="cal-next-lbl">Prossima partita</span><span class="cal-next-main"><span class="cal-next-teams">Calendario in arrivo</span></span></span>';
