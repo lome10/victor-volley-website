@@ -1614,6 +1614,7 @@ main, footer.site-footer {
 .gf-top {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 28px;
 }
@@ -1638,6 +1639,11 @@ main, footer.site-footer {
   color: rgba(255,255,255,0.45);
   letter-spacing: 0.04em;
   white-space: nowrap;
+}
+
+/* Data per esteso: su telefono va su una riga a sé invece di uscire dalla card */
+@media (max-width: 600px) {
+  .gf-date { flex-basis: 100%; margin-left: 0; white-space: normal; }
 }
 
 /* Body: two teams + VS */
@@ -1786,6 +1792,7 @@ main, footer.site-footer {
 
 .gc-table {
   width: 100%;
+  table-layout: fixed;   /* il nome si accorcia con i puntini invece di allargare la tabella */
   border-collapse: collapse;
   flex: 1;
 }
