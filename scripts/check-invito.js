@@ -22,12 +22,12 @@ function docRef(n, id) {
 }
 function query(n, filtri) {
   return {
-    where: (c, op, v) => query(n, filtri.concat([[c, v]])),
-    get: async () => ({ docs: Object.keys(col(n)).filter((id) => filtri.every(([c, v]) => col(n)[id][c] === v)).map((id) => ({ id, ref: docRef(n, id), data: () => col(n)[id] })) })
+    where: (c, op, v) => query(n, filtri.concat([[c, v, op]])),
+    get: async () => ({ docs: Object.keys(col(n)).filter((id) => filtri.every(([c, v, op]) => (op === 'array-contains' ? (col(n)[id][c] || []).includes(v) : col(n)[id][c] === v))).map((id) => ({ id, ref: docRef(n, id), data: () => col(n)[id] })) })
   };
 }
 const firestore = {
-  collection: (n) => ({ doc: (id) => docRef(n, id), where: (c, op, v) => query(n, [[c, v]]) }),
+  collection: (n) => ({ doc: (id) => docRef(n, id), where: (c, op, v) => query(n, [[c, v, op]]) }),
   batch: () => { const ops = []; return { update: (ref, d) => ops.push(() => ref.update(d)), commit: async () => { for (const o of ops) await o(); } }; },
   runTransaction: async (fn) => fn({ get: (ref) => ref.get(), update: (ref, d) => ref.update(d) })
 };
@@ -145,6 +145,43 @@ async function t(nome, fn) { try { await fn(); n++; } catch (e) { console.error(
     const di_nuovo = await post(imposta, { token: codice2, password: 'Altra-password-2' });
     assert.strictEqual(di_nuovo.code, 404); assert.strictEqual(passwords.gen1, 'La-mia-password-1');
     assert.strictEqual((await post(imposta, { token: codice2, soloVerifica: true })).code, 404);
+  });
+  await t('dopo la password parte l’email di conferma, senza la password dentro', async () => {
+    assert.strictEqual((await invito({})).code, 200); const c = codiceDa();
+    const r = await post(imposta, { token: c, password: 'Password-segreta-9' });
+    assert.strictEqual(r.code, 200);
+    assert.strictEqual(email.to[0].email, 'mamma@example.com');
+    assert.ok(/password scelta/.test(email.subject) && !/imposta-password/.test(email.textContent));
+    assert.ok(/Ciao Anna/.test(email.textContent) && email.textContent.includes('victorvolley.it/atleta') && /Luca Rossi/.test(email.textContent));
+    assert.ok(email.htmlContent.includes('href="https://www.victorvolley.it/atleta"'));
+    assert.ok(!email.textContent.includes('Password-segreta-9') && !email.htmlContent.includes('Password-segreta-9'), 'mai la password nell’email');
+  });
+  await t('con più figli l’email di conferma li nomina tutti e parla al plurale', async () => {
+    col('atleti').f1 = { nome: 'Marta', cognome: 'Verdi', accessUids: ['gp'], accessi: [{ uid: 'gp', email: 'gp@example.com', ruolo: 'genitore', nome: 'Rita' }] };
+    col('atleti').f2 = { nome: 'Carlo', cognome: 'Verdi', accessUids: ['gp'], accessi: [{ uid: 'gp', email: 'gp@example.com', ruolo: 'genitore', nome: 'Rita' }] };
+    col('atleti').f3 = { nome: 'Gigi', cognome: 'Altri', accessUids: ['altro'], accessi: [{ uid: 'altro', email: 'x@example.com', ruolo: 'genitore', nome: 'Z' }] };
+    assert.strictEqual((await post(invia, { atletaUid: 'f1', uid: 'gp' }, auth('tok-dir'))).code, 200);
+    const r = await post(imposta, { token: codiceDa(), password: 'Due-figli-password-1' });
+    assert.strictEqual(r.code, 200);
+    const tx = email.textContent;
+    assert.ok(/Ciao Rita/.test(tx) && tx.includes('dei tuoi figli (Carlo Verdi e Marta Verdi)') && /selettore in alto/.test(tx), tx);
+    assert.ok(!/Gigi/.test(tx), 'non nomina figli di altri');
+    assert.ok(/Carlo Verdi e Marta Verdi/.test(email.htmlContent));
+    const tre = I.componiConferma({ nome: 'Rita', email: 'r@example.com', atletiNomi: ['A B', 'C D', 'E F'] }, 'https://www.victorvolley.it');
+    assert.ok(tre.text.includes('A B, C D e E F'));
+    assert.ok(!/selettore/.test(I.componiConferma({ nome: 'Rita', email: 'r@example.com', atletiNomi: ['A B'] }, 'https://www.victorvolley.it').text), 'un solo figlio: niente selettore');
+  });
+  await t('se l’email di conferma non parte, la password è comunque impostata e l’esito è positivo', async () => {
+    assert.strictEqual((await invito({})).code, 200); const c = codiceDa();
+    brevoOk = false;
+    const r = await post(imposta, { token: c, password: 'Password-senza-email-1' }); brevoOk = true;
+    assert.strictEqual(r.code, 200); assert.strictEqual(passwords.gen1, 'Password-senza-email-1');
+  });
+  await t('senza servizio email la password si imposta lo stesso', async () => {
+    assert.strictEqual((await invito({})).code, 200); const c = codiceDa();
+    const k = process.env.BREVO_API_KEY; delete process.env.BREVO_API_KEY;
+    const r = await post(imposta, { token: c, password: 'Password-senza-brevo-1' }); process.env.BREVO_API_KEY = k;
+    assert.strictEqual(r.code, 200); assert.strictEqual(passwords.gen1, 'Password-senza-brevo-1');
   });
   await t('un secondo tentativo con lo stesso codice lo trova già usato', async () => {
     assert.strictEqual((await invito({})).code, 200); const c = codiceDa();

@@ -40,4 +40,38 @@ function componiInvito(g, link, siteUrl) {
   return { subject, text, html };
 }
 
-module.exports = { nuovoCodice, impronta, codiceValido, linkInvito, componiInvito };
+/** Seconda email, subito dopo che il genitore ha scelto la password: conferma che è andato tutto bene e dice dove
+ *  accedere. Non contiene mai la password. g = { nome (genitore), email, atletiNomi: ['Luca Rossi', …] }: con più figli
+ *  il testo parla al plurale e li nomina tutti; atletaNome (uno solo) resta accettato. */
+function elencoNomi(n) { return n.length < 2 ? (n[0] || '') : n.slice(0, -1).join(', ') + ' e ' + n[n.length - 1]; }
+
+function componiConferma(g, siteUrl) {
+  const area = siteUrl.replace(/\/$/, '') + '/atleta';
+  const areaBreve = area.replace(/^https?:\/\/(www\.)?/, '');
+  const saluto = g.nome ? 'Ciao ' + g.nome + ',' : 'Buongiorno,';
+  const nomi = (Array.isArray(g.atletiNomi) ? g.atletiNomi : (g.atletaNome ? [g.atletaNome] : [])).filter(Boolean);
+  const piu = nomi.length > 1;
+  const per = nomi.length ? (piu ? ' dei tuoi figli (' + elencoNomi(nomi) + ')' : ' di ' + nomi[0]) : '';
+  const passa = piu ? ' Dal selettore in alto puoi passare da un figlio all’altro.' : '';
+  const subject = 'Victor Volley — password scelta, ora puoi entrare nell’Area Atleti';
+  const text = [saluto, '',
+    'hai scelto la password correttamente: il tuo account è pronto.',
+    '', 'Puoi accedere all’area atleti da ' + areaBreve + ' (' + area + ') con questa email (' + g.email + ') e la password che hai appena scelto.',
+    '', 'Lì trovi impegni, allenamenti, avvisi, quote e ricevute' + per + '.' + passa + ' Nella sezione Documenti trovi anche il modulo di iscrizione da scaricare.',
+    '', 'Se non sei stato tu a scegliere la password, scrivici subito a victorvolley@libero.it.',
+    '', 'ASD Victor Volley'].join('\n');
+  const h = E.h;
+  const corpo =
+    '<p style="margin:0 0 14px">' + h(saluto) + '</p>' +
+    '<p style="margin:0 0 14px">hai scelto la password <strong>correttamente</strong>: il tuo account è pronto.</p>' +
+    '<p style="margin:0 0 4px">Ora puoi entrare nell’area atleti:</p>' +
+    E.pulsante('Vai all’Area Atleti', area) +
+    '<p style="margin:14px 0 0;font-size:13px;color:#475569;text-align:center">Indirizzo: <a href="' + h(area) + '" style="color:' + E.AZZURRO + ';font-weight:bold;text-decoration:none">' + h(areaBreve) + '</a></p>' +
+    E.riquadro('Accedi con questa email (<strong>' + h(g.email) + '</strong>) e la password che hai appena scelto. Per sicurezza non te la riscriviamo.') +
+    '<p style="margin:18px 0 0;font-size:14px;line-height:1.55;color:#33475b">Nell’area trovi impegni, allenamenti, avvisi, quote e ricevute' + h(per) + '.' + h(passa) + ' Nella sezione <strong>Documenti</strong> c’è anche il modulo di iscrizione da scaricare.</p>' +
+    '<p style="margin:18px 0 0;font-size:12px;line-height:1.55;color:#475569">Se non sei stato tu a scegliere la password, scrivi subito a <a href="mailto:victorvolley@libero.it" style="color:' + E.AZZURRO + '">victorvolley@libero.it</a>.</p>';
+  const html = E.cornice({ anteprima: 'Tutto fatto: ora puoi accedere all’area atleti con la tua email e la password scelta.', titolo: 'Tutto fatto, puoi entrare', corpo, site: siteUrl });
+  return { subject, text, html };
+}
+
+module.exports = { nuovoCodice, impronta, codiceValido, linkInvito, componiInvito, componiConferma };
