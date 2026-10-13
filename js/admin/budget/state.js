@@ -33,6 +33,7 @@
   B._rateAtleti = [];
   B._tessere = [];
   B._altreEntrate = [];
+  B._supercoppa = [];
   B._entrateSub = 'sponsor';
   B._curAtletaRettaId = null;
   B._vociSpesa = [];

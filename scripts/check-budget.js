@@ -369,12 +369,13 @@ t('Confronto tra stagioni: totali per fonte e per categoria di spesa', () => {
   const dati = { sponsorizzazioni: [{ id: 'a', stato: 'chiuso' }, { id: 'b', stato: 'prospect' }], sponsorIncassato: (s) => (s.id === 'a' ? 500 : 999),
     atletiRette: [{ id: 'r1' }], rate: [{ atletaRettaId: 'r1', importo: 100, pagata: true }, { atletaRettaId: 'r1', importo: 100, pagata: false }, { atletaRettaId: 'altro', importo: 77, pagata: true }],
     tessere: [{ nome: 'Mario', pagata: true }, { nome: '', pagata: true }, { nome: 'Anna', pagata: false }], prezzoTessera: 20,
+    supercoppa: [{ nome: 'Luca', pagata: true }, { nome: 'Sara', pagata: true }, { nome: '', pagata: true }, { nome: 'Gino', pagata: false }], prezzoSupercoppa: 35,
     altre: [{ importo: 300, pagata: true }, { importo: 50, pagata: false }],
     voci: [{ categoriaSpesaId: 'c1', importoSostenuto: 200 }, { categoriaSpesaId: 'c1', importoSostenuto: 50 }, { importoSostenuto: 10 }, { categoriaSpesaId: 'c2', importoSostenuto: 0 }],
     nomeCategoria: (id) => (id === 'c1' ? 'Federazione' : 'Società') };
   const x = B._totaliStagione(dati);
-  assert.deepStrictEqual(x.entrate, { 'Sponsor': 500, 'Rette atleti': 100, 'Tessere': 20, 'Altre entrate': 300 });
-  assert.deepStrictEqual([x.totEntrate, x.totSpese, x.saldo], [920, 260, 660]);
+  assert.deepStrictEqual(x.entrate, { 'Sponsor': 500, 'Rette atleti': 100, 'Tessere': 20, 'Evento Supercoppa Bari': 70, 'Altre entrate': 300 });
+  assert.deepStrictEqual([x.totEntrate, x.totSpese, x.saldo], [990, 260, 730]);
   assert.deepStrictEqual(x.spese, { 'Federazione': 250, 'Senza categoria': 10 });
 });
 

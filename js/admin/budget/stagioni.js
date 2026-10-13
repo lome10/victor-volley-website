@@ -120,6 +120,7 @@
     var idsAtleti = {}; d.atletiRette.forEach(function (a) { idsAtleti[a.id] = true; });
     var rette = d.rate.reduce(function (t, r) { return t + (r.pagata && idsAtleti[r.atletaRettaId] ? (+r.importo || 0) : 0); }, 0);
     var tessere = d.tessere.filter(function (t) { return String(t.nome || '').trim() && t.pagata; }).length * d.prezzoTessera;
+    var supercoppa = (d.supercoppa || []).filter(function (t) { return String(t.nome || '').trim() && t.pagata; }).length * (d.prezzoSupercoppa || 0);
     var altre = d.altre.reduce(function (t, x) { return t + (x.pagata ? (+x.importo || 0) : 0); }, 0);
     var perCat = {}, spese = 0;
     d.voci.forEach(function (v) {
@@ -127,8 +128,8 @@
       var c = v.categoriaSpesaId ? d.nomeCategoria(v.categoriaSpesaId) : 'Senza categoria';
       perCat[c] = (perCat[c] || 0) + s; spese += s;
     });
-    var entrate = sponsor + rette + tessere + altre;
-    return { entrate: { 'Sponsor': sponsor, 'Rette atleti': rette, 'Tessere': tessere, 'Altre entrate': altre }, totEntrate: entrate, spese: perCat, totSpese: spese, saldo: entrate - spese };
+    var entrate = sponsor + rette + tessere + supercoppa + altre;
+    return { entrate: { 'Sponsor': sponsor, 'Rette atleti': rette, 'Tessere': tessere, 'Evento Supercoppa Bari': supercoppa, 'Altre entrate': altre }, totEntrate: entrate, spese: perCat, totSpese: spese, saldo: entrate - spese };
   }
   B._totaliStagione = _totaliStagione;
 
@@ -136,12 +137,12 @@
     var mia = id === B._currentSeasonId;
     var base = {
       sponsorizzazioni: B._sponsorizzazioni.filter(function (s) { return s.seasonId === id; }), sponsorIncassato: B._sponsorIncassato,
-      rate: B._rateAtleti, prezzoTessera: B._calcTessere().prezzo, nomeCategoria: function (cid) { var c = B._categoriaSpesaById(cid); return c ? c.nome : 'Senza categoria'; }
+      rate: B._rateAtleti, prezzoTessera: B._calcTessere().prezzo, prezzoSupercoppa: B._calcSupercoppa ? B._calcSupercoppa().prezzo : 0, nomeCategoria: function (cid) { var c = B._categoriaSpesaById(cid); return c ? c.nome : 'Senza categoria'; }
     };
-    if (mia) return Promise.resolve(Object.assign(base, { atletiRette: B._atletiRette, tessere: B._tessere, altre: B._altreEntrate, voci: B._vociSpesa }));
+    if (mia) return Promise.resolve(Object.assign(base, { atletiRette: B._atletiRette, tessere: B._tessere, supercoppa: B._supercoppa, altre: B._altreEntrate, voci: B._vociSpesa }));
     var q = function (col) { return db.collection(col).where('seasonId', '==', id).get().then(function (s) { return s.docs.map(A.mapDoc); }).catch(function () { return []; }); };
-    return Promise.all([q('atletiRette'), q('tessere'), q('altreEntrate'), q('vociSpesa')]).then(function (r) {
-      return Object.assign(base, { atletiRette: r[0], tessere: r[1], altre: r[2], voci: r[3] });
+    return Promise.all([q('atletiRette'), q('tessere'), q('altreEntrate'), q('vociSpesa'), q('supercoppaBari')]).then(function (r) {
+      return Object.assign(base, { atletiRette: r[0], tessere: r[1], altre: r[2], voci: r[3], supercoppa: r[4] });
     });
   }
 

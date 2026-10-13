@@ -49,6 +49,11 @@
       if (!String(t.nome || '').trim() || t.pagata) return;
       ev.push({ fonte: 'Tessere', nome: 'Tessera n. ' + t.numero, importo: tess.prezzo, scadenza: '' });
     });
+    var superc = B._calcSupercoppa ? B._calcSupercoppa() : { prezzo: 0 };
+    (B._supercoppa || []).forEach(function (t) {
+      if (!String(t.nome || '').trim() || t.pagata) return;
+      ev.push({ fonte: 'Evento Supercoppa Bari', nome: 'Supercoppa Bari, posto ' + t.numero, importo: superc.prezzo, scadenza: '' });
+    });
     (B._altreEntrate || []).forEach(function (v) {
       if (v.pagata) return;
       ev.push({ fonte: 'Altre entrate', nome: v.descrizione || '—', importo: +v.importo || 0, scadenza: v.data || '' });
@@ -152,8 +157,9 @@
     var sponsorPrev = _somma(B._sponsorizzazioni, function (s) { return s.seasonId === B._currentSeasonId && s.stato === 'chiuso' ? (+s.importoConfermato || 0) : 0; });
     var tess = B._calcTessere();
     var altre = B._calcAltreEntrate ? B._calcAltreEntrate() : { previsto: 0 };
-    generali.entrate = sponsorPrev + tess.assegnate * tess.prezzo + altre.previsto;
-    generali.incassato = r.sponsorChiusi + r.tessere + (r.altre || 0);
+    var superc = B._calcSupercoppa ? B._calcSupercoppa() : { previsto: 0 };
+    generali.entrate = sponsorPrev + tess.assegnate * tess.prezzo + superc.previsto + altre.previsto;
+    generali.incassato = r.sponsorChiusi + r.tessere + (r.supercoppa || 0) + (r.altre || 0);
     righe.push(generali);
     righe = righe.filter(function (x) { return x.entrate || x.spese || x.nome === generali.nome; });
     righe.forEach(function (x) { x.margine = x.entrate - x.spese; delete x.ids; });

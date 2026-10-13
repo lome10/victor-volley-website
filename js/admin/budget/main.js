@@ -12,7 +12,7 @@
       _stagioneCorrenteNome = A.stagioneCorrenteNome, EDIT_ICON_SM = A.EDIT_ICON_SM;
   /* ---- Sotto-tab interne alla sezione "Budget & Forecast" ---- */
   /* «Entrate» raccoglie quattro fonti: ognuna ha il suo pannello (budgetPaneSponsor, …Rette, …Tessere, …Altre) */
-  var ENTRATE_SUB = ['sponsor', 'rette', 'tessere', 'altre'];
+  var ENTRATE_SUB = ['sponsor', 'rette', 'tessere', 'supercoppa', 'altre'];
   function _switchBudgetTab(tab) {
     if (tab === 'entrate') tab = B._entrateSub || 'sponsor';
     var inEntrate = ENTRATE_SUB.indexOf(tab) !== -1;
@@ -33,6 +33,7 @@
     if (B._activeBudgetTab === 'rette')     B._renderRette();
     if (B._activeBudgetTab === 'spese')     B._renderSpese();
     if (B._activeBudgetTab === 'tessere')   B._renderTessere();
+    if (B._activeBudgetTab === 'supercoppa') B._renderSupercoppa();
     if (B._activeBudgetTab === 'altre')     B._renderAltreEntrate();
     if (ENTRATE_SUB.indexOf(B._activeBudgetTab) !== -1) _renderEntrateNav();
     if (B._activeBudgetTab === 'bilancio')  { B._renderBilancio(); B._renderSpeseForecast(); }
@@ -40,7 +41,7 @@
 
   /* Etichette della barra delle fonti: incassato su previsto, con le stesse definizioni del Bilancio */
   function _renderEntrateNav() {
-    var ids = { 'Sponsor': 'enSponsor', 'Retta atleti': 'enRette', 'Tessere': 'enTessere', 'Altre entrate': 'enAltre' };
+    var ids = { 'Sponsor': 'enSponsor', 'Retta atleti': 'enRette', 'Tessere': 'enTessere', 'Evento Supercoppa Bari': 'enSupercoppa', 'Altre entrate': 'enAltre' };
     B._calcBilancioPerCategoria().entrate.forEach(function (e) {
       var el = document.getElementById(ids[e.fonte]);
       if (el) el.textContent = B._eur(e.incassato) + ' incassati' + (e.daIncassare > 0 ? ' · ' + B._eur(e.daIncassare) + ' da incassare' : '');
@@ -133,6 +134,11 @@
       db.collection('altreEntrate').where('seasonId', '==', B._currentSeasonId).get().catch(function (e) {
         console.error('[budget] altreEntrate', e);
         return { docs: [] };
+      }),
+      /* Evento Supercoppa Bari: stesso trattamento difensivo (regola da pubblicare per la nuova raccolta). */
+      db.collection('supercoppaBari').where('seasonId', '==', B._currentSeasonId).get().catch(function (e) {
+        console.error('[budget] supercoppaBari', e);
+        return { docs: [] };
       })
     ]).then(function (res) {
       B._categorieAtleti = res[0].docs.map(_mapDoc);
@@ -141,6 +147,7 @@
       B._sottospese      = res[3].docs.map(_mapDoc);
       B._tessere         = res[4].docs.map(_mapDoc);
       B._altreEntrate    = res[5].docs.map(_mapDoc);
+      B._supercoppa      = res[6].docs.map(_mapDoc);
     });
   }
 
@@ -215,7 +222,7 @@
       B._currentSeasonId = this.value;
       _loadSeasonScoped().then(function () {
         B._renderObiettivo(); B._renderPromemoriaWidget(); B._renderStatCards();
-        B._renderCharts(); B._renderCashflow(); B._renderKanban(); B._renderRette(); B._renderSpese(); B._renderBilancio(); B._renderTessere(); B._renderAltreEntrate(); _renderEntrateNav();
+        B._renderCharts(); B._renderCashflow(); B._renderKanban(); B._renderRette(); B._renderSpese(); B._renderBilancio(); B._renderTessere(); B._renderSupercoppa(); B._renderAltreEntrate(); _renderEntrateNav();
       });
     });
 
