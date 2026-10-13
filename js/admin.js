@@ -95,7 +95,9 @@
     btn.innerHTML = btn.innerHTML.replace('Esporta backup', 'Esportazione…');
 
     Promise.all(BACKUP_COLLECTIONS.map(function (name) {
-      return db.collection(name).get().then(function (snap) {
+      /* Il registro modifiche è la collezione più grande (migliaia di documenti): nel backup si tengono le ultime 300 voci per non consumare la quota di letture. */
+      var q = name === 'auditLog' ? db.collection(name).orderBy('timestamp', 'desc').limit(300) : db.collection(name);
+      return q.get().then(function (snap) {
         var docs = {};
         snap.forEach(function (d) { docs[d.id] = d.data(); });
         return [name, docs];

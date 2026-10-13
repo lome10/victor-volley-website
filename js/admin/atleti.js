@@ -15,6 +15,8 @@
      ATLETI
   ================================================ */
   var _atletiCache   = [];
+  var _atletiCaricatiAlle = 0;   /* ms dell'ultimo caricamento da Firestore: evita di rileggere ~200 documenti a ogni apertura della sezione */
+  var ATLETI_CACHE_MS = 10 * 60 * 1000;
   var _editingAtleta = null;
 
   function renderAtleti() {
@@ -30,6 +32,11 @@
   }
 
   function _loadAtleti() {
+    if (_atletiCache.length && Date.now() - _atletiCaricatiAlle < ATLETI_CACHE_MS) {
+      _renderAtletiRows();
+      if (_pendingOpenAtleta) { var daAprireCache = _pendingOpenAtleta; _pendingOpenAtleta = null; _openAtletaDetail(daAprireCache); }
+      return;
+    }
     document.getElementById('atletiBody').innerHTML =
       '<tr><td colspan="6" style="text-align:center;color:var(--a-muted);padding:20px">Caricamento…</td></tr>';
 
@@ -37,6 +44,7 @@
       var dati = {};
       res[1].forEach(function (d) { dati[d.id] = d.data(); });
       _atletiCache = [];
+      _atletiCaricatiAlle = Date.now();
       res[0].forEach(function (doc) {
         _atletiCache.push(Object.assign({}, dati[doc.id] || {}, doc.data(), { uid: doc.id }));
       });
@@ -1596,11 +1604,16 @@
   document.getElementById('iscriviAtletiBtn').addEventListener('click', function () {
     var btn = this;
     btn.disabled = true;
-    Promise.all([db.collection('atleti').get(), db.collection('atletiDati').get()]).then(function (res) {
-      var dati = {};
-      res[1].forEach(function (d) { dati[d.id] = d.data(); });
+    var daCache = _atletiCache.length && Date.now() - _atletiCaricatiAlle < ATLETI_CACHE_MS;
+    (daCache ? Promise.resolve(null) : Promise.all([db.collection('atleti').get(), db.collection('atletiDati').get()])).then(function (res) {
       var tutti = [];
-      res[0].forEach(function (d) { tutti.push(Object.assign({}, dati[d.id] || {}, d.data(), { uid: d.id })); });
+      if (daCache) {
+        tutti = _atletiCache.slice();
+      } else {
+        var dati = {};
+        res[1].forEach(function (d) { dati[d.id] = d.data(); });
+        res[0].forEach(function (d) { tutti.push(Object.assign({}, dati[d.id] || {}, d.data(), { uid: d.id })); });
+      }
       var daIscrivere = tutti.filter(function (a) { return a.categoria && !_iscrizioneOf(a.uid); });
       if (!daIscrivere.length) { _avviso('Tutti gli atleti con una categoria sono già iscritti a questa stagione.'); return; }
 

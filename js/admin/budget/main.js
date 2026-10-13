@@ -95,8 +95,6 @@
         _populateLogDirigenteFilter();
         return _loadSeasonScoped();
       });
-    }).then(function () {
-      return B._loadAuditLog();
     }).then(function () { if (cb) cb(); })
       .catch(function (err) {
         console.error('[budget] loadAll', err);
@@ -326,7 +324,7 @@
   A.budget = {
     loadData: _loadBudgetData,
     renderActiveTab: _renderActiveBudgetTab,
-    renderLog: B._renderLog,
+    renderLog: function () { return B._ensureAuditLog().then(B._renderLog); },
     renderDashBudgetWidget: B._renderDashBudgetWidget,
     renderDashCashflowWidget: B._renderDashCashflowWidget,
     renderDashSpeseWidget: B._renderDashSpeseWidget,

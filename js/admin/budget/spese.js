@@ -82,12 +82,18 @@
       .then(function () { return _syncSpesaIva(v); });
   }
 
+  /* Il registro (300 letture) si carica solo quando serve (scheda Log), una volta per sessione. */
+  var _auditLogCaricato = false;
   function _loadAuditLog() {
     return db.collection('auditLog').orderBy('timestamp', 'desc').limit(300).get().then(function (snap) {
       A.setAuditLog(snap.docs.map(_mapDoc));
+      _auditLogCaricato = true;
     }).catch(function (err) {
       console.error('[budget] log', err);
     });
+  }
+  function _ensureAuditLog() {
+    return _auditLogCaricato ? Promise.resolve() : _loadAuditLog();
   }
 
   /* ---- SPESE ---- */
@@ -749,6 +755,7 @@
   B._categorieSpesaOptionsHtml = _categorieSpesaOptionsHtml;
   B._isSottospesaCredito = _isSottospesaCredito;
   B._loadAuditLog = _loadAuditLog;
+  B._ensureAuditLog = _ensureAuditLog;
   B._renderCategorieSpesaModalList = _renderCategorieSpesaModalList;
   B._renderDashSpeseWidget = _renderDashSpeseWidget;
   B._renderSpese = _renderSpese;
