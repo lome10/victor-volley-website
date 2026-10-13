@@ -549,6 +549,19 @@
   /* Dirigenti (account con accesso all'Area Dirigenti): compaiono SOLO in questa vista, come gruppo a parte.
      Non sono atleti: stanno in `dirigenti/{uid}` e la taglia in `dirigenti/{uid}.taglie`, mai in `atleti`. */
   var DIR_GRUPPO = '__dirigenti__';
+  /* Minivolley: non ci sono schede atleta, si indica solo QUANTE maglie (o altri capi) per taglia.
+     stagione.taglieMinivolley = { voce: { taglia: numero } }; per i capi Sì/No (zaino, borsone) la chiave è «qta». */
+  var MV_GRUPPO = '__minivolley__';
+  function _mvDati() { var s = _stagioneBudget(); return (s && s.taglieMinivolley) || {}; }
+  function _mvN(voce, t) { var n = parseInt((_mvDati()[voce] || {})[t], 10); return n > 0 ? n : 0; }
+  /* [[taglia, n], …] nell'ordine della scala; capi Sì/No → [['', n]] */
+  function _mvRiga(voce) {
+    if (_isSiNo(voce)) { var q = _mvN(voce, 'qta'); return q ? [['', q]] : []; }
+    return TAGLIE_VALORI.filter(function (t) { return t && _mvN(voce, t); }).map(function (t) { return [t, _mvN(voce, t)]; });
+  }
+  function _mvTot(voce) { return _mvRiga(voce).reduce(function (a, x) { return a + x[1]; }, 0); }
+  function _mvTesto(voce) { return _mvRiga(voce).map(function (x) { return x[0] ? x[0] + ' ×' + x[1] : String(x[1]); }).join(', '); }
+  function _mvAttivo(voce) { return !_esclusa(MV_GRUPPO, voce); }
   var _dirigentiTaglie = null;   /* null = non ancora caricati */
   function _caricaDirigentiTaglie() {
     if (_dirigentiTaglie) return;
@@ -617,7 +630,7 @@
   /* Voci non previste per una categoria (es. il giubbotto solo alle categorie maggiori):
      stagione.taglieEscluse = { categoria: [voce, …] }. Nella tabella la cella diventa «n/d» e non conta nel riepilogo. */
   /* Firestore riserva i nomi di campo del tipo «__x__»: i dirigenti si salvano sotto «Dirigenti». */
-  function _chiaveEscl(categoria) { return categoria === DIR_GRUPPO ? 'Dirigenti' : categoria; }
+  function _chiaveEscl(categoria) { return categoria === DIR_GRUPPO ? 'Dirigenti' : categoria === MV_GRUPPO ? 'MinivolleyQta' : categoria; }
   function _esclusa(categoria, voce) {
     var s = _stagioneBudget();
     var m = s && s.taglieEscluse && categoria ? s.taglieEscluse[_chiaveEscl(categoria)] : null;
@@ -684,6 +697,7 @@
         if (_esclusa(a.categoria, v)) return;
         var t = _tagliaOf(a, v); if (t) n[t] = (n[t] || 0) + 1; else senza++;
       });
+      if (!_atletiCat && _mvAttivo(v)) _mvRiga(v).forEach(function (x) { var k = x[0] || 'Sì'; n[k] = (n[k] || 0) + x[1]; });
       var ordine = _scalaVoce(v).filter(function (t) { return t && n[t]; });
       Object.keys(n).forEach(function (t) { if (ordine.indexOf(t) === -1) ordine.push(t); });
       return '<div class="taglie-riepilogo-voce"><strong>' + esc(v) + '</strong>' +
@@ -714,9 +728,10 @@
     var cats = _categorieElenco().filter(function (c) { return _atletiCache.some(function (a) { return a.categoria === c; }); });
     if (_atletiCache.some(function (a) { return !a.categoria; })) cats.push('__none__');
     if (_dirigentiTaglie && _dirigentiTaglie.length) cats.push(DIR_GRUPPO);
+    cats.push(MV_GRUPPO);
     return cats;
   }
-  function _nomeGruppo(c) { return c === '__none__' ? 'Senza categoria' : c === DIR_GRUPPO ? 'Dirigenti' : c; }
+  function _nomeGruppo(c) { return c === '__none__' ? 'Senza categoria' : c === DIR_GRUPPO ? 'Dirigenti' : c === MV_GRUPPO ? 'Minivolley' : c; }
   function _pannelloExportHtml(voci) {
     var gruppi = _gruppiExport();
     if (!gruppi.length || !voci.length) return '';
@@ -749,17 +764,17 @@
   function _matriceEsclusioniHtml(voci) {
     var cats = _categorieElenco().filter(function (c) { return _atletiCache.some(function (a) { return a.categoria === c; }); });
     if (_dirigentiTaglie && _dirigentiTaglie.length) cats.push(DIR_GRUPPO);
-    if (!cats.length) return '';
+    cats.push(MV_GRUPPO);
     return '<details class="taglie-escl" id="taglieEscl"' + (_taglieEsclAperto ? ' open' : '') + '><summary>Voci per categoria</summary>' +
       '<p class="taglie-escl-hint">Togli la spunta dove una categoria non riceve quel capo: nella tabella diventa «n/d» e non entra nel riepilogo. Trascina le intestazioni per cambiare l’ordine delle colonne. Nella casella «Modello» scrivi la versione del capo (es. Kurt): compare sotto il nome della colonna. <button type="button" class="btn btn-sm taglie-modelli-auto">Precompila dall’elenco società</button></p>' +
       '<div class="admin-table-wrap"><table class="admin-table tab-scroll taglie-escl-table"><thead><tr><th>Categoria</th>' +
       voci.map(function (v) { return '<th class="taglie-th" draggable="true" data-voce="' + esc(v) + '" title="Trascina per spostare la colonna">' + esc(v) + '</th>'; }).join('') + '</tr></thead><tbody>' +
       cats.map(function (c) {
-        return '<tr><td><div class="table-title">' + esc(c === DIR_GRUPPO ? 'Dirigenti' : c) + '</div></td>' + voci.map(function (v) {
+        return '<tr><td><div class="table-title">' + esc(_nomeGruppo(c)) + '</div></td>' + voci.map(function (v) {
           return '<td><input type="checkbox" class="taglie-escl-cb" data-cat="' + esc(c) + '" data-voce="' + esc(v) + '"' + (_esclusa(c, v) ? '' : ' checked') +
-            ' aria-label="' + esc((c === DIR_GRUPPO ? 'Dirigenti' : c) + ' riceve ' + v) + '">' +
+            ' aria-label="' + esc(_nomeGruppo(c) + ' riceve ' + v) + '">' +
             (_esclusa(c, v) ? '' : '<input type="text" class="form-input taglie-modello-in" data-cat="' + esc(c) + '" data-voce="' + esc(v) + '" value="' + esc(_modelloDi(c, v)) +
-              '" placeholder="Modello" maxlength="40" aria-label="' + esc('Modello di ' + v + ' per ' + (c === DIR_GRUPPO ? 'Dirigenti' : c)) + '">') + '</td>';
+              '" placeholder="Modello" maxlength="40" aria-label="' + esc('Modello di ' + v + ' per ' + _nomeGruppo(c)) + '">') + '</td>';
         }).join('') + '</tr>';
       }).join('') + '</tbody></table></div></details>';
   }
@@ -774,6 +789,26 @@
         return '<td><select class="form-input taglia-sel" data-uid="' + esc(a.uid) + '"' + (a.dirigente ? ' data-dir="1"' : '') + ' data-voce="' + esc(v) + '" aria-label="' + esc(v + ' — ' + a.cognome + ' ' + a.nome) + '">' +
           opts.map(function (t) { return '<option value="' + esc(t) + '"' + (t === cur ? ' selected' : '') + '>' + (t ? esc(t) : '—') + '</option>'; }).join('') + '</select></td>';
       }).join('') + '</tr>';
+  }
+
+  /* Blocco «Minivolley»: quante maglie (o altri capi) per ogni taglia. */
+  function _mvHtml(voci) {
+    var vc = voci.filter(_mvAttivo);
+    if (!vc.length) return '';
+    var scala = TAGLIE_VALORI.filter(function (t) { return t; });
+    var inp = function (v, t, val, span) {
+      return '<td' + (span ? ' colspan="' + span + '"' : '') + '><input type="number" min="0" step="1" inputmode="numeric" class="form-input mv-in" data-voce="' + esc(v) + '" data-t="' + esc(t) + '" value="' + (val || '') +
+        '" placeholder="0" aria-label="' + esc(v + (t === 'qta' ? '' : ' taglia ' + t) + ' — Minivolley') + '"></td>';
+    };
+    return '<div class="admin-table-wrap taglie-gruppo"><table class="admin-table tab-scroll taglie-table mv-table"><thead>' +
+      '<tr class="atleti-group"><td colspan="' + (scala.length + 2) + '"><strong>Minivolley</strong> <span>quante maglie per taglia (nessuna scheda atleta)</span></td></tr>' +
+      '<tr class="taglie-head-row"><th>Capo</th>' + scala.map(function (t) { return '<th class="c">' + esc(t) + '</th>'; }).join('') + '<th class="c">Totale</th></tr></thead><tbody>' +
+      vc.map(function (v) {
+        var mod = _modelloDi(MV_GRUPPO, v);
+        var nome = '<td><div class="table-title">' + esc(v) + (mod ? '<span class="taglia-modello">' + esc(mod) + '</span>' : '') + '</div></td>';
+        var celle = _isSiNo(v) ? inp(v, 'qta', _mvN(v, 'qta'), scala.length) : scala.map(function (t) { return inp(v, t, _mvN(v, t)); }).join('');
+        return '<tr>' + nome + celle + '<td class="c"><b>' + _mvTot(v) + '</b></td></tr>';
+      }).join('') + '</tbody></table></div>';
   }
 
   function _daIndicare(membri, voci) {
@@ -838,7 +873,8 @@
           '</tbody></table></div>';
       }).join('');
     }
-    box.innerHTML = chips + _pannelloExportHtml(voci) + _matriceEsclusioniHtml(voci) + '<div id="taglieRiepilogo">' + _riepilogoTaglie(list, voci) + '</div>' + tabelle;
+    box.innerHTML = chips + _pannelloExportHtml(voci) + _matriceEsclusioniHtml(voci) + '<div id="taglieRiepilogo">' + _riepilogoTaglie(list, voci) + '</div>' + tabelle +
+      (!_atletiCat && !(_atletiQuery || '').trim() ? _mvHtml(voci) : '');
   }
 
   function _applicaVistaAtleti() {
@@ -1013,6 +1049,25 @@
       });
       return;
     }
+    var mv = e.target.closest('.mv-in');
+    if (mv) {
+      var st2 = _stagioneBudget();
+      if (!st2) return;
+      var pr = st2.taglieMinivolley || {}, nu = {};
+      Object.keys(pr).forEach(function (k) { nu[k] = Object.assign({}, pr[k]); });
+      var qn = parseInt(mv.value, 10);
+      nu[mv.dataset.voce] = nu[mv.dataset.voce] || {};
+      if (qn > 0) nu[mv.dataset.voce][mv.dataset.t] = qn; else delete nu[mv.dataset.voce][mv.dataset.t];
+      if (!Object.keys(nu[mv.dataset.voce]).length) delete nu[mv.dataset.voce];
+      st2.taglieMinivolley = nu;
+      _renderTaglie();
+      db.collection('budgetSeasons').doc(st2.id).update({ taglieMinivolley: nu }).catch(function (err) {
+        st2.taglieMinivolley = pr;
+        _renderTaglie();
+        _avviso('Quantità non salvata: ' + err.message);
+      });
+      return;
+    }
     var mi = e.target.closest('.taglie-modello-in');
     if (mi) {
       var prima = _copiaModelli(), dopo = _copiaModelli();
@@ -1117,7 +1172,7 @@
       }).join('') + '</tbody></table>';
     var corpo = p.gruppi.map(function (g) {
       var thead = '<thead><tr>' + (g.head || p.head).map(function (h, i) { return '<th' + (i === 0 ? '' : ' class="c"') + '>' + (Array.isArray(h) ? esc(h[0]) + (h[1] ? '<span class="mod">' + esc(h[1]) + '</span>' : '') : esc(h)) + '</th>'; }).join('') + '</tr></thead>';
-      return '<div class="gband"><strong>' + esc(g.nome) + '</strong><span>' + g.righe.length + (g.nome === 'Dirigenti' ? (g.righe.length === 1 ? ' persona' : ' persone') : (g.righe.length === 1 ? ' atleta' : ' atleti')) + '</span></div>' +
+      return '<div class="gband"><strong>' + esc(g.nome) + '</strong><span>' + (g.nome === 'Minivolley' ? '' : g.righe.length) + (g.nome === 'Minivolley' ? '' : g.nome === 'Dirigenti' ? (g.righe.length === 1 ? ' persona' : ' persone') : (g.righe.length === 1 ? ' atleta' : ' atleti')) + '</span></div>' +
         '<table>' + thead + '<tbody>' + g.righe.map(function (r) {
           return '<tr>' + r.map(function (c, i) {
             var t = String(c == null ? '' : c);
@@ -1157,10 +1212,12 @@
       /* voci scelte per la categoria di ciascuna persona (le non previste restano «n/d» nel file) */
       var vociDi = function (a) { return vociTutte.filter(function (v) { return !_expOff(_chiaveGruppo(a), v); }); };
       var tuttiTaglie = list.concat(_dirigentiFiltrati()).filter(function (a) { return vociDi(a).some(function (v) { return !_esclusa(a.categoria, v); }); });
-      var voci = vociTutte.filter(function (v) { return tuttiTaglie.some(function (a) { return vociDi(a).indexOf(v) !== -1; }); });
-      if (!voci.length || !tuttiTaglie.length) { _avviso('Nessuna taglia da esportare: controlla «Cosa esportare».'); return null; }
+      /* Minivolley: una riga con le quantità, solo con «Tutte» e senza ricerca (come i dirigenti) */
+      var mvVoci = (_atletiCat || (_atletiQuery || '').trim()) ? [] : vociTutte.filter(function (v) { return _mvAttivo(v) && !_expOff(MV_GRUPPO, v) && _mvTot(v) > 0; });
+      var voci = vociTutte.filter(function (v) { return mvVoci.indexOf(v) !== -1 || tuttiTaglie.some(function (a) { return vociDi(a).indexOf(v) !== -1; }); });
+      if (!voci.length || (!tuttiTaglie.length && !mvVoci.length)) { _avviso('Nessuna taglia da esportare: controlla «Cosa esportare».'); return null; }
       /* colonna «Modello» solo per i capi che hanno un modello in almeno una delle categorie esportate */
-      var conModello = function (v) { return tuttiTaglie.some(function (a) { return !_expOff(_chiaveGruppo(a), v) && !_esclusa(a.categoria, v) && _modelloDi(a.dirigente ? DIR_GRUPPO : a.categoria, v); }); };
+      var conModello = function (v) { return (mvVoci.indexOf(v) !== -1 && !!_modelloDi(MV_GRUPPO, v)) || tuttiTaglie.some(function (a) { return !_expOff(_chiaveGruppo(a), v) && !_esclusa(a.categoria, v) && _modelloDi(a.dirigente ? DIR_GRUPPO : a.categoria, v); }); };
       var pdfTaglie = {
         tipo: 'Elenco taglie', landscape: voci.length > 6,
         recap: voci.map(function (v) {
@@ -1170,12 +1227,13 @@
             var t = _tagliaOf(a, v);
             if (t) { n[t] = (n[t] || 0) + 1; totale++; } else senza++;
           });
+          if (mvVoci.indexOf(v) !== -1) _mvRiga(v).forEach(function (x) { var k = x[0] || 'Sì'; n[k] = (n[k] || 0) + x[1]; totale += x[1]; });
           var ordine = _scalaVoce(v).filter(function (t) { return t && n[t]; });
           Object.keys(n).forEach(function (t) { if (ordine.indexOf(t) === -1) ordine.push(t); });
           var modelli = [];
           _gruppiExport().forEach(function (c) {
             var m = (c === '__none__' || _esclusa(c, v) || _expOff(c, v)) ? '' : _modelloDi(c, v);
-            if (m && tuttiTaglie.some(function (a) { return _chiaveGruppo(a) === c; })) modelli.push([_nomeGruppo(c), m]);
+            if (m && (c === MV_GRUPPO ? mvVoci.indexOf(v) !== -1 : tuttiTaglie.some(function (a) { return _chiaveGruppo(a) === c; }))) modelli.push([_nomeGruppo(c), m]);
           });
           if (modelli.length && modelli.every(function (m) { return m[1] === modelli[0][1]; })) modelli = [['', modelli[0][1]]];
           return { voce: v, taglie: ordine.map(function (t) { return [t, n[t]]; }), modelli: modelli, totale: totale };
@@ -1187,6 +1245,10 @@
           }) };
         })
       };
+      if (mvVoci.length) {
+        pdfTaglie.gruppi.push({ nome: 'Minivolley', head: ['Minivolley'].concat(mvVoci.map(function (v) { return [v, _modelloDi(MV_GRUPPO, v)]; })),
+          righe: [['Numero di capi per taglia'].concat(mvVoci.map(_mvTesto))] });
+      }
       pdfTaglie.landscape = pdfTaglie.gruppi.some(function (g) { return g.head.length > 7; });
       return {
         pdf: pdfTaglie,
@@ -1194,14 +1256,18 @@
         head: ['Cognome', 'Nome', 'Categoria'].concat(voci.reduce(function (acc, v) {
           acc.push(v); if (conModello(v)) acc.push('Modello ' + v); return acc;
         }, [])),
-        righe: tuttiTaglie.map(function (a) {
+        righe: (mvVoci.length ? [['Minivolley', '', 'Minivolley'].concat(voci.reduce(function (acc, v) {
+          var m = mvVoci.indexOf(v) !== -1;
+          acc.push(m ? _mvTesto(v) : ''); if (conModello(v)) acc.push(m ? _modelloDi(MV_GRUPPO, v) : '');
+          return acc;
+        }, []))] : []).concat(tuttiTaglie.map(function (a) {
           return [a.cognome, a.nome, a.dirigente ? 'Dirigenti' : (a.categoria || '')].concat(voci.reduce(function (acc, v) {
             var fuori = _expOff(_chiaveGruppo(a), v), na = _esclusa(a.categoria, v);
             acc.push(fuori ? '' : (na ? 'n/d' : _tagliaOf(a, v)));
             if (conModello(v)) acc.push(fuori || na ? '' : _modelloDi(a.dirigente ? DIR_GRUPPO : a.categoria, v));
             return acc;
           }, []));
-        })
+        }))
       };
     }
     if (!list.length) { _avviso('Nessun atleta da esportare.'); return null; }
