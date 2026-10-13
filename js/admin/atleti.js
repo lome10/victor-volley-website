@@ -697,7 +697,7 @@
         if (_esclusa(a.categoria, v)) return;
         var t = _tagliaOf(a, v); if (t) n[t] = (n[t] || 0) + 1; else senza++;
       });
-      if (!_atletiCat && _mvAttivo(v)) _mvRiga(v).forEach(function (x) { var k = x[0] || 'Sì'; n[k] = (n[k] || 0) + x[1]; });
+      if (!_atletiCat && !(_atletiQuery || '').trim() && _mvAttivo(v)) _mvRiga(v).forEach(function (x) { var k = x[0] || 'Sì'; n[k] = (n[k] || 0) + x[1]; });
       var ordine = _scalaVoce(v).filter(function (t) { return t && n[t]; });
       Object.keys(n).forEach(function (t) { if (ordine.indexOf(t) === -1) ordine.push(t); });
       return '<div class="taglie-riepilogo-voce"><strong>' + esc(v) + '</strong>' +
@@ -873,7 +873,7 @@
           '</tbody></table></div>';
       }).join('');
     }
-    box.innerHTML = chips + _pannelloExportHtml(voci) + _matriceEsclusioniHtml(voci) + '<div id="taglieRiepilogo">' + _riepilogoTaglie(list, voci) + '</div>' + tabelle +
+    box.innerHTML = chips + _pannelloExportHtml(voci) + _matriceEsclusioniHtml(voci) + '<div id="taglieRiepilogo">' + _riepilogoTaglie(list.concat(dir), voci) + '</div>' + tabelle +
       (!_atletiCat && !(_atletiQuery || '').trim() ? _mvHtml(voci) : '');
   }
 
@@ -1092,7 +1092,7 @@
       a.taglie = Object.assign({}, a.taglie || {});
       a.taglie[voce] = dopo;
       var riep = document.getElementById('taglieRiepilogo');
-      if (riep) riep.innerHTML = _riepilogoTaglie(_atletiFiltrati(), _vociAbbigliamento());
+      if (riep) riep.innerHTML = _riepilogoTaglie(_atletiFiltrati().concat(_dirigentiFiltrati()), _vociAbbigliamento());
       return _logWrite(isDir ? 'dirigente' : 'atleta', a.uid, isDir ? 'Dirigente — ' + a.cognome + ' ' + a.nome : _atletaLabel(a), 'update', [{ campo: 'Taglia — ' + voce, prima: prima || null, dopo: dopo || null }]);
     }).catch(function (err) {
       sel.value = prima;
