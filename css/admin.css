@@ -1921,6 +1921,8 @@ button { font-family: var(--font-body); cursor: pointer; }
 .taglie-voce-chip.is-off { background: var(--a-card); color: var(--a-muted); border-color: var(--a-border); text-decoration: line-through; }
 .taglie-voce-chip:hover { opacity: .85; }
 .taglia-na { color: var(--a-muted); font-size: 12px; text-align: center; }
+.taglia-modello { display: block; font-size: 11px; font-weight: 500; color: var(--a-muted); text-transform: none; letter-spacing: 0; }
+.taglie-modello-in { display: block; width: 100%; min-width: 90px; margin-top: 4px; padding: 4px 6px; font-size: 12px; }
 .taglie-escl { margin: 0 0 14px; background: var(--a-card); border: 1px solid var(--a-border); border-radius: 10px; padding: 10px 14px; }
 .taglie-escl summary { cursor: pointer; font-weight: 700; font-size: 13px; }
 .taglie-exp-th { cursor: pointer; }

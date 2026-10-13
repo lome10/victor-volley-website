@@ -624,6 +624,59 @@
     return !!(m && m.indexOf(voce) !== -1);
   }
 
+  /* Modello (versione) di ogni capo per categoria, es. «Kurt» per la giacca tuta Under 13: serve a sapere quale tabella taglie usare.
+     stagione.taglieModelli = { categoria: { voce: modello } }; si legge nell'intestazione della tabella e si scrive in «Voci per categoria». */
+  function _modelloDi(categoria, voce) {
+    var s = _stagioneBudget();
+    var m = s && s.taglieModelli && categoria ? s.taglieModelli[_chiaveEscl(categoria)] : null;
+    return m && m[voce] ? String(m[voce]) : '';
+  }
+  function _salvaModelli(dopo, prima) {
+    var st = _stagioneBudget();
+    if (!st) return;
+    st.taglieModelli = dopo;
+    db.collection('budgetSeasons').doc(st.id).update({ taglieModelli: dopo }).catch(function (err) {
+      st.taglieModelli = prima;
+      _renderTaglie();
+      _avviso('Modello non salvato: ' + err.message);
+    });
+  }
+  function _copiaModelli() {
+    var st = _stagioneBudget(), o = {};
+    var src = (st && st.taglieModelli) || {};
+    Object.keys(src).forEach(function (k) { o[k] = Object.assign({}, src[k]); });
+    return o;
+  }
+  /* Elenco iniziale dato dalla società: [categoria, [[parola nella voce, modello], …]] */
+  var MODELLI_INIZIALI = [
+    [/under\s*13/i, [[/giacca/i, 'Kurt'], [/pantalone/i, 'Nevis 3.0'], [/zain[oi]/i, 'Tobago']]],
+    [/prima\s*divisione/i, [[/giacca/i, 'Alice'], [/pantalone/i, 'Vanessa 3.0'], [/felpa/i, 'Madison'], [/giubbott/i, 'Babylon'], [/borson/i, 'Basic Media']]],
+    [/^__dirigenti__$/, [[/polo/i, 'Evo'], [/giubbott/i, 'Babylon'], [/felpa/i, 'Madison'], [/giacca/i, 'Amedeo'], [/pantalone/i, 'Myron']]]
+  ];
+  /* Riempie solo le caselle vuote: ciò che è già scritto non si tocca. */
+  function _precompilaModelli() {
+    var st = _stagioneBudget();
+    if (!st) return;
+    var prima = _copiaModelli(), dopo = _copiaModelli(), n = 0;
+    var cats = _categorieElenco().concat([DIR_GRUPPO]);
+    cats.forEach(function (c) {
+      MODELLI_INIZIALI.forEach(function (gr) {
+        if (!gr[0].test(c)) return;
+        _vociTutte().forEach(function (v) {
+          if (_esclusa(c, v) || _modelloDi(c, v)) return;
+          var r = gr[1].filter(function (x) { return x[0].test(v); })[0];
+          if (!r) return;
+          var k = _chiaveEscl(c);
+          dopo[k] = dopo[k] || {};
+          dopo[k][v] = r[1]; n++;
+        });
+      });
+    });
+    if (!n) { _avviso('Nessuna casella vuota da precompilare.'); return; }
+    _salvaModelli(dopo, prima);
+    _renderTaglie();
+  }
+
   function _riepilogoTaglie(list, voci) {
     return '<div class="taglie-riepilogo">' + voci.map(function (v) {
       var n = {}, senza = 0;
@@ -698,13 +751,15 @@
     if (_dirigentiTaglie && _dirigentiTaglie.length) cats.push(DIR_GRUPPO);
     if (!cats.length) return '';
     return '<details class="taglie-escl" id="taglieEscl"' + (_taglieEsclAperto ? ' open' : '') + '><summary>Voci per categoria</summary>' +
-      '<p class="taglie-escl-hint">Togli la spunta dove una categoria non riceve quel capo: nella tabella diventa «n/d» e non entra nel riepilogo. Trascina le intestazioni per cambiare l’ordine delle colonne.</p>' +
+      '<p class="taglie-escl-hint">Togli la spunta dove una categoria non riceve quel capo: nella tabella diventa «n/d» e non entra nel riepilogo. Trascina le intestazioni per cambiare l’ordine delle colonne. Nella casella «Modello» scrivi la versione del capo (es. Kurt): compare sotto il nome della colonna. <button type="button" class="btn btn-sm taglie-modelli-auto">Precompila dall’elenco società</button></p>' +
       '<div class="admin-table-wrap"><table class="admin-table tab-scroll taglie-escl-table"><thead><tr><th>Categoria</th>' +
       voci.map(function (v) { return '<th class="taglie-th" draggable="true" data-voce="' + esc(v) + '" title="Trascina per spostare la colonna">' + esc(v) + '</th>'; }).join('') + '</tr></thead><tbody>' +
       cats.map(function (c) {
         return '<tr><td><div class="table-title">' + esc(c === DIR_GRUPPO ? 'Dirigenti' : c) + '</div></td>' + voci.map(function (v) {
           return '<td><input type="checkbox" class="taglie-escl-cb" data-cat="' + esc(c) + '" data-voce="' + esc(v) + '"' + (_esclusa(c, v) ? '' : ' checked') +
-            ' aria-label="' + esc((c === DIR_GRUPPO ? 'Dirigenti' : c) + ' riceve ' + v) + '"></td>';
+            ' aria-label="' + esc((c === DIR_GRUPPO ? 'Dirigenti' : c) + ' riceve ' + v) + '">' +
+            (_esclusa(c, v) ? '' : '<input type="text" class="form-input taglie-modello-in" data-cat="' + esc(c) + '" data-voce="' + esc(v) + '" value="' + esc(_modelloDi(c, v)) +
+              '" placeholder="Modello" maxlength="40" aria-label="' + esc('Modello di ' + v + ' per ' + (c === DIR_GRUPPO ? 'Dirigenti' : c)) + '">') + '</td>';
         }).join('') + '</tr>';
       }).join('') + '</tbody></table></div></details>';
   }
@@ -751,7 +806,10 @@
 
     /* Colonne per categoria: una voce tolta dalla matrice «Voci per categoria» non compare per quella categoria. */
     function vociDi(cat) { return voci.filter(function (v) { return cat === '__none__' || !_esclusa(cat, v); }); }
-    function intest(vc, cls, cat) { return '<tr' + (cls ? ' class="' + cls + '"' : '') + '><th>' + (cat === DIR_GRUPPO ? 'Dirigente' : 'Atleta') + '</th>' + vc.map(function (v) { return '<th>' + esc(v) + '</th>'; }).join('') + '</tr>'; }
+    function intest(vc, cls, cat) { return '<tr' + (cls ? ' class="' + cls + '"' : '') + '><th>' + (cat === DIR_GRUPPO ? 'Dirigente' : 'Atleta') + '</th>' + vc.map(function (v) {
+      var mod = cat ? _modelloDi(cat, v) : (_atletiCat ? _modelloDi(_atletiCat, v) : '');
+      return '<th>' + esc(v) + (mod ? '<span class="taglia-modello">' + esc(mod) + '</span>' : '') + '</th>';
+    }).join('') + '</tr>'; }
     var tabelle;
     if (_atletiCat) {
       var vc1 = vociDi(_atletiCat);
@@ -850,6 +908,7 @@
   document.getElementById('atletiTaglie').addEventListener('click', function (e) {
     var gr = e.target.closest('tr.atleti-group');
     if (gr) { _toggleGruppoAtleti(gr); return; }
+    if (e.target.closest('.taglie-modelli-auto')) { _precompilaModelli(); return; }
     var er = e.target.closest('.taglie-exp-riga');
     if (er) { _expToggle(er.dataset.cat, null); return; }
     var ec = e.target.closest('.taglie-exp-th');
@@ -952,6 +1011,17 @@
         _renderTaglie();
         _avviso('Impossibile salvare la scelta: ' + err.message);
       });
+      return;
+    }
+    var mi = e.target.closest('.taglie-modello-in');
+    if (mi) {
+      var prima = _copiaModelli(), dopo = _copiaModelli();
+      var k = _chiaveEscl(mi.dataset.cat), val = mi.value.trim();
+      dopo[k] = dopo[k] || {};
+      if (val) dopo[k][mi.dataset.voce] = val; else delete dopo[k][mi.dataset.voce];
+      if (!Object.keys(dopo[k]).length) delete dopo[k];
+      _salvaModelli(dopo, prima);
+      _renderTaglie();
       return;
     }
     var sel = e.target.closest('.taglia-sel');
