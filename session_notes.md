@@ -399,3 +399,18 @@ Modello Excel del dirigente analizzato; scelte dell'utente: importo libero (una 
 - **Minivolley solo «Maglia gara» (2026-10-13, richiesta dell'utente)**: `_esclusa(MV_GRUPPO, voce)` è vera per ogni voce che non contiene «maglia gara» (`MV_VOCI`), quindi nel blocco Minivolley, nelle matrici (n/d) e nell'export compare solo quel capo. Se la voce si chiama diversamente va cambiata la regex. Non provato nel browser.
 
 - **Gruppo «Aggiunte» nelle Taglie (2026-10-13)**: capi in più non legati a persone, da sommare ai totali (es. 3 M, 3 L, 2 XL di giacca tuta Kurt). Stessa struttura del Minivolley, generalizzata: `QG_IDS = [MV_GRUPPO, AG_GRUPPO]`, dati in `budgetSeasons.<stagione>.taglieAggiunte = { voce: { taglia: n } }` (Sì/No → `qta`), modello in `taglieModelli.AggiunteQta`, esclusioni in `taglieEscluse.AggiunteQta`. Compare come blocco «Aggiunte» sotto il Minivolley, nelle matrici «Voci per categoria» / «Cosa esportare», e si somma nel riepilogo per capo+modello (stesso modello → stessa riga, es. «Giacca tuta · Kurt»). Export: riga/gruppo «Aggiunte». Non provato nel browser.
+
+- **Backup 2026-10-13 conservato**: `backups/2026-10-13/victor-volley-backup-2026-10-13.json` (ignorato da git, dati personali), richiesto dall'utente per il futuro. Conteggio finale riepilogo capi (atleti + dirigenti + Aggiunte) calcolato da lì. Nel backup `taglieMinivolley` non esiste (nessuna quantità Minivolley inserita).
+
+- **Conteggio finale riepilogo capi (2026-10-13, dal backup delle 10:46)**: 50 atleti + 11 dirigenti + Aggiunte, per capo e modello (stesse regole del riepilogo a schermo: esclusioni, voci nascoste, Aggiunte nel modello `AggiunteQta`). `taglieMinivolley` assente nel backup → nessuna quantità Minivolley.
+  - Maglia Gara: XS 3, S 9, M 11, L 7, XL 2 = **32** (da indicare 18)
+  - Maglia Allenamento: S 14, M 4, L 5 = **23** (da indicare 27)
+  - Giacca tuta Kurt: XS 2, S 10, M 15, L 9, XL 4 = **40** (di cui 8 Aggiunte); Alice: S 2, M 10, L 6 = **18**; Amedeo: M 1, L 2, XL 4, XXL 2, 4XL 1 = **10** (da indicare 1)
+  - Felpa Madison: S 4, M 10, L 8, XL 4, XXL 2 = **28** (da indicare 1)
+  - Giubbotto Babylon: XS 1, S 5, M 9, L 8, XL 4, 4XL 1 = **28** (da indicare 1)
+  - Pantalone tuta Nevis 3.0: XS 1, S 12, M 12, L 10, XL 4, XXL 1 = **40** (di cui 8 Aggiunte); Vanessa 3.0: S 4, M 6, L 7, XL 1 = **18**; Myron: M 1, L 5, XL 3 = **9** (da indicare 2)
+  - Zaino Tobago: Sì **40** (di cui 8 Aggiunte)
+  - Borsone Basic Media: Sì 7, No 11 (18 risposte; da ordinare **7**)
+  - Polo Evo: M 1, L 2, XL 5, XXL 1, 4XL 1 = **10** (da indicare 1)
+  - Aggiunte: giacca tuta Kurt e pantalone Nevis 3.0 con 3 M, 3 L, 2 XL ciascuno; 8 zaini.
+  - **Da sapere:** mancano le taglie di 18 Maglie Gara e 27 Maglie Allenamento; «Tuta» è esclusa/vuota; il backup non include modifiche successive alle 10:46.
