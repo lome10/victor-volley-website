@@ -31,8 +31,10 @@
       assegnate: assegnate.length, pagate: pagate.length,
       tesserati: assegnate.filter(function (t) { return t.tesserato; }).length,
       incassato: pagate.length * QUOTA_PREZZO,
-      daIncassare: (assegnate.length - pagate.length) * QUOTA_PREZZO,
-      previsto: assegnate.length * QUOTA_PREZZO,
+      /* I 54 posti sono comunque un costo per la società: anche quelli non ancora assegnati
+         restano «da incassare», quindi il previsto è sempre 54 × 35 €. */
+      daIncassare: (POSTI_TOTALI - pagate.length) * QUOTA_PREZZO,
+      previsto: POSTI_TOTALI * QUOTA_PREZZO,
       righe: pagate.map(function (t) {
         return { numero: +t.numero, nome: _nomeOf(t), dataPagamento: t.dataPagamento || '', importo: QUOTA_PREZZO, note: _noteOf(t) };
       }).sort(function (a, b) { return a.numero - b.numero; })
