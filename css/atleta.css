@@ -342,6 +342,11 @@ button { font-family: inherit; cursor: pointer; }
 .al-pay-iban { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .al-pay-iban-value { font-family: ui-monospace, Consolas, monospace; letter-spacing: 0.04em; overflow-wrap: anywhere; }
 
+.al-modulo-nota { margin: 0; font-size: 13px; line-height: 1.5; color: var(--al-text); }
+.al-modulo-azioni { margin: 14px 0 0; }
+#moduloContent:not(:empty) { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--al-border); }
+.al-modulo-gia { margin: 0 0 10px; font-size: 13px; color: var(--al-text); }
+
 .al-rate-list {
   display: flex;
   flex-direction: column;

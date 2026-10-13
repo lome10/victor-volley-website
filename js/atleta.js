@@ -1085,12 +1085,14 @@
     var el = document.getElementById('moduloContent');
     if (data.moduloIscrizioneUrl) {
       var url = _driveViewUrl(data.moduloIscrizioneUrl);
-      el.innerHTML = '<a href="' + _esc(url) + '" target="_blank" rel="noopener" class="al-btn-ghost al-btn-sm">' +
+      el.innerHTML = '<p class="al-modulo-gia">La società ha già allegato il modulo di questo atleta:</p>' +
+        '<a href="' + _esc(url) + '" target="_blank" rel="noopener" class="al-btn-ghost al-btn-sm">' +
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>' +
-        'Apri modulo PDF' +
+        'Apri il modulo allegato' +
         '</a>';
     } else {
-      el.innerHTML = '<p class="al-muted">Modulo non ancora disponibile.</p>';
+      /* il modulo da scaricare è sempre in pagina: qui compare solo quello già allegato su Drive */
+      el.innerHTML = '';
     }
   }
 
