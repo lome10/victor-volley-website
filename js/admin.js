@@ -500,6 +500,9 @@
     ['dirigenteNome', 'dirigenteCognome', 'dirigenteEmail', 'dirigentePassword'].forEach(function (id) {
       document.getElementById(id).value = '';
     });
+    /* Dopo un salvataggio riuscito il pulsante restava su «Creazione…» e disabilitato */
+    var btn = document.getElementById('dirigenteFormSave');
+    btn.textContent = 'Crea dirigente'; btn.disabled = false;
   }
 
   document.getElementById('dirigenteFormCancel').addEventListener('click', renderDirigenti);
