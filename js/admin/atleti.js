@@ -631,7 +631,10 @@
      stagione.taglieEscluse = { categoria: [voce, …] }. Nella tabella la cella diventa «n/d» e non conta nel riepilogo. */
   /* Firestore riserva i nomi di campo del tipo «__x__»: i dirigenti si salvano sotto «Dirigenti». */
   function _chiaveEscl(categoria) { return categoria === DIR_GRUPPO ? 'Dirigenti' : categoria === MV_GRUPPO ? 'MinivolleyQta' : categoria; }
+  /* Il Minivolley riceve solo le maglie gara: ogni altro capo è «non previsto» (n/d) per quel gruppo. */
+  var MV_VOCI = /maglia\s+gara/i;
   function _esclusa(categoria, voce) {
+    if (categoria === MV_GRUPPO && !MV_VOCI.test(String(voce))) return true;
     var s = _stagioneBudget();
     var m = s && s.taglieEscluse && categoria ? s.taglieEscluse[_chiaveEscl(categoria)] : null;
     return !!(m && m.indexOf(voce) !== -1);
