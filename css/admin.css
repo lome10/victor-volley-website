@@ -1934,3 +1934,4 @@ button { font-family: var(--font-body); cursor: pointer; }
 .mv-table td .mv-in { width: 62px; min-width: 62px; padding: 6px 6px; text-align: center; }
 .mv-table th.c, .mv-table td.c { text-align: center; }
 .mv-table .atleti-group span { margin-left: 10px; font-weight: 500; }
+.taglie-modello-tag { background: var(--a-blue); color: #fff; border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 700; }

@@ -690,19 +690,49 @@
     _renderTaglie();
   }
 
+  /* Conteggio per capo, diviso per MODELLO (es. Giacca tuta · Kurt / Giacca tuta · Alice): il modello dipende dalla categoria della persona.
+     → [{ modello, n: { taglia: quante }, senza, totale }] nell'ordine in cui compaiono; con `mv` conta anche le quantità del Minivolley. */
+  function _conteggiPerModello(persone, voce, mv, soloEsportati) {
+    var gruppi = [];
+    var di = function (m) {
+      var g = gruppi.filter(function (x) { return x.modello === m; })[0];
+      if (!g) { g = { modello: m, n: {}, senza: 0, totale: 0 }; gruppi.push(g); }
+      return g;
+    };
+    persone.forEach(function (a) {
+      if (_esclusa(a.categoria, voce)) return;
+      if (soloEsportati && _expOff(_chiaveGruppo(a), voce)) return;
+      var g = di(_modelloDi(a.dirigente ? DIR_GRUPPO : a.categoria, voce));
+      var t = _tagliaOf(a, voce);
+      if (t) { g.n[t] = (g.n[t] || 0) + 1; g.totale++; } else g.senza++;
+    });
+    if (mv) {
+      var righe = _mvRiga(voce);
+      if (righe.length) {
+        var g = di(_modelloDi(MV_GRUPPO, voce));
+        righe.forEach(function (x) { var k = x[0] || 'Sì'; g.n[k] = (g.n[k] || 0) + x[1]; g.totale += x[1]; });
+      }
+    }
+    gruppi.forEach(function (g) {
+      var ordine = _scalaVoce(voce).filter(function (t) { return t && g.n[t]; });
+      Object.keys(g.n).forEach(function (t) { if (ordine.indexOf(t) === -1) ordine.push(t); });
+      g.taglie = ordine.map(function (t) { return [t, g.n[t]]; });
+    });
+    /* i modelli senza nome in coda, se ce ne sono altri con nome */
+    gruppi.sort(function (x, y) { return (x.modello === '') - (y.modello === ''); });
+    return gruppi.filter(function (g) { return g.totale || g.senza; });
+  }
+
   function _riepilogoTaglie(list, voci) {
+    var mv = !_atletiCat && !(_atletiQuery || '').trim();
     return '<div class="taglie-riepilogo">' + voci.map(function (v) {
-      var n = {}, senza = 0;
-      list.forEach(function (a) {
-        if (_esclusa(a.categoria, v)) return;
-        var t = _tagliaOf(a, v); if (t) n[t] = (n[t] || 0) + 1; else senza++;
-      });
-      if (!_atletiCat && !(_atletiQuery || '').trim() && _mvAttivo(v)) _mvRiga(v).forEach(function (x) { var k = x[0] || 'Sì'; n[k] = (n[k] || 0) + x[1]; });
-      var ordine = _scalaVoce(v).filter(function (t) { return t && n[t]; });
-      Object.keys(n).forEach(function (t) { if (ordine.indexOf(t) === -1) ordine.push(t); });
-      return '<div class="taglie-riepilogo-voce"><strong>' + esc(v) + '</strong>' +
-        (ordine.length ? ordine.map(function (t) { return '<span class="taglie-chip">' + esc(t) + ' <b>' + n[t] + '</b></span>'; }).join('') : '<span class="taglie-vuoto">nessuna taglia</span>') +
-        (senza ? '<span class="taglie-chip taglie-chip--senza">da indicare <b>' + senza + '</b></span>' : '') + '</div>';
+      var gr = _conteggiPerModello(list, v, mv && _mvAttivo(v), false);
+      if (!gr.length) return '<div class="taglie-riepilogo-voce"><strong>' + esc(v) + '</strong><span class="taglie-vuoto">nessuna taglia</span></div>';
+      return gr.map(function (g) {
+        return '<div class="taglie-riepilogo-voce"><strong>' + esc(v) + '</strong>' + (g.modello ? '<span class="taglie-modello-tag">' + esc(g.modello) + '</span>' : '') +
+          (g.taglie.length ? g.taglie.map(function (t) { return '<span class="taglie-chip">' + esc(t[0]) + ' <b>' + t[1] + '</b></span>'; }).join('') : '<span class="taglie-vuoto">nessuna taglia</span>') +
+          (g.senza ? '<span class="taglie-chip taglie-chip--senza">da indicare <b>' + g.senza + '</b></span>' : '') + '</div>';
+      }).join('');
     }).join('') + '</div>';
   }
 
@@ -1166,7 +1196,7 @@
     var recap = !p.recap || !p.recap.length ? '' :
       '<h2>Riepilogo capi</h2><table class="recap"><thead><tr><th>Capo</th><th>Taglie</th><th class="c">Totale</th></tr></thead><tbody>' +
       p.recap.map(function (r) {
-        return '<tr><td class="nm">' + esc(r.voce) + (r.modelli && r.modelli.length ? r.modelli.map(function (m) { return '<span class="mod">' + (m[0] ? esc(m[0]) + ': ' : '') + esc(m[1]) + '</span>'; }).join('') : '') + '</td><td>' +
+        return '<tr><td class="nm">' + esc(r.voce) + (r.modello ? '<span class="mod">' + esc(r.modello) + '</span>' : '') + '</td><td>' +
           (r.taglie.length ? r.taglie.map(function (t) { return '<span class="chip">' + esc(t[0]) + ' <b>' + t[1] + '</b></span>'; }).join('') : '<span class="vuoto">nessuna taglia</span>') +
           '</td><td class="c"><b>' + r.totale + '</b></td></tr>';
       }).join('') + '</tbody></table>';
@@ -1220,24 +1250,13 @@
       var conModello = function (v) { return (mvVoci.indexOf(v) !== -1 && !!_modelloDi(MV_GRUPPO, v)) || tuttiTaglie.some(function (a) { return !_expOff(_chiaveGruppo(a), v) && !_esclusa(a.categoria, v) && _modelloDi(a.dirigente ? DIR_GRUPPO : a.categoria, v); }); };
       var pdfTaglie = {
         tipo: 'Elenco taglie', landscape: voci.length > 6,
-        recap: voci.map(function (v) {
-          var n = {}, senza = 0, totale = 0;
-          tuttiTaglie.forEach(function (a) {
-            if (_esclusa(a.categoria, v) || _expOff(_chiaveGruppo(a), v)) return;
-            var t = _tagliaOf(a, v);
-            if (t) { n[t] = (n[t] || 0) + 1; totale++; } else senza++;
+        /* una riga per capo e modello; i capi senza nessuna taglia indicata non compaiono */
+        recap: voci.reduce(function (acc, v) {
+          _conteggiPerModello(tuttiTaglie, v, mvVoci.indexOf(v) !== -1, true).forEach(function (g) {
+            if (g.totale) acc.push({ voce: v, modello: g.modello, taglie: g.taglie, totale: g.totale });
           });
-          if (mvVoci.indexOf(v) !== -1) _mvRiga(v).forEach(function (x) { var k = x[0] || 'Sì'; n[k] = (n[k] || 0) + x[1]; totale += x[1]; });
-          var ordine = _scalaVoce(v).filter(function (t) { return t && n[t]; });
-          Object.keys(n).forEach(function (t) { if (ordine.indexOf(t) === -1) ordine.push(t); });
-          var modelli = [];
-          _gruppiExport().forEach(function (c) {
-            var m = (c === '__none__' || _esclusa(c, v) || _expOff(c, v)) ? '' : _modelloDi(c, v);
-            if (m && (c === MV_GRUPPO ? mvVoci.indexOf(v) !== -1 : tuttiTaglie.some(function (a) { return _chiaveGruppo(a) === c; }))) modelli.push([_nomeGruppo(c), m]);
-          });
-          if (modelli.length && modelli.every(function (m) { return m[1] === modelli[0][1]; })) modelli = [['', modelli[0][1]]];
-          return { voce: v, taglie: ordine.map(function (t) { return [t, n[t]]; }), modelli: modelli, totale: totale };
-        }),
+          return acc;
+        }, []),
         gruppi: _raggruppaPdf(tuttiTaglie).map(function (g) {
           var vc = voci.filter(function (v) { return !_expOff(g.chiave, v); });
           return { nome: g.nome, head: ['Cognome e nome'].concat(vc.map(function (v) { return [v, _modelloDi(g.chiave, v)]; })), righe: g.membri.map(function (a) {
