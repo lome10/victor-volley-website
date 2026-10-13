@@ -1244,7 +1244,7 @@
       var tuttiTaglie = list.concat(_dirigentiFiltrati()).filter(function (a) { return vociDi(a).some(function (v) { return !_esclusa(a.categoria, v); }); });
       /* Minivolley: una riga con le quantità, solo con «Tutte» e senza ricerca (come i dirigenti) */
       var mvVoci = (_atletiCat || (_atletiQuery || '').trim()) ? [] : vociTutte.filter(function (v) { return _mvAttivo(v) && !_expOff(MV_GRUPPO, v) && _mvTot(v) > 0; });
-      var voci = vociTutte.filter(function (v) { return mvVoci.indexOf(v) !== -1 || tuttiTaglie.some(function (a) { return vociDi(a).indexOf(v) !== -1; }); });
+      var voci = vociTutte.filter(function (v) { return mvVoci.indexOf(v) !== -1 || tuttiTaglie.some(function (a) { return vociDi(a).indexOf(v) !== -1 && !_esclusa(a.categoria, v); }); });
       if (!voci.length || (!tuttiTaglie.length && !mvVoci.length)) { _avviso('Nessuna taglia da esportare: controlla «Cosa esportare».'); return null; }
       /* colonna «Modello» solo per i capi che hanno un modello in almeno una delle categorie esportate */
       var conModello = function (v) { return (mvVoci.indexOf(v) !== -1 && !!_modelloDi(MV_GRUPPO, v)) || tuttiTaglie.some(function (a) { return !_expOff(_chiaveGruppo(a), v) && !_esclusa(a.categoria, v) && _modelloDi(a.dirigente ? DIR_GRUPPO : a.categoria, v); }); };
@@ -1258,7 +1258,7 @@
           return acc;
         }, []),
         gruppi: _raggruppaPdf(tuttiTaglie).map(function (g) {
-          var vc = voci.filter(function (v) { return !_expOff(g.chiave, v); });
+          var vc = voci.filter(function (v) { return !_expOff(g.chiave, v) && !_esclusa(g.chiave, v); });
           return { nome: g.nome, head: ['Cognome e nome'].concat(vc.map(function (v) { return [v, _modelloDi(g.chiave, v)]; })), righe: g.membri.map(function (a) {
             return [((a.cognome || '') + ' ' + (a.nome || '')).trim()].concat(vc.map(function (v) { return _esclusa(a.categoria, v) ? 'n/d' : _tagliaOf(a, v); }));
           }) };
@@ -1282,7 +1282,7 @@
         }, []))] : []).concat(tuttiTaglie.map(function (a) {
           return [a.cognome, a.nome, a.dirigente ? 'Dirigenti' : (a.categoria || '')].concat(voci.reduce(function (acc, v) {
             var fuori = _expOff(_chiaveGruppo(a), v), na = _esclusa(a.categoria, v);
-            acc.push(fuori ? '' : (na ? 'n/d' : _tagliaOf(a, v)));
+            acc.push(fuori || na ? '' : _tagliaOf(a, v));
             if (conModello(v)) acc.push(fuori || na ? '' : _modelloDi(a.dirigente ? DIR_GRUPPO : a.categoria, v));
             return acc;
           }, []));
