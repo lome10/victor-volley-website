@@ -107,6 +107,17 @@
       if (_current) _exportRatePdf(_current);
     });
 
+    /* IBAN: copia senza spazi, pronto da incollare nell'app della banca */
+    document.getElementById('payIbanCopy').addEventListener('click', function () {
+      var btn = this, iban = document.getElementById('payIban').getAttribute('data-iban');
+      var fatto = function (ok) {
+        btn.textContent = ok ? 'IBAN copiato' : 'Selezionalo e copialo a mano';
+        setTimeout(function () { btn.textContent = 'Copia IBAN'; }, 2500);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(iban).then(function () { fatto(true); }, function () { fatto(false); });
+      else fatto(false);
+    });
+
     document.getElementById('ricList').addEventListener('click', function (e) {
       var b = e.target.closest('[data-ric]');
       if (!b || !_current) return;

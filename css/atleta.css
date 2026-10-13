@@ -326,6 +326,22 @@ button { font-family: inherit; cursor: pointer; }
 /* ================================================
    RATE
 ================================================ */
+/* avviso fisso con l'IBAN, in cima agli Avvisi (vedi #payInfo in atleta.html) */
+#payInfo { margin-bottom: 16px; }
+.al-pay-text { font-size: 13px; line-height: 1.5; color: var(--al-text); margin: 8px 0; }
+.al-pay-example { font-size: 12px; color: #475569; margin: 6px 0 0; }
+.al-pay-data {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 14px;
+  align-items: center;
+  margin: 10px 0;
+}
+.al-pay-data dt { font-size: 12px; color: #475569; }
+.al-pay-data dd { margin: 0; font-size: 14px; font-weight: 600; color: var(--al-text); }
+.al-pay-iban { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.al-pay-iban-value { font-family: ui-monospace, Consolas, monospace; letter-spacing: 0.04em; overflow-wrap: anywhere; }
+
 .al-rate-list {
   display: flex;
   flex-direction: column;
