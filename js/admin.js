@@ -486,9 +486,9 @@
     document.getElementById('dirigentiBody').innerHTML = _dirigentiCache.map(function (d) {
       return '<tr>' +
         '<td>' + esc((d.nome || '') + ' ' + (d.cognome || '')) + '</td>' +
-        '<td>' + esc(d.email || '') + '</td>' +
+        '<td>' + (d.senzaAccesso ? '<span style="color:var(--a-muted)">Solo taglie (senza accesso)</span>' : esc(d.email || '')) + '</td>' +
         '<td style="text-align:right">' +
-          '<button class="btn-icon btn-icon--danger" onclick="AdminActions.deleteDirigente(\'' + d.uid + '\')" title="Revoca accesso">' + DEL_ICON + '</button>' +
+          '<button class="btn-icon btn-icon--danger" onclick="AdminActions.deleteDirigente(\'' + d.uid + '\')" title="' + (d.senzaAccesso ? 'Elimina' : 'Revoca accesso') + '">' + DEL_ICON + '</button>' +
         '</td>' +
       '</tr>';
     }).join('');
@@ -510,13 +510,29 @@
     var email   = document.getElementById('dirigenteEmail').value.trim();
     var pwd     = document.getElementById('dirigentePassword').value;
 
-    if (!nome || !cognome || !email || !pwd) {
-      alert('Nome, cognome, email e password sono obbligatori.'); return;
+    if (!nome || !cognome) { alert('Nome e cognome sono obbligatori.'); return; }
+    var senzaAccesso = !email && !pwd;
+    if (!senzaAccesso && (!email || !pwd)) {
+      alert('Per dare l\'accesso servono sia email sia password; per una persona senza accesso lasciali entrambi vuoti.'); return;
     }
-    if (pwd.length < 10) { alert('La password deve avere almeno 10 caratteri.'); return; }
+    if (!senzaAccesso && pwd.length < 10) { alert('La password deve avere almeno 10 caratteri.'); return; }
 
     var btn = document.getElementById('dirigenteFormSave');
     btn.textContent = 'Creazione…'; btn.disabled = true;
+
+    /* Senza accesso: nessun account, documento con id automatico (non coincide con nessun uid, quindi non apre il pannello). */
+    if (senzaAccesso) {
+      var ref = db.collection('dirigenti').doc();
+      var dati = { nome: nome, cognome: cognome, senzaAccesso: true, createdAt: new Date().toISOString() };
+      ref.set(dati)
+        .then(function () { return _logWrite('dirigente', ref.id, 'Dirigente — ' + cognome + ' ' + nome, 'create', _diff({}, dati, Object.keys(dati))); })
+        .then(renderDirigenti)
+        .catch(function (err) {
+          alert('Errore: ' + err.message);
+          btn.textContent = 'Crea dirigente'; btn.disabled = false;
+        });
+      return;
+    }
 
     /* secondary app per non disconnettere l'admin */
     var existing  = firebase.apps.find(function (a) { return a.name === 'dirigente-creator'; });
@@ -548,7 +564,7 @@
   window.AdminActions.deleteDirigente = function (uid) {
     var target = _dirigentiCache.find(function (d) { return d.uid === uid; });
     confirm(
-      'Revocare l\'accesso all\'Area Dirigenti? Le credenziali Firebase resteranno attive.',
+      target && target.senzaAccesso ? 'Eliminare questa persona? Sparirà anche dalle taglie.' : 'Revocare l\'accesso all\'Area Dirigenti? Le credenziali Firebase resteranno attive.',
       function () {
         db.collection('dirigenti').doc(uid).delete()
           .then(function () {

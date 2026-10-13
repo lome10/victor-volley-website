@@ -74,7 +74,7 @@
         return { docs: [] };
       })
     ]).then(function (res) {
-      B._dirigentiList    = res[0].docs.map(_mapDoc);
+      B._dirigentiList    = res[0].docs.map(_mapDoc).filter(function (d) { return !d.senzaAccesso; });
       B._seasons          = res[1].docs.map(_mapDoc).sort(function (a, b) { return (a.nome || '') < (b.nome || '') ? 1 : -1; });
       B._aziende          = res[2].docs.map(_mapDoc);
       B._sponsorizzazioni = res[3].docs.map(_mapDoc);

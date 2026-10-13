@@ -50,7 +50,8 @@
   function _loadPeDirigenti(cb) {
     if (_peDirigenti) { cb(); return; }
     db.collection('dirigenti').get().then(function (snap) {
-      _peDirigenti = snap.docs.map(function (d) { return Object.assign({ uid: d.id }, d.data()); });
+      _peDirigenti = snap.docs.map(function (d) { return Object.assign({ uid: d.id }, d.data()); })
+        .filter(function (d) { return !d.senzaAccesso; });
       cb();
     }).catch(function (e) {
       console.error('[pianoEditoriale] dirigenti', e);

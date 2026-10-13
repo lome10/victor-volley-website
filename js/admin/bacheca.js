@@ -43,7 +43,8 @@
   function _loadKbDirigenti(cb) {
     if (_kbDirigenti) { cb(); return; }
     db.collection('dirigenti').get().then(function (snap) {
-      _kbDirigenti = snap.docs.map(function (d) { return Object.assign({ uid: d.id }, d.data()); });
+      _kbDirigenti = snap.docs.map(function (d) { return Object.assign({ uid: d.id }, d.data()); })
+        .filter(function (d) { return !d.senzaAccesso; });
       cb();
     }).catch(function (e) {
       console.error('[bacheca] dirigenti', e);

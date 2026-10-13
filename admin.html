@@ -1351,15 +1351,16 @@
               <input type="text" id="dirigenteCognome" class="form-input" placeholder="Cognome">
             </div>
             <div class="form-group">
-              <label class="form-label">Email *</label>
+              <label class="form-label">Email</label>
               <input type="email" id="dirigenteEmail" class="form-input" placeholder="Email per il login">
             </div>
             <div class="form-group">
-              <label class="form-label">Password iniziale *</label>
+              <label class="form-label">Password iniziale</label>
               <input type="text" id="dirigentePassword" class="form-input" placeholder="Minimo 10 caratteri">
               <button type="button" class="btn-ghost btn-sm" data-genpwd="dirigentePassword" style="margin-top:6px">Genera password</button>
             </div>
           </div>
+          <p class="form-hint">Lascia vuoti email e password per aggiungere una persona <strong>senza accesso</strong>: compare solo nella vista Atleti → Taglie. Per dare l'accesso servono entrambe.</p>
           <div class="form-actions">
             <button id="dirigenteFormCancel" class="btn-ghost">Annulla</button>
             <button id="dirigenteFormSave" class="btn-primary">Crea dirigente</button>
