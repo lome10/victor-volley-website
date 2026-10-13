@@ -6,7 +6,7 @@
   --al-bg:     #F1F5F9;
   --al-card:   #FFFFFF;
   --al-text:   #1E293B;
-  --al-muted:  #64748B;
+  --al-muted:  #5B6B80;
   --al-border: #E2E8F0;
   --al-blue:   #008CFD;
   --al-green:  #10B981;
@@ -108,7 +108,7 @@ button { font-family: inherit; cursor: pointer; }
   justify-content: center;
   width: 100%;
   padding: 12px 20px;
-  background: var(--al-blue);
+  background: #0070D6;   /* blu più scuro del logo: il bianco sopra arriva a 4,9:1 (con #008CFD solo 3,4:1) */
   color: #fff;
   border: none;
   border-radius: 7px;
@@ -117,7 +117,7 @@ button { font-family: inherit; cursor: pointer; }
   cursor: pointer;
   transition: background var(--al-t);
 }
-.al-btn-primary:hover { background: #0070D6; }
+.al-btn-primary:hover { background: #005FB8; }
 
 .al-btn-ghost {
   display: inline-flex;
@@ -678,7 +678,6 @@ button { font-family: inherit; cursor: pointer; }
   gap: 14px;
   padding: 12px 14px;
   border: 1px solid var(--al-border);
-  border-left: 3px solid var(--al-border);
   border-radius: 8px;
   background: #FAFAFA;
 }
@@ -707,7 +706,7 @@ button { font-family: inherit; cursor: pointer; }
 @media (max-width: 600px) {
   .al-card-header { flex-wrap: wrap; }
   .al-card-action { margin-left: 0; }
-  .al-nav-btn span { font-size: 10px; }
+  .al-nav-btn span { font-size: 11px; }
 }
 
 /* ================================================
@@ -738,7 +737,7 @@ button { font-family: inherit; cursor: pointer; }
 .al-todo.is-link:hover, .al-todo.is-link:focus-visible { background: var(--al-bg); outline: none; }
 
 #avvisiList { display: flex; flex-direction: column; gap: 16px; }
-.al-avviso--important { border-left: 3px solid var(--al-red); }
+.al-avviso--important { border-color: var(--al-red); }
 .al-avviso-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .al-avviso-title { font-family: 'Barlow', sans-serif; font-size: 17px; font-weight: 700; margin-right: auto; }
 .al-avviso-meta { font-size: 12px; color: var(--al-muted); margin: 4px 0 12px; }

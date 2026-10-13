@@ -1029,11 +1029,11 @@
       '.titleblock h1{font-size:22px;color:#0F172A;font-weight:700}' +
       '.tag{display:inline-block;margin-top:8px;font-size:10.5px;background:#F1F5F9;color:#475569;border-radius:999px;padding:3px 11px;font-weight:600}' +
       '.kpis{display:flex;gap:10px;margin-bottom:20px}' +
-      '.kpi{flex:1;background:#F8FAFC;border:1px solid #E2E8F0;border-top:3px solid #94A3B8;border-radius:8px;padding:10px 12px}' +
+      '.kpi{flex:1;background:#F8FAFC;border:1px solid #94A3B8;border-radius:8px;padding:10px 12px}' +
       '.kpi-label{font-size:9.5px;color:#64748B;text-transform:uppercase;letter-spacing:.05em;font-weight:700}' +
       '.kpi-value{font-size:17px;font-weight:700;color:#0F172A;margin-top:3px;font-family:"Barlow",sans-serif}' +
-      '.kpi--ok{border-top-color:#10B981}.kpi--ok .kpi-value{color:#059669}' +
-      '.kpi--due{border-top-color:#F59E0B}.kpi--due .kpi-value{color:#B45309}' +
+      '.kpi--ok{border-color:#10B981}.kpi--ok .kpi-value{color:#059669}' +
+      '.kpi--due{border-color:#F59E0B}.kpi--due .kpi-value{color:#B45309}' +
       'table{width:100%;border-collapse:collapse;font-size:11.5px}' +
       'thead{display:table-header-group}tr{page-break-inside:avoid}' +
       'th{background:#0F172A;color:#fff;font-family:"Barlow",sans-serif;font-weight:700;font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;text-align:left;padding:7px 9px}' +
