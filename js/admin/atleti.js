@@ -1111,12 +1111,12 @@
     var recap = !p.recap || !p.recap.length ? '' :
       '<h2>Riepilogo capi</h2><table class="recap"><thead><tr><th>Capo</th><th>Taglie</th><th class="c">Totale</th></tr></thead><tbody>' +
       p.recap.map(function (r) {
-        return '<tr><td class="nm">' + esc(r.voce) + '</td><td>' +
+        return '<tr><td class="nm">' + esc(r.voce) + (r.modelli && r.modelli.length ? r.modelli.map(function (m) { return '<span class="mod">' + (m[0] ? esc(m[0]) + ': ' : '') + esc(m[1]) + '</span>'; }).join('') : '') + '</td><td>' +
           (r.taglie.length ? r.taglie.map(function (t) { return '<span class="chip">' + esc(t[0]) + ' <b>' + t[1] + '</b></span>'; }).join('') : '<span class="vuoto">nessuna taglia</span>') +
-          (r.senza ? '<span class="chip chip-senza">da indicare <b>' + r.senza + '</b></span>' : '') + '</td><td class="c"><b>' + r.totale + '</b></td></tr>';
+          '</td><td class="c"><b>' + r.totale + '</b></td></tr>';
       }).join('') + '</tbody></table>';
     var corpo = p.gruppi.map(function (g) {
-      var thead = '<thead><tr>' + (g.head || p.head).map(function (h, i) { return '<th' + (i === 0 ? '' : ' class="c"') + '>' + esc(h) + '</th>'; }).join('') + '</tr></thead>';
+      var thead = '<thead><tr>' + (g.head || p.head).map(function (h, i) { return '<th' + (i === 0 ? '' : ' class="c"') + '>' + (Array.isArray(h) ? esc(h[0]) + (h[1] ? '<span class="mod">' + esc(h[1]) + '</span>' : '') : esc(h)) + '</th>'; }).join('') + '</tr></thead>';
       return '<div class="gband"><strong>' + esc(g.nome) + '</strong><span>' + g.righe.length + (g.nome === 'Dirigenti' ? (g.righe.length === 1 ? ' persona' : ' persone') : (g.righe.length === 1 ? ' atleta' : ' atleti')) + '</span></div>' +
         '<table>' + thead + '<tbody>' + g.righe.map(function (r) {
           return '<tr>' + r.map(function (c, i) {
@@ -1138,6 +1138,7 @@
       'table{width:100%;border-collapse:collapse}thead{display:table-header-group}' +
       'th{background:#0F172A;color:#fff;font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;text-align:left;padding:6px 7px;font-weight:700}th.c,td.c{text-align:center}' +
       'td{padding:5px 7px;border-bottom:1px solid #E2E8F0;vertical-align:middle}tr{page-break-inside:avoid}' +
+      '.mod{display:block;font-weight:500;font-size:9px;color:#64748B;text-transform:none;letter-spacing:0}th .mod{color:#CBD5E1}' +
       'tbody tr:nth-child(even) td{background:#F8FAFC}td.nm{font-weight:600}td.na{color:#94A3B8}.vuoto{color:#CBD5E1}' +
       '.gband{background:#E8F1FB;border:1px solid #BFD6F2;border-radius:6px 6px 0 0;padding:6px 8px;margin-top:14px;page-break-after:avoid;break-after:avoid;color:#053063}.gband span{margin-left:10px;font-size:10px;color:#475569;font-weight:600}';
     return '<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>' + esc(d.titolo) + ' — Victor Volley</title>' +
@@ -1158,6 +1159,8 @@
       var tuttiTaglie = list.concat(_dirigentiFiltrati()).filter(function (a) { return vociDi(a).some(function (v) { return !_esclusa(a.categoria, v); }); });
       var voci = vociTutte.filter(function (v) { return tuttiTaglie.some(function (a) { return vociDi(a).indexOf(v) !== -1; }); });
       if (!voci.length || !tuttiTaglie.length) { _avviso('Nessuna taglia da esportare: controlla «Cosa esportare».'); return null; }
+      /* colonna «Modello» solo per i capi che hanno un modello in almeno una delle categorie esportate */
+      var conModello = function (v) { return tuttiTaglie.some(function (a) { return !_expOff(_chiaveGruppo(a), v) && !_esclusa(a.categoria, v) && _modelloDi(a.dirigente ? DIR_GRUPPO : a.categoria, v); }); };
       var pdfTaglie = {
         tipo: 'Elenco taglie', landscape: voci.length > 6,
         recap: voci.map(function (v) {
@@ -1169,11 +1172,17 @@
           });
           var ordine = _scalaVoce(v).filter(function (t) { return t && n[t]; });
           Object.keys(n).forEach(function (t) { if (ordine.indexOf(t) === -1) ordine.push(t); });
-          return { voce: v, taglie: ordine.map(function (t) { return [t, n[t]]; }), senza: senza, totale: totale };
+          var modelli = [];
+          _gruppiExport().forEach(function (c) {
+            var m = (c === '__none__' || _esclusa(c, v) || _expOff(c, v)) ? '' : _modelloDi(c, v);
+            if (m && tuttiTaglie.some(function (a) { return _chiaveGruppo(a) === c; })) modelli.push([_nomeGruppo(c), m]);
+          });
+          if (modelli.length && modelli.every(function (m) { return m[1] === modelli[0][1]; })) modelli = [['', modelli[0][1]]];
+          return { voce: v, taglie: ordine.map(function (t) { return [t, n[t]]; }), modelli: modelli, totale: totale };
         }),
         gruppi: _raggruppaPdf(tuttiTaglie).map(function (g) {
           var vc = voci.filter(function (v) { return !_expOff(g.chiave, v); });
-          return { nome: g.nome, head: ['Cognome e nome'].concat(vc), righe: g.membri.map(function (a) {
+          return { nome: g.nome, head: ['Cognome e nome'].concat(vc.map(function (v) { return [v, _modelloDi(g.chiave, v)]; })), righe: g.membri.map(function (a) {
             return [((a.cognome || '') + ' ' + (a.nome || '')).trim()].concat(vc.map(function (v) { return _esclusa(a.categoria, v) ? 'n/d' : _tagliaOf(a, v); }));
           }) };
         })
@@ -1182,11 +1191,16 @@
       return {
         pdf: pdfTaglie,
         titolo: 'Taglie — ' + cat, base: 'taglie-' + slug, sensibile: false,
-        head: ['Cognome', 'Nome', 'Categoria'].concat(voci),
+        head: ['Cognome', 'Nome', 'Categoria'].concat(voci.reduce(function (acc, v) {
+          acc.push(v); if (conModello(v)) acc.push('Modello ' + v); return acc;
+        }, [])),
         righe: tuttiTaglie.map(function (a) {
-          return [a.cognome, a.nome, a.dirigente ? 'Dirigenti' : (a.categoria || '')].concat(voci.map(function (v) {
-            return _expOff(_chiaveGruppo(a), v) ? '' : (_esclusa(a.categoria, v) ? 'n/d' : _tagliaOf(a, v));
-          }));
+          return [a.cognome, a.nome, a.dirigente ? 'Dirigenti' : (a.categoria || '')].concat(voci.reduce(function (acc, v) {
+            var fuori = _expOff(_chiaveGruppo(a), v), na = _esclusa(a.categoria, v);
+            acc.push(fuori ? '' : (na ? 'n/d' : _tagliaOf(a, v)));
+            if (conModello(v)) acc.push(fuori || na ? '' : _modelloDi(a.dirigente ? DIR_GRUPPO : a.categoria, v));
+            return acc;
+          }, []));
         })
       };
     }
