@@ -305,14 +305,25 @@
       }
     }
 
+    /* due date per rata: «pagamento entro» (scadenzaPagamento) e «valida fino al» (scadenza) */
     (a.rate || []).forEach(function (r) {
-      if (r.pagata || !r.scadenza) return;
-      var d = _daysDiff(r.scadenza);
+      if (r.pagata) return;
       var what = '«' + (r.descrizione || 'Quota') + '» (€' + (+r.importo || 0).toFixed(2) + ')';
-      if (d < 0) {
-        items.push({ lvl: 'red', text: 'Quota ' + what + ' scaduta il ' + _fmtDate(r.scadenza) + '.' });
-      } else if (d <= 14) {
-        items.push({ lvl: 'orange', text: 'Quota ' + what + ' in scadenza ' + _inDays(d) + ' (' + _fmtDate(r.scadenza) + ').' });
+      var dv = r.scadenza ? _daysDiff(r.scadenza) : null;
+      if (dv != null && dv < 0) {
+        items.push({ lvl: 'red', text: 'Quota ' + what + ' scaduta il ' + _fmtDate(r.scadenza) + ' e non pagata: contatta la società.' });
+        return;
+      }
+      if (r.scadenzaPagamento) {
+        var dp = _daysDiff(r.scadenzaPagamento);
+        if (dp < 0) {
+          items.push({ lvl: 'red', text: 'Quota ' + what + ' da pagare entro il ' + _fmtDate(r.scadenzaPagamento) + ': pagamento in ritardo.' });
+        } else if (dp <= 14) {
+          items.push({ lvl: 'orange', text: 'Quota ' + what + ': pagamento previsto ' + _inDays(dp) + ' (' + _fmtDate(r.scadenzaPagamento) + ').' });
+        }
+      }
+      if (dv != null && dv <= 14) {
+        items.push({ lvl: dv <= 1 ? 'red' : 'orange', text: 'La validità della quota ' + what + ' scade ' + _inDays(dv) + ' (' + _fmtDate(r.scadenza) + ').' });
       }
     });
 
@@ -513,9 +524,10 @@
         a.rate = rows.map(function (r) {
           return {
             descrizione: (r.note || 'Quota') + (piuStagioni && r.stagione ? ' (' + r.stagione + ')' : ''),
-            importo: r.importo, scadenza: r.scadenza, pagata: !!r.pagata, dataPagamento: r.dataPagamento || null
+            importo: r.importo, scadenza: r.scadenza, scadenzaPagamento: r.scadenzaPagamento || '', pagata: !!r.pagata, dataPagamento: r.dataPagamento || null
           };
         });
+        a.rate.sort(function (x, y) { return (x.scadenzaPagamento || x.scadenza || '9999-12-31').localeCompare(y.scadenzaPagamento || y.scadenza || '9999-12-31'); });
       })
       .catch(function (e) {
         if (token !== _rateToken) return;
@@ -973,19 +985,28 @@
 
     document.getElementById('rateList').innerHTML = rate.map(function (r) {
       var paid = !!r.pagata;
+      var stato = _statoRata(r, _isoDate(new Date()));
       return '<div class="al-rate-item' + (paid ? ' al-rate-item--paid' : '') + '">' +
         '<div class="al-rate-info">' +
           '<div class="al-rate-desc">' + _esc(r.descrizione || 'Quota') + '</div>' +
-          '<div class="al-rate-date">Scadenza: ' + (r.scadenza ? _fmtDate(r.scadenza) : '—') + '</div>' +
+          (r.scadenzaPagamento ? '<div class="al-rate-date">Pagamento entro: ' + _fmtDate(r.scadenzaPagamento) + '</div>' : '') +
+          '<div class="al-rate-date">Valida fino al: ' + (r.scadenza ? _fmtDate(r.scadenza) : '—') + '</div>' +
         '</div>' +
         '<div class="al-rate-right">' +
           '<div class="al-rate-amount">€' + (+r.importo || 0).toFixed(2) + '</div>' +
-          (paid
-            ? '<span class="al-badge al-badge--green">Pagata</span>'
-            : '<span class="al-badge al-badge--red">Da pagare</span>') +
+          '<span class="al-badge al-badge--' + (paid ? 'green' : 'red') + '">' + stato.testo + '</span>' +
         '</div>' +
       '</div>';
     }).join('');
+  }
+
+  /* Stato di una rata: pagata; scaduta (validità finita e non pagata); in ritardo (data di pagamento passata);
+     altrimenti da pagare. Le date sono YYYY-MM-DD, confrontate con quella di oggi. */
+  function _statoRata(r, oggi) {
+    if (r.pagata) return { k: 'pagata', testo: 'Pagata' };
+    if (r.scadenza && r.scadenza < oggi) return { k: 'scaduta', testo: 'Scaduta' };
+    if (r.scadenzaPagamento && r.scadenzaPagamento < oggi) return { k: 'ritardo', testo: 'In ritardo' };
+    return { k: 'da-pagare', testo: 'Da pagare' };
   }
 
   /* Riepilogo quote in PDF, via finestra di stampa del browser ("Salva come PDF").
@@ -996,7 +1017,7 @@
 
   function _exportRatePdf(a) {
     var rate = (a.rate || []).slice().sort(function (x, y) {
-      return (x.scadenza || '9999-12-31').localeCompare(y.scadenza || '9999-12-31');
+      return (x.scadenzaPagamento || x.scadenza || '9999-12-31').localeCompare(y.scadenzaPagamento || y.scadenza || '9999-12-31');
     });
     if (!rate.length) return;
 
@@ -1008,8 +1029,8 @@
       if (r.pagata) {
         return '<span class="badge badge--ok">Pagata' + (r.dataPagamento ? ' il ' + _esc(_fmtDate(r.dataPagamento)) : '') + '</span>';
       }
-      if (r.scadenza && r.scadenza < today) return '<span class="badge badge--red">Scaduta</span>';
-      return '<span class="badge badge--warn">Da pagare</span>';
+      var s = _statoRata(r, today);
+      return '<span class="badge badge--' + (s.k === 'da-pagare' ? 'warn' : 'red') + '">' + s.testo + '</span>';
     }
 
     var css = '@page{size:A4;margin:16mm 14mm}' +
@@ -1060,12 +1081,13 @@
         '<div class="kpi kpi--ok"><div class="kpi-label">Versato</div><div class="kpi-value">' + _eur(t.saldato) + '</div></div>' +
         '<div class="kpi kpi--due"><div class="kpi-label">Ancora da versare</div><div class="kpi-value">' + _eur(t.dovuto) + '</div></div>' +
       '</div>' +
-      '<table><thead><tr><th>Descrizione</th><th>Scadenza</th><th class="num">Importo</th><th>Stato</th></tr></thead><tbody>' +
+      '<table><thead><tr><th>Descrizione</th><th>Pagamento entro</th><th>Valida fino al</th><th class="num">Importo</th><th>Stato</th></tr></thead><tbody>' +
       rate.map(function (r) {
-        return '<tr><td>' + _esc(r.descrizione || 'Quota') + '</td><td>' + (r.scadenza ? _esc(_fmtDate(r.scadenza)) : '—') + '</td>' +
+        return '<tr><td>' + _esc(r.descrizione || 'Quota') + '</td><td>' + (r.scadenzaPagamento ? _esc(_fmtDate(r.scadenzaPagamento)) : '—') + '</td>' +
+          '<td>' + (r.scadenza ? _esc(_fmtDate(r.scadenza)) : '—') + '</td>' +
           '<td class="num">' + _eur(r.importo) + '</td><td>' + stato(r) + '</td></tr>';
       }).join('') +
-      '<tr class="total-row"><td colspan="2">Totale</td><td class="num">' + _eur(t.totale) + '</td><td></td></tr>' +
+      '<tr class="total-row"><td colspan="3">Totale</td><td class="num">' + _eur(t.totale) + '</td><td></td></tr>' +
       '</tbody></table>' +
       '<p class="note">Riepilogo informativo aggiornato alla data di generazione. Non è una ricevuta: le ricevute dei pagamenti si scaricano dalla scheda «Ricevute di pagamento».</p>' +
       '<footer><span>Victor Volley &middot; Area Atleti</span><span>Documento generato automaticamente</span></footer>' +

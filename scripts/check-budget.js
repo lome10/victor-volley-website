@@ -60,6 +60,13 @@ t('rata pagata: conta nel mese del pagamento (scadenza solo come ripiego)', () =
   const r = B._calcBilancioMensile(), m = r.righe.map((x) => x.label).join('|');
   assert.ok(/Ottobre 2026/.test(m) && /Marzo 2027/.test(m) && !/Dicembre 2026/.test(m), m); assert.strictEqual(r.totEntrate, 220);
 });
+t('rata pagata senza data di pagamento: ripiego sulla scadenza di pagamento, poi sulla validità', () => {
+  const B = stato({ _atletiRette: [{ id: 'a1' }], _rateAtleti: [
+    { atletaRettaId: 'a1', importo: 100, scadenzaPagamento: '2026-11-15', scadenza: '2027-06-30', pagata: true },
+    { atletaRettaId: 'a1', importo: 50, scadenza: '2027-03-31', pagata: true }] });
+  const m = B._calcBilancioMensile().righe.map((x) => x.label).join('|');
+  assert.ok(/Novembre 2026/.test(m) && /Marzo 2027/.test(m) && !/Giugno 2027/.test(m), m);
+});
 t('tessere pagate: mese della data di pagamento', () => {
   const B = stato({ _calcTessere: () => ({ righe: [{ numero: 1, nome: 'Mario', dataPagamento: '2026-10-02', importo: 20 }, { numero: 3, nome: 'Anna', dataPagamento: '2026-10-09', importo: 20 }] }) });
   const r = B._calcBilancioMensile(); assert.strictEqual(r.righe.length, 1); assert.strictEqual(r.totEntrate, 40);

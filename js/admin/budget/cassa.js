@@ -42,7 +42,7 @@
     B._rateAtleti.forEach(function (r) {
       var a = atleti[r.atletaRettaId];
       if (!a || r.pagata) return;
-      ev.push({ fonte: 'Rette', nome: ((a.nome || '') + ' ' + (a.cognome || '')).trim(), importo: +r.importo || 0, scadenza: r.scadenza || '' });
+      ev.push({ fonte: 'Rette', nome: ((a.nome || '') + ' ' + (a.cognome || '')).trim(), importo: +r.importo || 0, scadenza: r.scadenzaPagamento || r.scadenza || '' });
     });
     var tess = B._calcTessere();
     B._tessere.forEach(function (t) {

@@ -1483,7 +1483,7 @@
     var el = document.getElementById('rateAdminList');
     var a  = _editingAtleta;
     var rate = a ? _rateOfAtleta(a.uid).slice().sort(function (x, y) {
-      return (x.scadenza || '9999-12-31').localeCompare(y.scadenza || '9999-12-31');
+      return (x.scadenzaPagamento || x.scadenza || '9999-12-31').localeCompare(y.scadenzaPagamento || y.scadenza || '9999-12-31');
     }) : [];
 
     /* le ricevute si caricano una volta sola; a caricamento finito la lista si ridisegna */
@@ -1498,8 +1498,8 @@
       return '<div class="atleta-rate-item">' +
         '<div class="atleta-rate-info">' +
           '<div class="atleta-rate-desc">' + esc(r.note || 'Quota') + '</div>' +
-          '<div class="atleta-rate-meta">Scadenza: ' + _fmtDate(r.scadenza) +
-            ' &nbsp;·&nbsp; €' + (+r.importo || 0).toFixed(2) +
+          '<div class="atleta-rate-meta" style="display:flex;flex-wrap:wrap;gap:4px 0;margin-bottom:3px">' + window.AdminActions.dateRataHtml(r) + '</div>' +
+          '<div class="atleta-rate-meta">€' + (+r.importo || 0).toFixed(2) +
             (r.stagione ? ' &nbsp;·&nbsp; ' + esc(r.stagione) : '') +
             (r.pagata && r.dataPagamento ? ' &nbsp;·&nbsp; pagata il ' + _fmtDate(r.dataPagamento) : '') + '</div>' +
         '</div>' +
@@ -1522,15 +1522,17 @@
     var desc    = document.getElementById('rataDesc').value.trim();
     var importo = parseFloat(document.getElementById('rataImporto').value) || 0;
     var scad    = document.getElementById('rataScadenza').value;
+    var scadPag = document.getElementById('rataScadenzaPag').value;
     if (!desc)    { _avviso('Inserisci una descrizione.'); return; }
     if (!importo) { _avviso('Inserisci un importo.'); return; }
+    if (scad && scadPag && scadPag > scad) { _avviso('La scadenza di pagamento non può essere successiva alla fine della validità.'); return; }
 
     var btn = this;
     btn.disabled = true;
     _ensureIscrizione(a, true).then(function (isc) {
       var data = {
         atletaRettaId: isc.id, atletaId: a.uid, seasonId: _bs().currentSeasonId, stagione: _stagioneCorrenteNome(),
-        importo: importo, scadenza: scad, note: desc, pagata: false, dataPagamento: null,
+        importo: importo, scadenza: scad, scadenzaPagamento: scadPag, note: desc, pagata: false, dataPagamento: null,
         createdAt: new Date().toISOString()
       };
       var ref = db.collection('rateAtleti').doc();
@@ -1540,7 +1542,7 @@
         return _logWrite('rataAtleti', ref.id, 'Rata — ' + (a.cognome || '') + ' ' + (a.nome || ''), 'create', _diff({}, data, Object.keys(data)));
       });
     }).then(function () {
-      ['rataDesc', 'rataImporto', 'rataScadenza'].forEach(function (id) { document.getElementById(id).value = ''; });
+      ['rataDesc', 'rataImporto', 'rataScadenza', 'rataScadenzaPag'].forEach(function (id) { document.getElementById(id).value = ''; });
       _renderRateAdmin();
       _renderAtletiRows();
       _refreshBudgetViews();

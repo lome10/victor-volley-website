@@ -3,8 +3,10 @@
  * `node scripts/check-promemoria.js`). Il file inizia con «_» per non essere esposto da Vercel come funzione.
  *
  * Soglie decise con la società (2026-10-05):
- *   - rata non pagata: 7 e 1 giorno PRIMA della scadenza; poi il giorno dopo e ogni 7 giorni per 3 volte
- *     (cioè 1, 8, 15 e 22 giorni DOPO);
+ *   - rata non pagata, scadenza di PAGAMENTO: 7 e 1 giorno PRIMA; poi il giorno dopo e ogni 7 giorni per 3 volte
+ *     (cioè 1, 8, 15 e 22 giorni DOPO). Non partono più quando la quota è già scaduta;
+ *   - rata non pagata, scadenza di VALIDITÀ: 7 e 1 giorno PRIMA e il giorno dopo (SOGLIE_VALIDITA_*, scelte il
+ *     2026-10-14: da confermare con la società);
  *   - certificato medico: 30 e 7 giorni prima e il giorno della scadenza.
  * Il job gira una volta al giorno. Ogni promemoria ha una chiave (promemoriaInviati/{chiave}) per non essere
  * spedito due volte; per non perdere un avviso se un giorno il job salta, vale anche il giorno dopo la soglia.
@@ -12,6 +14,8 @@
 
 const SOGLIE_RATA_PRIMA = [7, 1];
 const SOGLIE_RATA_DOPO = [1, 8, 15, 22];
+const SOGLIE_VALIDITA_PRIMA = [7, 1];
+const SOGLIE_VALIDITA_DOPO = [1];
 const SOGLIE_CERT_PRIMA = [30, 7, 0];
 const TOLLERANZA_GIORNI = 1;
 
@@ -69,32 +73,69 @@ function costruisciPromemoria({ atleti, rate, oggi }) {
   const perId = new Map(atleti.map((a) => [a.id, a]));
   const out = [];
 
+  /* Una rata ha due date: `scadenzaPagamento` (entro quando va pagata) e `scadenza` (fino a quando la quota è valida;
+     passata questa data, se non è pagata, risulta scaduta). Le rate vecchie hanno solo `scadenza`: ricevono solo i
+     promemoria di validità finché non si inserisce la data di pagamento. */
+  const dataOk = (s) => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
+
   rate.forEach((r) => {
-    if (r.pagata || !r.scadenza || !/^\d{4}-\d{2}-\d{2}$/.test(r.scadenza)) return;
+    if (r.pagata) return;
+    const haPag = dataOk(r.scadenzaPagamento), haVal = dataOk(r.scadenza);
+    if (!haPag && !haVal) return;
     const a = perId.get(r.atletaId);
     if (!a) return;
     const dest = destinatariDi(a);
     if (!dest.length) return;
-    const g = giorniTra(oggi, r.scadenza);                 // >0 futuro, <0 scaduta
     const cosa = '«' + (r.note || 'Quota') + '» (€ ' + eur(r.importo) + ')';
-    let soglia = null, testo = '', livello = 'orange';
+    const base = { atletaId: a.id, atletaNome: nomeAtleta(a), tipo: 'rata', destinatari: dest };
+    const gVal = haVal ? giorniTra(oggi, r.scadenza) : null;       // >0 futuro, <0 validità finita
+    const validaFinita = gVal != null && gVal < 0;
 
-    if (g >= 0) {
-      soglia = SOGLIE_RATA_PRIMA.find((s) => g === s || g === s - TOLLERANZA_GIORNI);
-      if (soglia != null) {
-        testo = 'Quota ' + cosa + ' di ' + nomeAtleta(a) + ': scade il ' + fmtData(r.scadenza) + (g === 0 ? ' (oggi)' : ' (tra ' + _giornoLabel(g) + ')') + '.';
+    /* pagamento: non ha più senso sollecitarlo quando la quota è già scaduta (vale l'avviso di validità) */
+    if (haPag && !validaFinita) {
+      const g = giorniTra(oggi, r.scadenzaPagamento);
+      let soglia = null, testo = '', livello = 'orange';
+      if (g >= 0) {
+        soglia = SOGLIE_RATA_PRIMA.find((s) => g === s || g === s - TOLLERANZA_GIORNI);
+        if (soglia != null) {
+          testo = 'Quota ' + cosa + ' di ' + nomeAtleta(a) + ': da pagare entro il ' + fmtData(r.scadenzaPagamento) + (g === 0 ? ' (oggi)' : ' (tra ' + _giornoLabel(g) + ')') + '.';
+        }
+      } else {
+        const ritardo = -g;
+        const s = SOGLIE_RATA_DOPO.find((x) => ritardo === x || ritardo === x + TOLLERANZA_GIORNI);
+        if (s != null) {
+          soglia = -s;
+          livello = 'red';
+          testo = 'Quota ' + cosa + ' di ' + nomeAtleta(a) + ': andava pagata entro il ' + fmtData(r.scadenzaPagamento) + ' (in ritardo di ' + _giornoLabel(ritardo) + ').';
+        }
       }
-    } else {
-      const ritardo = -g;
-      const s = SOGLIE_RATA_DOPO.find((x) => ritardo === x || ritardo === x + TOLLERANZA_GIORNI);
-      if (s != null) {
-        soglia = -s;
-        livello = 'red';
-        testo = 'Quota ' + cosa + ' di ' + nomeAtleta(a) + ': era in scadenza il ' + fmtData(r.scadenza) + ' (scaduta da ' + _giornoLabel(ritardo) + ').';
+      if (soglia != null && testo) {
+        // la data fa parte della chiave: se viene spostata, i promemoria ripartono da capo
+        out.push(Object.assign({}, base, { chiave: 'pag_' + r.id + '_' + r.scadenzaPagamento + '_' + (soglia >= 0 ? 'p' + soglia : 'd' + (-soglia)), testo, livello }));
       }
     }
-    if (soglia != null && testo) {
-      out.push({ chiave: 'rata_' + r.id + '_' + (soglia >= 0 ? 'p' + soglia : 'd' + (-soglia)), atletaId: a.id, atletaNome: nomeAtleta(a), tipo: 'rata', testo, livello, destinatari: dest });
+
+    /* validità: avvisa prima che la quota scada e il giorno dopo, se ancora non è stata pagata */
+    if (haVal) {
+      let soglia = null, testo = '', livello = 'orange';
+      if (gVal >= 0) {
+        soglia = SOGLIE_VALIDITA_PRIMA.find((s) => gVal === s || gVal === s - TOLLERANZA_GIORNI);
+        if (soglia != null) {
+          livello = gVal <= 1 ? 'red' : 'orange';
+          testo = 'Quota ' + cosa + ' di ' + nomeAtleta(a) + ': la validità scade il ' + fmtData(r.scadenza) + (gVal === 0 ? ' (oggi)' : ' (tra ' + _giornoLabel(gVal) + ')') + '. Dopo quella data la quota risulta scaduta.';
+        }
+      } else {
+        const trascorsi = -gVal;
+        const s = SOGLIE_VALIDITA_DOPO.find((x) => trascorsi === x || trascorsi === x + TOLLERANZA_GIORNI);
+        if (s != null) {
+          soglia = -s;
+          livello = 'red';
+          testo = 'Quota ' + cosa + ' di ' + nomeAtleta(a) + ': è scaduta il ' + fmtData(r.scadenza) + ' e non risulta pagata. Contatta la società.';
+        }
+      }
+      if (soglia != null && testo) {
+        out.push(Object.assign({}, base, { chiave: 'val_' + r.id + '_' + r.scadenza + '_' + (soglia >= 0 ? 'p' + soglia : 'd' + (-soglia)), testo, livello, tipo: 'validita' }));
+      }
     }
   });
 
@@ -140,7 +181,7 @@ function schedaScadenza(v) {
   const rosso = v.livello === 'red';
   const colore = rosso ? '#dc2626' : '#f59e0b';
   const sfondo = rosso ? '#fef2f2' : '#fffbeb';
-  const etichetta = v.tipo === 'certificato' ? 'Certificato medico' : v.tipo === 'rata' ? 'Quota' : 'Scadenza';
+  const etichetta = v.tipo === 'certificato' ? 'Certificato medico' : v.tipo === 'rata' ? 'Quota' : v.tipo === 'validita' ? 'Validità quota' : 'Scadenza';
   return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 10px"><tr>' +
     '<td width="5" bgcolor="' + colore + '" style="width:5px;background:' + colore + ';border-radius:6px 0 0 6px">&nbsp;</td>' +
     '<td bgcolor="' + sfondo + '" style="background:' + sfondo + ';border-radius:0 6px 6px 0;padding:12px 16px;font-family:' + E.FONT + ';font-size:15px;line-height:1.5;color:#1e293b">' +
@@ -170,7 +211,7 @@ function componiEmail(g, siteUrl) {
 }
 
 module.exports = {
-  SOGLIE_RATA_PRIMA, SOGLIE_RATA_DOPO, SOGLIE_CERT_PRIMA,
+  SOGLIE_RATA_PRIMA, SOGLIE_RATA_DOPO, SOGLIE_VALIDITA_PRIMA, SOGLIE_VALIDITA_DOPO, SOGLIE_CERT_PRIMA,
   oggiRoma, giorniTra, emailValida, destinatariDi,
   costruisciPromemoria, raggruppaPerDestinatario, componiEmail
 };

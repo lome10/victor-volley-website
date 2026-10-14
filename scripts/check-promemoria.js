@@ -17,17 +17,47 @@ const OGGI = '2026-10-15';
 const addDays = (iso, n) => { const [y, m, d] = iso.split('-').map(Number); return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10); };
 const genitore = { uid: 'g1', email: 'mamma@example.com', ruolo: 'genitore', nome: 'Anna' };
 const atleta = (extra) => Object.assign({ id: 'a1', nome: 'Luca', cognome: 'Rossi', accessi: [genitore] }, extra || {});
-const rata = (g, extra) => Object.assign({ id: 'r1', atletaId: 'a1', importo: 150, note: '1ª rata', pagata: false, scadenza: addDays(OGGI, g) }, extra || {});
+/* g = giorni alla scadenza di PAGAMENTO; la validità (`scadenza`) è lontana, salvo diversa indicazione */
+const rata = (g, extra) => Object.assign({ id: 'r1', atletaId: 'a1', importo: 150, note: '1ª rata', pagata: false, scadenzaPagamento: addDays(OGGI, g), scadenza: addDays(OGGI, 200) }, extra || {});
+/* g = giorni alla scadenza di VALIDITÀ, senza data di pagamento (come le rate inserite prima del 2026-10-14) */
+const rataVal = (g, extra) => Object.assign({ id: 'r1', atletaId: 'a1', importo: 150, note: '1ª rata', pagata: false, scadenza: addDays(OGGI, g) }, extra || {});
 const chiavi = (p) => p.map((x) => x.chiave).sort();
 const run = (atleti, rate) => L.costruisciPromemoria({ atleti, rate, oggi: OGGI });
 
-/* ---- rate: giorni dalla scadenza → chiave attesa (null = nessun promemoria) ---- */
+/* ---- rate, scadenza di pagamento: giorni dalla scadenza → chiave attesa (null = nessun promemoria) ---- */
 const attesiRata = { 8: null, 7: 'p7', 6: 'p7', 5: null, 4: null, 3: null, 2: null, 1: 'p1', 0: 'p1', '-1': 'd1', '-2': 'd1', '-3': null, '-7': null, '-8': 'd8', '-9': 'd8', '-10': null, '-15': 'd15', '-16': 'd15', '-22': 'd22', '-23': 'd22', '-24': null, '-40': null };
-Object.keys(attesiRata).forEach((g) => t('rata a ' + g + ' giorni', () => {
+Object.keys(attesiRata).forEach((g) => t('pagamento a ' + g + ' giorni', () => {
   const p = run([atleta()], [rata(Number(g))]);
   if (attesiRata[g] === null) assert.deepStrictEqual(p, []);
-  else assert.deepStrictEqual(chiavi(p), ['rata_r1_' + attesiRata[g]]);
+  else assert.deepStrictEqual(chiavi(p), ['pag_r1_' + addDays(OGGI, Number(g)) + '_' + attesiRata[g]]);
 }));
+
+/* ---- rate, scadenza di validità: 7 e 1 giorno prima, il giorno dopo ---- */
+const attesiVal = { 8: null, 7: 'p7', 6: 'p7', 5: null, 2: null, 1: 'p1', 0: 'p1', '-1': 'd1', '-2': 'd1', '-3': null, '-8': null };
+Object.keys(attesiVal).forEach((g) => t('validità a ' + g + ' giorni (senza data di pagamento)', () => {
+  const p = run([atleta()], [rataVal(Number(g))]);
+  if (attesiVal[g] === null) assert.deepStrictEqual(p, []);
+  else assert.deepStrictEqual(chiavi(p), ['val_r1_' + addDays(OGGI, Number(g)) + '_' + attesiVal[g]]);
+}));
+t('validità: tipo, livello e testo', () => {
+  const sette = run([atleta()], [rataVal(7)])[0], uno = run([atleta()], [rataVal(1)])[0], dopo = run([atleta()], [rataVal(-1)])[0];
+  assert.strictEqual(sette.tipo, 'validita'); assert.strictEqual(sette.livello, 'orange'); assert.ok(/la validità scade il/.test(sette.testo));
+  assert.strictEqual(uno.livello, 'red'); assert.strictEqual(dopo.livello, 'red'); assert.ok(/è scaduta il .* non risulta pagata/.test(dopo.testo));
+});
+t('pagamento e validità nello stesso giorno: due promemoria distinti', () => {
+  const p = run([atleta()], [rata(7, { scadenza: addDays(OGGI, 7) })]);
+  assert.deepStrictEqual(p.map((x) => x.tipo).sort(), ['rata', 'validita']);
+  assert.strictEqual(new Set(p.map((x) => x.chiave)).size, 2);
+});
+t('quota con validità finita: niente più solleciti di pagamento, resta solo l’avviso di scadenza', () => {
+  assert.deepStrictEqual(run([atleta()], [rata(-8, { scadenza: addDays(OGGI, -1) })]).map((x) => x.tipo), ['validita']);
+  assert.deepStrictEqual(run([atleta()], [rata(-8, { scadenza: addDays(OGGI, -5) })]), []);
+});
+t('la data fa parte della chiave: spostandola i promemoria ripartono', () => {
+  const prima = run([atleta()], [rata(7)])[0].chiave;
+  const spostata = run([atleta()], [rata(7, { scadenzaPagamento: addDays(OGGI, 6) })])[0].chiave;
+  assert.notStrictEqual(prima, spostata);
+});
 
 /* ---- certificato ---- */
 const attesiCert = { 31: null, 30: 'p30', 29: 'p30', 28: null, 15: null, 8: null, 7: 'p7', 6: 'p7', 5: null, 1: null, 0: 'p0', '-1': 'p0', '-2': null, '-30': null };
@@ -47,9 +77,13 @@ t('dopo un rinnovo la chiave del certificato cambia (i promemoria ripartono)', (
 
 /* ---- esclusioni ---- */
 t('rata pagata ignorata', () => assert.deepStrictEqual(run([atleta()], [rata(7, { pagata: true })]), []));
-t('rata senza scadenza o con data non valida ignorata', () => {
-  assert.deepStrictEqual(run([atleta()], [rata(7, { scadenza: '' })]), []);
-  assert.deepStrictEqual(run([atleta()], [rata(7, { scadenza: '12/10/2026' })]), []);
+t('rata senza date o con date non valide ignorata', () => {
+  assert.deepStrictEqual(run([atleta()], [rata(7, { scadenzaPagamento: '', scadenza: '' })]), []);
+  assert.deepStrictEqual(run([atleta()], [rata(7, { scadenzaPagamento: '12/10/2026', scadenza: '31/12/2026' })]), []);
+});
+t('rata senza scadenza di pagamento: nessun sollecito di pagamento, solo la validità', () => {
+  assert.deepStrictEqual(run([atleta()], [rataVal(30)]), []);
+  assert.deepStrictEqual(run([atleta()], [rataVal(7)]).map((x) => x.tipo), ['validita']);
 });
 t('rata di un atleta inesistente ignorata', () => assert.deepStrictEqual(run([atleta({ id: 'zz' })], [rata(7)]), []));
 t('email @victorvolley e non valide escluse', () => {

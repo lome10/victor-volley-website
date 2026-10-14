@@ -41,7 +41,7 @@
       .map(function (r) {
         var a = B._atletaRettaById(r.atletaRettaId);
         /* mese dell'incasso = giorno in cui è stata segnata pagata; la scadenza solo se manca la data (rate vecchie) */
-        return { scadenza: r.dataPagamento || r.scadenza, importo: +r.importo || 0, tipo: 'Retta atleti', nome: a ? (a.nome + ' ' + a.cognome) : '—', note: r.note || '' };
+        return { scadenza: r.dataPagamento || r.scadenzaPagamento || r.scadenza, importo: +r.importo || 0, tipo: 'Retta atleti', nome: a ? (a.nome + ' ' + a.cognome) : '—', note: r.note || '' };
       });
     /* Tessere pagate: la data di pagamento sceglie il mese (la tabella la imposta sempre). */
     var entrateTessere = B._calcTessere().righe.map(function (r) {

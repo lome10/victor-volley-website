@@ -200,20 +200,55 @@
     document.getElementById('rateAtletaNome').textContent = a.nome + ' ' + a.cognome;
     document.getElementById('rataAtletaImporto').value = '';
     document.getElementById('rataAtletaScadenza').value = '';
+    document.getElementById('rataAtletaScadenzaPag').value = '';
     document.getElementById('rataAtletaNote').value = '';
     _renderRateAtletaModal();
     _openBudgetModal('rateAtletaModal');
   };
 
+  /* Ogni rata ha due date: «Pagamento entro» (scadenza di pagamento, `scadenzaPagamento`) e «Valida fino al»
+     (`scadenza`: passata questa data la rata non pagata risulta scaduta). Le rate inserite prima del 2026-10-14
+     hanno solo la seconda: la prima si compila qui, direttamente nell'elenco. */
+  DG.dateRataHtml = function (r) {
+    function campo(etichetta, nome, titolo) {
+      return '<label style="display:inline-flex;align-items:center;gap:5px" title="' + esc(titolo) + '">' + etichetta +
+        '<input type="date" value="' + esc(r[nome] || '') + '" onchange="DG.setDateRata(\'' + esc(r.id) + '\',\'' + nome + '\',this.value)"' +
+        ' style="font:inherit;font-size:12px;padding:2px 6px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;color:inherit"></label>';
+    }
+    return campo('Pagamento entro', 'scadenzaPagamento', 'Entro quando va pagata la rata') +
+      ' &nbsp;·&nbsp; ' + campo('Valida fino al', 'scadenza', 'Dopo questa data la rata non pagata risulta scaduta');
+  };
+
+  DG.setDateRata = function (id, campo, valore) {
+    if (campo !== 'scadenza' && campo !== 'scadenzaPagamento') return;
+    var r = B._rateAtleti.find(function (x) { return x.id === id; });
+    if (!r) return;
+    var pag = campo === 'scadenzaPagamento' ? valore : (r.scadenzaPagamento || '');
+    var val_ = campo === 'scadenza' ? valore : (r.scadenza || '');
+    if (pag && val_ && pag > val_) {
+      alert('La scadenza di pagamento non può essere successiva alla fine della validità.');
+      _renderRateAtletaModal(); _renderRateAdmin();
+      return;
+    }
+    var old = {}; old[campo] = r[campo] || '';
+    var patch = {}; patch[campo] = valore;
+    var a = B._atletiRette.find(function (x) { return x.id === r.atletaRettaId; });
+    r[campo] = valore;
+    db.collection('rateAtleti').doc(id).update(patch)
+      .then(function () { return _logWrite('rataAtleti', id, 'Rata — ' + (a ? a.cognome + ' ' + a.nome : ''), 'update', _diff(old, patch, [campo])); })
+      .then(function () { _renderRateAtletaModal(); _renderRette(); B._renderStatCards(); B._renderCharts(); _renderRateAdmin(); _renderAtletiRows(); })
+      .catch(function (e) { r[campo] = old[campo]; _renderRateAtletaModal(); _renderRateAdmin(); alert('Errore: ' + e.message); });
+  };
+
   function _renderRateAtletaModal() {
     var el = document.getElementById('rateAtletaList');
     var rate = B._curAtletaRettaId ? _rateByAtleta(B._curAtletaRettaId) : [];
-    rate = rate.slice().sort(function (a, b) { return (a.scadenza || '') < (b.scadenza || '') ? -1 : 1; });
+    rate = rate.slice().sort(function (a, b) { return (a.scadenzaPagamento || a.scadenza || '') < (b.scadenzaPagamento || b.scadenza || '') ? -1 : 1; });
     el.innerHTML = rate.length ? rate.map(function (r) {
       return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:#f8fafc;border-radius:8px">' +
         '<div>' +
           '<div style="font-weight:700;font-size:13px">€' + Number(r.importo || 0).toLocaleString('it-IT') + (r.note ? ' — ' + esc(r.note) : '') + '</div>' +
-          '<div style="font-size:12px;color:var(--dg-muted)">Scadenza: ' + (r.scadenza ? _fmtDate(r.scadenza) : '—') + '</div>' +
+          '<div style="font-size:12px;color:var(--dg-muted);display:flex;flex-wrap:wrap;gap:4px 0;margin-top:3px">' + DG.dateRataHtml(r) + '</div>' +
         '</div>' +
         '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0">' +
           '<label class="dg-check" style="font-size:12px"><input type="checkbox"' + (r.pagata ? ' checked' : '') + ' onchange="DG.toggleRataAtleta(\'' + r.id + '\', this.checked)"> Pagata</label>' +
@@ -227,11 +262,13 @@
     if (!B._curAtletaRettaId) return;
     var importo = +val('rataAtletaImporto') || 0;
     var scadenza = val('rataAtletaScadenza');
+    var scadenzaPagamento = val('rataAtletaScadenzaPag');
     if (!importo) { alert('Inserisci un importo.'); return; }
+    if (scadenza && scadenzaPagamento && scadenzaPagamento > scadenza) { alert('La scadenza di pagamento non può essere successiva alla fine della validità.'); return; }
     var a = B._atletiRette.find(function (x) { return x.id === B._curAtletaRettaId; });
     var data = {
       atletaRettaId: B._curAtletaRettaId, atletaId: (a && a.atletaId) || '', seasonId: B._currentSeasonId, stagione: _stagioneCorrenteNome(),
-      importo: importo, scadenza: scadenza,
+      importo: importo, scadenza: scadenza, scadenzaPagamento: scadenzaPagamento,
       note: val('rataAtletaNote').trim(), pagata: false, dataPagamento: null, createdAt: new Date().toISOString()
     };
     var ref = db.collection('rateAtleti').doc();
@@ -242,6 +279,7 @@
     }).then(function () {
       document.getElementById('rataAtletaImporto').value = '';
       document.getElementById('rataAtletaScadenza').value = '';
+      document.getElementById('rataAtletaScadenzaPag').value = '';
       document.getElementById('rataAtletaNote').value = '';
       _renderRateAtletaModal();
       _renderRette(); B._renderStatCards(); B._renderCharts();
