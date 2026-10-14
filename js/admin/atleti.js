@@ -584,6 +584,7 @@
         return { uid: d.id, nome: x.nome || '', cognome: x.cognome || '', categoria: DIR_GRUPPO, taglie: x.taglie || {}, dirigente: true };
       }).sort(function (a, b) { return (a.cognome + ' ' + a.nome).localeCompare(b.cognome + ' ' + b.nome, 'it'); });
       if (_atletiVista === 'taglie') _renderTaglie();
+      else if (_atletiVista === 'prezzi') _renderPrezzi();
     }).catch(function (e) { _dirigentiTaglie = null; console.error('[Atleti] dirigenti taglie', e); });
   }
   /* Solo con «Tutte» le categorie; segue la ricerca per nome. */
@@ -922,14 +923,232 @@
       (!_atletiCat && !(_atletiQuery || '').trim() ? QG_IDS.map(function (g) { return _mvHtml(g, voci); }).join('') : '');
   }
 
+  /* ---- Vista «Prezzi»: stesso conteggio della vista Taglie (per capo e modello) moltiplicato per prezzo e stampa, più voci
+     extra (maglie gara, aggiunte già pagate, contributo per atleta…), IVA e totale. Il calcolo sta in prezzi-calc.js.
+     Dati in stagione.prezziCapi = { voce: { modello: { prezzo, stampa } } } (modello vuoto → «_») e stagione.prezziExtra = [voce extra].
+     Cosa includere (categorie × voci e singole persone) è una scelta di schermo, salvata solo in questo browser. ---- */
+  var _przSel = (function () {
+    try {
+      var v = JSON.parse(localStorage.getItem('vv_prezzi_sel') || '{}') || {};
+      return { escl: v.escl && typeof v.escl === 'object' && !Array.isArray(v.escl) ? v.escl : {}, persone: Array.isArray(v.persone) ? v.persone : [] };
+    } catch (e) { return { escl: {}, persone: [] }; }
+  })(), _przSelAperto = false, _przPersAperte = [];
+  function _salvaPrzSel() {
+    try { localStorage.setItem('vv_prezzi_sel', JSON.stringify(_przSel)); } catch (e) { /* senza storage vale finché la pagina è aperta */ }
+  }
+  function _przOff(cat, voce) { return (_przSel.escl[cat] || []).indexOf(voce) !== -1; }
+  function _przSet(cat, voce, on) {
+    var a = _przSel.escl[cat] = _przSel.escl[cat] || [], i = a.indexOf(voce);
+    if (on && i !== -1) a.splice(i, 1);
+    else if (!on && i === -1) a.push(voce);
+    _salvaPrzSel();
+  }
+  function _przPersOff(uid) { return _przSel.persone.indexOf(uid) !== -1; }
+  function _przPersSet(uid, on) {
+    var i = _przSel.persone.indexOf(uid);
+    if (on && i !== -1) _przSel.persone.splice(i, 1);
+    else if (!on && i === -1) _przSel.persone.push(uid);
+  }
+  function _przPersone() { return _atletiCache.concat(_dirigentiTaglie || []); }
+  function _przCatAttiva(cat) {
+    return _vociAbbigliamento().some(function (v) { return !_esclusa(cat, v) && !_przOff(cat, v); });
+  }
+  /* Atleti (non dirigenti) delle categorie indicate, tolti quelli esclusi a mano: serve alle voci «per atleta». */
+  function _przContaAtleti(cats) {
+    return _atletiCache.filter(function (a) { return a.categoria && cats.indexOf(a.categoria) !== -1 && _przCatAttiva(a.categoria) && !_przPersOff(a.uid); }).length;
+  }
+  function _kM(m) { return String(m || '_').replace(/[.~*\/\[\]]/g, '_'); }
+  function _przPrezzoDi(voce, modello) {
+    var s = _stagioneBudget(), p = s && s.prezziCapi && s.prezziCapi[voce] ? s.prezziCapi[voce][_kM(modello)] : null;
+    return p || {};
+  }
+  function _przCopiaCapi() {
+    var s = _stagioneBudget(), o = {}, src = (s && s.prezziCapi) || {};
+    Object.keys(src).forEach(function (v) { o[v] = {}; Object.keys(src[v]).forEach(function (m) { o[v][m] = Object.assign({}, src[v][m]); }); });
+    return o;
+  }
+  function _przExtraLista() { var s = _stagioneBudget(); return s && Array.isArray(s.prezziExtra) ? s.prezziExtra : []; }
+  function _przSalva(campo, dopo, prima) {
+    var st = _stagioneBudget();
+    if (!st) return;
+    st[campo] = dopo;
+    _renderPrezzi();
+    var patch = {}; patch[campo] = dopo;
+    db.collection('budgetSeasons').doc(st.id).update(patch).catch(function (err) {
+      st[campo] = prima;
+      _renderPrezzi();
+      _avviso('Non salvato: ' + err.message);
+    });
+  }
+
+  /* Conta i capi per voce e modello, come la vista Taglie ma sulle sole persone e categorie incluse.
+     Zaino e borsone contano solo chi ha «Sì»; chi non ha la taglia va in «da indicare». → [{ voce, modello, qta, daIndicare }] */
+  function _przConta() {
+    var persone = _przPersone(), out = [];
+    _vociAbbigliamento().forEach(function (v) {
+      var mappa = {}, ordine = [];
+      var di = function (m) { if (!mappa[m]) { mappa[m] = { voce: v, modello: m, qta: 0, daIndicare: 0 }; ordine.push(m); } return mappa[m]; };
+      persone.forEach(function (a) {
+        if (_esclusa(a.categoria, v) || _przOff(_chiaveGruppo(a), v) || _przPersOff(a.uid)) return;
+        var t = _tagliaOf(a, v), r = di(_modelloDi(a.dirigente ? DIR_GRUPPO : a.categoria, v));
+        if (!t) r.daIndicare++;
+        else if (!_isSiNo(v) || t === 'Sì') r.qta++;
+      });
+      QG_IDS.forEach(function (g) {
+        if (!_mvAttivo(g, v) || _przOff(g, v)) return;
+        var n = _mvTot(g, v);
+        if (n) di(_modelloDi(g, v)).qta += n;
+      });
+      ordine.sort(function (x, y) { return (x === '') - (y === ''); });
+      ordine.forEach(function (m) { if (mappa[m].qta || mappa[m].daIndicare) out.push(mappa[m]); });
+    });
+    return out;
+  }
+
+  /* Conti completi: righe dei capi con i prezzi salvati + voci extra → risultato di prezziCalc.calcola */
+  function _przCalcola() {
+    var righe = _przConta().map(function (r) {
+      var p = _przPrezzoDi(r.voce, r.modello);
+      return { voce: r.voce, modello: r.modello, qta: r.qta, prezzo: p.prezzo, stampa: p.stampa, daIndicare: r.daIndicare };
+    });
+    var extra = _przExtraLista().map(function (x) {
+      return { id: x.id, desc: x.desc, qta: x.perAtleta ? _przContaAtleti(x.cats || []) : x.qta, importo: x.importo,
+        ivaInclusa: !!x.ivaInclusa, segno: x.segno === -1 ? -1 : 1, perAtleta: !!x.perAtleta };
+    });
+    return A.prezziCalc.calcola(righe, extra);
+  }
+
+  /* Listino dell'Offerta Global Sport n. 93 del 6/9/2026 (IVA esclusa) e stampa concordata: riempie solo le caselle vuote. */
+  var PREZZI_OFFERTA = [['giacca', 'alice', 19.80], ['giacca', 'amedeo', 19.80], ['giacca', 'kurt', 13.95], ['pantalone', 'vanessa', 15.98], ['pantalone', 'myron', 15.98],
+    ['pantalone', 'nevis', 10.13], ['felpa', 'madison', 11.25], ['giubbott', 'babylon', 31.28], ['zain', 'tobago', 12.83], ['borson', 'basic media', 17.33], ['polo', 'evo', 0]];
+  var STAMPA_PREVISTA = [[/giacca/i, 8], [/felpa/i, 8], [/giubbott/i, 8], [/zain/i, 4]];
+  function _przPrecompilaPrezzi() {
+    var prima = _przCopiaCapi(), dopo = _przCopiaCapi(), n = 0;
+    _przConta().forEach(function (r) {
+      var o = PREZZI_OFFERTA.filter(function (x) { return String(r.voce).toLowerCase().indexOf(x[0]) !== -1 && String(r.modello).toLowerCase().indexOf(x[1]) !== -1; })[0];
+      var sp = STAMPA_PREVISTA.filter(function (x) { return x[0].test(r.voce); })[0];
+      var k = _kM(r.modello), cur = (dopo[r.voce] = dopo[r.voce] || {})[k] = dopo[r.voce][k] || {};
+      if (o && cur.prezzo == null) { cur.prezzo = o[2]; n++; }
+      if (cur.stampa == null) { cur.stampa = sp ? sp[1] : 0; n++; }
+    });
+    if (!n) { _avviso('Nessuna casella vuota da precompilare.'); return; }
+    _przSalva('prezziCapi', dopo, prima);
+  }
+  function _idExtra() { return 'x' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+  function _przVociPreventivo() {
+    var u13 = _categorieElenco().filter(function (c) { return /under\s*13/i.test(c); });
+    return [
+      { id: _idExtra(), desc: 'Maglia gara Under 13 (quantità indicativa)', qta: 40, importo: 13, ivaInclusa: false, segno: 1 },
+      { id: _idExtra(), desc: 'Maglia gara Minivolley (quantità indicativa)', qta: 30, importo: 13, ivaInclusa: false, segno: 1 },
+      { id: _idExtra(), desc: 'Aggiunte generiche', qta: 1, importo: 1208.80, ivaInclusa: true, segno: 1 },
+      { id: _idExtra(), desc: 'Aggiunte generiche', qta: 1, importo: 260, ivaInclusa: true, segno: 1 },
+      { id: _idExtra(), desc: 'Maglie gara Prima Divisione (già spese)', qta: 1, importo: 412, ivaInclusa: true, segno: 1 },
+      { id: _idExtra(), desc: 'Contributo per atleta Under 13', perAtleta: true, cats: u13, qta: 1, importo: 50, ivaInclusa: true, segno: -1 }
+    ];
+  }
+
+  function _przNumIn(cls, attrs, val) {
+    return '<input type="number" min="0" step="0.01" inputmode="decimal" class="form-input prz-in ' + cls + '" ' + attrs + ' value="' + (val == null ? '' : val) + '" placeholder="0,00">';
+  }
+
+  function _przSelezioneHtml() {
+    var voci = _vociAbbigliamento(), gruppi = _gruppiExport();
+    if (!gruppi.length || !voci.length) return '';
+    var matrice = '<div class="admin-table-wrap"><table class="admin-table tab-scroll taglie-escl-table"><thead><tr><th>Categoria</th>' +
+      voci.map(function (v) { return '<th class="taglie-exp-th prz-sel-th" data-voce="' + esc(v) + '" title="Attiva o togli questa voce per tutte le categorie">' + esc(v) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      gruppi.map(function (c) {
+        return '<tr><td><button type="button" class="taglie-exp-riga prz-sel-riga" data-cat="' + esc(c) + '" title="Attiva o togli tutte le voci di questa categoria">' + esc(_nomeGruppo(c)) + '</button></td>' + voci.map(function (v) {
+          if (_esclusa(c, v)) return '<td class="taglia-na" title="Voce non prevista per questa categoria">n/d</td>';
+          return '<td><input type="checkbox" class="prz-sel-in" data-cat="' + esc(c) + '" data-voce="' + esc(v) + '"' + (_przOff(c, v) ? '' : ' checked') +
+            ' aria-label="' + esc('Includi ' + v + ' per ' + _nomeGruppo(c)) + '"></td>';
+        }).join('') + '</tr>';
+      }).join('') + '</tbody></table></div>';
+    var persone = _raggruppaPdf(_przPersone()).map(function (g) {
+      var nOff = g.membri.filter(function (a) { return _przPersOff(a.uid); }).length;
+      return '<details class="prz-pers" data-cat="' + esc(g.chiave) + '"' + (_przPersAperte.indexOf(g.chiave) !== -1 ? ' open' : '') + '><summary>' + esc(g.nome) + ' <span>' + (g.membri.length - nOff) + ' di ' + g.membri.length + ' inclusi</span></summary>' +
+        '<div class="prz-pers-azioni"><button type="button" class="btn btn-sm prz-pers-tutti" data-cat="' + esc(g.chiave) + '" data-on="1">Includi tutti</button>' +
+        '<button type="button" class="btn btn-sm prz-pers-tutti" data-cat="' + esc(g.chiave) + '" data-on="0">Escludi tutti</button></div>' +
+        '<div class="prz-pers-lista">' + g.membri.map(function (a) {
+          return '<label class="prz-pers-voce"><input type="checkbox" class="prz-pers-in" data-uid="' + esc(a.uid) + '"' + (_przPersOff(a.uid) ? '' : ' checked') + '> ' + esc(a.cognome) + ' ' + esc(a.nome) + '</label>';
+        }).join('') + '</div></details>';
+    }).join('');
+    return '<details class="taglie-escl" id="przSel"' + (_przSelAperto ? ' open' : '') + '><summary>Cosa includere nel calcolo</summary>' +
+      '<p class="taglie-escl-hint">Togli la spunta alle categorie e alle voci che non vuoi contare. Sotto puoi escludere singole persone (valgono per tutte le voci). La scelta resta su questo browser e non cambia i dati.</p>' +
+      matrice + '<div class="prz-pers-box">' + persone + '</div></details>';
+  }
+
+  function _przExtraHtml(res, cats) {
+    var lista = _przExtraLista();
+    var righe = lista.map(function (x, i) {
+      var r = res.extra[i] || {};
+      var qta = x.perAtleta ? _przContaAtleti(x.cats || []) : x.qta;
+      return '<tr><td><input type="text" class="form-input prz-x-in" data-id="' + esc(x.id) + '" data-k="desc" value="' + esc(x.desc || '') + '" maxlength="80" placeholder="Descrizione" aria-label="Descrizione voce">' +
+        '<label class="prz-x-per"><input type="checkbox" class="prz-x-in" data-id="' + esc(x.id) + '" data-k="perAtleta"' + (x.perAtleta ? ' checked' : '') + '> per ogni atleta delle categorie scelte</label>' +
+        (x.perAtleta ? '<div class="prz-x-cats">' + cats.map(function (c) {
+          return '<label><input type="checkbox" class="prz-x-cat" data-id="' + esc(x.id) + '" data-cat="' + esc(c) + '"' + ((x.cats || []).indexOf(c) !== -1 ? ' checked' : '') + '> ' + esc(c) + '</label>';
+        }).join('') + '</div>' : '') + '</td>' +
+        '<td class="c">' + (x.perAtleta ? '<b>' + qta + '</b>' : '<input type="number" min="0" step="1" class="form-input prz-x-in prz-x-qta" data-id="' + esc(x.id) + '" data-k="qta" value="' + (x.qta == null ? '' : x.qta) + '" aria-label="Quantità">') + '</td>' +
+        '<td>' + _przNumIn('prz-x-in', 'data-id="' + esc(x.id) + '" data-k="importo" aria-label="Importo unitario"', x.importo) + '</td>' +
+        '<td class="c"><label class="prz-x-per"><input type="checkbox" class="prz-x-in" data-id="' + esc(x.id) + '" data-k="ivaInclusa"' + (x.ivaInclusa ? ' checked' : '') + '> IVA compresa</label></td>' +
+        '<td class="c"><select class="form-input prz-x-in" data-id="' + esc(x.id) + '" data-k="segno" aria-label="Costo o detrazione"><option value="1"' + (x.segno === -1 ? '' : ' selected') + '>Costo</option><option value="-1"' + (x.segno === -1 ? ' selected' : '') + '>Detrazione</option></select></td>' +
+        '<td class="n">' + A.prezziCalc.eur(r.lordo || 0) + '</td>' +
+        '<td><button type="button" class="btn-icon btn-icon--danger prz-x-del" data-id="' + esc(x.id) + '" title="Rimuovi la voce">' + DEL_ICON_SM + '</button></td></tr>';
+    }).join('');
+    return '<h3 class="prz-h">Altre voci</h3><p class="taglie-escl-hint">Maglie gara, capi già pagati o aggiunte generiche, contributi da sottrarre. «IVA compresa» per gli importi già pagati con IVA: vengono scorporati e non maggiorati. «Detrazione» toglie l’importo dal totale.</p>' +
+      '<div class="admin-table-wrap"><table class="admin-table tab-scroll prz-table"><thead><tr><th>Voce</th><th class="c">Qtà</th><th>Importo unitario €</th><th class="c">IVA</th><th class="c">Tipo</th><th class="n">Importo</th><th></th></tr></thead><tbody>' +
+      (righe || '<tr><td colspan="7"><span class="taglie-vuoto">Nessuna voce extra.</span></td></tr>') + '</tbody></table></div>' +
+      '<div class="prz-azioni"><button type="button" class="btn btn-sm prz-x-add">+ Aggiungi voce</button> <button type="button" class="btn btn-sm prz-x-preventivo">Aggiungi le voci del preventivo 14/10/2026</button></div>';
+  }
+
+  function _renderPrezzi() {
+    var box = document.getElementById('atletiPrezzi'), st = _stagioneBudget(), C = A.prezziCalc, eur = C.eur;
+    _caricaDirigentiTaglie();
+    if (!st || !_vociTutte().length) {
+      box.innerHTML = '<div class="empty-state"><p>Nessuna voce di abbigliamento per la stagione ' + esc(_stagioneCorrenteNome() || 'corrente') + '. Le voci sono le colonne di Budget → Materiali sponsor.</p></div>';
+      document.getElementById('atletiSummary').textContent = '';
+      return;
+    }
+    var res = _przCalcola();
+    var cats = _categorieElenco().filter(function (c) { return _atletiCache.some(function (a) { return a.categoria === c; }); });
+    var mancano = res.righe.reduce(function (s, r) { return s + (r.daIndicare || 0); }, 0);
+    var senzaPrezzo = res.righe.filter(function (r) { return r.qta && !_przPrezzoDi(r.voce, r.modello).prezzo && _przPrezzoDi(r.voce, r.modello).prezzo !== 0; }).length;
+    document.getElementById('atletiSummary').textContent = res.righe.reduce(function (s, r) { return s + r.qta; }, 0) + ' capi · totale ' + eur(res.totale) + ' IVA compresa' +
+      (mancano ? ' · ' + mancano + ' taglie da indicare' : '') + (senzaPrezzo ? ' · ' + senzaPrezzo + ' righe senza prezzo' : '');
+
+    var tab = '<div class="admin-table-wrap"><table class="admin-table tab-scroll prz-table"><thead><tr><th>Capo</th><th class="c">Qtà</th><th>Prezzo unit. €</th><th class="n">Totale capo</th><th>Stampa a capo €</th><th class="n">Stampa</th><th class="n">Totale riga</th></tr></thead><tbody>' +
+      (res.righe.length ? res.righe.map(function (r) {
+        var p = _przPrezzoDi(r.voce, r.modello), at = 'data-voce="' + esc(r.voce) + '" data-mod="' + esc(r.modello) + '"';
+        return '<tr><td><div class="table-title">' + esc(r.voce) + (r.modello ? '<span class="taglia-modello">' + esc(r.modello) + '</span>' : '') + '</div></td>' +
+          '<td class="c"><b>' + r.qta + '</b>' + (r.daIndicare ? '<span class="taglie-chip taglie-chip--senza" title="Persone senza taglia indicata: non contate">da indicare <b>' + r.daIndicare + '</b></span>' : '') + '</td>' +
+          '<td>' + _przNumIn('', at + ' data-k="prezzo" aria-label="Prezzo ' + esc(r.voce + ' ' + r.modello) + '"', p.prezzo) + '</td><td class="n">' + eur(r.totCapo) + '</td>' +
+          '<td>' + _przNumIn('', at + ' data-k="stampa" aria-label="Stampa ' + esc(r.voce + ' ' + r.modello) + '"', p.stampa) + '</td><td class="n">' + (r.totStampa ? eur(r.totStampa) : '–') + '</td>' +
+          '<td class="n"><b>' + eur(r.totRiga) + '</b></td></tr>';
+      }).join('') : '<tr><td colspan="7"><span class="taglie-vuoto">Nessun capo da contare: controlla «Cosa includere» e le taglie.</span></td></tr>') +
+      '<tr class="prz-tot"><td><b>Totale capi</b></td><td></td><td></td><td class="n"><b>' + eur(res.totCapi) + '</b></td><td></td><td class="n"><b>' + eur(res.totStampa) + '</b></td><td class="n"><b>' + eur(res.totRighe) + '</b></td></tr>' +
+      '</tbody></table></div>';
+
+    var inclusa = res.extra.filter(function (x) { return x.ivaInclusa; });
+    var riep = '<h3 class="prz-h">Riepilogo</h3><div class="admin-table-wrap"><table class="admin-table tab-scroll prz-table"><thead><tr><th>Blocco</th><th class="n">Imponibile</th><th class="n">IVA ' + res.aliquota + '%</th><th class="n">Con IVA</th></tr></thead><tbody>' +
+      '<tr><td>Capi, stampa e voci a IVA esclusa</td><td class="n">' + eur(res.base) + '</td><td class="n">' + eur(res.ivaBase) + '</td><td class="n">' + eur(res.base + res.ivaBase) + '</td></tr>' +
+      inclusa.map(function (x) { return '<tr><td>' + esc(x.desc || 'Voce') + ' <span class="taglie-vuoto">(IVA compresa)</span></td><td class="n">' + eur(x.imponibile) + '</td><td class="n">' + eur(x.iva) + '</td><td class="n">' + eur(x.lordo) + '</td></tr>'; }).join('') +
+      '<tr class="prz-tot prz-fin"><td><b>Totale</b></td><td class="n"><b>' + eur(res.imponibile) + '</b></td><td class="n"><b>' + eur(res.iva) + '</b></td><td class="n"><b>' + eur(res.totale) + '</b></td></tr></tbody></table></div>';
+
+    box.innerHTML = '<div class="prz-azioni"><button type="button" class="btn btn-sm prz-precompila">Precompila prezzi dall’Offerta Global Sport (6/9/2026)</button>' +
+      '<span class="taglie-escl-hint">Riempie solo le caselle vuote: capi dall’Offerta, stampa a 8 € (zaino 4 €).</span></div>' +
+      _przSelezioneHtml() + '<h3 class="prz-h">Capi e stampa</h3>' + tab + _przExtraHtml(res, cats) + riep;
+  }
+
   function _applicaVistaAtleti() {
-    var taglie = _atletiVista === 'taglie';
-    document.getElementById('atletiElencoWrap').classList.toggle('is-hidden', taglie);
+    var taglie = _atletiVista === 'taglie', prezzi = _atletiVista === 'prezzi';
+    document.getElementById('atletiElencoWrap').classList.toggle('is-hidden', taglie || prezzi);
     document.getElementById('atletiTaglie').classList.toggle('is-hidden', !taglie);
+    document.getElementById('atletiPrezzi').classList.toggle('is-hidden', !prezzi);
+    /* nei Prezzi i filtri per categoria e la ricerca non servono: la scelta si fa in «Cosa includere» */
+    ['atletiSearch', 'atletiCatBar', 'atletiToggleAll'].forEach(function (id) { document.getElementById(id).classList.toggle('is-hidden', prezzi); });
     Array.prototype.forEach.call(document.querySelectorAll('#atletiVista .atleti-pill'), function (b) {
       b.classList.toggle('is-active', b.dataset.vista === _atletiVista);
     });
-    document.getElementById('atletiExport').title = taglie ? 'Scarica le taglie mostrate in CSV' : "Scarica l'elenco mostrato in CSV";
+    document.getElementById('atletiExport').title = prezzi ? 'Scarica la tabella prezzi in CSV' : taglie ? 'Scarica le taglie mostrate in CSV' : "Scarica l'elenco mostrato in CSV";
     _renderAtletiRows();
   }
 
@@ -938,6 +1157,7 @@
     _renderAtletiCats();
     _aggiornaToggleTutte([]);
     if (_atletiVista === 'taglie') { _renderTaglie(); return; }
+    if (_atletiVista === 'prezzi') { _renderPrezzi(); return; }
     if (!_atletiCache.length) {
       document.getElementById('atletiSummary').textContent = '';
       body.innerHTML = '<tr><td colspan="6"><div class="empty-state"><p>Nessun atleta registrato.</p></div></td></tr>';
@@ -1148,6 +1368,92 @@
     }).then(function () { sel.disabled = false; });
   });
 
+  /* ---- Eventi della vista Prezzi ---- */
+  document.getElementById('atletiPrezzi').addEventListener('click', function (e) {
+    if (e.target.closest('.prz-precompila')) { _przPrecompilaPrezzi(); return; }
+    if (e.target.closest('.prz-x-add')) {
+      var prima = _przExtraLista(), dopo = prima.concat([{ id: _idExtra(), desc: '', qta: 1, importo: 0, ivaInclusa: false, segno: 1 }]);
+      _przSalva('prezziExtra', dopo, prima);
+      return;
+    }
+    if (e.target.closest('.prz-x-preventivo')) {
+      var pr = _przExtraLista(), agg = function () { _przSalva('prezziExtra', pr.concat(_przVociPreventivo()), pr); };
+      if (pr.length) confirm('Ci sono già delle voci extra: aggiungo anche quelle del preventivo senza toccare le tue?', agg); else agg();
+      return;
+    }
+    var del = e.target.closest('.prz-x-del');
+    if (del) {
+      var p0 = _przExtraLista();
+      _przSalva('prezziExtra', p0.filter(function (x) { return x.id !== del.dataset.id; }), p0);
+      return;
+    }
+    /* riga o colonna della matrice: se c'è almeno una cella attiva le toglie tutte, altrimenti le attiva */
+    var riga = e.target.closest('.prz-sel-riga'), col = e.target.closest('.prz-sel-th');
+    if (riga || col) {
+      var cel = [];
+      (riga ? [riga.dataset.cat] : _gruppiExport()).forEach(function (c) {
+        (riga ? _vociAbbigliamento() : [col.dataset.voce]).forEach(function (v) { if (!_esclusa(c, v)) cel.push([c, v]); });
+      });
+      var algunaOn = cel.some(function (x) { return !_przOff(x[0], x[1]); });
+      cel.forEach(function (x) { _przSet(x[0], x[1], !algunaOn); });
+      _renderPrezzi();
+      return;
+    }
+    var tutti = e.target.closest('.prz-pers-tutti');
+    if (tutti) {
+      _raggruppaPdf(_przPersone()).filter(function (g) { return g.chiave === tutti.dataset.cat; }).forEach(function (g) {
+        g.membri.forEach(function (a) { _przPersSet(a.uid, tutti.dataset.on === '1'); });
+      });
+      _salvaPrzSel();
+      _renderPrezzi();
+    }
+  });
+  document.getElementById('atletiPrezzi').addEventListener('toggle', function (e) {
+    if (!e.target) return;
+    if (e.target.id === 'przSel') _przSelAperto = e.target.open;
+    else if (e.target.classList && e.target.classList.contains('prz-pers')) {
+      var c = e.target.dataset.cat, i = _przPersAperte.indexOf(c);
+      if (e.target.open && i === -1) _przPersAperte.push(c); else if (!e.target.open && i !== -1) _przPersAperte.splice(i, 1);
+    }
+  }, true);
+  document.getElementById('atletiPrezzi').addEventListener('change', function (e) {
+    var t = e.target, C = A.prezziCalc;
+    if (t.classList.contains('prz-sel-in')) { _przSet(t.dataset.cat, t.dataset.voce, t.checked); _renderPrezzi(); return; }
+    if (t.classList.contains('prz-pers-in')) { _przPersSet(t.dataset.uid, t.checked); _salvaPrzSel(); _renderPrezzi(); return; }
+    /* prezzo o stampa a capo di una riga */
+    if (t.classList.contains('prz-in') && t.dataset.voce) {
+      var prima = _przCopiaCapi(), dopo = _przCopiaCapi(), k = _kM(t.dataset.mod);
+      var cur = (dopo[t.dataset.voce] = dopo[t.dataset.voce] || {})[k] = dopo[t.dataset.voce][k] || {};
+      if (t.value.trim() === '') delete cur[t.dataset.k]; else cur[t.dataset.k] = Math.max(0, C.r2(C.num(t.value)));
+      if (!Object.keys(cur).length) delete dopo[t.dataset.voce][k];
+      if (!Object.keys(dopo[t.dataset.voce]).length) delete dopo[t.dataset.voce];
+      _przSalva('prezziCapi', dopo, prima);
+      return;
+    }
+    /* campi di una voce extra */
+    var id = t.dataset.id;
+    if (!id) return;
+    var p0 = _przExtraLista(), p1 = p0.map(function (x) { return Object.assign({}, x); });
+    var x = p1.filter(function (y) { return y.id === id; })[0];
+    if (!x) return;
+    if (t.classList.contains('prz-x-cat')) {
+      var cs = (x.cats || []).filter(function (c) { return c !== t.dataset.cat; });
+      if (t.checked) cs.push(t.dataset.cat);
+      x.cats = cs;
+    } else {
+      var k2 = t.dataset.k;
+      if (k2 === 'desc') x.desc = t.value.trim();
+      else if (k2 === 'qta') x.qta = Math.max(0, parseInt(t.value, 10) || 0);
+      else if (k2 === 'importo') x.importo = Math.max(0, C.r2(C.num(t.value)));
+      else if (k2 === 'ivaInclusa' || k2 === 'perAtleta') x[k2] = t.checked;
+      else if (k2 === 'segno') x.segno = parseInt(t.value, 10) === -1 ? -1 : 1;
+      if (k2 === 'perAtleta' && t.checked && !(x.cats && x.cats.length)) {
+        x.cats = _categorieElenco().filter(function (c) { return /under\s*13/i.test(c); });
+      }
+    }
+    _przSalva('prezziExtra', p1, p0);
+  });
+
   document.getElementById('atletiToggleAll').addEventListener('click', function () {
     var gruppi = JSON.parse(this.dataset.gruppi || '[]');
     if (this.dataset.azione === 'apri') _atletiChiuse = _atletiChiuse.filter(function (c) { return gruppi.indexOf(c) === -1; });
@@ -1220,7 +1526,7 @@
       }).join('') + '</tbody></table>';
     var corpo = p.gruppi.map(function (g) {
       var thead = '<thead><tr>' + (g.head || p.head).map(function (h, i) { return '<th' + (i === 0 ? '' : ' class="c"') + '>' + (Array.isArray(h) ? esc(h[0]) + (h[1] ? '<span class="mod">' + esc(h[1]) + '</span>' : '') : esc(h)) + '</th>'; }).join('') + '</tr></thead>';
-      return '<div class="gband"><strong>' + esc(g.nome) + '</strong><span>' + (g.nome === 'Minivolley' || g.nome === 'Aggiunte' ? '' : g.righe.length) + (g.nome === 'Minivolley' || g.nome === 'Aggiunte' ? '' : g.nome === 'Dirigenti' ? (g.righe.length === 1 ? ' persona' : ' persone') : (g.righe.length === 1 ? ' atleta' : ' atleti')) + '</span></div>' +
+      return '<div class="gband"><strong>' + esc(g.nome) + '</strong><span>' + (g.sub !== undefined ? esc(g.sub) : (g.nome === 'Minivolley' || g.nome === 'Aggiunte' ? '' : g.righe.length) + (g.nome === 'Minivolley' || g.nome === 'Aggiunte' ? '' : g.nome === 'Dirigenti' ? (g.righe.length === 1 ? ' persona' : ' persone') : (g.righe.length === 1 ? ' atleta' : ' atleti'))) + '</span></div>' +
         '<table>' + thead + '<tbody>' + g.righe.map(function (r) {
           return '<tr>' + r.map(function (c, i) {
             var t = String(c == null ? '' : c);
@@ -1255,6 +1561,7 @@
   function _datiExport() {
     var list = _atletiFiltrati();
     var slug = _slugExport(), cat = _atletiCat && _atletiCat !== '__none__' ? _atletiCat : 'Tutte le categorie';
+    if (_atletiVista === 'prezzi') return _datiExportPrezzi();
     if (_atletiVista === 'taglie') {
       var vociTutte = _vociAbbigliamento();
       /* voci scelte per la categoria di ciascuna persona (le non previste restano «n/d» nel file) */
@@ -1337,6 +1644,31 @@
       head: cols.map(function (c) { return c.l; }),
       righe: list.map(function (a) { return cols.map(function (c) { return a[c.k] == null ? '' : a[c.k]; }); })
     };
+  }
+
+  /* Vista Prezzi: stessa tabella dello schermo (capi e stampa, altre voci, riepilogo con IVA) */
+  function _datiExportPrezzi() {
+    var res = _przCalcola(), C = A.prezziCalc;
+    var n2 = function (x) { return C.r2(x).toFixed(2).replace('.', ','); };
+    if (!res.righe.length && !res.extra.length) { _avviso('Niente da esportare: controlla «Cosa includere» e le taglie.'); return null; }
+    var nome = function (r) { return r.voce + (r.modello ? ' ' + r.modello : ''); };
+    var righe = res.righe.map(function (r) { return [r.voce, r.modello, r.qta, n2(r.prezzo), n2(r.totCapo), n2(r.stampa), n2(r.totStampa), n2(r.totRiga)]; });
+    righe.push(['Totale capi', '', res.righe.reduce(function (s, r) { return s + r.qta; }, 0), '', n2(res.totCapi), '', n2(res.totStampa), n2(res.totRighe)]);
+    res.extra.forEach(function (x) { righe.push([x.desc || 'Voce', x.ivaInclusa ? 'IVA compresa' : 'IVA esclusa', x.qta, n2(x.importo * x.segno), '', '', '', n2(x.lordo)]); });
+    righe.push(['Imponibile', '', '', '', '', '', '', n2(res.imponibile)], ['IVA ' + res.aliquota + '%', '', '', '', '', '', '', n2(res.iva)], ['Totale con IVA', '', '', '', '', '', '', n2(res.totale)]);
+    var pdf = { tipo: 'Prezzi abbigliamento', landscape: false, gruppi: [
+      { nome: 'Capi vestiario e stampa', sub: '', head: ['Capo', 'Qtà', 'Prezzo unit.', 'Totale capo', 'Stampa a capo', 'Totale stampa', 'Totale riga'],
+        righe: res.righe.map(function (r) { return [nome(r), r.qta, C.eur(r.prezzo), C.eur(r.totCapo), r.stampa ? C.eur(r.stampa) : '', r.totStampa ? C.eur(r.totStampa) : '', C.eur(r.totRiga)]; })
+          .concat([['Totale capi', '', '', C.eur(res.totCapi), '', C.eur(res.totStampa), C.eur(res.totRighe)]]) }
+    ] };
+    if (res.extra.length) pdf.gruppi.push({ nome: 'Altre voci', sub: '', head: ['Voce', 'Qtà', 'Importo unit.', 'IVA', 'Importo'],
+      righe: res.extra.map(function (x) { return [x.desc || 'Voce', x.qta, C.eur(x.importo * x.segno), x.ivaInclusa ? 'compresa' : 'esclusa', C.eur(x.lordo)]; }) });
+    pdf.gruppi.push({ nome: 'Riepilogo', sub: '', head: ['Blocco', 'Imponibile', 'IVA ' + res.aliquota + '%', 'Con IVA'],
+      righe: [['Capi, stampa e voci a IVA esclusa', C.eur(res.base), C.eur(res.ivaBase), C.eur(res.base + res.ivaBase)]]
+        .concat(res.extra.filter(function (x) { return x.ivaInclusa; }).map(function (x) { return [(x.desc || 'Voce') + ' (IVA compresa)', C.eur(x.imponibile), C.eur(x.iva), C.eur(x.lordo)]; }))
+        .concat([['Totale', C.eur(res.imponibile), C.eur(res.iva), C.eur(res.totale)]]) });
+    return { pdf: pdf, titolo: 'Prezzi abbigliamento', base: 'prezzi-' + _slugExport(), sensibile: false,
+      head: ['Capo', 'Modello', 'Qtà', 'Prezzo unit.', 'Totale capo', 'Stampa a capo', 'Totale stampa', 'Totale riga'], righe: righe };
   }
 
   function _htmlTabella(d, thStyle, tdStyle) {

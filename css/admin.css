@@ -1935,3 +1935,26 @@ button { font-family: var(--font-body); cursor: pointer; }
 .mv-table th.c, .mv-table td.c { text-align: center; }
 .mv-table .atleti-group span { margin-left: 10px; font-weight: 500; }
 .taglie-modello-tag { background: var(--a-blue); color: #fff; border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 700; }
+
+/* Atleti → vista Prezzi */
+.prz-h { font-family: var(--font-head); font-size: 15px; margin: 18px 0 8px; }
+.prz-azioni { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 12px; }
+.prz-table th.n, .prz-table td.n { text-align: right; white-space: nowrap; }
+.prz-table th.c, .prz-table td.c { text-align: center; }
+.prz-table td .prz-in { width: 92px; min-width: 92px; padding: 6px 8px; text-align: right; }
+.prz-table td .prz-x-qta { width: 70px; min-width: 70px; text-align: center; }
+.prz-table td .prz-x-in[data-k="desc"] { min-width: 200px; }
+.prz-tot td { background: #FDEEDB; border-top: 1.5px solid #E0A04A; }
+.prz-fin td { font-size: 14px; }
+.prz-x-per { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--a-muted); margin-top: 4px; cursor: pointer; }
+.prz-x-per input { width: 16px; height: 16px; }
+.prz-x-cats { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 6px; font-size: 12px; }
+.prz-x-cats label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+.prz-pers-box { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.prz-pers { border: 1px solid var(--a-border); border-radius: 8px; padding: 6px 10px; background: var(--a-bg); }
+.prz-pers summary { cursor: pointer; font-weight: 600; font-size: 13px; }
+.prz-pers summary span { font-weight: 500; font-size: 12px; color: var(--a-muted); margin-left: 8px; }
+.prz-pers-azioni { display: flex; gap: 6px; margin: 8px 0; }
+.prz-pers-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 4px 12px; }
+.prz-pers-voce { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
+.prz-pers-voce input { width: 16px; height: 16px; }
