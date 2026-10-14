@@ -958,9 +958,36 @@
     return _atletiCache.filter(function (a) { return a.categoria && cats.indexOf(a.categoria) !== -1 && _przCatAttiva(a.categoria) && !_przPersOff(a.uid); }).length;
   }
   function _kM(m) { return String(m || '_').replace(/[.~*\/\[\]]/g, '_'); }
+  /* Prezzo del capo: quello salvato; se manca, quello dell'Offerta Global Sport (già inserito di default, si può cambiare). */
+  function _przPrezzoOfferta(voce, modello) {
+    var o = PREZZI_OFFERTA.filter(function (x) { return String(voce).toLowerCase().indexOf(x[0]) !== -1 && String(modello).toLowerCase().indexOf(x[1]) !== -1; })[0];
+    return o ? o[2] : undefined;
+  }
   function _przPrezzoDi(voce, modello) {
-    var s = _stagioneBudget(), p = s && s.prezziCapi && s.prezziCapi[voce] ? s.prezziCapi[voce][_kM(modello)] : null;
-    return p || {};
+    var s = _stagioneBudget(), p = (s && s.prezziCapi && s.prezziCapi[voce] ? s.prezziCapi[voce][_kM(modello)] : null) || {};
+    var def = p.prezzo == null ? _przPrezzoOfferta(voce, modello) : undefined;
+    return { prezzo: p.prezzo != null ? p.prezzo : def, stampa: p.stampa, nascosta: p.nascosta, predefinito: p.prezzo == null && def !== undefined };
+  }
+  /* Righe nascoste: da te (nascosta = true) oppure in automatico quando non c'è nulla da pagare (nessun capo, o prezzo non indicato / 0 e senza stampa).
+     Le righe nascoste non entrano nel totale. «Mostra» le rimette (nascosta = false) anche se sono a zero. */
+  function _przRighe() {
+    var vis = [], nas = [];
+    _przConta().forEach(function (r) {
+      var p = _przPrezzoDi(r.voce, r.modello);
+      var riga = { voce: r.voce, modello: r.modello, qta: r.qta, prezzo: p.prezzo, stampa: p.stampa, daIndicare: r.daIndicare };
+      var zero = !r.qta || (!(+p.prezzo) && !(+p.stampa));
+      if (p.nascosta === true || (p.nascosta !== false && zero)) {
+        riga.motivo = p.nascosta === true ? 'nascosta da te' : !r.qta ? 'nessun capo' : p.prezzo == null ? 'senza prezzo' : 'a 0 €';
+        nas.push(riga);
+      } else vis.push(riga);
+    });
+    return { vis: vis, nas: nas };
+  }
+  function _przSetNascosta(voce, modello, val) {
+    var prima = _przCopiaCapi(), dopo = _przCopiaCapi(), k = _kM(modello);
+    (dopo[voce] = dopo[voce] || {})[k] = dopo[voce][k] || {};
+    dopo[voce][k].nascosta = val;
+    _przSalva('prezziCapi', dopo, prima);
   }
   function _przCopiaCapi() {
     var s = _stagioneBudget(), o = {}, src = (s && s.prezziCapi) || {};
@@ -1007,15 +1034,14 @@
 
   /* Conti completi: righe dei capi con i prezzi salvati + voci extra → risultato di prezziCalc.calcola */
   function _przCalcola() {
-    var righe = _przConta().map(function (r) {
-      var p = _przPrezzoDi(r.voce, r.modello);
-      return { voce: r.voce, modello: r.modello, qta: r.qta, prezzo: p.prezzo, stampa: p.stampa, daIndicare: r.daIndicare };
-    });
+    var rg = _przRighe(), righe = rg.vis;
     var extra = _przExtraLista().map(function (x) {
       return { id: x.id, desc: x.desc, qta: x.perAtleta ? _przContaAtleti(x.cats || []) : x.qta, importo: x.importo,
         ivaInclusa: !!x.ivaInclusa, segno: x.segno === -1 ? -1 : 1, perAtleta: !!x.perAtleta };
     });
-    return A.prezziCalc.calcola(righe, extra);
+    var res = A.prezziCalc.calcola(righe, extra);
+    res.nascoste = rg.nas;
+    return res;
   }
 
   /* Listino dell'Offerta Global Sport n. 93 del 6/9/2026 (IVA esclusa) e stampa concordata: riempie solo le caselle vuote. */
@@ -1028,7 +1054,7 @@
       var o = PREZZI_OFFERTA.filter(function (x) { return String(r.voce).toLowerCase().indexOf(x[0]) !== -1 && String(r.modello).toLowerCase().indexOf(x[1]) !== -1; })[0];
       var sp = STAMPA_PREVISTA.filter(function (x) { return x[0].test(r.voce); })[0];
       var k = _kM(r.modello), cur = (dopo[r.voce] = dopo[r.voce] || {})[k] = dopo[r.voce][k] || {};
-      if (o && cur.prezzo == null) { cur.prezzo = o[2]; n++; }
+      if (o && cur.prezzo == null && cur.nascosta !== true) { cur.prezzo = o[2]; n++; }
       if (cur.stampa == null) { cur.stampa = sp ? sp[1] : 0; n++; }
     });
     if (!n) { _avviso('Nessuna casella vuota da precompilare.'); return; }
@@ -1115,17 +1141,23 @@
     document.getElementById('atletiSummary').textContent = res.righe.reduce(function (s, r) { return s + r.qta; }, 0) + ' capi · totale ' + eur(res.totale) + ' IVA compresa' +
       (mancano ? ' · ' + mancano + ' taglie da indicare' : '') + (senzaPrezzo ? ' · ' + senzaPrezzo + ' righe senza prezzo' : '');
 
-    var tab = '<div class="admin-table-wrap"><table class="admin-table tab-scroll prz-table"><thead><tr><th>Capo</th><th class="c">Qtà</th><th>Prezzo unit. €</th><th class="n">Totale capo</th><th>Stampa a capo €</th><th class="n">Stampa</th><th class="n">Totale riga</th></tr></thead><tbody>' +
+    var tab = '<div class="admin-table-wrap"><table class="admin-table tab-scroll prz-table"><thead><tr><th>Capo</th><th class="c">Qtà</th><th>Prezzo unit. €</th><th class="n">Totale capo</th><th>Stampa a capo €</th><th class="n">Stampa</th><th class="n">Totale riga</th><th></th></tr></thead><tbody>' +
       (res.righe.length ? res.righe.map(function (r) {
         var p = _przPrezzoDi(r.voce, r.modello), at = 'data-voce="' + esc(r.voce) + '" data-mod="' + esc(r.modello) + '"';
         return '<tr><td><div class="table-title">' + esc(r.voce) + (r.modello ? '<span class="taglia-modello">' + esc(r.modello) + '</span>' : '') + '</div></td>' +
           '<td class="c"><b>' + r.qta + '</b>' + (r.daIndicare ? '<span class="taglie-chip taglie-chip--senza" title="Persone senza taglia indicata: non contate">da indicare <b>' + r.daIndicare + '</b></span>' : '') + '</td>' +
-          '<td>' + _przNumIn('', at + ' data-k="prezzo" aria-label="Prezzo ' + esc(r.voce + ' ' + r.modello) + '"', p.prezzo) + '</td><td class="n">' + eur(r.totCapo) + '</td>' +
+          '<td>' + _przNumIn('', at + ' data-k="prezzo" aria-label="Prezzo ' + esc(r.voce + ' ' + r.modello) + '"' + (p.predefinito ? ' title="Prezzo dell’Offerta Global Sport: modificalo se serve"' : ''), p.prezzo) + '</td><td class="n">' + eur(r.totCapo) + '</td>' +
           '<td>' + _przNumIn('', at + ' data-k="stampa" aria-label="Stampa ' + esc(r.voce + ' ' + r.modello) + '"', p.stampa) + '</td><td class="n">' + (r.totStampa ? eur(r.totStampa) : '–') + '</td>' +
-          '<td class="n"><b>' + eur(r.totRiga) + '</b></td></tr>';
-      }).join('') : '<tr><td colspan="7"><span class="taglie-vuoto">Nessun capo da contare: controlla «Cosa includere» e le taglie.</span></td></tr>') +
-      '<tr class="prz-tot"><td><b>Totale capi</b></td><td></td><td></td><td class="n"><b>' + eur(res.totCapi) + '</b></td><td></td><td class="n"><b>' + eur(res.totStampa) + '</b></td><td class="n"><b>' + eur(res.totRighe) + '</b></td></tr>' +
-      '</tbody></table></div>';
+          '<td class="n"><b>' + eur(r.totRiga) + '</b></td>' +
+          '<td><button type="button" class="btn-icon prz-nascondi" ' + at + ' title="Nascondi questa riga: non entra nel totale" aria-label="' + esc('Nascondi ' + r.voce + ' ' + r.modello) + '">✕</button></td></tr>';
+      }).join('') : '<tr><td colspan="8"><span class="taglie-vuoto">Nessun capo da contare: controlla «Cosa includere» e le taglie.</span></td></tr>') +
+      '<tr class="prz-tot"><td><b>Totale capi</b></td><td></td><td></td><td class="n"><b>' + eur(res.totCapi) + '</b></td><td></td><td class="n"><b>' + eur(res.totStampa) + '</b></td><td class="n"><b>' + eur(res.totRighe) + '</b></td><td></td></tr>' +
+      '</tbody></table></div>' +
+      (res.nascoste.length ? '<div class="prz-nasc"><span class="taglie-vuoto">' + res.nascoste.length + (res.nascoste.length === 1 ? ' riga nascosta' : ' righe nascoste') + ' (non contate nel totale):</span>' +
+        res.nascoste.map(function (r) {
+          return '<button type="button" class="taglie-chip prz-mostra" data-voce="' + esc(r.voce) + '" data-mod="' + esc(r.modello) + '" title="' + esc(r.motivo + ' — clicca per mostrarla') + '">' +
+            esc(r.voce + (r.modello ? ' ' + r.modello : '')) + ' <b>' + r.qta + '</b> <span class="prz-nasc-mot">' + esc(r.motivo) + '</span> · mostra</button>';
+        }).join('') + '</div>' : '');
 
     var inclusa = res.extra.filter(function (x) { return x.ivaInclusa; });
     var riep = '<h3 class="prz-h">Riepilogo</h3><div class="admin-table-wrap"><table class="admin-table tab-scroll prz-table"><thead><tr><th>Blocco</th><th class="n">Imponibile</th><th class="n">IVA ' + res.aliquota + '%</th><th class="n">Con IVA</th></tr></thead><tbody>' +
@@ -1371,6 +1403,8 @@
   /* ---- Eventi della vista Prezzi ---- */
   document.getElementById('atletiPrezzi').addEventListener('click', function (e) {
     if (e.target.closest('.prz-precompila')) { _przPrecompilaPrezzi(); return; }
+    var nasc = e.target.closest('.prz-nascondi'), mostra = e.target.closest('.prz-mostra');
+    if (nasc || mostra) { var b = nasc || mostra; _przSetNascosta(b.dataset.voce, b.dataset.mod, !!nasc); return; }
     if (e.target.closest('.prz-x-add')) {
       var prima = _przExtraLista(), dopo = prima.concat([{ id: _idExtra(), desc: '', qta: 1, importo: 0, ivaInclusa: false, segno: 1 }]);
       _przSalva('prezziExtra', dopo, prima);

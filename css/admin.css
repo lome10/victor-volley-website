@@ -1958,3 +1958,9 @@ button { font-family: var(--font-body); cursor: pointer; }
 .prz-pers-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 4px 12px; }
 .prz-pers-voce { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
 .prz-pers-voce input { width: 16px; height: 16px; }
+.prz-nasc { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0 0; }
+.prz-nasc .prz-mostra { font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; background: var(--a-bg); }
+.prz-nasc .prz-mostra:hover { border-color: var(--a-blue); color: var(--a-blue); }
+.prz-nasc-mot { font-weight: 500; color: var(--a-muted); }
+.prz-nascondi { color: var(--a-muted); }
+.prz-nascondi:hover { color: #B91C1C; }
