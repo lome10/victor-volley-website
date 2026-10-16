@@ -124,7 +124,10 @@
       var c = key === '__none__' ? null : _categoriaSpesaById(key);
       var p = perCategoria[key];
       return { nome: c ? c.nome : 'Senza categoria', preventivato: p.preventivato, sostenuto: p.sostenuto, scostamento: p.sostenuto - p.preventivato };
-    }).sort(function (a, b) { return a.nome.localeCompare(b.nome); });
+    }).sort(function (a, b) {   /* ordine alfabetico, «Senza categoria» in fondo */
+      if (a.nome === 'Senza categoria' || b.nome === 'Senza categoria') return a.nome === b.nome ? 0 : (a.nome === 'Senza categoria' ? 1 : -1);
+      return a.nome.localeCompare(b.nome, 'it', { sensitivity: 'base', numeric: true });
+    });
     var bufferPreventivato = totPreventivato * 0.1;
     return {
       totPreventivato: totPreventivato, totSostenuto: totSostenuto, scostamento: totSostenuto - totPreventivato,
@@ -383,7 +386,7 @@
      I crediti sono solo un dettaglio informativo: non toccano Sostenuto/Preventivato della voce né i totali di Bilancio
      (un incasso già tracciato altrove, per esempio sponsor o rette, non va contato due volte). */
   function _sottospeseInnerHtml(v) {
-    var elenco = _sottospeseOf(v.id).slice().sort(function (a, b) { return (a.data || '') < (b.data || '') ? 1 : -1; });
+    var elenco = _sottospeseOf(v.id).slice().sort(function (a, b) { return (a.descrizione || '').localeCompare(b.descrizione || '', 'it', { sensitivity: 'base', numeric: true }); });   /* ordine alfabetico */
     var spese = elenco.filter(function (s) { return !_isSottospesaCredito(s); });
     var crediti = elenco.filter(_isSottospesaCredito);
     var somma = _sommaSottospese(v.id), sommaPrev = _sommaSottospesePreventivate(v.id);

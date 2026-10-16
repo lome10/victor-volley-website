@@ -159,7 +159,7 @@
     if (!v) return;
     var season = B._seasons.find(function (s) { return s.id === B._currentSeasonId; }) || {};
     var cat = v.categoriaSpesaId ? B._categoriaSpesaById(v.categoriaSpesaId) : null;
-    var elenco = B._sottospeseOf(voceId).slice().sort(function (a, b) { return (a.data || '') < (b.data || '') ? -1 : 1; });
+    var elenco = B._sottospeseOf(voceId).slice().sort(function (a, b) { return (a.descrizione || '').localeCompare(b.descrizione || '', 'it', { sensitivity: 'base', numeric: true }); });   /* ordine alfabetico */
     var spese = elenco.filter(function (s) { return !B._isSottospesaCredito(s); });
     var crediti = elenco.filter(B._isSottospesaCredito);
     var somma = B._sommaSottospese(voceId);
@@ -309,7 +309,12 @@
     B._vociSpesa.forEach(function (v) { totVociPrev += (+v.importoPreventivato || 0); totVociSost += (+v.importoSostenuto || 0); });
     html += '<section><h2>Singole voci di spesa</h2>' +
       _pdfTableHtml(['Voce', 'Categoria', 'Preventivato', 'Sostenuto', 'Data', 'Note'],
-        B._vociSpesa.map(function (v) {
+        B._vociSpesa.slice().sort(function (a, b) {   /* per categoria e poi per nome, in ordine alfabetico («Senza categoria» in fondo) */
+          var ca = a.categoriaSpesaId ? B._categoriaSpesaById(a.categoriaSpesaId) : null, cb = b.categoriaSpesaId ? B._categoriaSpesaById(b.categoriaSpesaId) : null;
+          if (!ca !== !cb) return ca ? -1 : 1;
+          var o = { sensitivity: 'base', numeric: true };
+          return (ca && cb ? (ca.nome || '').localeCompare(cb.nome || '', 'it', o) : 0) || (a.categoria || '').localeCompare(b.categoria || '', 'it', o);
+        }).map(function (v) {
           var cat = v.categoriaSpesaId ? B._categoriaSpesaById(v.categoriaSpesaId) : null;
           return [esc(v.categoria), esc(cat ? cat.nome : '—'), B._eur(v.importoPreventivato || 0), B._eur(v.importoSostenuto || 0),
             v.dataSpesa ? esc(_fmtDateLong(v.dataSpesa)) : '—', esc(v.note || '')];
