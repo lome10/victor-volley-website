@@ -53,7 +53,10 @@
     var hasChannel = channelId && channelId !== 'INSERISCI_CHANNEL_ID_YOUTUBE';
 
     if (isLive && hasChannel) {
-      if (msgEl) msgEl.hidden = true;
+      if (msgEl) {
+        msgEl.hidden = false;
+        msgEl.innerHTML = 'Se vedi &laquo;Video non disponibile&raquo;, la diretta su YouTube non &egrave; ancora iniziata: riprova tra poco.';
+      }
       el.innerHTML =
         '<iframe src="https://www.youtube.com/embed/live_stream?channel=' + encodeURIComponent(channelId) + '&autoplay=1&mute=1" ' +
           'title="Diretta YouTube Victor Volley" ' +
@@ -89,15 +92,24 @@
   /* -------------------------------------------------------
      Render: tabellone
   ------------------------------------------------------- */
+  /* Tabellone Set Point Pulse: indirizzo fisso per società, segue da solo la
+     partita in corso (altrimenti scrive "Nessuna partita in corso"). Sempre
+     presente: non dipende dal calendario né da campi da compilare. */
+  function embedHtml() {
+    return (
+      '<div class="dt-spp-embed">' +
+        '<iframe src="https://victor-volley.setpointpulse.com/embed/club/victor-volley" width="480" height="120" title="Tabellone live Victor Volley" loading="lazy"></iframe>' +
+      '</div>'
+    );
+  }
+
   function renderLive(p) {
     return (
       '<div class="dt-top">' +
         '<span class="dt-cat">' + esc(catLabel(p.categoria)) + '</span>' +
-        '<span class="dt-live-badge" aria-label="Partita in corso"><span class="dt-live-dot" aria-hidden="true"></span>LIVE</span>' +
+        '<span class="dt-live-badge" aria-label="Partita di oggi"><span class="dt-live-dot" aria-hidden="true"></span>OGGI</span>' +
       '</div>' +
-      '<div class="dt-spp-embed">' +
-        '<iframe src="https://victor-volley.setpointpulse.com/embed/club/victor-volley" width="480" height="120" title="Tabellone live Victor Volley" loading="lazy"></iframe>' +
-      '</div>' +
+      embedHtml() +
       '<p class="dt-meta">' + esc(p.squadra_casa) + ' &ndash; ' + esc(p.squadra_ospite) + '</p>' +
       '<p class="dt-meta">' + esc(p.palazzetto || '') + (p.palazzetto ? ' · ' : '') + esc(formatData(p.data, p.ora)) + '</p>'
     );
@@ -141,12 +153,8 @@
         '</div>' +
       '</div>' +
       '<p class="dt-meta">' + esc(catLabel(p.categoria)) + ' · ' + esc(formatData(p.data, p.ora)) + (p.palazzetto ? ' · ' + esc(p.palazzetto) : '') + '</p>' +
-      '<p class="dt-upcoming-note">Il tabellone si attiver&agrave; il giorno della partita.</p>'
+      '<p class="dt-upcoming-note">Il tabellone si attiva da solo quando inizia la partita.</p>'
     );
-  }
-
-  function renderEmpty() {
-    return '<p class="dt-loading">Nessuna diretta disponibile al momento.</p>';
   }
 
   /* -------------------------------------------------------
@@ -158,20 +166,20 @@
 
     new Promise(function (resolve) { DB.load(['partite'], resolve); }).then(function () {
       if (DB.failed(['partite'])) {
-        el.innerHTML = VV.errorStateHtml('Non riusciamo a caricare le partite.');
+        el.innerHTML = embedHtml() + VV.errorStateHtml('Non riusciamo a caricare le partite.');
         var rb = el.querySelector('[data-retry]');
         if (rb) rb.addEventListener('click', function () { rb.disabled = true; rb.textContent = 'Riprovo…'; DB.retry(['partite'], init); });
         return;
       }
       var partite = VV.getPartite();
-      var oggi = new Date().toISOString().slice(0, 10);
+      var d = new Date();
+      var oggi = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
 
-      /* "In diretta": partita programmata per oggi con il campo Set Point
-         Pulse compilato (solo un interruttore: l'embed ha un indirizzo fisso
-         per società e segue da solo la partita in corso). È l'app SPP a gestire da sé gli stati pre/durante/
-         dopo partita all'interno del proprio widget. */
+      /* Il tabellone c'è sempre (embedHtml). Il video YouTube in diretta parte
+         se oggi c'è una partita non conclusa in calendario; altrimenti
+         l'ultimo video caricato. */
       var live = partite.filter(function (p) {
-        return p.stato === 'programmata' && p.spp_code && p.data === oggi;
+        return p.stato === 'programmata' && p.data === oggi;
       })[0];
 
       if (live) {
@@ -187,7 +195,7 @@
         .sort(function (a, b) { return a.data > b.data ? 1 : -1; })[0];
 
       if (upcoming) {
-        el.innerHTML = renderUpcoming(upcoming);
+        el.innerHTML = embedHtml() + renderUpcoming(upcoming);
         return;
       }
 
@@ -195,11 +203,11 @@
         .filter(function (p) { return p.stato === 'conclusa'; })
         .sort(function (a, b) { return a.data < b.data ? 1 : -1; })[0];
 
-      el.innerHTML = ultimaConclusa ? renderConcluded(ultimaConclusa, 'Ultimo risultato') : renderEmpty();
+      el.innerHTML = embedHtml() + (ultimaConclusa ? renderConcluded(ultimaConclusa, 'Ultimo risultato') : '');
     }).catch(function (e) {
       console.warn('[diretta] errore caricamento partite:', e);
       renderVideo(false);
-      el.innerHTML = renderEmpty();
+      el.innerHTML = embedHtml();
     });
   }
 
