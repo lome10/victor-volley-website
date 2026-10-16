@@ -3617,17 +3617,75 @@ button[type="submit"][aria-busy="true"] { opacity: 0.7; cursor: progress; }
   color: rgba(255,255,255,0.4);
 }
 
-.dt-spp-embed {
-  display: flex;
-  justify-content: center;
-  background: rgba(255,255,255,0.04);
-  border-radius: 12px;
-  padding: 12px;
+/* Tabellone live: punti del set, set vinti, servizio, set conclusi */
+.dt-final-badge {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.7);
 }
-.dt-spp-embed iframe {
-  max-width: 100%;
-  border: 0;
-  border-radius: 8px;
+.dt-teams--live { align-items: flex-start; }
+.dt-teams--live .dt-team { gap: 6px; }
+.dt-teams--live .dt-team-logo { width: 64px; height: 64px; }
+.dt-scorecol { gap: 6px; padding-top: 4px; }
+.dt-points {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-heading);
+  font-size: 44px;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.dt-points i, .dt-setswon i { font-style: normal; color: rgba(255,255,255,0.35); }
+.dt-setswon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 20px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.75);
+  font-variant-numeric: tabular-nums;
+}
+.dt-setswon--final { font-family: var(--font-heading); font-size: 44px; font-weight: 800; line-height: 1; color: #fff; }
+.dt-serve {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: transparent;
+}
+.dt-team.is-serving .dt-serve { background: #ffd23f; box-shadow: 0 0 0 4px rgba(255,210,63,0.25); }
+.dt-setchips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+.dt-setchip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.08);
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.dt-setchip small {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(255,255,255,0.45);
+}
+@media (max-width: 420px) {
+  .dt-points, .dt-setswon--final { font-size: 34px; }
+  .dt-teams--live .dt-team-logo { width: 52px; height: 52px; }
 }
 
 .dt-upcoming-label {
