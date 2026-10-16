@@ -31,7 +31,7 @@
     if (B._activeBudgetTab === 'riepilogo') { B._renderObiettivo(); B._renderPromemoriaWidget(); B._renderStatCards(); B._renderCharts(); B._renderCashflow(); }
     if (B._activeBudgetTab === 'sponsor')   B._renderKanban();
     if (B._activeBudgetTab === 'rette')     B._renderRette();
-    if (B._activeBudgetTab === 'spese')     B._renderSpese();
+    if (B._activeBudgetTab === 'spese')     { B._renderSpese(); B._controllaTesseramenti(); }
     if (B._activeBudgetTab === 'tessere')   B._renderTessere();
     if (B._activeBudgetTab === 'supercoppa') B._renderSupercoppa();
     if (B._activeBudgetTab === 'altre')     B._renderAltreEntrate();
@@ -95,7 +95,11 @@
         _populateLogDirigenteFilter();
         return _loadSeasonScoped();
       });
-    }).then(function () { if (cb) cb(); })
+    }).then(function () {
+      B._budgetCaricato = true;
+      if (B._tesseramentiBudgetPronto) B._tesseramentiBudgetPronto();
+      if (cb) cb();
+    })
       .catch(function (err) {
         console.error('[budget] loadAll', err);
         if (cb) cb();
@@ -146,6 +150,7 @@
       B._tessere         = res[4].docs.map(_mapDoc);
       B._altreEntrate    = res[5].docs.map(_mapDoc);
       B._supercoppa      = res[6].docs.map(_mapDoc);
+      B._tessControllati = false;   /* nuova stagione: la voce Tesseramenti va riallineata alla prossima apertura delle Spese */
     });
   }
 

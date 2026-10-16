@@ -76,7 +76,10 @@
 
   /* atleti: elenco con `categoria` e `dataNascita` (la scheda atleta li tiene in cache).
      → { totale, tesserati, senzaData, fuoriFasce, squadre } dello stato dopo l'aggiornamento. */
+  var _inAttesa = null;   /* richiesta arrivata prima che il budget fosse caricato: si esegue appena è pronto */
+
   function _ricalcola(atleti) {
+    if (!B._budgetCaricato) { _inAttesa = atleti; return Promise.resolve(null); }
     var run = function () {
       var C = A.tesseramentiCalc;
       var r = C.riepilogo(atleti);
@@ -131,17 +134,17 @@
     });
   }
 
-  /* Bottone «Ricalcola tesseramenti» nelle Spese */
-  window.AdminActions.ricalcolaTesseramenti = function (btn) {
-    if (btn) btn.disabled = true;
-    _elencoAtleti().then(_ricalcola).then(function (r) {
-      var righe = [r.tesserati + (r.tesserati === 1 ? ' atleta con costo di tesseramento' : ' atleti con costo di tesseramento') +
-        ', totale ' + String(r.totale).replace('.', ',') + ' €.'];
-      if (r.senzaData) righe.push(r.senzaData + ' senza data di nascita (il costo si genera quando la inserisci).');
-      if (r.fuoriFasce) righe.push(r.fuoriFasce + ' nati dopo il 2021: nessuna fascia prevista.');
-      if (r.escluse) righe.push(r.escluse + ' della categoria Open: esclusi per ora.');
-      alert('Tesseramenti aggiornati.' + String.fromCharCode(10) + righe.join(String.fromCharCode(10)));
-    }).catch(function (e) { alert('Errore: ' + e.message); })
-      .then(function () { if (btn) btn.disabled = false; });
+  B._tesseramentiBudgetPronto = function () {
+    if (!_inAttesa) return;
+    var l = _inAttesa; _inAttesa = null;
+    _ricalcola(l);
+  };
+
+  /* Prima apertura delle Spese (per stagione, una volta a sessione): allinea la voce agli atleti, così esiste
+     anche se nessuno ha toccato una scheda. Usa l'elenco già in memoria; se non c'è lo legge. */
+  B._controllaTesseramenti = function () {
+    if (B._tessControllati) return;
+    B._tessControllati = true;
+    _elencoAtleti().then(_ricalcola).catch(function (e) { B._tessControllati = false; console.error('[budget] tesseramenti', e); });
   };
 })();

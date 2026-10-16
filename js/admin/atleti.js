@@ -62,6 +62,7 @@
         }
       });
       _renderAtletiRows();
+      _ricalcolaTesseramenti();   /* elenco appena riletto (anche modifiche di altri dirigenti): la voce nelle Spese resta allineata */
       if (_pendingOpenAtleta) { var daAprire = _pendingOpenAtleta; _pendingOpenAtleta = null; _openAtletaDetail(daAprire); }
       _migrateAccessiAtleti();
       _loadAccessiDocs();
@@ -1994,6 +1995,7 @@
         _reconcileAccessi();
         _renderAtletiRows();
         _refreshBudgetViews();
+        return _ricalcolaTesseramenti();
       }).catch(function (e) { _avviso('Errore: ' + e.message); });
     });
   };
