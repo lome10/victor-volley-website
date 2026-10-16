@@ -437,6 +437,8 @@
         (r.home ? '<span class="girone-sq-tag">La nostra squadra</span>' : '') +
         '<label class="btn-ghost" style="cursor:pointer;padding:6px 10px;white-space:nowrap" title="Carica logo: sfondo bianco rimosso, PNG 256 px">Carica logo' +
           '<input type="file" accept="image/*" data-role="file" style="display:none"></label>' +
+        '<label class="btn-ghost" style="cursor:pointer;padding:6px 10px;white-space:nowrap" title="Carica il logo com’è, senza togliere lo sfondo bianco">Con sfondo' +
+          '<input type="file" accept="image/*" data-role="file-raw" style="display:none"></label>' +
         (r.logo ? '<button type="button" class="btn-ghost" data-act="rm-logo" style="padding:6px 10px">Togli logo</button>' : '') +
         (r.home ? '' : '<button type="button" class="btn-icon btn-icon--danger" data-act="del" title="Elimina squadra">' + DEL_ICON_SM + '</button>') +
       '</div>';
@@ -596,7 +598,8 @@
         _renderGironeCount();
         return;
       }
-      if (role !== 'file' || !ev.target.files.length) return;
+      if ((role !== 'file' && role !== 'file-raw') || !ev.target.files.length) return;
+      var keepBg = role === 'file-raw';
       var fileEl = ev.target, box = row.querySelector('[data-role="logo"]'), prev = r.logo;
       convertLogoToPng(fileEl.files[0], 256, function (dataUrl, blob) {
         fileEl.value = '';
@@ -615,7 +618,7 @@
           _renderGironeRows();
           _gironeStatus('Logo caricato: ricordati di salvare.');
         });
-      });
+      }, keepBg);
     });
 
     list.addEventListener('click', function (ev) {
@@ -1196,7 +1199,8 @@
     return out;
   }
 
-  function convertLogoToPng(file, size, cb) {
+  /* keepBg = true: lascia lo sfondo bianco com'è (nessuna pulizia, nessun ritaglio) */
+  function convertLogoToPng(file, size, cb, keepBg) {
     var reader = new FileReader();
     reader.onload = function (e) {
       var dataUrl = e.target.result;
@@ -1224,7 +1228,7 @@
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
         ctx.drawImage(img, 0, 0);
-        _removeWhiteBg(ctx, w, h);
+        if (!keepBg) _removeWhiteBg(ctx, w, h);
         var finalCanvas = _trimAndScale(canvas, size);
         var outDataUrl = finalCanvas.toDataURL('image/png');
         finalCanvas.toBlob(function (blob) { cb(outDataUrl, blob); }, 'image/png');
