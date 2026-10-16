@@ -35,7 +35,8 @@
      L'embed persistente /embed/live_stream?channel= mostra "Video non
      disponibile" quando il canale non sta trasmettendo in questo
      momento (cosa vera quasi sempre): per evitarlo, carichiamo
-     l'iframe live solo quando il tabellone segnala una partita live;
+     l'iframe live solo quando YouTube dice che il canale sta trasmettendo
+     (/api/youtube-live, controllata ogni minuto);
      altrimenti mostriamo un avviso + l'ultimo video caricato (playlist
      "uploads" del canale, ricavata da UC... -> UU...).
   ------------------------------------------------------- */
@@ -53,10 +54,7 @@
     var hasChannel = channelId && channelId !== 'INSERISCI_CHANNEL_ID_YOUTUBE';
 
     if (isLive && hasChannel) {
-      if (msgEl) {
-        msgEl.hidden = false;
-        msgEl.innerHTML = 'Se vedi &laquo;Video non disponibile&raquo;, la diretta su YouTube non &egrave; ancora iniziata: riprova tra poco.';
-      }
+      if (msgEl) msgEl.hidden = true;
       el.innerHTML =
         '<iframe src="https://www.youtube.com/embed/live_stream?channel=' + encodeURIComponent(channelId) + '&autoplay=1&mute=1" ' +
           'title="Diretta YouTube Victor Volley" ' +
@@ -87,6 +85,27 @@
         '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>' +
         '<span>Streaming non ancora configurato.<br>Segui la diretta su <a href="' + CHANNEL_URL + '/live" target="_blank" rel="noopener">YouTube</a>.</span>' +
       '</div>';
+  }
+
+  /* Il canale sta trasmettendo adesso? Risponde /api/youtube-live; se non
+     risponde si considera "no" (si vede l'ultimo video, mai "non disponibile"). */
+  var videoLive = null;
+  function checkLive() {
+    return fetch('/api/youtube-live', { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : { live: false }; })
+      .then(function (j) { return !!(j && j.live); })
+      .catch(function () { return false; });
+  }
+  function initVideo() {
+    function tick() {
+      checkLive().then(function (live) {
+        if (live === videoLive) return;
+        videoLive = live;
+        renderVideo(live);
+      });
+    }
+    tick();
+    setInterval(tick, 60000);
   }
 
   /* -------------------------------------------------------
@@ -175,20 +194,16 @@
       var d = new Date();
       var oggi = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
 
-      /* Il tabellone c'è sempre (embedHtml). Il video YouTube in diretta parte
-         se oggi c'è una partita non conclusa in calendario; altrimenti
-         l'ultimo video caricato. */
+      /* Il tabellone c'è sempre (embedHtml); il video lo decide initVideo.
+         Qui solo il riquadro con la partita di oggi, se c'è in calendario. */
       var live = partite.filter(function (p) {
         return p.stato === 'programmata' && p.data === oggi;
       })[0];
 
       if (live) {
         el.innerHTML = renderLive(live);
-        renderVideo(true);
         return;
       }
-
-      renderVideo(false);
 
       var upcoming = partite
         .filter(function (p) { return p.stato === 'programmata' && p.data >= oggi; })
@@ -206,13 +221,12 @@
       el.innerHTML = embedHtml() + (ultimaConclusa ? renderConcluded(ultimaConclusa, 'Ultimo risultato') : '');
     }).catch(function (e) {
       console.warn('[diretta] errore caricamento partite:', e);
-      renderVideo(false);
       el.innerHTML = embedHtml();
     });
   }
 
   document.addEventListener('DOMContentLoaded', function () {
-    renderVideo(false);
+    initVideo();
     init();
   });
 })();
