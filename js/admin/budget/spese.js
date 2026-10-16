@@ -302,8 +302,14 @@
     var items = _vociFiltrate(oggi), per = {}, html = '';
     items.forEach(function (v) { var key = v.categoriaSpesaId || '__none__'; (per[key] = per[key] || []).push(v); });
     function sommaPrev(arr) { return arr.reduce(function (t, v) { return t + (+v.importoPreventivato || 0); }, 0); }
-    Object.keys(per).sort(function (a, b) { return sommaPrev(per[b]) - sommaPrev(per[a]); }).forEach(function (key) {
-      var arr = per[key].slice().sort(function (a, b) { return (a.dataSpesa || '9999').localeCompare(b.dataSpesa || '9999'); });
+    /* ordine alfabetico: categorie ("Senza categoria" in fondo) e, dentro ciascuna, le voci per nome */
+    function nomeGruppo(key) { var cc = key === '__none__' ? null : _categoriaSpesaById(key); return cc ? (cc.nome || '') : ''; }
+    function perNome(x, y) { return (x || '').localeCompare(y || '', 'it', { sensitivity: 'base', numeric: true }); }
+    Object.keys(per).sort(function (a, b) {
+      if (a === '__none__' || b === '__none__') return a === '__none__' ? (b === '__none__' ? 0 : 1) : -1;
+      return perNome(nomeGruppo(a), nomeGruppo(b));
+    }).forEach(function (key) {
+      var arr = per[key].slice().sort(function (a, b) { return perNome(a.categoria, b.categoria); });
       var c = key === '__none__' ? null : _categoriaSpesaById(key);
       var p = sommaPrev(arr), s = arr.reduce(function (t, v) { return t + (+v.importoSostenuto || 0); }, 0), pc = p ? Math.round(s / p * 100) : 0;
       var aperto = !B._speseGruppiChiusi[key];
