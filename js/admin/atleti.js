@@ -38,7 +38,7 @@
       return;
     }
     document.getElementById('atletiBody').innerHTML =
-      '<tr><td colspan="6" style="text-align:center;color:var(--a-muted);padding:20px">Caricamento…</td></tr>';
+      '<tr><td colspan="7" style="text-align:center;color:var(--a-muted);padding:20px">Caricamento…</td></tr>';
 
     Promise.all([db.collection('atleti').get(), db.collection('atletiDati').get()]).then(function (res) {
       var dati = {};
@@ -68,7 +68,7 @@
     }).catch(function (err) {
       console.error('[Atleti]', err);
       document.getElementById('atletiBody').innerHTML =
-        '<tr><td colspan="6" style="text-align:center;color:var(--a-red)">Errore nel caricamento.</td></tr>';
+        '<tr><td colspan="7" style="text-align:center;color:var(--a-red)">Errore nel caricamento.</td></tr>';
     });
   }
 
@@ -542,7 +542,16 @@
     if (certKo)       parts.push(certKo + ' con certificato scaduto o mancante');
     if (privKo)       parts.push(privKo + ' con privacy da ritirare');
     if (senzaAccessi) parts.push(senzaAccessi + ' senza accessi');
+    var tess = A.tesseramentiCalc.riepilogo(list);
+    if (tess.tesserati) parts.push('tesseramenti ' + String(tess.totale).replace('.', ',') + ' €');
     return parts.join(' · ');
+  }
+
+  /* Costo di tesseramento dell'atleta (regola per data di nascita): importo e fascia sotto. */
+  function _tesseramentoCella(a) {
+    var c = A.tesseramentiCalc.costo(a);
+    if (!c) return A.tesseramentiCalc.isEsclusa(a.categoria) ? '<span class="table-sub">esclusa</span>' : '—';
+    return '<span style="font-weight:600">' + String(c.importo).replace('.', ',') + ' €</span><div class="table-sub">' + esc(c.etichetta) + '</div>';
   }
 
   function _atletaRowHtml(a) {
@@ -558,6 +567,7 @@
       '<td>' + (a.dataNascita ? esc(_fmtDate(a.dataNascita)) + '<div class="table-sub">' + eta + ' anni</div>' : '<span class="chip chip--gray">—</span>') + '</td>' +
       '<td>' + (ruoloNum ? esc(ruoloNum) : '—') + '</td>' +
       '<td>' + _certChip(a.certMedicoScadenza) + '</td>' +
+      '<td>' + _tesseramentoCella(a) + '</td>' +
       '<td>' + (totale > 0
         ? '<span style="font-weight:600">€' + saldato.toFixed(0) + '</span><span style="color:var(--a-muted)"> / €' + totale.toFixed(0) + '</span>'
         : '—') + '</td>' +
@@ -1224,13 +1234,13 @@
     if (_atletiVista === 'prezzi') { _renderPrezzi(); return; }
     if (!_atletiCache.length) {
       document.getElementById('atletiSummary').textContent = '';
-      body.innerHTML = '<tr><td colspan="6"><div class="empty-state"><p>Nessun atleta registrato.</p></div></td></tr>';
+      body.innerHTML = '<tr><td colspan="7"><div class="empty-state"><p>Nessun atleta registrato.</p></div></td></tr>';
       return;
     }
     var list = _atletiFiltrati();
     document.getElementById('atletiSummary').textContent = _atletiAvvisi(list);
     if (!list.length) {
-      body.innerHTML = '<tr><td colspan="6"><div class="empty-state"><p>Nessun atleta corrisponde ai filtri.</p></div></td></tr>';
+      body.innerHTML = '<tr><td colspan="7"><div class="empty-state"><p>Nessun atleta corrisponde ai filtri.</p></div></td></tr>';
       return;
     }
 
@@ -1250,7 +1260,7 @@
       /* Con una ricerca in corso i gruppi restano aperti, così i risultati si vedono. */
       var chiuso = !q && _atletiChiuse.indexOf(cat) !== -1;
       return '<tr class="atleti-group' + (chiuso ? ' is-closed' : '') + '" data-cat="' + esc(cat) + '" tabindex="0" role="button" aria-expanded="' + (chiuso ? 'false' : 'true') + '">' +
-        '<td colspan="6"><span class="atleti-group-chev" aria-hidden="true"></span><strong>' + esc(cat === '__none__' ? 'Senza categoria' : cat) + '</strong>' +
+        '<td colspan="7"><span class="atleti-group-chev" aria-hidden="true"></span><strong>' + esc(cat === '__none__' ? 'Senza categoria' : cat) + '</strong>' +
         '<span>' + esc(_atletiAvvisi(membri)) + '</span></td></tr>' + (chiuso ? '' : membri.map(_atletaRowHtml).join(''));
     }).join('');
   }
