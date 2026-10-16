@@ -33,7 +33,7 @@ async function scarica(url) {
   try {
     const r = await fetch(url, { signal: ctrl.signal, headers: HEADERS });
     const testo = r.ok ? await r.text() : '';
-    if (diagnosi) diagnosi.push({ url: url.replace(/channel_id=.*/, 'channel_id=…'), http: r.status, finale: r.url.slice(0, 80), byte: testo.length, playability: (/"playabilityStatus":\{"status":"(\w+)"/.exec(testo) || [])[1] || null });
+    if (diagnosi) diagnosi.push({ url: url.replace(/channel_id=.*/, 'channel_id=…'), http: r.status, finale: r.url.slice(0, 80), byte: testo.length, isLiveNow: /"isLiveNow":true/.test(testo), playability: (/"playabilityStatus":\{"status":"(\w+)"/.exec(testo) || [])[1] || null });
     return testo;
   } finally { clearTimeout(t); }
 }
@@ -47,10 +47,12 @@ function idDalFeed(xml) {
   return ids;
 }
 
-/** Vero se la pagina del video dice che si può guardare adesso (non una diretta ancora da iniziare). */
+/** Vero se il video si può guardare adesso. Dal server di Vercel YouTube risponde LOGIN_REQUIRED (controllo
+ *  anti-bot) anche per i video normali, mentre una diretta non ancora iniziata dice LIVE_STREAM_OFFLINE:
+ *  si scartano solo gli stati che indicano un video non riproducibile. */
 function eRiproducibile(html) {
   const m = /"playabilityStatus":\{"status":"(\w+)"/.exec(html || '');
-  return !!(m && m[1] === 'OK');
+  return !!m && m[1] !== 'LIVE_STREAM_OFFLINE' && m[1] !== 'UNPLAYABLE' && m[1] !== 'ERROR';
 }
 
 module.exports = async function handler(req, res) {
@@ -66,7 +68,9 @@ module.exports = async function handler(req, res) {
     try {
       const ids = idDalFeed(await scarica('https://www.youtube.com/feeds/videos.xml?channel_id=' + CHANNEL_ID)).slice(0, 5);
       for (const id of ids) {
-        if (eRiproducibile(await scarica('https://www.youtube.com/watch?v=' + id))) { lastVideoId = id; break; }
+        const html = await scarica('https://www.youtube.com/watch?v=' + id);
+        if (/"isLiveNow":true/.test(html)) { live = true; break; } // diretta in corso non vista dalla pagina /live
+        if (eRiproducibile(html)) { lastVideoId = id; break; }
       }
     } catch (e) {
       console.warn('[youtube-live] ultimo video non ricavabile:', e && e.message);
