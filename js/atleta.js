@@ -298,13 +298,13 @@
     var items = [];
 
     if (!a.certMedicoScadenza) {
-      items.push({ lvl: 'orange', text: 'Certificato medico non ancora consegnato.' });
+      items.push({ lvl: 'orange', text: 'Certificato medico non ancora consegnato. La società darà aggiornamenti a breve.' });
     } else {
       var d = _daysDiff(a.certMedicoScadenza);
       if (d < 0) {
-        items.push({ lvl: 'red', text: 'Certificato medico scaduto il ' + _fmtDate(a.certMedicoScadenza) + '.' });
+        items.push({ lvl: 'red', text: 'Certificato medico scaduto il ' + _fmtDate(a.certMedicoScadenza) + '. La società darà aggiornamenti a breve.' });
       } else if (d <= 30) {
-        items.push({ lvl: 'orange', text: 'Il certificato medico scade ' + _inDays(d) + ' (' + _fmtDate(a.certMedicoScadenza) + ').' });
+        items.push({ lvl: 'orange', text: 'Il certificato medico scade ' + _inDays(d) + ' (' + _fmtDate(a.certMedicoScadenza) + '). La società darà aggiornamenti a breve.' });
       }
     }
 
