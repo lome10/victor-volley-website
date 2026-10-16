@@ -38,6 +38,12 @@
         ],
         "createdAt": "2026-08-17T07:57:48.018Z",
         "reason": "pre-existing sitewide pattern in admin.html (dozens of 11-13px muted sublabels/hints across the whole panel, e.g. lines 212,219,240,321,340... predating this change); this session only added a toolbar+button reusing existing dg-card-sub/dg-btn-ghost classes, no new font-size introduced — out of scope for a backend IVA-calc task"
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "createdAt": "2026-10-16T09:09:17.551Z",
+        "reason": "user confirmed: tiene Inter per l'area famiglie (2026-10-16)"
       }
     ]
   }
