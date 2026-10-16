@@ -26,12 +26,15 @@ const HEADERS = {
   'Cookie': 'SOCS=CAI; CONSENT=YES+1'
 };
 
+let diagnosi = null; // riempito solo con ?debug=1
 async function scarica(url) {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), 6000);
   try {
     const r = await fetch(url, { signal: ctrl.signal, headers: HEADERS });
-    return r.ok ? await r.text() : '';
+    const testo = r.ok ? await r.text() : '';
+    if (diagnosi) diagnosi.push({ url: url.replace(/channel_id=.*/, 'channel_id=…'), http: r.status, finale: r.url.slice(0, 80), byte: testo.length, playability: (/"playabilityStatus":\{"status":"(\w+)"/.exec(testo) || [])[1] || null });
+    return testo;
   } finally { clearTimeout(t); }
 }
 
@@ -53,6 +56,7 @@ function eRiproducibile(html) {
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60');
   let live = false, lastVideoId = null;
+  diagnosi = req && req.query && req.query.debug ? [] : null;
   try {
     live = eInDiretta(await scarica('https://www.youtube.com/channel/' + CHANNEL_ID + '/live'));
   } catch (e) {
@@ -68,7 +72,7 @@ module.exports = async function handler(req, res) {
       console.warn('[youtube-live] ultimo video non ricavabile:', e && e.message);
     }
   }
-  res.status(200).json({ live, lastVideoId });
+  res.status(200).json(diagnosi ? { live, lastVideoId, diagnosi } : { live, lastVideoId });
 };
 
 module.exports.eInDiretta = eInDiretta;
