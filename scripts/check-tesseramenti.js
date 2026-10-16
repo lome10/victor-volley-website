@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Collaudo del costo di tesseramento:  node scripts/check-tesseramenti.js
- * Carica js/admin/tesseramenti-calc.js in un ambiente finto e controlla fasce, estremi, OPE e riepilogo per squadra.
+ * Carica js/admin/tesseramenti-calc.js in un ambiente finto e controlla fasce, estremi, Minivolley S3 e riepilogo per squadra.
  */
 const assert = require('assert');
 const fs = require('fs');
@@ -33,15 +33,15 @@ t('Under 13 senza data: già 5 €; con la data vale la fascia reale', () => {
   assert.strictEqual(imp({ categoria: 'Under 13 Femminile', dataNascita: '2023-04-01' }), null);
   ['Under 12 Maschile', 'Under 130', 'Prima Divisione'].forEach((c) => assert.strictEqual(imp({ categoria: c }), null, c));
 });
-t('senza data di nascita: nessun costo (non OPE)', () => { assert.strictEqual(C.costo({ categoria: 'Prima Divisione' }), null); assert.strictEqual(C.costo({ dataNascita: '' }), null); });
+t('senza data di nascita: nessun costo (non Minivolley S3)', () => { assert.strictEqual(C.costo({ categoria: 'Prima Divisione' }), null); assert.strictEqual(C.costo({ dataNascita: '' }), null); });
 t('nata dopo il 2021: nessuna fascia, nessun costo', () => { assert.strictEqual(imp(nato(2022)), null); });
-t('OPE (S3 minivolley): 5 € anche senza data o con data di altra fascia', () => {
+t('Minivolley S3: 5 € anche senza data o con data di altra fascia', () => {
   assert.strictEqual(imp({ categoria: 'S3 - Minivolley' }), 5);
   assert.strictEqual(imp({ categoria: 'Minivolley', dataNascita: '1990-01-01' }), 5);
   assert.strictEqual(imp({ categoria: 'S3', dataNascita: '2012-01-01' }), 5);
 });
-t('«Under 13» o «Società» non sono OPE', () => {
-  ['Under 13 Femminile', 'Under 13 maschile', 'Prima Divisione', 'Società', 'S30 Open'].forEach((c) => assert.strictEqual(C.isOpe(c), false, c));
+t('«Under 13» o «Società» non sono Minivolley S3', () => {
+  ['Under 13 Femminile', 'Under 13 maschile', 'Prima Divisione', 'Società', 'S30 Open'].forEach((c) => assert.strictEqual(C.isMinivolley(c), false, c));
 });
 
 t('categoria Open: esclusa, anche con data di nascita, e non conta tra i senza data', () => {

@@ -4,10 +4,10 @@
 
    Regola (decisa dalla società, per anno di nascita):
      2014–2021 → 5 €   ·   2011–2013 → 7 €   ·   2003–2010 → 10 €   ·   2002 e prima → 18 €
-     OPE (minivolley S3) → 5 €, qualunque sia la data di nascita.
+     Minivolley S3 → 5 €, qualunque sia la data di nascita.
      Under 13 senza data di nascita → già 5 € (sono nati dal 2014); appena c'è la data vale quella.
      La categoria «Open» è a parte: per ora è esclusa (nessun costo, non conta tra i «senza data»).
-   Senza data di nascita (e non OPE) il costo non c'è ancora: si genera man mano che le date vengono inserite. */
+   Senza data di nascita (e non Minivolley S3) il costo non c'è ancora: si genera man mano che le date vengono inserite. */
 (function () {
   'use strict';
   var A = window.Admin = window.Admin || {};
@@ -19,12 +19,12 @@
     { da: 2003, a: 2010, importo: 10, etichetta: 'nati/e dal 2003 al 2010' },
     { da: null, a: 2002, importo: 18, etichetta: 'nati/e nel 2002 e anni precedenti' }
   ];
-  var OPE = { importo: 5, etichetta: 'OPE (minivolley S3)' };
+  var MINIVOLLEY = { importo: 5, etichetta: 'Minivolley S3' };
 
   function r2(x) { return Math.round((+x || 0) * 100 + 1e-9) / 100; }
 
-  /* La categoria OPE è il minivolley S3: «S3 - Minivolley», «Minivolley», «S3»… */
-  function isOpe(categoria) {
+  /* Minivolley S3: «S3 - Minivolley», «Minivolley», «S3»… */
+  function isMinivolley(categoria) {
     return /(^|[^a-z0-9])s3([^a-z0-9]|$)|minivolley|mini volley/i.test(String(categoria || ''));
   }
 
@@ -48,7 +48,7 @@
   function costo(atleta) {
     atleta = atleta || {};
     if (isEsclusa(atleta.categoria)) return null;
-    if (isOpe(atleta.categoria)) return { importo: OPE.importo, etichetta: OPE.etichetta };
+    if (isMinivolley(atleta.categoria)) return { importo: MINIVOLLEY.importo, etichetta: MINIVOLLEY.etichetta };
     var y = annoNascita(atleta.dataNascita);
     if (y == null) return isUnder13(atleta.categoria) ? { importo: FASCE[0].importo, etichetta: 'Under 13, nati/e dal 2014' } : null;
     for (var i = 0; i < FASCE.length; i++) {
@@ -85,12 +85,12 @@
     return out;
   }
 
-  /* «3 × 5 € (OPE) · 2 × 10 € (nati/e dal 2003 al 2010)» — per la nota della sottospesa */
+  /* «3 × 5 € (Minivolley S3) · 2 × 10 € (nati/e dal 2003 al 2010)» — per la nota della sottospesa */
   function dettaglio(squadra) {
     return squadra.righe.map(function (r) {
       return r.n + ' × ' + String(r.importo).replace('.', ',') + ' € (' + r.etichetta + ')';
     }).join(' · ');
   }
 
-  A.tesseramentiCalc = { FASCE: FASCE, isOpe: isOpe, isUnder13: isUnder13, isEsclusa: isEsclusa, costo: costo, riepilogo: riepilogo, dettaglio: dettaglio };
+  A.tesseramentiCalc = { FASCE: FASCE, isMinivolley: isMinivolley, isUnder13: isUnder13, isEsclusa: isEsclusa, costo: costo, riepilogo: riepilogo, dettaglio: dettaglio };
 })();
