@@ -96,7 +96,7 @@
         '<span class="dt-live-badge" aria-label="Partita in corso"><span class="dt-live-dot" aria-hidden="true"></span>LIVE</span>' +
       '</div>' +
       '<div class="dt-spp-embed">' +
-        '<iframe src="https://victor-volley.setpointpulse.com/embed/' + esc(p.spp_code) + '" width="480" height="120" frameborder="0"></iframe>' +
+        '<iframe src="https://victor-volley.setpointpulse.com/embed/club/victor-volley" width="480" height="120" title="Tabellone live Victor Volley" loading="lazy"></iframe>' +
       '</div>' +
       '<p class="dt-meta">' + esc(p.squadra_casa) + ' &ndash; ' + esc(p.squadra_ospite) + '</p>' +
       '<p class="dt-meta">' + esc(p.palazzetto || '') + (p.palazzetto ? ' · ' : '') + esc(formatData(p.data, p.ora)) + '</p>'
@@ -166,8 +166,9 @@
       var partite = VV.getPartite();
       var oggi = new Date().toISOString().slice(0, 10);
 
-      /* "In diretta": partita programmata per oggi con un codice Set Point
-         Pulse assegnato. È l'app SPP a gestire da sé gli stati pre/durante/
+      /* "In diretta": partita programmata per oggi con il campo Set Point
+         Pulse compilato (solo un interruttore: l'embed ha un indirizzo fisso
+         per società e segue da solo la partita in corso). È l'app SPP a gestire da sé gli stati pre/durante/
          dopo partita all'interno del proprio widget. */
       var live = partite.filter(function (p) {
         return p.stato === 'programmata' && p.spp_code && p.data === oggi;
