@@ -51,7 +51,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://api.cloudinary.com https://api.web3forms.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; script-src 'self' 'sha256-1UWsP0fa21CfbuUCg88f8CkzaI07vGQDzhHL6jVXbm8='; img-src 'self' data: https://res.cloudinary.com https://i.ytimg.com; frame-src https://www.youtube.com https://www.youtube-nocookie.com https://maps.google.com https://www.google.com https://set-point-pulse.lovable.app"
+          "value": "default-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://api.cloudinary.com https://api.web3forms.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; script-src 'self' 'sha256-1UWsP0fa21CfbuUCg88f8CkzaI07vGQDzhHL6jVXbm8='; img-src 'self' data: https://res.cloudinary.com https://i.ytimg.com; frame-src https://www.youtube.com https://www.youtube-nocookie.com https://maps.google.com https://www.google.com https://victor-volley.setpointpulse.com"
         }
       ]
     },

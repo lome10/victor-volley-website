@@ -96,7 +96,7 @@
         '<span class="dt-live-badge" aria-label="Partita in corso"><span class="dt-live-dot" aria-hidden="true"></span>LIVE</span>' +
       '</div>' +
       '<div class="dt-spp-embed">' +
-        '<iframe src="https://set-point-pulse.lovable.app/embed/' + esc(p.spp_code) + '" width="480" height="120" frameborder="0"></iframe>' +
+        '<iframe src="https://victor-volley.setpointpulse.com/embed/' + esc(p.spp_code) + '" width="480" height="120" frameborder="0"></iframe>' +
       '</div>' +
       '<p class="dt-meta">' + esc(p.squadra_casa) + ' &ndash; ' + esc(p.squadra_ospite) + '</p>' +
       '<p class="dt-meta">' + esc(p.palazzetto || '') + (p.palazzetto ? ' · ' : '') + esc(formatData(p.data, p.ora)) + '</p>'
