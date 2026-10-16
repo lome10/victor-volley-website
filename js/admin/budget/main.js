@@ -330,6 +330,8 @@
     renderDashSpeseWidget: B._renderDashSpeseWidget,
     /* dopo una modifica a rette/rate fatta dalla scheda atleta */
     refreshRette: function () { B._renderRette(); B._renderStatCards(); B._renderCharts(); B._renderBilancio(); },
+    /* tesseramenti: aggiorna la voce «Tesseramenti atleti» nelle Spese dall'elenco atleti */
+    ricalcolaTesseramenti: function (atleti) { return B._ricalcolaTesseramenti(atleti); },
     /* stato condiviso con la scheda atleta (iscrizione e rate) */
     state: {
       get seasons() { return B._seasons; },

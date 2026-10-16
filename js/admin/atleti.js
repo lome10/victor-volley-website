@@ -382,8 +382,38 @@
   function _atletaFormHtml(a) {
     return ATLETA_SEZIONI.map(function (s) {
       return '<div class="form-group form-full"><h4 class="af-section">' + esc(s.titolo) + '</h4></div>' +
-        s.campi.map(function (f) { return _campoHtml(f, _valoreScheda(a, f.k)); }).join('');
+        s.campi.map(function (f) { return _campoHtml(f, _valoreScheda(a, f.k)); }).join('') +
+        (s.titolo === 'Sport e tesseramento' ? '<div class="form-group form-full"><div id="af_costoTesseramento" class="af-costo" aria-live="polite"></div></div>' : '');
     }).join('');
+  }
+
+  function _campoEl(k) { return document.getElementById('af_' + k); }
+
+  /* Costo di tesseramento (regola per data di nascita, vedi tesseramenti-calc.js): si aggiorna mentre si compila la scheda. */
+  function _aggiornaCostoTesseramento() {
+    var box = document.getElementById('af_costoTesseramento');
+    if (!box) return;
+    var dn = _campoEl('dataNascita'), cat = _campoEl('categoria');
+    var c = A.tesseramentiCalc.costo({ dataNascita: dn ? dn.value : '', categoria: cat ? cat.value : '' });
+    var categoria = cat ? cat.value : '';
+    var testo;
+    if (A.tesseramentiCalc.isEsclusa(categoria)) testo = 'Categoria «' + categoria + '»: per ora esclusa dal costo di tesseramento.';
+    else if (c) testo = '<strong>' + String(c.importo).replace('.', ',') + ' €</strong> <span>(' + esc(c.etichetta) + ')</span>';
+    else if (dn && dn.value) testo = 'Nessuna fascia prevista per questa data di nascita.';
+    else testo = 'Si calcola quando inserisci la data di nascita.';
+    box.innerHTML = '<span class="af-costo-label">Costo di tesseramento</span> ' + testo;
+  }
+  function _collegaCostoTesseramento() {
+    ['dataNascita', 'categoria'].forEach(function (k) {
+      var el = _campoEl(k);
+      if (el) { el.addEventListener('input', _aggiornaCostoTesseramento); el.addEventListener('change', _aggiornaCostoTesseramento); }
+    });
+    _aggiornaCostoTesseramento();
+  }
+
+  /* Aggiorna la voce «Tesseramenti atleti» nelle Spese (una sottospesa per squadra). Un errore qui non deve bloccare la scheda. */
+  function _ricalcolaTesseramenti() {
+    return Admin.budget.ricalcolaTesseramenti(_atletiCache).catch(function (e) { console.error('[Atleti] tesseramenti', e); });
   }
 
   function _leggiCampo(f) {
@@ -452,7 +482,9 @@
       var campi  = Object.keys(dopo).filter(function (k) {
         return String(before[k] == null ? '' : before[k]) !== String(dopo[k] == null ? '' : dopo[k]);
       });
-      return _logWrite('atleta', a.uid, _atletaLabel(a), 'update', _diff(before, dopo, campi));
+      var logP = _logWrite('atleta', a.uid, _atletaLabel(a), 'update', _diff(before, dopo, campi));
+      if (campi.indexOf('dataNascita') !== -1 || campi.indexOf('categoria') !== -1) return logP.then(_ricalcolaTesseramenti);
+      return logP;
     }).catch(function (e) {
       msg.textContent = 'Errore: ' + e.message; msg.className = 'af-msg is-err';
     }).then(function () { btn.disabled = false; });
@@ -2061,7 +2093,7 @@
         }).then(function () {
           /* l'atleta è già salvato: un problema sul budget non deve far fallire la creazione */
           return data.categoria ? _ensureIscrizione(data).catch(function (e) { console.error('[Atleti] iscrizione', e); }) : null;
-        });
+        }).then(function () { return data.categoria ? _ricalcolaTesseramenti() : null; });
       })
       .then(function () {
         /* 3) accesso genitore (facoltativo): se fallisce, la scheda esiste già */
@@ -2102,6 +2134,7 @@
       (_editingAtleta.cognome || '') + ' ' + (_editingAtleta.nome || '');
 
     document.getElementById('detAnagraficaFields').innerHTML = _atletaFormHtml(_editingAtleta);
+    _collegaCostoTesseramento();
     document.getElementById('detAnagraficaMsg').textContent = '';
 
     document.getElementById('detNote').value = _editingAtleta.note || '';
@@ -2843,6 +2876,8 @@
     renderComunicazioni: renderComunicazioni,
     renderPresenze: renderPresenze,
     renderAllenamenti: renderAllenamenti,
+    /* elenco atleti già in memoria (vuoto se la sezione Atleti non è stata aperta) */
+    elenco: function () { return _atletiCache; },
     SENSIBILI: ATLETA_SENSIBILI
   };
 

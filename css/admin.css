@@ -1772,6 +1772,8 @@ button { font-family: var(--font-body); cursor: pointer; }
 .admin-table tr.atleti-group:focus-visible td { outline: 2px solid var(--a-blue, #0070D6); outline-offset: -2px; }
 .atleti-group-chev { display: inline-block; width: 8px; height: 8px; margin-right: 10px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: translateY(-2px) rotate(45deg); transition: transform .15s ease; }
 .admin-table tr.atleti-group.is-closed .atleti-group-chev { transform: translateX(-2px) rotate(-45deg); }
+.af-costo { font-size: 13px; padding: 10px 12px; border-radius: 8px; background: #EFF6FF; border: 1px solid #BFDBFE; color: #1E293B; }
+.af-costo-label { font-weight: 600; margin-right: 6px; }
 .af-section {
   font-family: var(--font-head); font-size: 13px; font-weight: 700; color: var(--a-text);
   text-transform: uppercase; letter-spacing: .05em;

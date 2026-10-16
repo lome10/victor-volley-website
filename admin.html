@@ -9,7 +9,7 @@
   <link rel="preload" href="/assets/fonts/barlow-700-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/manrope-400-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/fonts.css?v=c0ba2518">
-  <link rel="stylesheet" href="/css/admin.css?v=f405fa1c">
+  <link rel="stylesheet" href="/css/admin.css?v=3d452546">
   <link rel="stylesheet" href="/css/dirigenti.css?v=be786146">
 </head>
 <body>
@@ -1906,6 +1906,7 @@
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                   Nuova spesa
                 </button>
+                <button class="dg-btn-ghost dg-btn-sm" onclick="DG.ricalcolaTesseramenti(this)" title="Rilegge le date di nascita degli atleti e aggiorna la voce Tesseramenti atleti">Ricalcola tesseramenti</button>
                 <button id="manageCategorieSpesaBtn" class="dg-btn-ghost dg-btn-sm">Gestisci categorie</button>
                 <button class="dg-btn-ghost dg-btn-sm" onclick="DG.exportSpesePdf()">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path d="M9 13h6M9 17h6"/></svg>
@@ -2704,7 +2705,8 @@
   <script src="/js/photodb.js?v=15e771fb"></script>
   <script src="/js/admin.js?v=e9946ce2"></script>
   <script src="/js/admin/prezzi-calc.js?v=681fbe4b"></script>
-  <script src="/js/admin/atleti.js?v=90ccea51"></script>
+  <script src="/js/admin/tesseramenti-calc.js?v=076379f5"></script>
+  <script src="/js/admin/atleti.js?v=815e81cc"></script>
   <script src="/js/admin/cms.js?v=063fef0d"></script>
   <script src="/js/admin/pianoeditoriale.js?v=06732f38"></script>
   <script src="/js/admin/bacheca.js?v=14f4be5e"></script>
@@ -2718,13 +2720,13 @@
   <script src="/js/admin/budget/altre.js?v=0fb5f323"></script>
   <script src="/js/admin/budget/tessere.js?v=29a979d9"></script>
   <script src="/js/admin/budget/supercoppa.js?v=2317d33b"></script>
-  <script src="/js/admin/budget/spese.js?v=91f28088"></script>
+  <script src="/js/admin/budget/spese.js?v=85aab886"></script>
   <script src="/js/admin/budget/iva.js?v=2b927099"></script>
   <script src="/js/admin/budget/exportpdf.js?v=5d577cf9"></script>
   <script src="/js/admin/budget/cassa.js?v=e9911e1a"></script>
   <script src="/js/admin/budget/bilancio.js?v=33f3846b"></script>
   <script src="/js/admin/budget/log.js?v=9343fe64"></script>
-  <script src="/js/admin/budget/main.js?v=6bf68d08"></script>
+  <script src="/js/admin/budget/main.js?v=77ef9128"></script>
   <script src="/js/admin/password.js?v=ec78580e"></script>
   <script src="/js/ricevuta-doc.js?v=6cc81c25"></script>
   <script src="/js/admin/ricevute.js?v=431f2560"></script>

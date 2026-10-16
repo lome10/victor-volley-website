@@ -767,5 +767,6 @@
   B._sottospeseOf = _sottospeseOf;
   B._statoSottospesa = _statoSottospesa;
   B._syncSpesaIva = _syncSpesaIva;
+  B._syncVoceDaSottospese = _syncVoceDaSottospese;
 
 })();
