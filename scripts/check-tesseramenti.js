@@ -26,6 +26,13 @@ t('1° e 31 dicembre/gennaio non spostano la fascia', () => {
   assert.strictEqual(imp({ dataNascita: '2010-12-31' }), 10);
   assert.strictEqual(imp({ dataNascita: '2011-01-01' }), 7);
 });
+t('Under 13 senza data: già 5 €; con la data vale la fascia reale', () => {
+  ['Under 13 Femminile', 'Under 13 maschile', 'Under13', 'U13'].forEach((c) => assert.strictEqual(imp({ categoria: c }), 5, c));
+  assert.strictEqual(imp({ categoria: 'Under 13 Femminile', dataNascita: '2012-04-01' }), 7);
+  assert.strictEqual(imp({ categoria: 'Under 13 Femminile', dataNascita: '2015-04-01' }), 5);
+  assert.strictEqual(imp({ categoria: 'Under 13 Femminile', dataNascita: '2023-04-01' }), null);
+  ['Under 12 Maschile', 'Under 130', 'Prima Divisione'].forEach((c) => assert.strictEqual(imp({ categoria: c }), null, c));
+});
 t('senza data di nascita: nessun costo (non OPE)', () => { assert.strictEqual(C.costo({ categoria: 'Prima Divisione' }), null); assert.strictEqual(C.costo({ dataNascita: '' }), null); });
 t('nata dopo il 2021: nessuna fascia, nessun costo', () => { assert.strictEqual(imp(nato(2022)), null); });
 t('OPE (S3 minivolley): 5 € anche senza data o con data di altra fascia', () => {
@@ -50,8 +57,8 @@ t('riepilogo per squadra, totali e conteggi', () => {
     nato(2012, 'Under 13 Femminile'), nato(2012, 'Under 13 Femminile'), nato(2015, 'Under 13 Femminile'),
     nato(2000, 'Prima Divisione'), nato(2005, 'Prima Divisione'),
     { categoria: 'S3 - Minivolley' },
-    { categoria: 'Under 13 maschile' },          /* senza data */
-    nato(2023, 'Under 13 maschile')              /* fuori fasce */
+    { categoria: 'Under 14 maschile' },          /* senza data */
+    nato(2023, 'Under 14 maschile')              /* fuori fasce */
   ]);
   assert.strictEqual(r.totale, 7 + 7 + 5 + 18 + 10 + 5);
   assert.strictEqual(r.tesserati, 6);

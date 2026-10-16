@@ -5,6 +5,7 @@
    Regola (decisa dalla società, per anno di nascita):
      2014–2021 → 5 €   ·   2011–2013 → 7 €   ·   2003–2010 → 10 €   ·   2002 e prima → 18 €
      OPE (minivolley S3) → 5 €, qualunque sia la data di nascita.
+     Under 13 senza data di nascita → già 5 € (sono nati dal 2014); appena c'è la data vale quella.
      La categoria «Open» è a parte: per ora è esclusa (nessun costo, non conta tra i «senza data»).
    Senza data di nascita (e non OPE) il costo non c'è ancora: si genera man mano che le date vengono inserite. */
 (function () {
@@ -27,6 +28,11 @@
     return /(^|[^a-z0-9])s3([^a-z0-9]|$)|minivolley|mini volley/i.test(String(categoria || ''));
   }
 
+  /* Under 13: i nati dal 2014 in poi, quindi la fascia da 5 € anche prima di avere la data di nascita */
+  function isUnder13(categoria) {
+    return /under\s*-?\s*13(?![0-9])|(^|[^a-z0-9])u\s*-?\s*13(?![0-9])/i.test(String(categoria || ''));
+  }
+
   /* Categoria «Open»: esclusa dal calcolo finché la società non ne decide la quota */
   function isEsclusa(categoria) {
     return /(^|[^a-z0-9])open([^a-z0-9]|$)/i.test(String(categoria || ''));
@@ -44,7 +50,7 @@
     if (isEsclusa(atleta.categoria)) return null;
     if (isOpe(atleta.categoria)) return { importo: OPE.importo, etichetta: OPE.etichetta };
     var y = annoNascita(atleta.dataNascita);
-    if (y == null) return null;
+    if (y == null) return isUnder13(atleta.categoria) ? { importo: FASCE[0].importo, etichetta: 'Under 13, nati/e dal 2014' } : null;
     for (var i = 0; i < FASCE.length; i++) {
       var f = FASCE[i];
       if ((f.da == null || y >= f.da) && (f.a == null || y <= f.a)) return { importo: f.importo, etichetta: f.etichetta };
@@ -86,5 +92,5 @@
     }).join(' · ');
   }
 
-  A.tesseramentiCalc = { FASCE: FASCE, isOpe: isOpe, isEsclusa: isEsclusa, costo: costo, riepilogo: riepilogo, dettaglio: dettaglio };
+  A.tesseramentiCalc = { FASCE: FASCE, isOpe: isOpe, isUnder13: isUnder13, isEsclusa: isEsclusa, costo: costo, riepilogo: riepilogo, dettaglio: dettaglio };
 })();
