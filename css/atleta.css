@@ -352,7 +352,6 @@ button { font-family: inherit; cursor: pointer; }
 }
 .al-pay-box-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #1E40AF; }
 .al-pay-box .al-pay-text:first-of-type { margin-top: 6px; }
-.al-home-avvisi-all { margin: 0 0 16px; }
 
 .al-modulo-nota { margin: 0; font-size: 13px; line-height: 1.5; color: var(--al-text); }
 .al-modulo-azioni { margin: 14px 0 0; }
