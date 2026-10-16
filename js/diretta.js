@@ -46,7 +46,7 @@
     return channelId.indexOf('UC') === 0 ? 'UU' + channelId.slice(2) : null;
   }
 
-  function renderVideo(isLive) {
+  function renderVideo(isLive, lastVideoId) {
     var el    = document.getElementById('direttaVideo');
     var msgEl = document.getElementById('direttaVideoMsg');
     if (!el) return;
@@ -65,6 +65,21 @@
     }
 
     var playlistId = hasChannel ? uploadsPlaylistId(channelId) : null;
+
+    /* Ultimo video realmente riproducibile (ricavato dal server): la playlist
+       "uploads" inizia anche con le dirette programmate, che non si vedono. */
+    if (lastVideoId && /^[\w-]{11}$/.test(lastVideoId)) {
+      if (msgEl) {
+        msgEl.hidden = false;
+        msgEl.innerHTML = 'Nessuna partita &egrave; al momento in diretta.<br>Nel frattempo, dai un&rsquo;occhiata alla nostra ultima partita.';
+      }
+      el.innerHTML =
+        '<iframe src="https://www.youtube.com/embed/' + lastVideoId + '?autoplay=1&mute=1" ' +
+          'title="Ultimo video Victor Volley" ' +
+          'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" ' +
+          'allowfullscreen></iframe>';
+      return;
+    }
 
     if (playlistId) {
       if (msgEl) {
@@ -93,15 +108,16 @@
   function checkLive() {
     return fetch('/api/youtube-live', { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : { live: false }; })
-      .then(function (j) { return !!(j && j.live); })
-      .catch(function () { return false; });
+      .then(function (j) { return { live: !!(j && j.live), last: (j && j.lastVideoId) || null }; })
+      .catch(function () { return { live: false, last: null }; });
   }
   function initVideo() {
     function tick() {
-      checkLive().then(function (live) {
-        if (live === videoLive) return;
-        videoLive = live;
-        renderVideo(live);
+      checkLive().then(function (st) {
+        var chiave = st.live ? 'live' : 'last:' + st.last;
+        if (chiave === videoLive) return;
+        videoLive = chiave;
+        renderVideo(st.live, st.last);
       });
     }
     tick();
