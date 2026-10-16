@@ -14,7 +14,7 @@
   <link rel="preload" href="/assets/fonts/manrope-400-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
   <link rel="stylesheet" href="/css/fonts.css?v=c0ba2518">
-  <link rel="stylesheet" href="css/atleta.css?v=ea451c35">
+  <link rel="stylesheet" href="css/atleta.css?v=985048fd">
 </head>
 <body>
 
@@ -107,6 +107,32 @@
 
         <!-- HOME -->
         <section id="view-home" class="al-view">
+          <!-- Avviso fisso: sempre in cima alla Home, indipendente dalla bacheca -->
+          <article class="al-card al-avviso al-avviso--fissato al-pay" id="payInfo">
+            <div class="al-card-body">
+              <div class="al-avviso-head">
+                <h2 class="al-avviso-title">Pagamenti: coordinate per il bonifico</h2>
+                <span class="al-badge al-badge--blue">Fissato</span>
+              </div>
+              <p class="al-pay-text">I pagamenti si fanno con bonifico bancario a favore di:</p>
+              <dl class="al-pay-data">
+                <dt>Intestatario</dt>
+                <dd>A.S.D. VICTOR VOLLEY</dd>
+                <dt>IBAN</dt>
+                <dd class="al-pay-iban">
+                  <span id="payIban" class="al-pay-iban-value" data-iban="IT42Y0538779670000004768039">IT42 Y053 8779 6700 0000 4768 039</span>
+                  <button type="button" class="al-btn-ghost al-btn-sm js-iban-copy">Copia IBAN</button>
+                </dd>
+              </dl>
+              <p class="al-pay-text"><strong>Causale.</strong> Scrivi sempre il nome e cognome dell'atleta e la tranche che stai pagando (1ª, 2ª o 3ª). Solo la 1ª tranche comprende anche i costi di iscrizione, che si pagano una volta sola.</p>
+              <p class="al-pay-example">Esempi: «Mario Rossi, 1ª tranche + iscrizione» · «Mario Rossi, 2ª tranche»</p>
+            </div>
+          </article>
+
+          <!-- Avvisi fissati dalla bacheca -->
+          <div id="homeAvvisi"></div>
+          <button type="button" class="al-btn-ghost al-btn-sm al-home-avvisi-all" data-goto="avvisi">Tutti gli avvisi</button>
+
           <div class="al-card">
             <div class="al-card-header">
               <div class="al-card-icon al-card-icon--blue">
@@ -144,27 +170,6 @@
 
         <!-- AVVISI -->
         <section id="view-avvisi" class="al-view is-hidden">
-          <!-- Avviso fisso: sempre in cima, indipendente dalla bacheca -->
-          <article class="al-card al-avviso al-avviso--fissato al-pay" id="payInfo">
-            <div class="al-card-body">
-              <div class="al-avviso-head">
-                <h2 class="al-avviso-title">Pagamenti: coordinate per il bonifico</h2>
-                <span class="al-badge al-badge--blue">Fissato</span>
-              </div>
-              <p class="al-pay-text">I pagamenti si fanno con bonifico bancario a favore di:</p>
-              <dl class="al-pay-data">
-                <dt>Intestatario</dt>
-                <dd>A.S.D. VICTOR VOLLEY</dd>
-                <dt>IBAN</dt>
-                <dd class="al-pay-iban">
-                  <span id="payIban" class="al-pay-iban-value" data-iban="IT42Y0538779670000004768039">IT42 Y053 8779 6700 0000 4768 039</span>
-                  <button type="button" id="payIbanCopy" class="al-btn-ghost al-btn-sm">Copia IBAN</button>
-                </dd>
-              </dl>
-              <p class="al-pay-text"><strong>Causale.</strong> Scrivi sempre il nome e cognome dell'atleta e la tranche che stai pagando (1ª, 2ª o 3ª). Solo la 1ª tranche comprende anche i costi di iscrizione, che si pagano una volta sola.</p>
-              <p class="al-pay-example">Esempi: «Mario Rossi, 1ª tranche + iscrizione» · «Mario Rossi, 2ª tranche»</p>
-            </div>
-          </article>
           <div id="avvisiList"></div>
         </section>
 
@@ -253,6 +258,16 @@
             </div>
             <div class="al-card-body">
               <p id="ratePdfMsg" class="al-form-msg is-err" role="alert"></p>
+              <!-- Coordinate di pagamento: stesse dell'avviso fissato in Avvisi -->
+              <div class="al-pay-box" id="payBoxRate">
+                <div class="al-pay-box-title">Come pagare</div>
+                <p class="al-pay-text">Bonifico bancario a favore di <strong>A.S.D. VICTOR VOLLEY</strong></p>
+                <div class="al-pay-iban">
+                  <span class="al-pay-iban-value" data-iban="IT42Y0538779670000004768039">IT42 Y053 8779 6700 0000 4768 039</span>
+                  <button type="button" class="al-btn-ghost al-btn-sm js-iban-copy">Copia IBAN</button>
+                </div>
+                <p class="al-pay-text"><strong>Causale.</strong> Nome e cognome dell'atleta e la tranche che stai pagando (1ª, 2ª o 3ª). Solo la 1ª tranche comprende anche i costi di iscrizione, che si pagano una volta sola.</p>
+              </div>
               <div id="rateList" class="al-rate-list">
                 <p class="al-muted">Nessuna quota inserita.</p>
               </div>
@@ -353,7 +368,7 @@
   <script src="js/data.js?v=f59e753e"></script>
   <script src="js/db.js?v=258bd128"></script>
   <script src="js/ricevuta-doc.js?v=6cc81c25"></script>
-  <script src="js/atleta.js?v=3a4d977d"></script>
+  <script src="js/atleta.js?v=45f61371"></script>
   <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

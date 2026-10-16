@@ -342,6 +342,18 @@ button { font-family: inherit; cursor: pointer; }
 .al-pay-iban { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .al-pay-iban-value { font-family: ui-monospace, Consolas, monospace; letter-spacing: 0.04em; overflow-wrap: anywhere; }
 
+/* riquadro "Come pagare" dentro Quote e Pagamenti */
+.al-pay-box {
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  border-radius: 8px;
+  border: 1px solid #BFDBFE;
+  background: #EFF6FF;
+}
+.al-pay-box-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #1E40AF; }
+.al-pay-box .al-pay-text:first-of-type { margin-top: 6px; }
+.al-home-avvisi-all { margin: 0 0 16px; }
+
 .al-modulo-nota { margin: 0; font-size: 13px; line-height: 1.5; color: var(--al-text); }
 .al-modulo-azioni { margin: 14px 0 0; }
 #moduloContent:not(:empty) { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--al-border); }
@@ -412,8 +424,15 @@ button { font-family: inherit; cursor: pointer; }
   .al-main { padding: 20px 16px 48px; }
   .al-card-header { padding: 16px 18px; }
   .al-card-body   { padding: 16px 18px; }
-  .al-rate-item   { flex-direction: column; align-items: flex-start; }
-  .al-rate-right  { align-items: flex-start; flex-direction: row; gap: 10px; }
+  .al-rate-item   { flex-direction: column; align-items: stretch; gap: 10px; }
+  /* importo e stato sulla stessa riga, separati dalle date: si legge "quanto" e "a che punto sono" */
+  .al-rate-right  {
+    flex-direction: row; align-items: center; justify-content: space-between;
+    padding-top: 10px; border-top: 1px dashed var(--al-border);
+  }
+  .al-rate-amount { font-size: 20px; }
+  .al-pay-iban .al-btn-ghost { width: 100%; justify-content: center; }
+  .al-pay-iban-value { font-size: 15px; }
 }
 
 /* ================================================

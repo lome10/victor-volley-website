@@ -108,14 +108,16 @@
     });
 
     /* IBAN: copia senza spazi, pronto da incollare nell'app della banca */
-    document.getElementById('payIbanCopy').addEventListener('click', function () {
-      var btn = this, iban = document.getElementById('payIban').getAttribute('data-iban');
-      var fatto = function (ok) {
-        btn.textContent = ok ? 'IBAN copiato' : 'Selezionalo e copialo a mano';
-        setTimeout(function () { btn.textContent = 'Copia IBAN'; }, 2500);
-      };
-      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(iban).then(function () { fatto(true); }, function () { fatto(false); });
-      else fatto(false);
+    Array.prototype.forEach.call(document.querySelectorAll('.js-iban-copy'), function (btn) {
+      btn.addEventListener('click', function () {
+        var iban = document.getElementById('payIban').getAttribute('data-iban');
+        var fatto = function (ok) {
+          btn.textContent = ok ? 'IBAN copiato' : 'Selezionalo e copialo a mano';
+          setTimeout(function () { btn.textContent = 'Copia IBAN'; }, 2500);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(iban).then(function () { fatto(true); }, function () { fatto(false); });
+        else fatto(false);
+      });
     });
 
     document.getElementById('ricList').addEventListener('click', function (e) {
@@ -256,6 +258,7 @@
     _avvisiError = false;
     _seenBefore = _getLastSeen(_current);
     _renderAvvisiBadge();
+    _renderHomeAvvisi();
     if (_view === 'avvisi') _renderAvvisi(_current);
     _loadAvvisi(_current);
   }
@@ -450,6 +453,7 @@
         if (token !== _avvisiToken) return;
         if (_view === 'avvisi') _renderAvvisi(a);   /* segna anche come letti */
         _renderAvvisiBadge();
+        _renderHomeAvvisi();
         _renderTodo(a);
       });
   }
@@ -458,6 +462,33 @@
     return _esc(text)
       .replace(/(https:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>')
       .replace(/\n/g, '<br>');
+  }
+
+  function _avvisoCard(v, isNew) {
+    var fissato = _fissatoAttivo(v);
+    var att = v.allegatoUrl && /^https:\/\//i.test(v.allegatoUrl)
+      ? '<a href="' + _esc(_driveViewUrl(v.allegatoUrl)) + '" target="_blank" rel="noopener" class="al-btn-ghost al-btn-sm">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>Apri allegato</a>'
+      : '';
+    return '<article class="al-card al-avviso' + (v.importante ? ' al-avviso--important' : '') + (fissato ? ' al-avviso--fissato' : '') + '">' +
+      '<div class="al-card-body">' +
+        '<div class="al-avviso-head">' +
+          '<h2 class="al-avviso-title">' + _esc(v.titolo) + '</h2>' +
+          (fissato ? '<span class="al-badge al-badge--blue">Fissato</span>' : '') +
+          (isNew ? '<span class="al-badge al-badge--green">Nuovo</span>' : '') +
+          (v.importante ? '<span class="al-badge al-badge--red">Importante</span>' : '') +
+        '</div>' +
+        '<div class="al-avviso-meta">' + _fmtDate((v.createdAt || '').slice(0, 10)) + ' · ' +
+          (v.categoria === 'tutte' ? 'Tutta la società' : _esc(v.categoria)) + '</div>' +
+        '<div class="al-avviso-text">' + _linkify(v.testo || '') + '</div>' +
+        (att ? '<div class="al-avviso-att">' + att + '</div>' : '') +
+      '</div></article>';
+  }
+
+  /* Home: gli avvisi fissati dalla bacheca stanno subito sotto le coordinate di pagamento */
+  function _renderHomeAvvisi() {
+    var fissati = _avvisiError ? [] : _avvisi.filter(_fissatoAttivo);
+    document.getElementById('homeAvvisi').innerHTML = fissati.map(function (v) { return _avvisoCard(v, false); }).join('');
   }
 
   function _renderAvvisi(a) {
@@ -481,23 +512,7 @@
       var isNew = !fissato && (v.createdAt || '') > seen;
       var titoloSezione = nFissati && i === 0 ? '<h3 class="al-avvisi-sezione">In evidenza</h3>'
         : nFissati && i === nFissati ? '<h3 class="al-avvisi-sezione">Altri avvisi</h3>' : '';
-      var att = v.allegatoUrl && /^https:\/\//i.test(v.allegatoUrl)
-        ? '<a href="' + _esc(_driveViewUrl(v.allegatoUrl)) + '" target="_blank" rel="noopener" class="al-btn-ghost al-btn-sm">' +
-          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>Apri allegato</a>'
-        : '';
-      return titoloSezione + '<article class="al-card al-avviso' + (v.importante ? ' al-avviso--important' : '') + (fissato ? ' al-avviso--fissato' : '') + '">' +
-        '<div class="al-card-body">' +
-          '<div class="al-avviso-head">' +
-            '<h2 class="al-avviso-title">' + _esc(v.titolo) + '</h2>' +
-            (fissato ? '<span class="al-badge al-badge--blue">Fissato</span>' : '') +
-            (isNew ? '<span class="al-badge al-badge--green">Nuovo</span>' : '') +
-            (v.importante ? '<span class="al-badge al-badge--red">Importante</span>' : '') +
-          '</div>' +
-          '<div class="al-avviso-meta">' + _fmtDate((v.createdAt || '').slice(0, 10)) + ' · ' +
-            (v.categoria === 'tutte' ? 'Tutta la società' : _esc(v.categoria)) + '</div>' +
-          '<div class="al-avviso-text">' + _linkify(v.testo || '') + '</div>' +
-          (att ? '<div class="al-avviso-att">' + att + '</div>' : '') +
-        '</div></article>';
+      return titoloSezione + _avvisoCard(v, isNew);
     }).join('');
 
     /* l'apertura della scheda li segna come letti (su questo dispositivo) */
