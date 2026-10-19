@@ -527,6 +527,8 @@
   };
 
   /* ---- TRANCHE DI PAGAMENTO — tracciamento incassi reali di uno sponsor chiuso ---- */
+  function _linkOk(u) { return /^https?:\/\/[^\s]+$/i.test(String(u || '').trim()); }
+
   function _tabPagamenti() {
     var s = B._sponsorizzazioni.find(function (x) { return x.id === B._curSponsorId; });
     if (!s) return '';
@@ -563,6 +565,7 @@
           (t.pagato ? '<div class="dg-form-group"><label class="dg-form-label">Data incasso</label><input type="date" id="dgTrancheEditDataIncasso" class="dg-form-input" value="' + esc(t.dataIncasso || '') + '"></div>' : '') +
           '</div>' +
           '<div class="dg-form-group"><label class="dg-form-label">Note</label><input type="text" id="dgTrancheEditNote" class="dg-form-input" value="' + esc(t.note || '') + '"></div>' +
+          '<div class="dg-form-group"><label class="dg-form-label">Fattura (link Drive)</label><input type="url" id="dgTrancheEditDoc" class="dg-form-input" placeholder="https://drive.google.com/…" value="' + esc(t.documentoUrl || '') + '"></div>' +
           '<div class="dg-form-actions" style="margin-top:0">' +
           '<button class="dg-btn-ghost dg-btn-sm" onclick="DG.editTrancheCancel()">Annulla</button>' +
           '<button class="dg-btn-primary dg-btn-sm" onclick="DG.saveTranche(\'' + t.id + '\')">Salva</button>' +
@@ -572,6 +575,7 @@
         '<label class="dg-check"><input type="checkbox" ' + (t.pagato ? 'checked' : '') + ' onchange="DG.toggleTranchePagata(\'' + t.id + '\', this.checked)">' +
         '<span><div class="dg-reminder-azienda">€' + Number(t.importo || 0).toLocaleString('it-IT') + (t.pagato ? ' — pagata' + (t.dataIncasso ? ' il ' + _fmtDate(t.dataIncasso) : '') : ' — da pagare') + '</div>' +
         '<div class="dg-reminder-desc">Scadenza: ' + _fmtDate(t.scadenza) + (t.pagato && !t.dataIncasso ? ' · data incasso non indicata (nel Bilancio conta alla scadenza: modificala con la matita)' : '') + (t.note ? ' · ' + esc(t.note) : '') + '</div></span></label>' +
+        (_linkOk(t.documentoUrl) ? '<a class="sp-tag" href="' + esc(t.documentoUrl) + '" target="_blank" rel="noopener noreferrer" title="Apri la fattura su Drive" style="align-self:center;flex-shrink:0">Fattura ↗</a>' : '') +
         '<div style="display:flex;gap:4px;flex-shrink:0">' +
         '<button class="dg-btn-icon-only" title="Modifica" onclick="DG.editTrancheStart(\'' + t.id + '\')">' + EDIT_ICON_SM + '</button>' +
         '<button class="dg-btn-icon-only" title="Elimina" onclick="DG.deleteTranche(\'' + t.id + '\')">' + B._delIconSm() + '</button>' +
@@ -585,6 +589,7 @@
       '<div class="dg-form-group"><label class="dg-form-label">Scadenza</label><input type="date" id="dgTrancheScadenza" class="dg-form-input" value="' + B._todayISO() + '"></div>' +
       '</div>' +
       '<div class="dg-form-group"><label class="dg-form-label">Note</label><input type="text" id="dgTrancheNote" class="dg-form-input" placeholder="es. Acconto alla firma"></div>' +
+      '<div class="dg-form-group"><label class="dg-form-label">Fattura (link Drive)</label><input type="url" id="dgTrancheDoc" class="dg-form-input" placeholder="https://drive.google.com/…"></div>' +
       '<div class="dg-form-actions"><button class="dg-btn-primary dg-btn-sm" onclick="DG.addTranche()">Aggiungi tranche</button></div>';
   }
 
@@ -592,9 +597,11 @@
     var importo = +val('dgTrancheImporto') || 0;
     var scadenza = val('dgTrancheScadenza');
     if (!importo || !scadenza) { alert('Importo e scadenza sono obbligatori.'); return; }
+    var doc = val('dgTrancheDoc').trim();
+    if (doc && !_linkOk(doc)) { alert('Il link alla fattura deve iniziare con https://'); return; }
     var data = {
       sponsorizzazioneId: B._curSponsorId, importo: importo, scadenza: scadenza,
-      note: val('dgTrancheNote').trim(), pagato: false, createdAt: new Date().toISOString()
+      note: val('dgTrancheNote').trim(), documentoUrl: doc, pagato: false, createdAt: new Date().toISOString()
     };
     var ref = db.collection('tranchePagamento').doc();
     var az = B._aziendaById(B._curAziendaId);
@@ -622,8 +629,10 @@
     var importo = +val('dgTrancheEditImporto') || 0;
     var scadenza = val('dgTrancheEditScadenza');
     if (!importo || !scadenza) { alert('Importo e scadenza sono obbligatori.'); return; }
-    var patch = { importo: importo, scadenza: scadenza, note: val('dgTrancheEditNote').trim() };
-    var old = { importo: t.importo, scadenza: t.scadenza, note: t.note };
+    var doc = val('dgTrancheEditDoc').trim();
+    if (doc && !_linkOk(doc)) { alert('Il link alla fattura deve iniziare con https://'); return; }
+    var patch = { importo: importo, scadenza: scadenza, note: val('dgTrancheEditNote').trim(), documentoUrl: doc };
+    var old = { importo: t.importo, scadenza: t.scadenza, note: t.note, documentoUrl: t.documentoUrl || '' };
     if (t.pagato) {   /* data in cui i soldi sono arrivati davvero: decide il mese nel Bilancio; se si svuota il campo vale oggi */
       patch.dataIncasso = val('dgTrancheEditDataIncasso') || B._todayISO();
       old.dataIncasso = t.dataIncasso || '';
