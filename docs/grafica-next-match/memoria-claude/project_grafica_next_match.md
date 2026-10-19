@@ -14,4 +14,6 @@ Grafica Instagram 4:5 (1080×1350) per il next match U19 femminile: **Victor Vol
 
 **Regole dell'utente:** accanto al nostro logo sempre Puglia in Food; sponsor in ordine Vita, Trisolino (versione per fondi scuri), Gesco, Magiflex; loghi da `assets/`; l'utente ritocca a mano nell'editor, quindi prima di ogni pubblicazione rileggere il file con `read` e non sovrascrivere.
 
+**Aggiornamento 2026-10-19 sera:** lavoro proseguito su `MatchDay3` (Match day 3, fondo blu Victor, Astra, Domenica 1 Novembre Presicce) e `Numero21`; stato e materiali in `docs/grafica-next-match/HANDOFF.md`. Testo/avversario della didascalia da allineare alla tavola.
+
 **How to apply:** per nuove grafiche partire da `Chiaro2`; i materiali preparati (foto scontornate dai RAW `.CR2`, loghi in bianco o scuri, nebbia) sono nella cartella temporanea di sessione e vanno rifatti se mancano. Vedi [[brandbook-asd-victor-volley]] e [[stile-grafiche-instagram]].

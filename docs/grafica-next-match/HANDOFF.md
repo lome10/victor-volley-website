@@ -57,3 +57,12 @@ Copia i file di `docs/grafica-next-match/memoria-claude/` nella cartella memoria
 ## Regole di lavoro già concordate
 
 `npm test` prima di ogni commit sul sito (e `node scripts/stamp-versions.js` se cambia un JS/CSS pubblicato); dopo ogni commit, sempre il push; aggiornare `session_notes.md` a ogni cambiamento.
+
+## Aggiornamento 2026-10-19 sera
+
+Tavole nuove nel canvas (copie in `artifact/project/`): `Numero21` («Sfondo 2b»), `MatchDay3` («Match day 3 – taglio largo»), `MatchDay4`, `MatchDay6`, `MatchDay7`.
+
+- `MatchDay3` è la tavola su cui si lavorava per ultima: fondo blu Victor, cornice sfumata bianco→magenta, striscia 1 «Capitolo 1 / 1° Divisione / Girone B», striscia 2 con Astra (negativo bianco) + Victor bianco, dettagli «Domenica 1 Novembre 11:00 Palazzetto dello Sport Presicce», sponsor Vita/Trisolino/Puglia in Food. Le 4 foto sono ritagli stretti degli occhi; l'ultima (IMG_0016) è rifatta con `script/ritaglio-striscia-IMG_0016.js` (serve l'originale `IMG_0016b_r.jpg` della cartella temporanea di sessione, rifacibile dal RAW `IMG_0016.CR2`).
+- Materiali nuovi in `materiali/`: `fipav-trasp.png` (logo federazione, trasparente ricavato dal bianco), `astra-negativo-bianco.png`, `logo-vv-tutto-bianco.svg`, `striscia-IMG_0016-ritaglio-largo.jpg`.
+- Attenzione: in `assets/brand` `logo-bianco.svg` = contorni neri (per fondi chiari), `logo-nero.svg` = versione bianca (per fondi scuri).
+- Da fare: allineare la didascalia («L'ESORDIO», scritta per 21/10 FlyArmida Taviano) ai dati della tavola Match day 3 (1/11 Astra Presicce), oppure viceversa.

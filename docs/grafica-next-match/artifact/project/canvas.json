@@ -1,1 +1,235 @@
-{"v":3,"createdOnFiles":{"v":1,"at":"2026-10-19T12:00:00Z"},"title":"Grafica giornata Victor Volley","launch":{"view":"canvas"},"pages":[],"boards":{"Main.dc.html":{"x":0,"y":0,"w":1080,"h":1350,"title":"Prova 1 - IMG_0016"},"Alt.dc.html":{"x":1160,"y":0,"w":1080,"h":1350,"title":"Prova 2 - IMG_0013"},"Chiaro1.dc.html":{"x":2320,"y":0,"w":1080,"h":1350,"title":"Stile Burnley - braccia incrociate"},"Chiaro2.dc.html":{"x":3480,"y":0,"w":1080,"h":1350,"title":"Stile Burnley - indica lo stemma"}},"order":["Main.dc.html","Alt.dc.html","Chiaro1.dc.html","Chiaro2.dc.html"],"notes":{},"designSystems":[]}
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "Alt.dc.html": {
+      "h": 1350,
+      "title": "Prova 2 - IMG_0013",
+      "w": 1080,
+      "x": 1160,
+      "y": 0
+    },
+    "Bayern2.dc.html": {
+      "h": 1350,
+      "title": "Bayern - soggetto di lato (IMG_0114)",
+      "w": 1080,
+      "x": 0,
+      "y": 1470
+    },
+    "BluVictor.dc.html": {
+      "h": 1350,
+      "title": "Indica lo stemma blu Victor",
+      "w": 1080,
+      "x": 8120,
+      "y": 2550
+    },
+    "Chiaro1.dc.html": {
+      "h": 1350,
+      "title": "VS FLY -  braccia incrociate",
+      "w": 1080,
+      "x": 2320,
+      "y": 0
+    },
+    "Chiaro2.dc.html": {
+      "h": 1350,
+      "title": "VS fLY - indica lo stemma",
+      "w": 1080,
+      "x": 3480,
+      "y": 0
+    },
+    "Chiaro3.dc.html": {
+      "h": 1350,
+      "title": "VS fLY - pallone e scritte leggibili",
+      "w": 1080,
+      "x": 4640,
+      "y": 0
+    },
+    "FeedMatchDay.dc.html": {
+      "h": 960,
+      "title": "Anteprima feed Match day (post singolo e profilo)",
+      "w": 1040,
+      "x": 4640,
+      "y": 1470
+    },
+    "FeedMatchDay7.dc.html": {
+      "h": 960,
+      "title": "Anteprima feed cornice blu (post singolo e profilo)",
+      "w": 1040,
+      "x": 5800,
+      "y": 1470
+    },
+    "Feed.dc.html": {
+      "h": 960,
+      "title": "Anteprima feed e profilo",
+      "w": 1040,
+      "x": 3480,
+      "y": 1470
+    },
+    "Main.dc.html": {
+      "h": 1350,
+      "title": "Prova 1 - IMG_0016",
+      "w": 1080,
+      "x": 0,
+      "y": 0
+    },
+    "MatchDay.dc.html": {
+      "h": 1350,
+      "title": "Match day - sguardi (4 ragazze)",
+      "w": 1080,
+      "x": 0,
+      "y": 5470
+    },
+    "MatchDay2.dc.html": {
+      "h": 1350,
+      "title": "Match day 2 - fascia laterale e ritocco",
+      "w": 1080,
+      "x": 1160,
+      "y": 5470
+    },
+    "MatchDay3.dc.html": {
+      "h": 1350,
+      "title": "Match day 3 - taglio largo con muro della foto",
+      "w": 1080,
+      "x": 1160,
+      "y": 5470
+    },
+    "MatchDay4.dc.html": {
+      "h": 1350,
+      "title": "Match day 4 - sguardi con nuova foto e schema testi",
+      "w": 1080,
+      "x": 2320,
+      "y": 5470
+    },
+    "MatchDay5.dc.html": {
+      "h": 1350,
+      "title": "Match day 5 - solo loghi in basso, dettagli a destra",
+      "w": 1080,
+      "x": 3480,
+      "y": 5470
+    },
+    "MatchDay6.dc.html": {
+      "h": 1350,
+      "title": "Match day 6 - Astra Volley, con Vita",
+      "w": 1080,
+      "x": 4640,
+      "y": 5470
+    },
+    "MatchDay7.dc.html": {
+      "h": 1350,
+      "title": "Match day 7 - cornice blu Victor (prova)",
+      "w": 1080,
+      "x": 5800,
+      "y": 5470
+    },
+    "Numero21.dc.html": {
+      "h": 1350,
+      "title": "Sfondo 2b - numero 21 gigante",
+      "w": 1080,
+      "x": 4640,
+      "y": 4010
+    },
+    "Numero21Nuvole.dc.html": {
+      "h": 1350,
+      "title": "Sfondo 2c - numero 21 con nuvole",
+      "w": 1080,
+      "x": 5800,
+      "y": 4010
+    },
+    "Numero21NuvoleBiancheLeggere.dc.html": {
+      "h": 1350,
+      "title": "Sfondo 2f - numero 21 con nuvole bianche leggere",
+      "w": 1080,
+      "x": 8120,
+      "y": 4010
+    },
+    "Numero21NuvoleBluLeggere.dc.html": {
+      "h": 1350,
+      "title": "Sfondo 2e - numero 21 con nuvole blu leggere",
+      "w": 1080,
+      "x": 6960,
+      "y": 4010
+    },
+    "Numero22.dc.html": {
+      "h": 1350,
+      "title": "Sfondo 2 - numero 22 gigante",
+      "w": 1080,
+      "x": 1160,
+      "y": 4010
+    },
+    "Rosa1.dc.html": {
+      "h": 1350,
+      "title": "Sfondo braccia incrociate in rosa chiaro + fascia blu",
+      "w": 1080,
+      "x": 4640,
+      "y": 2550
+    },
+    "SenzaRete.dc.html": {
+      "h": 1350,
+      "title": "Indica lo stemma senza rete",
+      "w": 1080,
+      "x": 5800,
+      "y": 2550
+    },
+    "SfondoC.dc.html": {
+      "h": 1350,
+      "title": "Sfondo C - luci sfocate",
+      "w": 1080,
+      "x": 2320,
+      "y": 2550
+    },
+    "SfumLunga.dc.html": {
+      "h": 1350,
+      "title": "Indica lo stemma sfumatura lunga",
+      "w": 1080,
+      "x": 6960,
+      "y": 2550
+    },
+    "Studio.dc.html": {
+      "h": 1350,
+      "title": "Sfondo 1 - fondale da studio con grana",
+      "w": 1080,
+      "x": 0,
+      "y": 4010
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-10-19T12:00:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {},
+  "order": [
+    "Main.dc.html",
+    "Alt.dc.html",
+    "Chiaro1.dc.html",
+    "Chiaro2.dc.html",
+    "Chiaro3.dc.html",
+    "SfondoC.dc.html",
+    "Rosa1.dc.html",
+    "SenzaRete.dc.html",
+    "SfumLunga.dc.html",
+    "BluVictor.dc.html",
+    "Bayern2.dc.html",
+    "Studio.dc.html",
+    "Numero22.dc.html",
+    "Numero21.dc.html",
+    "Numero21Nuvole.dc.html",
+    "Numero21NuvoleBluLeggere.dc.html",
+    "Numero21NuvoleBiancheLeggere.dc.html",
+    "MatchDay.dc.html",
+    "MatchDay2.dc.html",
+    "MatchDay3.dc.html",
+    "MatchDay4.dc.html",
+    "MatchDay5.dc.html",
+    "MatchDay6.dc.html",
+    "MatchDay7.dc.html",
+    "FeedMatchDay.dc.html",
+    "FeedMatchDay7.dc.html",
+    "Feed.dc.html"
+  ],
+  "pages": [],
+  "title": "Grafica giornata Victor Volley"
+}
