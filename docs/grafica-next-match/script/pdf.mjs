@@ -1,0 +1,13 @@
+import { createCanvas } from '@napi-rs/canvas';
+import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
+import fs from 'fs';
+const data = new Uint8Array(fs.readFileSync('C:/Users/loren/Desktop/victor-volley-website/assets/Trisolino_impianti_logo (2).pdf'));
+const doc = await pdfjs.getDocument({ data, useSystemFonts: true, isEvalSupported: false }).promise;
+console.log('pagine', doc.numPages);
+const page = await doc.getPage(1);
+const vp = page.getViewport({ scale: 4 });
+const canvas = createCanvas(Math.ceil(vp.width), Math.ceil(vp.height));
+const ctx = canvas.getContext('2d');
+await page.render({ canvasContext: ctx, viewport: vp }).promise;
+fs.writeFileSync('../foto/trisolino_pdf.png', canvas.toBuffer('image/png'));
+console.log(vp.width + 'x' + vp.height);

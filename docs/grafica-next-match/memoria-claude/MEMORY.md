@@ -1,0 +1,15 @@
+- [Session notes](feedback_session_notes.md) — aggiornare session_notes.md a ogni cambiamento e a fine sessione
+- [Monolite admin.js](project_admin_monolite.md) — estrazione chiusa (admin.js 928 righe); restano grandi atleti.js e cms.js, non richiesti
+- [Ricevute, area famiglie, promemoria email](project_ricevute_email_famiglie.md) — decisioni dell'utente; Brevo attivo, punti in sospeso chiusi (agg. 2026-10-13)
+- [Rifacimento Budget concluso](project_budget_refactor.md) — fasi 1-5 e piano editoriale con sponsor; cosa resta in sospeso (backup, 17 tranche, pulizia)
+- [Non riproporre il logo Trisolino](feedback_non_riproporre_logo_trisolino.md) — già risolto dall'utente: file non disponibile
+- [Prestazioni mobile home](project_mobile_prestazioni.md) — punto chiuso dall'utente il 2026-10-13 (Lighthouse 73, LCP 6,3 s); il browser automatico non emula il telefono
+- [Backup 13/10/2026](reference_backup_2026_10_13.md) — copia in backups/2026-10-13/, da tenere; fonte per conteggi taglie
+- [Supabase: solo piano](project_supabase_piano.md) — piano in docs/, non applicato; si resta su Firestore (2026-10-14)
+- [Usa Chrome per le console](feedback_usa_chrome_per_console.md) — non dire «non ho accesso»: aprire la console col browser
+- [Push dopo commit](feedback_push_dopo_commit.md) — dopo ogni commit fare sempre il push, senza chiedere
+- [Diretta e tabellone](project_diretta_tabellone.md) — Set Point Pulse + YouTube, approvato e in sospeso chiusi (2026-10-16)
+- [npm test prima del commit](feedback_npm_test_prima_commit.md) — lanciare stamp-versions e npm test prima di ogni commit sul sito (CI fallita il 2026-10-19)
+- [Stile grafiche Instagram](reference_stile_grafiche_instagram.md) — colori, layout WELCOME/staff/sponsor, fascia sponsor e slogan; l'utente farà le grafiche da solo
+- [Brand book ufficiale](reference_brandbook.md) — colori #CA2367/#028BFD/#002B56, font Montserrat/Impact/EDITION, loghi in assets/brand; nel progetto in docs/brandbook
+- [Grafica next match U19](project_grafica_next_match.md) — stile Burnley chiaro, tavola Chiaro2 scelta; regole sponsor e come ripartire
