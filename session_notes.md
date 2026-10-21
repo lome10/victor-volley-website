@@ -3,7 +3,7 @@
 File di coordinamento: va aggiornato **alla fine di ogni sessione** e **ad ogni cambiamento**.
 Ordine: stato attuale → da fare → da verificare → decisioni → registro sessioni.
 
-Ultimo aggiornamento: 2026-10-11 (verifica dei 12 punti aperti, fix propagazione rinomina categoria → partite)
+Ultimo aggiornamento: 2026-10-21 (fix video live /diretta: tabellone Set Point Pulse come segnale)
 
 ---
 
@@ -497,3 +497,5 @@ Modello Excel del dirigente analizzato; scelte dell'utente: importo libero (una 
 - **Storia Instagram 9:16 «risultato set» (2026-10-21, richiesta dell'utente; fuori dal sito)**: nuova tavola «Storia 9:16 - risultato set» nel canvas Claude Design (https://claude.ai/artifact/DfvU4iLegNg978qTjNEHpz), ispirata alla grafica Iowa Volleyball: foto a tutta altezza che sfuma nel navy, box magenta con punteggio set e parziali, header Fly+Victor / Puglia in Food (verde, main sponsor), sponsor Vita/Unipol/Trisolino. Foto da `IMG_0113 (2).CR2` (anteprima JPEG estratta, ruotata, color correction nostra). Passaggio di consegne, copia della tavola, script e memoria in `docs/grafica-risultati/` (HANDOFF.md); aggiunto `assets/UNIPOLBIANCA.png`; `.impeccable/config.json` con esenzioni per Montserrat e la spaziatura larga delle etichette. Nessuna modifica al sito.
 
 - **Storia 9:16 «risultato set», tavola gemella e rifiniture (2026-10-21 notte, richieste dell'utente; fuori dal sito)**: aggiunta `StoriaRisultato2` (Puglia in Food al centro in alto, Fly + stemma sopra il box); box tornato al magenta pieno `#CA2367`; linee verticali dei set a 2,5 px bianche; Puglia in Food ora verde (versione per fondi chiari); velo sulla foto alleggerito; Unipol (`assets/UNIPOLBIANCA.png`) rimpicciolito, Trisolino ingrandito; «UNDER 19» dentro il box. Aggiunti in `docs/grafica-risultati/`: cartella `loghi/` con `LOGHI.md`, `COLOR-CORRECTION.md` (regole di pulizia e color correction), copie di tavole e `canvas.json`, `HANDOFF.md` aggiornato. Nessuna modifica al sito.
+
+- **/diretta: video live non si vedeva durante una partita (2026-10-21, segnalato dall'utente in diretta)**: `GET /api/youtube-live` rispondeva `live:false` perché dal server Vercel YouTube dà `LOGIN_REQUIRED` anche a `/channel/<ID>/live` (confermato con `?debug=1`), quindi la pagina mostrava l'ultimo video. Fix in `js/diretta.js` (commit `cd3937b`): secondo segnale `partitaInCorso` dal polling del tabellone Set Point Pulse (`status === 'live'` con home e away) → `aggiornaVideo()` mostra l'embed `live_stream?channel=` se `ultimoStato.live || partitaInCorso`; a partita finita torna all'ultimo video. **Confermato dall'utente: la diretta ora si vede.** Limite noto: se la diretta YouTube va senza partita attiva su Set Point Pulse, la pagina mostra l'ultimo video; soluzione robusta = chiave YouTube Data API in variabile d'ambiente Vercel. Pull da altro PC eseguito prima (stash/pop di `calendario-1.js`, nessun conflitto).
