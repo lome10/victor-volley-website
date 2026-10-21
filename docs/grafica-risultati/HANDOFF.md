@@ -43,6 +43,10 @@ Comune a entrambe:
 - Unipol meno grande di Vita/Trisolino; Trisolino un po' più grande degli altri.
 - Il logo Trisolino ad alta risoluzione non è disponibile: non riproporlo (vedi `docs/grafica-next-match/memoria-claude/feedback_non_riproporre_logo_trisolino.md`).
 
+## Come mi arrivano i risultati (Claude Code)
+
+Partita Victor–FlyArmida: **fuori casa**, quindi in casa gioca Fly. L'utente scrive a Claude Code **prima la squadra di casa e poi l'ospite**, ognuna col suo numero: «fly victor 25 8» = Fly 25, Victor 8 in quel set. Nella tavola la colonna di **sinistra è la prima squadra scritta (Fly)** e quella di **destra la seconda (Victor)**, come nell'ordine dei loghi (Fly, poi Victor). Il primo numero del parziale va a sinistra; il cerchio bianco va sul parziale vinto di ogni set; i set non giocati restano `--`; i grandi numeri ai lati sono i set vinti da ciascuna. Rileggere sempre la tavola prima di modificare e far ricaricare la pagina (F5). I dati attuali nella tavola (3-1, 25-19, …) sono di prova.
+
 ## Come si fa durante una partita (dal browser, anche senza Claude Code)
 
 1. Apri il link del canvas dal browser. 2. Duplica la tavola (o lavora sull'originale se non serve più) e cambia nell'editor i numeri: punteggio set grande (3 e 1), parziali, quale parziale ha il cerchio (sono riquadri con bordo bianco da spostare), `--` sui set non giocati. 3. Scarica il PNG dall'icona di download della tavola. Non ho potuto verificare i menu esatti dell'editor: se qualcosa non torna, descrivilo a Claude.
