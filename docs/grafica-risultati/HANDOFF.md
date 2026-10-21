@@ -22,11 +22,16 @@ Storia Instagram **1080×1920 (9:16)** con il risultato di una partita: foto a t
 | Memoria di Claude Code (preferenze) | `docs/grafica-risultati/memoria-claude/` | copiala in `C:\Users\<utente>\.claude\projects\<percorso-progetto-con-trattini>\memory\` (vedi `docs/grafica-next-match/HANDOFF.md`) |
 | La conversazione | resta sul PC attuale | non si trasferisce: questo file la sostituisce |
 
-## Stato della tavola
+## Stato delle tavole
 
-- Foto di fondo `foto-0113-corretta.jpg`, `object-position: 50% 0%`, in un blocco alto 1365 px con maschera che sfuma a trasparente da metà in giù; sopra, un velo navy leggero (0.45 in alto, 0.15, 0.3 in basso). Sotto il blocco il fondo è un gradiente navy `#002B56 → #00152B`.
-- Header (top 110 px): a sinistra logo FlyArmida a colori su riquadro bianco arrotondato + stemma Victor; a destra **Puglia in Food (main sponsor), 330 px, versione verde**.
-- Box punteggio: left 80, top 1090, 920×520, magenta `#CA2367` con riflesso bianco in diagonale e ombra scura sopra; «UNDER 19» in alto dentro il box; colonna centrale dei set abbassata di 16 px; numeri grandi in Anton (stand-in web di Impact).
+Nel canvas ci sono **due tavole gemelle** (stesso box, stessa foto, stessi dati; copie in `artifact/StoriaRisultato.dc.html` e `artifact/StoriaRisultato2.dc.html`, più `artifact/canvas.json` con le posizioni):
+
+- **«Storia 9:16 - risultato set»** (`StoriaRisultato`, x 0, y 6940): header in alto (top 80 px) con logo FlyArmida a colori su riquadro bianco arrotondato + stemma Victor a sinistra e Puglia in Food (330 px, versione verde) a destra.
+- **«Storia 9:16 - risultato set, loghi sopra il box»** (`StoriaRisultato2`, x 1160, y 6940): Puglia in Food **al centro in alto** (300 px, top 30 px, versione verde); Fly + stemma Victor affiancati **sopra il box** (top 905 px, centrati). L'utente ha detto che questa «può piacergli»: è la candidata.
+
+Comune a entrambe:
+- Foto di fondo `foto-0113-corretta.jpg`, `object-position: 50% 0%`, in un blocco alto 1365 px con maschera che sfuma a trasparente da metà in giù; sopra, un velo navy leggero (0.45 in alto, 0.15 a un terzo, 0.3 in basso). Sotto il blocco il fondo è un gradiente navy `#002B56 → #00152B`.
+- Box punteggio: left 80, top 1090, 920×520, **magenta pieno `#CA2367`** (l'utente ha voluto togliere l'ombreggiatura scura) con riflesso bianco in diagonale e ombra sotto il box; «UNDER 19» in alto dentro il box (34 px, peso normale); colonna centrale dei set abbassata di 16 px; **linee verticali tratteggiate di 2,5 px, bianche al 95%** (prima erano quasi invisibili); numeri grandi in Anton (stand-in web di Impact).
 - «WE ARE FUTURE» a top 1640; fascia sponsor a top 1700: Vita, Unipol (250 px di larghezza, il file ha molto margine trasparente), Trisolino (max 90 px). Nessun nome squadra sotto i punteggi.
 
 ## Decisioni dell'utente da rispettare
@@ -34,7 +39,7 @@ Storia Instagram **1080×1920 (9:16)** con il risultato di una partita: foto a t
 - **Foto e pulizia sono compito di Claude Code** (anche sull'altro PC, dove l'utente avrà Claude Code): conversione dal RAW, rotazione, pulizia e color correction le fa Claude seguendo `COLOR-CORRECTION.md` (vedi anche `memoria-claude/feedback_foto_pulizia_color.md`).
 - **Puglia in Food è il main sponsor: sempre presente e leggibile.** Esiste in bianco (`puglia-scuro-t.png` con `filter: brightness(0) invert(1)`, per fondi scuri) e **in verde** (`puglia-verde-t.png`, per fondi/foto chiari): scegliere quella che si legge meglio sulla foto di turno. Ora è verde perché la foto ha il muro chiaro.
 - La categoria («Under 19») sta nel box del punteggio, non in alto: la zona alta sotto l'header è riservata alla live.
-- Velo sulla foto leggero; box punteggio magenta ombrato (non blu, non troppo acceso); niente nomi squadra sotto i punteggi; niente soggetto ritagliato (le foto le fa l'utente).
+- Velo sulla foto leggero; box punteggio **magenta pieno** (provato blu e magenta ombrato, scartati); niente nomi squadra sotto i punteggi; niente soggetto ritagliato (le foto le fa l'utente).
 - Unipol meno grande di Vita/Trisolino; Trisolino un po' più grande degli altri.
 - Il logo Trisolino ad alta risoluzione non è disponibile: non riproporlo (vedi `docs/grafica-next-match/memoria-claude/feedback_non_riproporre_logo_trisolino.md`).
 
