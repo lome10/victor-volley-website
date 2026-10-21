@@ -105,6 +105,15 @@
   /* Il canale sta trasmettendo adesso? Risponde /api/youtube-live; se non
      risponde si considera "no" (si vede l'ultimo video, mai "non disponibile"). */
   var videoLive = null;
+  var ultimoStato = { live: false, last: null };
+  var partitaInCorso = false; // dal tabellone: dal server di Vercel YouTube può rispondere LOGIN_REQUIRED e l'API dire "no"
+  function aggiornaVideo() {
+    var live = ultimoStato.live || partitaInCorso;
+    var chiave = live ? 'live' : 'last:' + ultimoStato.last;
+    if (chiave === videoLive) return;
+    videoLive = chiave;
+    renderVideo(live, ultimoStato.last);
+  }
   function checkLive() {
     return fetch('/api/youtube-live', { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : { live: false }; })
@@ -114,10 +123,8 @@
   function initVideo() {
     function tick() {
       checkLive().then(function (st) {
-        var chiave = st.live ? 'live' : 'last:' + st.last;
-        if (chiave === videoLive) return;
-        videoLive = chiave;
-        renderVideo(st.live, st.last);
+        ultimoStato = st;
+        aggiornaVideo();
       });
     }
     tick();
@@ -275,6 +282,8 @@
       .then(function (r) { return r.ok ? r.json() : null; })
       .catch(function () { return null; })
       .then(function (j) {
+        var inCorso = !!(j && j.status === 'live' && j.home && j.away);
+        if (inCorso !== partitaInCorso) { partitaInCorso = inCorso; aggiornaVideo(); }
         if (j && (j.status === 'live' || j.status === 'finished') && j.home && j.away) {
           paint(renderSpp(j), JSON.stringify(j));
         } else {
