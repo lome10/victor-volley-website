@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Storia risultato 9:16</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+@font-face{font-family:"ImpactVV";src:url("impact.ttf")}
+:root{--pink:#CA2367;--blue:#028BFD;--navy:#002B56;--ink:#00152B}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;background:var(--ink)}
+body{font-family:Montserrat,Arial,sans-serif;color:#fff;position:relative;overflow:hidden}
+#story{position:absolute;inset:0;width:1080px;height:1920px;overflow:hidden;
+  background:
+   radial-gradient(900px 760px at 50% 38%,rgba(202,35,103,.55),rgba(202,35,103,0) 70%),
+   radial-gradient(700px 600px at 90% 12%,rgba(2,139,253,.35),rgba(2,139,253,0) 70%),
+   linear-gradient(180deg,#003a73 0%,#002B56 45%,#00152B 100%)}
+.mark{filter:brightness(0) invert(1);position:absolute;left:50%;top:560px;width:1100px;transform:translateX(-50%);opacity:.07}
+.grain{position:absolute;inset:0;opacity:.18;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/></filter><rect width='300' height='300' filter='url(%23n)'/></svg>")}
+.head{position:absolute;top:110px;left:80px;right:80px;display:flex;align-items:center;justify-content:space-between}
+.head .stemma{width:190px;height:auto}
+.head .sep{width:3px;height:150px;background:rgba(255,255,255,.35)}
+.head .puglia{filter:brightness(0) invert(1);width:430px;height:auto}
+.tag{position:absolute;top:410px;left:0;right:0;text-align:center;font-weight:800;letter-spacing:.42em;font-size:26px;color:#fff;opacity:.9}
+.tag b{color:var(--pink);background:#fff;padding:6px 16px;margin-right:14px;letter-spacing:.3em}
+.athlete{position:absolute;left:50%;top:420px;height:1000px;transform:translateX(-50%);
+  -webkit-mask-image:linear-gradient(#000 78%,transparent 100%);mask-image:linear-gradient(#000 78%,transparent 100%);
+  filter:drop-shadow(0 30px 50px rgba(0,0,0,.45))}
+.panel{position:absolute;left:80px;top:1130px;width:920px;height:470px;background:var(--pink);border-radius:30px;
+  display:grid;grid-template-columns:250px 1fr 250px;align-items:center;
+  box-shadow:0 30px 60px rgba(0,0,0,.45)}
+.panel::before{content:"";position:absolute;inset:0;border-radius:30px;
+  background:linear-gradient(135deg,rgba(255,255,255,.18),rgba(255,255,255,0) 45%)}
+.team{display:flex;flex-direction:column;align-items:center;gap:6px;position:relative}
+.team img{height:96px;width:auto;max-width:190px;object-fit:contain}
+.team .n{font-family:ImpactVV,Impact,sans-serif;font-size:250px;line-height:.95}
+.team .name{font-weight:800;font-size:30px;letter-spacing:.16em}
+.sets{position:relative;border-left:2px dashed rgba(255,255,255,.45);border-right:2px dashed rgba(255,255,255,.45);
+  height:380px;display:flex;flex-direction:column;justify-content:space-between;padding:6px 0}
+.row{display:grid;grid-template-columns:1fr 130px 1fr;align-items:center;text-align:center;font-weight:700;font-size:38px}
+.row .lab{font-weight:600;font-size:34px;opacity:.95}
+.row .s{display:inline-flex;align-items:center;justify-content:center;width:78px;height:78px;margin:0 auto}
+.row .s.w{border:4px solid #fff;border-radius:50%;font-weight:900}
+.row.off{opacity:.65}
+.foot{position:absolute;top:1640px;left:0;right:0;text-align:center;font-weight:800;font-size:24px;letter-spacing:.5em}
+.spons{position:absolute;left:80px;right:80px;top:1700px;height:120px;display:grid;grid-template-columns:1fr 1fr 1.7fr;align-items:center;justify-items:center;gap:30px;
+  border-top:2px solid rgba(255,255,255,.3);padding-top:24px}
+.spons img{max-height:76px;max-width:100%;width:auto;object-fit:contain}
+.spons .unipol{font-weight:900;font-size:46px;letter-spacing:.04em}
+</style>
+</head>
+<body>
+<div id="story">
+  <img class="mark" src="../grafica-next-match/materiali/puglia-scuro-t.png" alt="">
+  <div class="head">
+    <img class="stemma" src="../../assets/brand/logo-originale.svg" alt="Victor Volley">
+    <div class="sep"></div>
+    <img class="puglia" src="../grafica-next-match/materiali/puglia-scuro-t.png" alt="Puglia in Food">
+  </div>
+  <div class="tag"><b>FINALE</b>UNDER 19 FEMMINILE</div>
+  <img class="athlete" src="../grafica-next-match/materiali/nat2.png" alt="">
+  <div class="panel" id="panel"></div>
+  <div class="foot">WE ARE FUTURE</div>
+  <div class="spons">
+    <img src="../grafica-next-match/materiali/vita.png" alt="Vita">
+    <div class="unipol">UNIPOL</div>
+    <img src="../grafica-next-match/materiali/trisolino-scuro.png" alt="Trisolino Impianti">
+  </div>
+  <div class="grain"></div>
+</div>
+<script>
+// Dati della partita: cambiare solo questo blocco
+const M={
+  casa:{nome:"VICTOR",logo:"../../assets/brand/logo-originale.svg"},
+  ospite:{nome:"FLYARMIDA",logo:"../grafica-next-match/materiali/flyarmida-bianco.png"},
+  set:[[25,19],[22,25],[25,17],[25,21]] // parziali (casa, ospite); i set non giocati restano "--"
+};
+const g=M.set.map(([a,b])=>a>b?1:0), sc=[g.reduce((x,y)=>x+y,0),g.length-g.reduce((x,y)=>x+y,0)];
+let rows="";
+for(let i=0;i<5;i++){
+  const p=M.set[i], w=p?(p[0]>p[1]?0:1):-1;
+  const c=(v,k)=>p?`<span class="s${w===k?' w':''}">${v}</span>`:`<span class="s">--</span>`;
+  rows+=`<div class="row${p?'':' off'}">${c(p&&p[0],0)}<span class="lab">Set ${i+1}</span>${c(p&&p[1],1)}</div>`;
+}
+document.getElementById("panel").innerHTML=
+ `<div class="team"><img src="${M.casa.logo}"><div class="n">${sc[0]}</div><div class="name">${M.casa.nome}</div></div>
+  <div class="sets">${rows}</div>
+  <div class="team"><img src="${M.ospite.logo}"><div class="n">${sc[1]}</div><div class="name">${M.ospite.nome}</div></div>`;
+</script>
+</body>
+</html>

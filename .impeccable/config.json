@@ -44,6 +44,21 @@
         "value": "inter",
         "createdAt": "2026-10-16T09:09:17.551Z",
         "reason": "user confirmed: tiene Inter per l'area famiglie (2026-10-16)"
+      },
+      {
+        "rule": "overused-font",
+        "value": "montserrat",
+        "createdAt": "2026-10-21T15:11:43.858Z",
+        "reason": "Montserrat is the official brand-book font (docs/brandbook), set by the club, not a design choice of mine"
+      },
+      {
+        "rule": "wide-tracking",
+        "value": "*",
+        "files": [
+          "docs/grafica-risultati/storia-risultato.html"
+        ],
+        "createdAt": "2026-10-21T15:11:43.998Z",
+        "reason": "wide tracking only on short uppercase labels (category, WE ARE FUTURE) in the club's Instagram style; my judgement, not confirmed by the user"
       }
     ]
   }
