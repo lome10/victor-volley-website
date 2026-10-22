@@ -3,7 +3,7 @@
 File di coordinamento: va aggiornato **alla fine di ogni sessione** e **ad ogni cambiamento**.
 Ordine: stato attuale → da fare → da verificare → decisioni → registro sessioni.
 
-Ultimo aggiornamento: 2026-10-21 (fix video live /diretta: tabellone Set Point Pulse come segnale)
+Ultimo aggiornamento: 2026-10-22 (risultato Fly–Victor U19 3-0)
 
 ---
 
@@ -499,3 +499,5 @@ Modello Excel del dirigente analizzato; scelte dell'utente: importo libero (una 
 - **Storia 9:16 «risultato set», tavola gemella e rifiniture (2026-10-21 notte, richieste dell'utente; fuori dal sito)**: aggiunta `StoriaRisultato2` (Puglia in Food al centro in alto, Fly + stemma sopra il box); box tornato al magenta pieno `#CA2367`; linee verticali dei set a 2,5 px bianche; Puglia in Food ora verde (versione per fondi chiari); velo sulla foto alleggerito; Unipol (`assets/UNIPOLBIANCA.png`) rimpicciolito, Trisolino ingrandito; «UNDER 19» dentro il box. Aggiunti in `docs/grafica-risultati/`: cartella `loghi/` con `LOGHI.md`, `COLOR-CORRECTION.md` (regole di pulizia e color correction), copie di tavole e `canvas.json`, `HANDOFF.md` aggiornato. Nessuna modifica al sito.
 
 - **/diretta: video live non si vedeva durante una partita (2026-10-21, segnalato dall'utente in diretta)**: `GET /api/youtube-live` rispondeva `live:false` perché dal server Vercel YouTube dà `LOGIN_REQUIRED` anche a `/channel/<ID>/live` (confermato con `?debug=1`), quindi la pagina mostrava l'ultimo video. Fix in `js/diretta.js` (commit `cd3937b`): secondo segnale `partitaInCorso` dal polling del tabellone Set Point Pulse (`status === 'live'` con home e away) → `aggiornaVideo()` mostra l'embed `live_stream?channel=` se `ultimoStato.live || partitaInCorso`; a partita finita torna all'ultimo video. **Confermato dall'utente: la diretta ora si vede.** Limite noto: se la diretta YouTube va senza partita attiva su Set Point Pulse, la pagina mostra l'ultimo video; soluzione robusta = chiave YouTube Data API in variabile d'ambiente Vercel. Pull da altro PC eseguito prima (stash/pop di `calendario-1.js`, nessun conflitto).
+
+- **Risultato Flyarmida–Victor Under 19 (2026-10-22, richiesta dell'utente)**: partita `m1791636189773` (21/10, Taviano) in `partite` aggiornata a **3-0 per Flyarmida**, stato `conclusa` (scritta con `DB.savePartita` da browser con admin loggato, riletta da Firestore); nel girone Under 19 la partita `u19-118` aveva già 3-0. Parziali dei set non inseriti. **Chiusi su conferma dell'utente**: storia Instagram del risultato (tavole 9:16) e inserimento dei risultati nel girone. Il PDF `gp_tesseramento_2627 (1).pdf` resta solo in Downloads, non va nel repo.
