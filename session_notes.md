@@ -505,3 +505,5 @@ Modello Excel del dirigente analizzato; scelte dell'utente: importo libero (una 
 - **Area atleta, nota sul certificato medico (2026-10-22, richiesta dell'utente)**: nella scheda «Certificato Medico» (vista Documenti di `atleta.html`) aggiunta la riga «La società darà info a breve su come organizzarsi per il certificato medico.» (classe `.al-cert-note` in `css/atleta.css`). Restano i messaggi già presenti nei promemoria della home.
 
 - **Nota certificato medico, verificata (2026-10-22)**: l'utente ha visto la riga in produzione (`www.victorvolley.it/atleta`, scheda «Certificato Medico», vista Documenti) tramite Claude in Chrome e l'ha approvata. Chiuso, nulla in sospeso. Nota: il browser era collegato a un account senza atleta, la vista è stata resa visibile con uno script solo visivo.
+
+- **Nuovo modulo di iscrizione (2026-10-22, richiesta dell'utente)**: `assets/modulo-tesseramento.pdf` sostituito con `Modulo_Tesseramento_Completo (4).pdf` (Downloads, 2,0 MB; il precedente era del 13/10, 2,0 MB, recuperabile da git). Stesso nome file, quindi il link in `atleta.html` (scarica «Modulo-tesseramento-Victor-Volley.pdf») non cambia.
