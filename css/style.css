@@ -3432,6 +3432,10 @@ button[type="submit"][aria-busy="true"] { opacity: 0.7; cursor: progress; }
   .dt-live-grid { grid-template-columns: 1fr; }
 }
 
+/* Partita in corso: il punteggio è già sovrapposto al video, il tabellone laterale sparisce */
+.dt-live-grid--solo-video { grid-template-columns: 1fr; }
+.dt-live-grid--solo-video .dt-side-col { display: none; }
+
 .dt-video-col {
   display: flex;
   flex-direction: column;
