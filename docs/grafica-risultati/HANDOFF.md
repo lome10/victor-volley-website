@@ -2,6 +2,49 @@
 
 Per riprendere il lavoro su un altro PC dopo `git pull`. Leggi questo file, poi `docs/brandbook/BRANDBOOK.md` e `docs/grafica-next-match/HANDOFF.md` (stessa famiglia di grafiche).
 
+## AGGIORNAMENTO 27/10/2026 (Anselmo): cosa c'è oggi nel canvas e cosa applicare
+
+Canvas: https://claude.ai/artifact/DfvU4iLegNg978qTjNEHpz (tipo Design, stesso account claude.ai). Le tavole sono file `project/<Nome>.dc.html`; l'indice e le posizioni sono in `project/canvas.json`. Le tavole storia sono 1080×1920, le altre 1080×1350. Le tavole originali FlyArmida (sezioni sotto) sono **intatte**: tutto il nuovo è in tavole aggiunte accanto.
+
+### Tavole nuove (riga y 6940, a destra delle Fly)
+
+| Tavola (file) | x | Cosa è |
+|---|---|---|
+| `StoriaRisultatoSet2Astra` | 5800 | Fine set 2, Victor 2–0 **Astra Volley Presicce Acquarica**, 25-7 e 25-11. Loghi **sopra il box**, invertiti: prima Victor (160 px), poi Astra (200 px), **senza riquadro bianco**. |
+| `StoriaRisultatoSet2Astra2` | 6960 | Stessa grafica con i loghi **in alto** (header), Puglia in Food a destra. |
+| `ProveNumeriUrban` | 8120 | 12 prove di stile per i numeri grandi (2 e 0). Solo prove. |
+| `ProveNumeriMano` | 9280 | 6 prove «a penna» con spessore variabile. Solo prove. |
+| `StoriaRisultatoSet2AstraStile3` | 10440 | Numeri a pennarello veloce. Lorenzo: «mi piace questo stile, ma magari lo utilizziamo per altro». |
+| `StoriaRisultatoSet2AstraStile5` | 11600 | Numeri a brush pen corsivo. Stesso commento. |
+
+Altre tavole: `Giornata2` (x 9280, y 4010) è il Next Match della 2ª giornata Victor – Astra (27 ottobre). **Ernesta** ha aggiunto in fondo (y 9200) `LogoBase`, `LogoV1-3`, `LogoApplicazioni`: il rebranding del logo è **chiuso e scartato da Lorenzo** («non mi piacciono, non farne più»); restano lì finché Lorenzo non chiede di cancellarle.
+
+### Decisioni di Lorenzo su queste tavole (da applicare, in quest'ordine)
+
+1. **Numeri grandi dei set: font Anton 250 px**, come nelle Fly («torniamo all'esempio canonico»). Le prove di stile non sono state scelte per i numeri grandi.
+2. **Cerchio sul parziale vinto disegnato a mano**, non un cerchio perfetto. Lorenzo: «il primo 25 è bellissimo, falli tutti così». È un SVG 90×90 dietro al numero (left/top -6 px, `overflow: visible`), tratto bianco 3,3 px, `stroke-linecap: round`, con filtro `feTurbulence` leggero (`baseFrequency 0.05`, `numOctaves 2`, `feDisplacementMap scale 1.6`; `seed` e id del filtro diversi per ogni cerchio). Tracciati, da alternare: A = `M 50 19 C 36 15, 12 22, 9 46 C 7 70, 30 85, 52 83 C 74 80, 86 60, 80 38 C 75 20, 58 9, 38 11 C 30 12, 24 15, 19 20` e B = `M 36 16 C 54 8, 80 16, 84 42 C 88 68, 66 88, 42 84 C 18 80, 5 60, 10 36 C 14 18, 34 8, 58 10 C 66 11, 72 14, 77 19`. Il numero resta peso 900. **Fatto solo** nelle due tavole Astra.
+3. **Da applicare dove manca**: `StoriaFullTime` (x 4640, y 6940, post 4:5, FlyArmida 3-0, con i «1» e i «3»), le tre tavole storia Fly e `StoriaRisultatoSet2`/`Set2b`. Lorenzo non ha detto «sì a tutte»: **chiedere una tavola alla volta** o fargliele scegliere.
+4. Lo stile pennarello/brush (Stile3, Stile5) **non è per i numeri grandi**: Lorenzo lo vuole «per altro» (non ha detto cosa: chiederglielo prima di usarlo).
+
+### Asset e dati
+
+- Asset del canvas (`/_blob/<id>`): stemma Victor `ec877601eed9aaf1541f8827b7c11414`, **logo Astra Volley** `2d72fcfd392b090de0fe48fda2766b42`, Puglia in Food bianco `bff4fda19d4783283f70598763bfd754` (con `filter: brightness(0) invert(1)`), Vita `be702746670391a1b5a9245a85c101e7`, Unipol `75e7a4c66b30c9dc8ccb99744157124c`, Trisolino `c0c2ede4109849ec247053791492ee15`, foto `4ecf31e189a118a425d324fed0320023`. Il PNG del logo Astra (715×703, trasparente) è in `C:\Users\loren\Downloads\862818627_1600596014428120_8111855324200941357_n.png` sul PC vecchio: non sta su Git, da copiare se serve ricaricarlo.
+- Nelle due tavole Astra: «UNDER 19», Set 1 25–7, Set 2 25–11, Set 3-5 `--`, header e sponsor come nelle Fly.
+- Il logo Astra è stato sostituito il 27/10 anche sul sito (database, 4 squadre Astra nei campionati): non c'entra con le tavole.
+
+### Come lavorare sul canvas (cose imparate)
+
+- **Rileggere sempre prima di pubblicare** (`Artifact` con `action: read` sul canvas e sul file della tavola): Lorenzo ritocca dall'editor e salva spesso, e un publish sul vecchio viene rifiutato. Il 27/10 un mio publish ha sostituito un salvataggio dell'editor fatto meno di 1 minuto prima sulle due tavole Astra: **dopo ogni publish dire a Lorenzo di ricaricare (F5) e controllare se aveva cambiato qualcosa**.
+- Si lavora su copie in una cartella di appoggio (non su Git) e si pubblicano i `.dc.html` modificati con la mappa `files`. Non si toccano le tavole esistenti: si creano nuove tavole e si aggiunge la riga in `canvas.json` (`boards` e `order`) con x, y, w, h e titolo.
+- Per guardare il canvas nel browser: **scheda nuova**, mai riusare quella del canvas (il 27/10 l'ho sbagliato una volta e l'ho dovuta ripristinare).
+- Sul nuovo PC: Claude in Chrome loggato con lo stesso account; foto RAW e file non su Git da copiare a mano.
+
+### Cose aperte per Lorenzo
+
+- Su quali altre tavole applicare i cerchi a mano (punto 3).
+- Che uso dare allo stile pennarello/brush (punto 4).
+- Se cancellare le tavole di prova (`ProveNumeriUrban`, `ProveNumeriMano`) e quelle del rebranding di Ernesta.
+
 ## Cosa è
 
 Storia Instagram **1080×1920 (9:16)** con il risultato di una partita: foto a tutta altezza che sfuma nel navy, box magenta con punteggio set grande a sinistra e a destra e i parziali dei 5 set al centro (cerchio sul parziale vinto, `--` sui set non giocati). Riferimento: la grafica di Iowa Volleyball che l'utente ha mandato. Partita di prova inventata: Victor 3 – 1 FlyArmida (25-19, 22-25, 25-17, 25-21).
