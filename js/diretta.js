@@ -56,7 +56,7 @@
     if (isLive && hasChannel) {
       if (msgEl) msgEl.hidden = true;
       el.innerHTML =
-        '<iframe src="https://www.youtube.com/embed/live_stream?channel=' + encodeURIComponent(channelId) + '&autoplay=1&mute=1" ' +
+        '<iframe src="https://www.youtube.com/embed/live_stream?channel=' + encodeURIComponent(channelId) + '&autoplay=1" ' +
           'title="Diretta YouTube Victor Volley" ' +
           'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" ' +
           'allowfullscreen></iframe>' +
