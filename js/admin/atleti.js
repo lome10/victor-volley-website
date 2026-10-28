@@ -1213,17 +1213,59 @@
       _przSelezioneHtml() + '<h3 class="prz-h">Capi e stampa</h3>' + tab + _przExtraHtml(res, cats) + riep;
   }
 
+  /* ---- Vista «Mail»: gli indirizzi dei login già collegati agli atleti (atleta e genitori), con nome e cognome.
+     Sola lettura: si modificano dalla scheda dell'atleta, tab Accessi. Rispetta categoria e ricerca. ---- */
+  function _righeMail() {
+    var righe = [];
+    _atletiFiltrati().forEach(function (a) {
+      var atleta = ((a.cognome || '') + ' ' + (a.nome || '')).trim();
+      _accessiOf(a).forEach(function (x) {
+        if (!x.email) return;
+        righe.push({
+          persona: x.ruolo === 'atleta' ? atleta : (x.nome || '').trim(),
+          email: String(x.email).trim().toLowerCase(),
+          ruolo: x.ruolo === 'atleta' ? 'Atleta' : 'Genitore',
+          atleta: atleta, categoria: a.categoria || ''
+        });
+      });
+    });
+    return righe.sort(function (x, y) { return (x.persona || x.email).localeCompare(y.persona || y.email, 'it'); });
+  }
+
+  function _indirizziUnici(righe) {
+    var visti = {};
+    return righe.filter(function (r) { if (visti[r.email]) return false; visti[r.email] = true; return true; });
+  }
+
+  function _renderMail() {
+    var box = document.getElementById('atletiMail'), righe = _righeMail(), unici = _indirizziUnici(righe);
+    var senza = _atletiFiltrati().filter(function (a) { return !_accessiOf(a).some(function (x) { return x.email; }); }).length;
+    document.getElementById('atletiSummary').textContent = unici.length + (unici.length === 1 ? ' indirizzo' : ' indirizzi') +
+      (senza ? ' · ' + senza + (senza === 1 ? ' atleta senza accesso' : ' atleti senza accesso') : '');
+    if (!righe.length) { box.innerHTML = '<div class="empty-state"><p>Nessun indirizzo mail collegato agli atleti mostrati.</p></div>'; return; }
+    box.innerHTML = '<div class="prz-azioni"><button type="button" class="btn btn-sm mail-copia">Copia tutti gli indirizzi</button>' +
+      '<span class="taglie-escl-hint">Un indirizzo collegato a più atleti (fratelli) viene copiato una volta sola.</span></div>' +
+      '<div class="admin-table-wrap"><table class="admin-table tab-scroll"><thead><tr><th>Cognome e nome</th><th>Email</th><th>Ruolo</th><th>Atleta</th><th>Categoria</th></tr></thead><tbody>' +
+      righe.map(function (r) {
+        return '<tr><td>' + (r.persona ? esc(r.persona) : '<span class="taglie-vuoto">nome non indicato</span>') + '</td><td>' + esc(r.email) + '</td><td>' + esc(r.ruolo) +
+          '</td><td>' + esc(r.atleta) + '</td><td>' + esc(r.categoria) + '</td></tr>';
+      }).join('') + '</tbody></table></div>';
+  }
+
   function _applicaVistaAtleti() {
-    var taglie = _atletiVista === 'taglie', prezzi = _atletiVista === 'prezzi';
-    document.getElementById('atletiElencoWrap').classList.toggle('is-hidden', taglie || prezzi);
+    var taglie = _atletiVista === 'taglie', prezzi = _atletiVista === 'prezzi', mail = _atletiVista === 'mail';
+    document.getElementById('atletiElencoWrap').classList.toggle('is-hidden', taglie || prezzi || mail);
     document.getElementById('atletiTaglie').classList.toggle('is-hidden', !taglie);
     document.getElementById('atletiPrezzi').classList.toggle('is-hidden', !prezzi);
+    document.getElementById('atletiMail').classList.toggle('is-hidden', !mail);
     /* nei Prezzi i filtri per categoria e la ricerca non servono: la scelta si fa in «Cosa includere» */
     ['atletiSearch', 'atletiCatBar', 'atletiToggleAll'].forEach(function (id) { document.getElementById(id).classList.toggle('is-hidden', prezzi); });
+    /* nella Mail l'elenco non è diviso in gruppi da comprimere */
+    document.getElementById('atletiToggleAll').classList.toggle('is-hidden', prezzi || mail);
     Array.prototype.forEach.call(document.querySelectorAll('#atletiVista .atleti-pill'), function (b) {
       b.classList.toggle('is-active', b.dataset.vista === _atletiVista);
     });
-    document.getElementById('atletiExport').title = prezzi ? 'Scarica la tabella prezzi in CSV' : taglie ? 'Scarica le taglie mostrate in CSV' : "Scarica l'elenco mostrato in CSV";
+    document.getElementById('atletiExport').title = prezzi ? 'Scarica la tabella prezzi in CSV' : mail ? 'Scarica gli indirizzi mostrati in CSV' : taglie ?'Scarica le taglie mostrate in CSV' : "Scarica l'elenco mostrato in CSV";
     _renderAtletiRows();
   }
 
@@ -1233,6 +1275,7 @@
     _aggiornaToggleTutte([]);
     if (_atletiVista === 'taglie') { _renderTaglie(); return; }
     if (_atletiVista === 'prezzi') { _renderPrezzi(); return; }
+    if (_atletiVista === 'mail') { _renderMail(); return; }
     if (!_atletiCache.length) {
       document.getElementById('atletiSummary').textContent = '';
       body.innerHTML = '<tr><td colspan="7"><div class="empty-state"><p>Nessun atleta registrato.</p></div></td></tr>';
@@ -1279,6 +1322,16 @@
     if (!b || b.dataset.vista === _atletiVista) return;
     _atletiVista = b.dataset.vista;
     _applicaVistaAtleti();
+  });
+
+  document.getElementById('atletiMail').addEventListener('click', function (e) {
+    if (!e.target.closest('.mail-copia')) return;
+    var testo = _indirizziUnici(_righeMail()).map(function (r) { return r.email; }).join('; ');
+    if (!testo) return;
+    if (!navigator.clipboard || !navigator.clipboard.writeText) { _avviso('Il browser non permette di copiare: usa «Esporta CSV».'); return; }
+    navigator.clipboard.writeText(testo).then(
+      function () { _avviso('Indirizzi copiati negli appunti, separati da «;».', 'ok'); },
+      function () { _avviso('Copia non riuscita: usa «Esporta CSV».'); });
   });
 
   document.getElementById('atletiTaglie').addEventListener('click', function (e) {
@@ -1639,6 +1692,18 @@
     var list = _atletiFiltrati();
     var slug = _slugExport(), cat = _atletiCat && _atletiCat !== '__none__' ? _atletiCat : 'Tutte le categorie';
     if (_atletiVista === 'prezzi') return _datiExportPrezzi();
+    if (_atletiVista === 'mail') {
+      var mailRighe = _righeMail();
+      if (!mailRighe.length) { _avviso('Nessun indirizzo da esportare.'); return null; }
+      var mailHead = ['Cognome e nome', 'Email', 'Ruolo', 'Atleta', 'Categoria'];
+      var mailDati = mailRighe.map(function (r) { return [r.persona, r.email, r.ruolo, r.atleta, r.categoria]; });
+      return {
+        pdf: { tipo: 'Indirizzi mail', landscape: false, gruppi: [{ nome: 'Indirizzi mail', sub: _indirizziUnici(mailRighe).length + ' indirizzi', head: mailHead, righe: mailDati }] },
+        titolo: 'Indirizzi mail — ' + cat, base: 'mail-' + slug, sensibile: true,
+        avviso: 'Il file contiene indirizzi mail e nomi di famiglie di minori. Conservalo in un posto sicuro e cancellalo quando non serve più. Procedere?',
+        head: mailHead, righe: mailDati
+      };
+    }
     if (_atletiVista === 'taglie') {
       var vociTutte = _vociAbbigliamento();
       /* voci scelte per la categoria di ciascuna persona (le non previste restano «n/d» nel file) */
@@ -1779,7 +1844,7 @@
         setTimeout(stampa, 2000);
       }
     };
-    if (d.sensibile) confirm('Il file contiene dati personali di minori (codice fiscale, indirizzo, telefoni). Conservalo in un posto sicuro e cancellalo quando non serve più. Procedere?', run);
+    if (d.sensibile) confirm(d.avviso || 'Il file contiene dati personali di minori (codice fiscale, indirizzo, telefoni). Conservalo in un posto sicuro e cancellalo quando non serve più. Procedere?', run);
     else run();
   }
   document.getElementById('atletiExport').addEventListener('click', function () { _esporta('csv'); });
