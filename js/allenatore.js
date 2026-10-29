@@ -1,6 +1,6 @@
 /* Victor Volley — Area Allenatore
    Pagina di SOLA LETTURA. L'allenatore entra dal login dell'area dirigenti (/admin), che lo manda qui; l'elenco dei suoi atleti (cognome, nome, data di
-   nascita, telefono dei genitori) arriva da /api/allenatore-atleti, che controlla allenatori/{uid} e restituisce
+   nascita, telefono dei genitori, note per l'allenatore) arriva da /api/allenatore-atleti, che controlla allenatori/{uid} e restituisce
    soltanto quei campi, solo per le categorie assegnate. Qui non c'è nessuna scrittura. */
 (function () {
   'use strict';
@@ -51,7 +51,7 @@
         var wrap = el('div', 'co-wrap');
         tabella = el('table', 'co-table');
         var head = el('tr');
-        ['Cognome e nome', 'Data di nascita', 'Genitore e telefono'].forEach(function (t) { head.appendChild(el('th', '', t)); });
+        ['Cognome e nome', 'Data di nascita', 'Genitore e telefono', 'Note'].forEach(function (t) { head.appendChild(el('th', '', t)); });
         var thead = el('thead'); thead.appendChild(head); tabella.appendChild(thead);
         tabella.appendChild(el('tbody'));
         wrap.appendChild(tabella);
@@ -77,6 +77,7 @@
         tel.appendChild(voce);
       });
       riga.appendChild(tel);
+      riga.appendChild(a.note ? el('td', 'co-note', a.note) : el('td', 'co-none', '—'));
       tabella.querySelector('tbody').appendChild(riga);
     });
   }

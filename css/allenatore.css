@@ -12,6 +12,7 @@
 .co-name { font-weight: 600; }
 .co-phone + .co-phone { margin-top: 4px; }
 .co-who { color: var(--al-muted); }
+.co-note { white-space: pre-wrap; overflow-wrap: anywhere; }
 .co-none { color: var(--al-muted); font-style: italic; }
 .co-phone a { font-weight: 600; text-decoration: none; }
 .co-phone a:hover { text-decoration: underline; }

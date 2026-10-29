@@ -1,7 +1,7 @@
 /**
  * Regole dell'Area Allenatore, senza accesso a Firebase (così si provano da sole, vedi scripts/check-allenatore.js).
- * L'allenatore vede SOLO: cognome, nome, data di nascita e telefono del genitore degli atleti delle sue categorie.
- * Codice fiscale, indirizzo, note mediche, pagamenti e tutto il resto restano ai dirigenti.
+ * L'allenatore vede SOLO: cognome, nome, data di nascita e telefono del genitore e le note per l'allenatore degli atleti delle sue categorie.
+ * Codice fiscale, indirizzo, note riservate e mediche, pagamenti e tutto il resto restano ai dirigenti.
  */
 
 /** Le categorie dell'allenatore (testi non vuoti, senza doppioni), o null se il suo accesso non vale. */
@@ -34,7 +34,8 @@ function schedaAtleta(atleta, dati) {
     nome: testo(atleta.nome),
     categoria: testo(atleta.categoria),
     dataNascita: testo(riservati.dataNascita) || testo(atleta.dataNascita),
-    genitori: genitori(riservati)
+    genitori: genitori(riservati),
+    note: testo(riservati.noteAllenatore)
   };
 }
 

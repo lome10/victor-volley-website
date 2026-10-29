@@ -333,6 +333,9 @@
     ] },
     { titolo: 'Riservato ai dirigenti (le famiglie non lo vedono)', campi: [
       { k: 'infoMediche', l: 'Info utili in emergenza (allergie, intolleranze…)', t: 'textarea', full: true, sens: true }
+    ] },
+    { titolo: 'Per l\'allenatore (lo vede il mister nella sua tabella)', campi: [
+      { k: 'noteAllenatore', l: 'Note per l\'allenatore', t: 'textarea', full: true, sens: true }
     ] }
   ];
 

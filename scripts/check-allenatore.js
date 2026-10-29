@@ -56,7 +56,7 @@ async function t(nome, fn) { try { await fn(); n++; } catch (e) { console.error(
     dataNascita: '2012-03-04', codiceFiscale: 'VRDGLI12C44F205X', indirizzo: 'Via Roma 1', telefono: '3331112222', emailContatto: 'giulia@example.com',
     tutore1Prenome: 'Marco', tutore1Cognome: 'Verdi', tutore1Parentela: 'Padre', tutore1Telefono: '3401234567', tutore1Email: 'marco@example.com',
     tutore1CodiceFiscale: 'VRDMRC70A01F205Z', tutore2Prenome: 'Laura', tutore2Cognome: 'Rossi', tutore2Telefono: ' 3489876543 ',
-    infoMediche: 'allergia al lattice', note: 'segnalazione riservata', emergenzaTelefono: '0805550000'
+    infoMediche: 'allergia al lattice', note: 'segnalazione riservata', noteAllenatore: 'Palleggiatrice, torna dall\'infortunio', emergenzaTelefono: '0805550000'
   };
   col('atletiDati').a2 = { dataNascita: '2010-11-20', tutore1Prenome: 'Piero', tutore1Cognome: 'Bruni' };   /* nessun telefono */
   col('atletiDati').a3 = { dataNascita: '2001-01-01', tutore1Telefono: '3999999999' };
@@ -70,11 +70,12 @@ async function t(nome, fn) { try { await fn(); n++; } catch (e) { console.error(
     assert.deepStrictEqual(r.body.allenatore, { nome: 'Renato', cognome: 'Bianchi' });
     assert.strictEqual(r.headers['Cache-Control'], 'no-store');
   });
-  await t('di ogni atleta arrivano solo nome, cognome, categoria, data di nascita e telefono dei genitori', async () => {
+  await t('di ogni atleta arrivano solo nome, cognome, categoria, data di nascita, telefono dei genitori e note per l\'allenatore', async () => {
     const giulia = (await chiama('tok-ren')).body.atleti.find((a) => a.cognome === 'Verdi');
     assert.deepStrictEqual(giulia, {
       cognome: 'Verdi', nome: 'Giulia', categoria: 'Under 14 F', dataNascita: '2012-03-04',
-      genitori: [{ nome: 'Marco Verdi', parentela: 'Padre', telefono: '3401234567' }, { nome: 'Laura Rossi', parentela: '', telefono: '3489876543' }]
+      genitori: [{ nome: 'Marco Verdi', parentela: 'Padre', telefono: '3401234567' }, { nome: 'Laura Rossi', parentela: '', telefono: '3489876543' }],
+      note: 'Palleggiatrice, torna dall\'infortunio'
     });
   });
   await t('nessun dato riservato esce dalla risposta, qualunque sia il campo', async () => {
@@ -85,6 +86,7 @@ async function t(nome, fn) { try { await fn(); n++; } catch (e) { console.error(
   await t('un atleta senza telefono o senza anagrafica compare lo stesso, con la lista dei genitori vuota', async () => {
     const atleti = (await chiama('tok-ren')).body.atleti;
     assert.deepStrictEqual(atleti.find((a) => a.cognome === 'Bruni').genitori, []);
+    assert.strictEqual(atleti.find((a) => a.cognome === 'Bruni').note, '');
     const alberti = atleti.find((a) => a.cognome === 'Alberti');
     assert.deepStrictEqual([alberti.dataNascita, alberti.genitori], ['', []]);
   });
