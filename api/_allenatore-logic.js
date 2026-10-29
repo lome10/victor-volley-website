@@ -45,4 +45,57 @@ function ordina(schede) {
     a.categoria.localeCompare(b.categoria, 'it') || a.cognome.localeCompare(b.cognome, 'it') || a.nome.localeCompare(b.nome, 'it'));
 }
 
-module.exports = { categorieAllenatore, schedaAtleta, genitori, ordina };
+/* ---------- Presenze agli allenamenti ---------- */
+
+/** Quanti giorni indietro il mister può ancora correggere una presenza. */
+const GIORNI_INDIETRO = 60;
+
+/** Oggi in Italia come AAAA-MM-GG (il server gira in UTC: a mezzanotte il giorno cambia a Roma, non a Londra). */
+function oggiRoma(now) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Rome', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now || new Date());
+}
+
+const DATA = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+/** Vera solo per una data di calendario che esiste davvero (non il 31 novembre). */
+function dataValida(iso) {
+  const m = DATA.exec(iso || '');
+  if (!m) return false;
+  const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+  return d.getUTCFullYear() === +m[1] && d.getUTCMonth() === +m[2] - 1 && d.getUTCDate() === +m[3];
+}
+
+const aggiungiGiorni = (iso, n) => {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
+};
+
+/** 1 = lunedì … 7 = domenica, come il campo `giorno` della raccolta `allenamenti`. */
+const giornoSettimana = (iso) => ((new Date(iso + 'T00:00:00Z').getUTCDay() + 6) % 7) + 1;
+
+/**
+ * I giorni di allenamento di una categoria fino a oggi (dal più recente), dagli orari settimanali.
+ * `orari` = documenti di `allenamenti`; un orario con `validoFino` non conta dopo quella data.
+ */
+function giorniAllenamento(orari, categoria, oggi) {
+  const mie = (orari || []).filter((o) => o && o.categoria === categoria && +o.giorno >= 1 && +o.giorno <= 7);
+  const out = [];
+  for (let i = 0; i <= GIORNI_INDIETRO; i++) {
+    const data = aggiungiGiorni(oggi, -i);
+    const g = giornoSettimana(data);
+    mie.filter((o) => +o.giorno === g && !(o.validoFino && data > o.validoFino)).forEach((o) => {
+      out.push({ data, oraInizio: testo(o.oraInizio), oraFine: testo(o.oraFine), luogo: testo(o.luogo) });
+    });
+  }
+  return out;
+}
+
+/** Id del documento di una giornata: categoria "Under 14 F" + data → "under-14-f_2026-10-29". */
+function idGiornata(categoria, data) {
+  const slug = String(categoria).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  return slug + '_' + data;
+}
+
+const STATI_PRESENZA = ['p', 'a', ''];
+
+module.exports = { categorieAllenatore, schedaAtleta, genitori, ordina, oggiRoma, dataValida, giorniAllenamento, idGiornata, STATI_PRESENZA, GIORNI_INDIETRO };

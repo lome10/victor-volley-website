@@ -14,12 +14,17 @@ const path = require('path');
 /* ---------- Firestore e Auth finti ---------- */
 const store = {};
 const col = (n) => (store[n] = store[n] || {});
-const docRef = (n, id) => ({ id, get: async () => ({ exists: id in col(n), id, data: () => col(n)[id] }) });
+const docRef = (n, id) => ({
+  id,
+  get: async () => ({ exists: id in col(n), id, data: () => col(n)[id] }),
+  /* set con merge: i campi semplici si sovrascrivono, la mappa `segnate` si unisce (come fa Firestore) */
+  set: async (d, o) => { const prima = (o && o.merge && col(n)[id]) || {}; col(n)[id] = { ...prima, ...d, ...(d.segnate ? { segnate: { ...(prima.segnate || {}), ...d.segnate } } : {}) }; }
+});
 const firestore = {
   collection: (n) => ({
     doc: (id) => docRef(n, id),
     where: (c, op, v) => ({
-      get: async () => ({ docs: Object.keys(col(n)).filter((id) => op === 'in' && v.length <= 30 && v.includes(col(n)[id][c])).map((id) => ({ id, data: () => col(n)[id] })) })
+      get: async () => ({ docs: Object.keys(col(n)).filter((id) => (op === 'in' && v.length <= 30 && v.includes(col(n)[id][c])) || (op === '==' && col(n)[id][c] === v)).map((id) => ({ id, data: () => col(n)[id] })) })
     })
   }),
   getAll: async (...refs) => Promise.all(refs.map((r) => r.get()))
@@ -32,10 +37,13 @@ require.cache[require.resolve(path.join('..', 'api', '_firebase.js'))] = {
 };
 
 const handler = require('../api/allenatore-atleti');
+const presenze = require('../api/allenatore-presenze');
 const L = require('../api/_allenatore-logic');
 
 const res = () => { const r = { code: 200, body: null, headers: {} }; r.status = (c) => { r.code = c; return r; }; r.json = (b) => { r.body = b; return r; }; r.setHeader = (k, v) => { r.headers[k] = v; }; return r; };
 const chiama = async (tok, extra, method) => { const r = res(); await handler({ method: method || 'GET', headers: { host: 'www.victorvolley.it', ...(tok ? { authorization: 'Bearer ' + tok } : {}), ...(extra || {}) } }, r); return r; };
+
+const chiamaP = async (tok, metodo, body) => { const r = res(); await presenze({ method: metodo, body, headers: { host: 'www.victorvolley.it', ...(tok ? { authorization: 'Bearer ' + tok } : {}) } }, r); return r; };
 
 let n = 0;
 async function t(nome, fn) { try { await fn(); n++; } catch (e) { console.error('FALLITO: ' + nome + '\n  ' + (e.stack || e.message).split('\n').slice(0, 4).join('\n  ')); process.exitCode = 1; } }
@@ -117,6 +125,76 @@ async function t(nome, fn) { try { await fn(); n++; } catch (e) { console.error(
     assert.deepStrictEqual(L.categorieAllenatore({ categorie: [' A ', 'A', '', 5, 'B'] }), ['A', 'B']);
     assert.strictEqual(L.categorieAllenatore(null), null);
     assert.strictEqual(L.schedaAtleta({ nome: 'X', cognome: 'Y', categoria: 'C', dataNascita: '2011-01-01' }, {}).dataNascita, '2011-01-01');
+  });
+  /* ---------- presenze agli allenamenti ---------- */
+  const OGGI = L.oggiRoma();
+  const weekdayOggi = ((new Date(OGGI + 'T00:00:00Z').getUTCDay() + 6) % 7) + 1;
+  const domani = ((weekdayOggi) % 7) + 1;
+  col('allenamenti').t1 = { categoria: 'Under 14 F', giorno: weekdayOggi, oraInizio: '17:30', oraFine: '19:00', luogo: 'Palestra' };
+  col('allenamenti').t2 = { categoria: 'Under 14 F', giorno: domani, oraInizio: '18:00', validoFino: '2000-01-01' };   /* scaduto */
+  col('allenamenti').t3 = { categoria: 'Serie D', giorno: weekdayOggi, oraInizio: '20:00' };                          /* non sua */
+
+  await t('presenze: il mister vede i giorni di allenamento fino a oggi (oggi compreso), gli atleti e nient\'altro', async () => {
+    const r = await chiamaP('tok-ren', 'GET');
+    assert.strictEqual(r.code, 200);
+    assert.strictEqual(r.body.oggi, OGGI);
+    const u14 = r.body.categorie.find((c) => c.categoria === 'Under 14 F');
+    assert.strictEqual(u14.giorni[0].data, OGGI, 'oggi è il primo');
+    assert.ok(u14.giorni.every((g) => ((new Date(g.data + 'T00:00:00Z').getUTCDay() + 6) % 7) + 1 === weekdayOggi), 'solo il giorno della settimana giusto');
+    assert.ok(u14.giorni.length >= 8, 'circa 60 giorni indietro: 8-9 settimane');
+    assert.deepStrictEqual(u14.atleti.map((a) => a.cognome), ['Alberti', 'Verdi']);
+    assert.deepStrictEqual(Object.keys(u14.atleti[0]).sort(), ['cognome', 'id', 'nome']);
+    assert.ok(!r.body.categorie.some((c) => c.categoria === 'Serie D'), 'le categorie di altri non compaiono');
+    assert.ok(!JSON.stringify(r.body).includes('VRDGLI12C44F205X'), 'nessun dato riservato');
+  });
+  await t('presenze: segna presente, poi assente, poi toglie; la tabella lo ricorda', async () => {
+    const dati = { categoria: 'Under 14 F', data: OGGI, atletaId: 'a1' };
+    assert.strictEqual((await chiamaP('tok-ren', 'POST', { ...dati, stato: 'p' })).code, 200);
+    assert.strictEqual((await chiamaP('tok-ren', 'POST', { ...dati, atletaId: 'a4', stato: 'a' })).code, 200);
+    let u14 = (await chiamaP('tok-ren', 'GET')).body.categorie.find((c) => c.categoria === 'Under 14 F');
+    assert.deepStrictEqual(u14.presenze[OGGI], { a1: 'p', a4: 'a' });
+    assert.strictEqual((await chiamaP('tok-ren', 'POST', { ...dati, stato: '' })).code, 200);
+    u14 = (await chiamaP('tok-ren', 'GET')).body.categorie.find((c) => c.categoria === 'Under 14 F');
+    assert.deepStrictEqual(u14.presenze[OGGI], { a1: '', a4: 'a' }, 'segnare uno non cancella gli altri');
+    assert.strictEqual(col('presenzeAllenamento')['under-14-f_' + OGGI].aggiornatoDa, 'ren');
+  });
+  await t('presenze: rifiuta categoria non sua, atleta di un\'altra categoria, giorni senza allenamento, futuro, date e stati strani', async () => {
+    const ok = { categoria: 'Under 14 F', data: OGGI, atletaId: 'a1', stato: 'p' };
+    const prova = async (cambio, codice, perche) => assert.strictEqual((await chiamaP('tok-ren', 'POST', { ...ok, ...cambio })).code, codice, perche);
+    await prova({ categoria: 'Serie D', atletaId: 'a3' }, 403, 'categoria di un altro mister');
+    await prova({ atletaId: 'a3' }, 403, 'atleta di Serie D in Under 14');
+    await prova({ atletaId: 'inesistente' }, 403, 'atleta che non esiste');
+    await prova({ data: L.dataValida('2026-02-30') ? OGGI : '2026-02-30' }, 400, 'data che non esiste');
+    await prova({ data: '29/10/2026' }, 400, 'formato sbagliato');
+    const futuro = new Date(OGGI + 'T00:00:00Z'); futuro.setUTCDate(futuro.getUTCDate() + 7);
+    await prova({ data: futuro.toISOString().slice(0, 10) }, 400, 'stesso giorno della settimana ma nel futuro');
+    const ieri = new Date(OGGI + 'T00:00:00Z'); ieri.setUTCDate(ieri.getUTCDate() - 1);
+    await prova({ data: ieri.toISOString().slice(0, 10) }, 400, 'giorno in cui non si allena');
+    const vecchio = new Date(OGGI + 'T00:00:00Z'); vecchio.setUTCDate(vecchio.getUTCDate() - 7 * 12);
+    await prova({ data: vecchio.toISOString().slice(0, 10) }, 400, 'oltre i 60 giorni');
+    await prova({ stato: 'x' }, 400, 'stato non ammesso');
+    await prova({ atletaId: 'a1/../x' }, 400, 'id con barra');
+  });
+  await t('presenze: solo mister attivi, solo dallo stesso sito, solo GET e POST', async () => {
+    assert.strictEqual((await chiamaP(null, 'GET')).code, 401);
+    assert.strictEqual((await chiamaP('falso', 'GET')).code, 401);
+    assert.strictEqual((await chiamaP('tok-dir', 'GET')).code, 403, 'un dirigente usa il pannello');
+    assert.strictEqual((await chiamaP('tok-gen', 'POST', { categoria: 'Under 14 F', data: OGGI, atletaId: 'a1', stato: 'p' })).code, 403, 'un genitore non può segnare');
+    assert.strictEqual((await chiamaP('tok-off', 'GET')).code, 403);
+    assert.strictEqual((await chiamaP('tok-ren', 'DELETE')).code, 405);
+  });
+  await t('presenze: la logica dei giorni e le regole di Firestore (solo i dirigenti leggono, nessuno scrive dal browser)', () => {
+    assert.strictEqual(L.dataValida('2026-10-29'), true);
+    assert.strictEqual(L.dataValida('2026-11-31'), false);
+    assert.strictEqual(L.idGiornata('Under 14 F', '2026-10-29'), 'under-14-f_2026-10-29');
+    assert.strictEqual(L.idGiornata('Minivolley S3', '2026-10-29'), 'minivolley-s3_2026-10-29');
+    /* giovedì 29/10/2026: la squadra che si allena il giovedì (giorno 4) lo ha tra i giorni */
+    assert.strictEqual(L.giorniAllenamento([{ categoria: 'S3', giorno: 4, oraInizio: '17:00' }], 'S3', '2026-10-29')[0].data, '2026-10-29');
+    assert.strictEqual(L.giorniAllenamento([{ categoria: 'S3', giorno: 4, validoFino: '2026-10-22' }], 'S3', '2026-10-29')[0].data, '2026-10-22');
+    const rules = fs.readFileSync(path.join(__dirname, '..', 'firestore.rules'), 'utf8');
+    const m = /match \/presenzeAllenamento\/\{docId\}\s*\{([\s\S]*?)\n\s*\}/.exec(rules);
+    assert.ok(m, 'manca la regola');
+    assert.ok(/allow read: if isDirigente\(\)/.test(m[1]) && /allow write: if false/.test(m[1]));
   });
   await t('le regole di Firestore: ognuno legge solo il proprio profilo, scrivono solo i dirigenti', () => {
     const rules = fs.readFileSync(path.join(__dirname, '..', 'firestore.rules'), 'utf8');

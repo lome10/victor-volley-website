@@ -119,6 +119,13 @@ service cloud.firestore {
       allow write: if isDirigente();
     }
 
+    // Presenze agli allenamenti segnate dal mister: le scrive solo la funzione del server
+    // (api/allenatore-presenze), i dirigenti le possono leggere.
+    match /presenzeAllenamento/{docId} {
+      allow read: if isDirigente();
+      allow write: if false;
+    }
+
     // Area Dirigenti — dati di budget/CRM: solo dirigenti/admin, mai pubblico.
     match /budgetSeasons/{document=**}    { allow read, write: if isDirigente(); }
     match /aziende/{document=**}          { allow read, write: if isDirigente(); }

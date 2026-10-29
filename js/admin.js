@@ -93,7 +93,7 @@
     'pianoEditoriale', 'promemoria', 'rateAtleti', 'sottospese',
     'sponsorizzazioni', 'tranchePagamento', 'vociSpesa', 'tessere', 'supercoppaBari', 'altreEntrate', 'settings', 'siteData',
     'accessi', 'allenamenti', 'atletiDati', 'comunicazioni', 'presenze',
-    'ricevute', 'contatoriRicevute', 'firme', 'notifiche', 'promemoriaInviati'
+    'ricevute', 'contatoriRicevute', 'firme', 'notifiche', 'promemoriaInviati', 'presenzeAllenamento'
   ];
 
   document.getElementById('btnExportBackup').addEventListener('click', function () {

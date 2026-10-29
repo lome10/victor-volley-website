@@ -12,6 +12,20 @@
 .co-name { font-weight: 600; }
 .co-phone + .co-phone { margin-top: 4px; }
 .co-who { color: var(--al-muted); }
+.co-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+.co-tab { flex: 1; min-height: 44px; border: 1px solid var(--al-border); background: var(--al-card); border-radius: var(--al-radius); font: inherit; font-weight: 600; cursor: pointer; color: inherit; }
+.co-tab.is-active { background: var(--al-text, #111); color: #fff; border-color: transparent; }
+.pr-table { border-collapse: collapse; width: max-content; min-width: 100%; }
+.pr-table th, .pr-table td { padding: 6px 8px; border-bottom: 1px solid var(--al-border); text-align: center; white-space: nowrap; }
+.pr-table th { font-size: 11px; color: var(--al-muted); font-weight: 600; }
+.pr-table th.pr-today { color: inherit; font-weight: 800; }
+.pr-table .pr-name { text-align: left; position: sticky; left: 0; background: var(--al-card); font-weight: 600; min-width: 130px; z-index: 1; }
+.pr-cell { width: 44px; height: 44px; border-radius: 10px; border: 1px solid var(--al-border); background: transparent; font: inherit; font-weight: 800; cursor: pointer; color: inherit; }
+.pr-cell[data-s="p"] { background: #16a34a; border-color: #16a34a; color: #fff; }
+.pr-cell[data-s="a"] { background: #dc2626; border-color: #dc2626; color: #fff; }
+.pr-cell[disabled] { opacity: .5; }
+.pr-sum { font-size: 12px; color: var(--al-muted); }
+.pr-hour { display: block; font-weight: 400; }
 .co-note { white-space: pre-wrap; overflow-wrap: anywhere; }
 .co-none { color: var(--al-muted); font-style: italic; }
 .co-phone a { font-weight: 600; text-decoration: none; }

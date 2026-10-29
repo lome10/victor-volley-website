@@ -83,6 +83,7 @@
   }
 
   function carica(user) {
+    _user = user;
     show('deniedScreen', false);
     show('dashboard', true);
     $('coachMsg').textContent = 'Caricamento…';
@@ -100,6 +101,143 @@
       $('coachMsg').textContent = 'Non riesco a caricare l\'elenco. Controlla la connessione e riprova.';
     });
   }
+
+
+  /* ---------------- presenze agli allenamenti ----------------
+     Una tabella per categoria: righe = atleti, colonne = i giorni di allenamento (dagli orari in "allenamenti"),
+     il più recente per primo. Ogni tocco su una casella la fa passare da vuota a presente (P), assente (A), vuota;
+     il salvataggio passa da /api/allenatore-presenze, che ricontrolla tutto sul server. */
+  var NEXT = { '': 'p', p: 'a', a: '' };
+  var _user = null, _pres = null, _presLoaded = false;
+
+  function apiPresenze(metodo, corpo) {
+    return _user.getIdToken().then(function (token) {
+      var opts = { method: metodo, cache: 'no-store', headers: { Authorization: 'Bearer ' + token } };
+      if (corpo) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(corpo); }
+      return fetch('/api/allenatore-presenze', opts);
+    });
+  }
+
+  function giornoCorto(iso) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+    var nomi = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'];
+    return nomi[new Date(+m[1], +m[2] - 1, +m[3]).getDay()] + ' ' + (+m[3]) + '/' + (+m[2]);
+  }
+
+  function cella(cat, giorno, atleta, bottone) {
+    var stato = (cat.presenze[giorno.data] || {})[atleta.id] || '';
+    bottone.dataset.s = stato;
+    bottone.textContent = stato === 'p' ? 'P' : stato === 'a' ? 'A' : '';
+    bottone.setAttribute('aria-label', (atleta.cognome + ' ' + atleta.nome + ', ' + giornoCorto(giorno.data) + ': ' +
+      (stato === 'p' ? 'presente' : stato === 'a' ? 'assente' : 'non segnato')).trim());
+  }
+
+  function riepilogo(cat) {
+    cat.atleti.forEach(function (a) {
+      var tot = cat.giorni.length, p = 0;
+      cat.giorni.forEach(function (g) { if (((cat.presenze[g.data] || {})[a.id]) === 'p') p++; });
+      a._sum = p + '/' + tot;
+    });
+  }
+
+  function disegnaPresenze() {
+    var lista = $('presList');
+    lista.textContent = '';
+    _pres.categorie.forEach(function (cat) {
+      lista.appendChild(el('h2', 'co-cat', cat.categoria));
+      if (!cat.giorni.length) { lista.appendChild(el('p', 'co-none', 'Per questa squadra non ci sono allenamenti in calendario.')); return; }
+      if (!cat.atleti.length) { lista.appendChild(el('p', 'co-none', 'Non ci sono ancora atleti in questa squadra.')); return; }
+      riepilogo(cat);
+      var wrap = el('div', 'co-wrap');
+      var tab = el('table', 'pr-table');
+      var head = el('tr');
+      head.appendChild(el('th', 'pr-name', 'Atleta'));
+      cat.giorni.forEach(function (g) {
+        var th = el('th', g.data === _pres.oggi ? 'pr-today' : '', (g.data === _pres.oggi ? 'oggi ' : '') + giornoCorto(g.data));
+        if (g.oraInizio) th.appendChild(el('span', 'pr-hour', g.oraInizio));
+        head.appendChild(th);
+      });
+      head.appendChild(el('th', '', 'Presenze'));
+      var thead = el('thead'); thead.appendChild(head); tab.appendChild(thead);
+      var tbody = el('tbody');
+      cat.atleti.forEach(function (a) {
+        var tr = el('tr');
+        tr.appendChild(el('td', 'pr-name', (a.cognome + ' ' + a.nome).trim()));
+        cat.giorni.forEach(function (g) {
+          var td = el('td');
+          var b = el('button', 'pr-cell');
+          b.type = 'button';
+          cella(cat, g, a, b);
+          b.addEventListener('click', function () { tocca(cat, g, a, b); });
+          td.appendChild(b);
+          tr.appendChild(td);
+        });
+        var sum = el('td', 'pr-sum', a._sum);
+        sum.dataset.sum = a.id;
+        tr.appendChild(sum);
+        tbody.appendChild(tr);
+      });
+      tab.appendChild(tbody);
+      wrap.appendChild(tab);
+      lista.appendChild(wrap);
+    });
+  }
+
+  /* Cambia subito la casella e salva; se il salvataggio fallisce, la rimette com'era e lo dice. */
+  function tocca(cat, giorno, atleta, bottone) {
+    var segnate = cat.presenze[giorno.data] = cat.presenze[giorno.data] || {};
+    var prima = segnate[atleta.id] || '';
+    var dopo = NEXT[prima];
+    segnate[atleta.id] = dopo;
+    cella(cat, giorno, atleta, bottone);
+    bottone.disabled = true;
+    $('presMsg').textContent = '';
+    apiPresenze('POST', { categoria: cat.categoria, data: giorno.data, atletaId: atleta.id, stato: dopo }).then(function (r) {
+      if (r.status === 401) { auth.signOut().then(function () { location.reload(); }); return; }
+      if (!r.ok) throw new Error('http ' + r.status);
+      var somma = document.querySelector('[data-sum="' + atleta.id + '"]');
+      riepilogo(cat);
+      if (somma) somma.textContent = atleta._sum;
+    }).catch(function (e) {
+      console.error('[allenatore] presenza', e);
+      segnate[atleta.id] = prima;
+      cella(cat, giorno, atleta, bottone);
+      $('presMsg').textContent = 'Non sono riuscito a salvare: riprova.';
+    }).then(function () { bottone.disabled = false; });
+  }
+
+  function caricaPresenze() {
+    $('presMsg').textContent = 'Caricamento…';
+    apiPresenze('GET').then(function (r) {
+      if (r.status === 401) { auth.signOut().then(function () { location.reload(); }); return null; }
+      if (!r.ok) throw new Error('http ' + r.status);
+      return r.json();
+    }).then(function (dati) {
+      if (!dati) return;
+      _pres = dati; _presLoaded = true;
+      $('presMsg').textContent = '';
+      disegnaPresenze();
+    }).catch(function (e) {
+      console.error('[allenatore] presenze', e);
+      $('presMsg').textContent = 'Non riesco a caricare le presenze. Controlla la connessione e riprova.';
+    });
+  }
+
+  function mostra(vista) {
+    var pres = vista === 'presenze';
+    show('viewAtleti', !pres);
+    show('viewPresenze', pres);
+    $('tabAtleti').classList.toggle('is-active', !pres);
+    $('tabPresenze').classList.toggle('is-active', pres);
+    $('tabAtleti').setAttribute('aria-pressed', String(!pres));
+    $('tabPresenze').setAttribute('aria-pressed', String(pres));
+    if (pres && !_presLoaded) caricaPresenze();
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    $('tabAtleti').addEventListener('click', function () { mostra('atleti'); });
+    $('tabPresenze').addEventListener('click', function () { mostra('presenze'); });
+  });
 
   document.addEventListener('DOMContentLoaded', function () {
     auth.onAuthStateChanged(function (user) {
