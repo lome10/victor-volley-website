@@ -111,6 +111,14 @@ service cloud.firestore {
       allow write: if isDirigente();
     }
 
+    // Allenatori — un documento per account (id = uid) con le categorie che allena. Ognuno legge solo il proprio;
+    // i dirigenti li gestiscono. NON dà accesso alle schede degli atleti: l'elenco con nome, data di nascita e
+    // telefono dei genitori lo serve api/allenatore-atleti.js, che controlla questo documento.
+    match /allenatori/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isDirigente());
+      allow write: if isDirigente();
+    }
+
     // Area Dirigenti — dati di budget/CRM: solo dirigenti/admin, mai pubblico.
     match /budgetSeasons/{document=**}    { allow read, write: if isDirigente(); }
     match /aziende/{document=**}          { allow read, write: if isDirigente(); }

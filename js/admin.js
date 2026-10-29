@@ -82,7 +82,7 @@
   var BACKUP_COLLECTIONS = [
     'articles', 'partite', 'albums', 'categories', 'players', 'staff',
     'atleti', 'atletiRette', 'attivita', 'auditLog', 'aziende', 'bacheca',
-    'budgetSeasons', 'categorieAtleti', 'categorieSpesa', 'dirigenti',
+    'budgetSeasons', 'categorieAtleti', 'categorieSpesa', 'dirigenti', 'allenatori',
     'pianoEditoriale', 'promemoria', 'rateAtleti', 'sottospese',
     'sponsorizzazioni', 'tranchePagamento', 'vociSpesa', 'tessere', 'supercoppaBari', 'altreEntrate', 'settings', 'siteData',
     'accessi', 'allenamenti', 'atletiDati', 'comunicazioni', 'presenze',
@@ -208,7 +208,7 @@
   var SECTIONS = {
     dashboard: 'Dashboard', articoli: 'Articoli', calendario: 'Calendario', allenamenti: 'Allenamenti', presenze: 'Presenze', comunicazioni: 'Avvisi', pianoEditoriale: 'Piano Editoriale',
     bacheca: 'Bacheca', galleria: 'Galleria', squadre: 'Squadre',
-    sponsor: 'Sponsor', atleti: 'Atleti', dirigenti: 'Dirigenti', datiJson: 'File JSON',
+    sponsor: 'Sponsor', atleti: 'Atleti', dirigenti: 'Dirigenti', allenatori: 'Allenatori', datiJson: 'File JSON',
     log: 'Log', budget: 'Budget & Forecast', ricevute: 'Ricevute'
   };
 
@@ -302,6 +302,7 @@
     if (section === 'sponsor')    Admin.cms.renderSponsor();
     if (section === 'atleti')     Admin.atleti.render();
     if (section === 'dirigenti')  renderDirigenti();
+    if (section === 'allenatori') Admin.allenatori.render();
     if (section === 'datiJson')   renderDatiJson();
     if (section === 'log')        Admin.budget.renderLog();
     if (section === 'budget')     Admin.budget.renderActiveTab();

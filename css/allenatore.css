@@ -1,0 +1,27 @@
+/* Victor Volley — Area Allenatore (elenco atleti, sola lettura). Usa le variabili e i componenti di atleta.css. */
+.co-main { max-width: 960px; margin: 0 auto; padding: 24px 16px 64px; }
+.co-title { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+.co-sub { color: var(--al-muted); font-size: 13px; margin-bottom: 4px; }
+.co-msg { color: var(--al-muted); font-size: 13px; margin-bottom: 16px; min-height: 18px; }
+.co-cat { font-size: 16px; font-weight: 700; margin: 24px 0 8px; }
+.co-wrap { background: var(--al-card); border: 1px solid var(--al-border); border-radius: var(--al-radius); box-shadow: var(--al-shadow); overflow-x: auto; }
+.co-table { width: 100%; border-collapse: collapse; min-width: 560px; }
+.co-table th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--al-muted); padding: 10px 14px; border-bottom: 1px solid var(--al-border); }
+.co-table td { padding: 11px 14px; border-bottom: 1px solid var(--al-border); vertical-align: top; }
+.co-table tr:last-child td { border-bottom: 0; }
+.co-name { font-weight: 600; }
+.co-phone + .co-phone { margin-top: 4px; }
+.co-who { color: var(--al-muted); }
+.co-none { color: var(--al-muted); font-style: italic; }
+.co-phone a { font-weight: 600; text-decoration: none; }
+.co-phone a:hover { text-decoration: underline; }
+
+/* Telefono: la tabella diventa una scheda per atleta, senza scorrimento laterale */
+@media (max-width: 640px) {
+  .co-table { min-width: 0; }
+  .co-table thead { display: none; }
+  .co-table, .co-table tbody, .co-table tr, .co-table td { display: block; width: 100%; }
+  .co-table tr { padding: 10px 14px; border-bottom: 1px solid var(--al-border); }
+  .co-table tr:last-child { border-bottom: 0; }
+  .co-table td { border: 0; padding: 2px 0; }
+}

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/assets/logo.png">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <meta name="theme-color" content="#020d1a">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Area Allenatore — Victor Volley</title>
+  <meta name="description" content="Area riservata agli allenatori della Victor Volley: elenco degli atleti della propria squadra.">
+  <link rel="preload" href="/assets/fonts/barlow-700-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/manrope-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/css/fonts.css?v=c0ba2518">
+  <link rel="stylesheet" href="css/atleta.css?v=a3a1f15c">
+  <link rel="stylesheet" href="css/allenatore.css?v=bb8c5878">
+</head>
+<body>
+
+  <!-- LOGIN -->
+  <div id="loginScreen" class="al-login-screen">
+    <div class="al-login-box">
+      <img src="assets/logo.png" alt="Victor Volley" class="al-login-logo">
+      <h1 class="al-login-title">Area Allenatore</h1>
+      <p class="al-login-sub">Victor Volley</p>
+      <form id="loginForm" autocomplete="off">
+        <input type="email" id="emailInput" class="al-login-input" placeholder="Email" required autocomplete="username">
+        <input type="password" id="passwordInput" class="al-login-input" placeholder="Password" required autocomplete="current-password">
+        <button type="submit" class="al-btn-primary">Accedi</button>
+        <p id="loginError" class="al-login-error" role="alert"></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- ELENCO ATLETI (sola lettura) -->
+  <div id="dashboard" class="al-dashboard is-hidden">
+    <header class="al-header">
+      <div class="al-header-inner">
+        <div class="al-header-logo">
+          <a href="/"><img src="assets/logo.png" alt="Victor Volley"></a>
+          <span>Area Allenatore</span>
+        </div>
+        <div class="al-header-right">
+          <span id="coachName" class="al-header-nome"></span>
+          <button id="logoutBtn" class="al-btn-logout" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Esci
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="co-main">
+      <h1 class="co-title">Atleti</h1>
+      <p id="coachCats" class="co-sub"></p>
+      <p id="coachMsg" class="co-msg" role="status"></p>
+      <div id="coachList"></div>
+    </main>
+  </div>
+
+  <div id="deniedScreen" class="al-login-screen is-hidden">
+    <div class="al-login-box">
+      <img src="assets/logo.png" alt="Victor Volley" class="al-login-logo">
+      <h1 class="al-login-title">Accesso non abilitato</h1>
+      <p class="al-login-sub">Questo account non è abilitato come allenatore.<br>Chiedi alla segreteria di attivarlo.</p>
+      <button id="deniedLogoutBtn" class="al-btn-primary" type="button">Esci</button>
+    </div>
+  </div>
+
+  <script src="js/vendor/firebase-app-compat.js"></script>
+  <script src="js/vendor/firebase-firestore-compat.js"></script>
+  <script src="js/vendor/firebase-auth-compat.js"></script>
+  <script src="js/firebase-config.js?v=6b9dd403"></script>
+  <script src="js/allenatore.js?v=b330f959"></script>
+  <script defer src="/_vercel/insights/script.js"></script>
+</body>
+</html>
