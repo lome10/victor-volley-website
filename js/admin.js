@@ -33,7 +33,14 @@
      "dirigenti" — non basta più un login Firebase qualsiasi. */
   function _checkRole(user) {
     db.collection('dirigenti').doc(user.uid).get().then(function (doc) {
-      if (!doc.exists) { _showDenied(); return; }
+      if (!doc.exists) {
+        /* Non è un dirigente: se è un allenatore va alla sua pagina di sola lettura, con lo stesso login. */
+        db.collection('allenatori').doc(user.uid).get().then(function (coach) {
+          if (coach.exists) location.replace('/allenatore');
+          else _showDenied();
+        }).catch(function () { _showDenied(); });
+        return;
+      }
       var data = doc.data();
       _uid = user.uid;
       _dirigenteNome = ((data.nome || '') + ' ' + (data.cognome || '')).trim() || data.email || user.email;

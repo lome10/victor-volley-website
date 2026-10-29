@@ -1,5 +1,5 @@
 /* Victor Volley — Area Allenatore
-   Pagina di SOLA LETTURA. L'allenatore accede con email e password; l'elenco dei suoi atleti (cognome, nome, data di
+   Pagina di SOLA LETTURA. L'allenatore entra dal login dell'area dirigenti (/admin), che lo manda qui; l'elenco dei suoi atleti (cognome, nome, data di
    nascita, telefono dei genitori) arriva da /api/allenatore-atleti, che controlla allenatori/{uid} e restituisce
    soltanto quei campi, solo per le categorie assegnate. Qui non c'è nessuna scrittura. */
 (function () {
@@ -82,7 +82,6 @@
   }
 
   function carica(user) {
-    show('loginScreen', false);
     show('deniedScreen', false);
     show('dashboard', true);
     $('coachMsg').textContent = 'Caricamento…';
@@ -104,16 +103,7 @@
   document.addEventListener('DOMContentLoaded', function () {
     auth.onAuthStateChanged(function (user) {
       if (user) carica(user);
-      else { show('dashboard', false); show('deniedScreen', false); show('loginScreen', true); }
-    });
-
-    $('loginForm').addEventListener('submit', function (e) {
-      e.preventDefault();
-      var errEl = $('loginError');
-      errEl.textContent = '';
-      auth.signInWithEmailAndPassword($('emailInput').value.trim(), $('passwordInput').value).catch(function () {
-        errEl.textContent = 'Email o password non corretti.';
-      });
+      else location.replace('/admin'); /* il login è quello dell'area dirigenti */
     });
 
     function esci() { auth.signOut().then(function () { location.reload(); }); }
