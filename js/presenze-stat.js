@@ -7,15 +7,15 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  /* Sotto questa percentuale (con almeno MIN_SEGNATE allenamenti segnati) l'atleta è «da richiamare». */
-  var SOGLIA_RICHIAMO = 65;
-  var MIN_SEGNATE = 3;
+  /* Soglie dei colori del numero (solo grafica, nessun giudizio). */
+  var SOGLIA_VERDE = 80;
+  var SOGLIA_AMBRA = 65;
   var ULTIMI = 8;
 
   /**
    * giorni = date AAAA-MM-GG di allenamento già avvenuti (anche doppie o in disordine);
    * stati = { data: 'p' | 'a' } per quell'atleta (qualsiasi altro valore = non segnato).
-   * Restituisce { si, no, segnate, nr, pct, ultimi, assenzeDiFila, richiamo }: `ultimi` = fino a 8 stati dal più vecchio
+   * Restituisce { si, no, segnate, nr, pct, ultimi, assenzeDiFila }: `ultimi` = fino a 8 stati dal più vecchio
    * al più recente ('p' | 'a' | ''), `assenzeDiFila` = assenze consecutive più recenti (i giorni non segnati si saltano).
    */
   function calcola(giorni, stati) {
@@ -34,15 +34,14 @@
     var pct = segnate ? Math.round(si / segnate * 100) : null;
     return {
       si: si, no: no, segnate: segnate, nr: date.length - segnate, pct: pct,
-      ultimi: ultimi.reverse(), assenzeDiFila: assenzeDiFila,
-      richiamo: pct !== null && segnate >= MIN_SEGNATE && pct < SOGLIA_RICHIAMO
+      ultimi: ultimi.reverse(), assenzeDiFila: assenzeDiFila
     };
   }
 
   /** Colore del numero: verde dall'80%, ambra dal 65%, rosso sotto, grigio se non c'è niente di segnato. */
   function colore(pct) {
     if (pct === null || pct === undefined) return '#64748B';
-    return pct >= 80 ? '#16A34A' : pct >= SOGLIA_RICHIAMO ? '#B45309' : '#DC2626';
+    return pct >= SOGLIA_VERDE ? '#16A34A' : pct >= SOGLIA_AMBRA ? '#B45309' : '#DC2626';
   }
 
   /** Media delle percentuali (solo di chi ha qualcosa di segnato), o null. */
@@ -57,5 +56,5 @@
     return (m >= 9 ? y : y - 1) + '-09-01';
   }
 
-  return { calcola: calcola, colore: colore, media: media, inizioStagione: inizioStagione, SOGLIA_RICHIAMO: SOGLIA_RICHIAMO, MIN_SEGNATE: MIN_SEGNATE, ULTIMI: ULTIMI };
+  return { calcola: calcola, colore: colore, media: media, inizioStagione: inizioStagione, ULTIMI: ULTIMI };
 });

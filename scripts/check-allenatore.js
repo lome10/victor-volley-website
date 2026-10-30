@@ -255,7 +255,7 @@ async function t(nome, fn) { try { await fn(); n++; } catch (e) { console.error(
     assert.ok(!/allenatori/.test(rules.replace(/match \/allenatori\/\{uid\}[\s\S]*?\n\s*\}/, '')), 'le altre regole non devono nominare gli allenatori');
   });
 
-  await t('statistiche di presenza: contano solo i giorni segnati, assenze di fila, da richiamare, colori', () => {
+  await t('statistiche di presenza: contano solo i giorni segnati, assenze di fila, colori', () => {
     const S = require('../js/presenze-stat.js');
     /* 9 date con una doppia = 8 giorni; 3 presente, 3 assente, 2 non segnati */
     const giorni = ['2026-10-05', '2026-10-07', '2026-10-12', '2026-10-14', '2026-10-19', '2026-10-21', '2026-10-26', '2026-10-28', '2026-10-28'];
@@ -263,14 +263,10 @@ async function t(nome, fn) { try { await fn(); n++; } catch (e) { console.error(
     const r = S.calcola(giorni, stati);
     assert.deepStrictEqual([r.si, r.no, r.segnate, r.nr, r.pct], [3, 3, 6, 2, 50], 'i non segnati non abbassano la percentuale');
     assert.strictEqual(r.assenzeDiFila, 3, 'le ultime tre segnate sono assenze (il 21/10 non segnato si salta)');
-    assert.strictEqual(r.richiamo, true);
     assert.deepStrictEqual(r.ultimi, ['p', 'p', 'p', '', 'a', '', 'a', 'a'], 'dal più vecchio al più recente');
-    /* con meno di 3 segnati non si richiama nessuno */
-    assert.strictEqual(S.calcola(['2026-10-05', '2026-10-07'], { '2026-10-05': 'a', '2026-10-07': 'a' }).richiamo, false);
     /* niente di segnato: percentuale assente, non 0 */
     const vuoto = S.calcola(['2026-10-05'], {});
     assert.strictEqual(vuoto.pct, null);
-    assert.strictEqual(vuoto.richiamo, false);
     assert.strictEqual(S.calcola([], {}).pct, null);
     /* una presenza interrompe la serie di assenze */
     assert.strictEqual(S.calcola(['2026-10-05', '2026-10-07', '2026-10-12'], { '2026-10-05': 'a', '2026-10-07': 'p', '2026-10-12': 'a' }).assenzeDiFila, 1);

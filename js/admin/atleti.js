@@ -2946,14 +2946,13 @@
     }
     if (_ps.errore) { _ps.errore = false; _ps.orari = null; box.innerHTML = '<p class="pres-empty" style="color:var(--a-red)">Errore nel caricamento delle presenze.</p>'; return; }
     var righe = _psRighe();
-    var richiamo = righe.filter(function (r) { return r.s.richiamo; }).length;
     var media = PresenzeStat.media(righe.map(function (r) { return r.s; }));
     document.getElementById('atletiSummary').textContent = righe.length + (righe.length === 1 ? ' atleta' : ' atleti') +
-      (media === null ? '' : ' · presenza media ' + media + '%') + (richiamo ? ' · ' + richiamo + (richiamo === 1 ? ' da richiamare' : ' da richiamare') : '');
+      (media === null ? '' : ' · presenza media ' + media + '%');
     var per = '<div class="ps-periodo" role="group" aria-label="Periodo">' +
       [['30', 'Ultimi 30 giorni'], ['stagione', 'Stagione']].map(function (p) {
         return '<button type="button" class="atleti-pill' + (_ps.periodo === p[0] ? ' is-active' : '') + '" data-periodo="' + p[0] + '" aria-pressed="' + (_ps.periodo === p[0]) + '">' + p[1] + '</button>';
-      }).join('') + '<span class="taglie-escl-hint">Contano solo gli allenamenti già segnati. «Da richiamare»: sotto il ' + PresenzeStat.SOGLIA_RICHIAMO + '%.</span></div>';
+      }).join('') + '<span class="taglie-escl-hint">Contano solo gli allenamenti già segnati.</span></div>';
     if (!righe.length) { box.innerHTML = per + '<div class="empty-state"><p>Nessun atleta con categoria tra quelli mostrati.</p></div>'; return; }
     var gruppi = _categorieElenco().filter(function (c) { return righe.some(function (r) { return r.a.categoria === c; }); });
     box.innerHTML = per + gruppi.map(function (c) {
@@ -2962,7 +2961,7 @@
       return '<h3 class="pres-h">' + esc(c) + '</h3><div class="admin-table-wrap"><table class="admin-table tab-scroll"><thead><tr><th>Atleta</th><th>Presenza</th><th>Ultimi allenamenti</th><th>Assenze</th></tr></thead><tbody>' +
         membri.map(function (r) {
           return '<tr class="ps-riga" data-uid="' + esc(r.a.uid) + '" tabindex="0" role="button"><td><strong>' + esc(((r.a.cognome || '') + ' ' + (r.a.nome || '')).trim()) + '</strong>' +
-            (r.s.richiamo ? ' <span class="chip chip--amber">Da richiamare</span>' : '') + '</td><td><span class="ps-cella">' + _psPct(r.s) + '</span></td><td>' +
+            '</td><td><span class="ps-cella">' + _psPct(r.s) + '</span></td><td>' +
             (r.s.segnate ? _psPuntini(r.s.ultimi) : '—') + '</td><td>' + (r.s.segnate ? r.s.no + ' su ' + r.s.segnate : '—') +
             (r.s.assenzeDiFila >= 2 ? ' <span class="ps-fila">(' + r.s.assenzeDiFila + ' di fila)</span>' : '') + '</td></tr>';
         }).join('') + '</tbody></table></div>';
@@ -3015,7 +3014,6 @@
     var stati = (_ps.risp || {})[a.uid] || {};
     box.innerHTML = '<div class="ps-tessere">' +
       tessera('Ultimi 30 giorni', s30, squadra === null ? '' : ' · media squadra ' + squadra + '%') + tessera('Stagione', sSt, '') + '</div>' +
-      (s30.assenzeDiFila >= 2 ? '<p class="ps-alert">Ha saltato gli ultimi ' + s30.assenzeDiFila + ' allenamenti segnati.</p>' : '') +
       '<h3 class="pres-h">Ultimi allenamenti</h3>' +
       (giorni.length ? '<div class="admin-table-wrap"><table class="admin-table"><tbody>' + giorni.map(function (d) {
         var st = stati[d] || '';

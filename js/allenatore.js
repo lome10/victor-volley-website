@@ -293,7 +293,7 @@
         });
       }
       righe.forEach(function (r) {
-        var card = el('button', 'st-card' + (r.s.richiamo ? ' is-warn' : ''));
+        var card = el('button', 'st-card');
         card.type = 'button';
         var top = el('div', 'st-row');
         top.appendChild(el('span', 'st-name', (r.a.cognome + ' ' + r.a.nome).trim()));
@@ -302,7 +302,6 @@
         top.appendChild(pct);
         var bottom = el('div', 'st-row');
         bottom.appendChild(r.s.segnate ? puntini(r.s.ultimi) : el('span', 'co-none', 'Ancora niente di segnato'));
-        if (r.s.richiamo) bottom.appendChild(el('span', 'st-flag', 'Da richiamare'));
         card.appendChild(top);
         card.appendChild(bottom);
         card.addEventListener('click', function () { _statSel = { cat: cat.categoria, id: r.a.id }; disegnaScheda(); window.scrollTo(0, 0); });
@@ -359,7 +358,6 @@
     }
     stat.appendChild(el('p', 'co-sub', s30.si + ' presente · ' + s30.no + ' assente · ' + s30.nr + ' non segnati' +
       (squadra === null ? '' : ' · media squadra ' + squadra + '%')));
-    if (s30.assenzeDiFila >= 2) stat.appendChild(el('div', 'st-alert', 'Ha saltato gli ultimi ' + s30.assenzeDiFila + ' allenamenti segnati.'));
     if (s60.segnate) stat.appendChild(el('p', 'co-sub', 'Ultimi 60 giorni: ' + s60.pct + '% (' + s60.si + ' su ' + s60.segnate + ' segnati)'));
     box.appendChild(stat);
 

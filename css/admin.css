@@ -1985,5 +1985,3 @@ button { font-family: var(--font-body); cursor: pointer; }
 .ps-lab { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--a-muted); }
 .ps-grande { font-family: var(--font-head); font-size: 40px; line-height: 1.1; }
 .ps-sub { font-size: 12px; color: var(--a-muted); }
-.chip--amber { background: #FEF3C7; color: #92400E; }
-.ps-alert { padding: 10px 12px; border-radius: var(--a-radius); background: #FEF3C7; color: #78350F; font-size: 13px; font-weight: 700; margin-bottom: 12px; }
