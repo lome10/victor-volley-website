@@ -10,6 +10,7 @@
   var _diff = A.diff, _logWrite = A.logWrite;
 
   var _cache = [];
+  var _promoting = null;   /* dirigente con account già attivo che si sta rendendo allenatore; null = nessuno */
   var _editingUid = null;   /* uid dell'allenatore le cui categorie si stanno cambiando; null = nuovo */
 
   function _byId(id) { return document.getElementById(id); }
@@ -72,6 +73,7 @@
 
   function _openForm(uid) {
     _editingUid = uid;
+    _promoting = null;
     var current = uid ? _cache.find(function (a) { return a.uid === uid; }) : null;
     _showView('form');
     _byId('topbarActions').innerHTML = '';
@@ -89,6 +91,27 @@
 
   window.AdminActions = window.AdminActions || {};
   window.AdminActions.editAllenatore = function (uid) { _openForm(uid); };
+
+  /* Dalla lista Dirigenti: "Rendi allenatore" per chi ha già un account, senza crearne un altro. */
+  window.AdminActions.rendiAllenatore = function (uid) {
+    db.collection('dirigenti').doc(uid).get().then(function (doc) {
+      var d = doc.exists ? Object.assign({ uid: doc.id }, doc.data()) : null;
+      if (!d || d.senzaAccesso || !d.email) { alert('Questa persona non ha un account con accesso: crea un nuovo allenatore dalla sezione Allenatori.'); return; }
+      A.goTo('allenatori');
+      _editingUid = null;
+      _promoting = d;
+      _showView('form');
+      _byId('topbarActions').innerHTML = '';
+      _byId('allenatoreNome').value = d.nome || '';
+      _byId('allenatoreCognome').value = d.cognome || '';
+      _byId('allenatoreNome').disabled = true;
+      _byId('allenatoreCognome').disabled = true;
+      _byId('allenatoreAccount').classList.add('is-hidden');
+      _byId('allenatoreCategorie').innerHTML = _categoryBoxes([]);
+      var btn = _byId('allenatoreFormSave');
+      btn.textContent = 'Rendi allenatore'; btn.disabled = false;
+    }).catch(function (err) { alert('Errore: ' + err.message); });
+  };
 
   window.AdminActions.deleteAllenatore = function (uid) {
     var target = _cache.find(function (a) { return a.uid === uid; });
@@ -117,6 +140,22 @@
         .then(function () { return _logWrite('allenatore', uid, 'Allenatore — ' + (before.cognome || '') + ' ' + (before.nome || ''), 'update', _diff(before, { categorie: categorie }, ['categorie'])); })
         .then(render)
         .catch(function (err) { alert('Errore: ' + err.message); btn.textContent = 'Salva le categorie'; btn.disabled = false; });
+      return;
+    }
+
+    /* Dirigente con account già attivo: nessun account nuovo, si crea solo il documento con le categorie. */
+    if (_promoting) {
+      var d = _promoting;
+      if (!categorie.length) { alert('Scegli almeno una categoria: senza, l\'allenatore non vedrebbe nessun atleta.'); return; }
+      btn.textContent = 'Salvataggio…'; btn.disabled = true;
+      var nuovo = { uid: d.uid, nome: d.nome || '', cognome: d.cognome || '', email: d.email || '', categorie: categorie, createdAt: new Date().toISOString() };
+      db.collection('allenatori').doc(d.uid).get().then(function (esiste) {
+        if (esiste.exists) throw new Error('Questa persona è già un allenatore: cambia le categorie dalla lista Allenatori.');
+        return db.collection('allenatori').doc(d.uid).set(nuovo);
+      }).then(function () {
+        return _logWrite('allenatore', d.uid, 'Allenatore — ' + (d.cognome || '') + ' ' + (d.nome || ''), 'create', _diff({}, nuovo, ['nome', 'cognome', 'email', 'categorie']));
+      }).then(function () { _promoting = null; render(); })
+        .catch(function (err) { alert('Errore: ' + err.message); btn.textContent = 'Rendi allenatore'; btn.disabled = false; });
       return;
     }
 

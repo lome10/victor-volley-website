@@ -497,7 +497,8 @@
       return '<tr>' +
         '<td>' + esc((d.nome || '') + ' ' + (d.cognome || '')) + '</td>' +
         '<td>' + (d.senzaAccesso ? '<span style="color:var(--a-muted)">Solo taglie (senza accesso)</span>' : esc(d.email || '')) + '</td>' +
-        '<td style="text-align:right">' +
+        '<td style="text-align:right;white-space:nowrap">' +
+          (d.senzaAccesso ? '' : '<button class="btn-ghost btn-sm" onclick="AdminActions.rendiAllenatore(\'' + d.uid + '\')" title="Dagli la pagina dell\'allenatore con le sue categorie">Rendi allenatore</button> ') +
           '<button class="btn-icon btn-icon--danger" onclick="AdminActions.deleteDirigente(\'' + d.uid + '\')" title="' + (d.senzaAccesso ? 'Elimina' : 'Revoca accesso') + '">' + DEL_ICON + '</button>' +
         '</td>' +
       '</tr>';
