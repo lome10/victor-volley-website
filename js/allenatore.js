@@ -8,6 +8,8 @@
 (function () {
   'use strict';
 
+  /* Le presenze contano dal 29/10/2026 (richiesta di Lorenzo): gli allenamenti prima di questa data non si mostrano. */
+  var INIZIO = '2026-10-29';
   var VERDE = '#16A34A', ROSSO = '#DC2626', GRIGIO = '#CBD5E1';
 
   function $(id) { return document.getElementById(id); }
@@ -578,6 +580,7 @@
       return r.json();
     }).then(function (dati) {
       if (!dati) return;
+      dati.categorie.forEach(function (c) { c.giorni = c.giorni.filter(function (g) { return g.data >= INIZIO; }); });
       _pres = dati; _presLoaded = true;
       _catNome = dati.categorie.length ? dati.categorie[0].categoria : '';
       avviso('');
