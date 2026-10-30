@@ -13,7 +13,7 @@
   <link rel="preload" href="/assets/fonts/manrope-400-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/fonts.css?v=c0ba2518">
   <link rel="stylesheet" href="css/atleta.css?v=a3a1f15c">
-  <link rel="stylesheet" href="css/allenatore.css?v=0f291273">
+  <link rel="stylesheet" href="css/allenatore.css?v=26d21a6b">
 </head>
 <body>
 
@@ -43,24 +43,18 @@
       </nav>
       <div id="viewAtleti">
         <h1 class="co-title">Atleti</h1>
-        <p id="coachCats" class="co-sub"></p>
         <p id="coachMsg" class="co-msg" role="status"></p>
-        <div id="coachList"></div>
+        <div id="atBox"></div>
       </div>
       <div id="viewPresenze" class="is-hidden">
         <h1 class="co-title">Presenze agli allenamenti</h1>
-        <p class="co-sub">Tocca la casella di un atleta per segnarlo: presente, poi assente, poi vuota. Si salva da sola.</p>
         <p id="presMsg" class="co-msg" role="status"></p>
-        <div id="presList"></div>
+        <div id="presBox"></div>
       </div>
       <div id="viewStat" class="is-hidden">
-        <div id="statListaBox">
-          <h1 class="co-title">Presenze per atleta</h1>
-          <p class="co-sub">Ultimi 30 giorni. Contano solo gli allenamenti già segnati: un giorno senza risposta non abbassa la percentuale.</p>
-          <p id="statMsg" class="co-msg" role="status"></p>
-          <div id="statList"></div>
-        </div>
-        <div id="statScheda" class="is-hidden"></div>
+        <h1 class="co-title">Statistiche di presenza</h1>
+        <p id="statMsg" class="co-msg" role="status"></p>
+        <div id="statBox"></div>
       </div>
     </main>
   </div>
@@ -79,7 +73,7 @@
   <script src="js/vendor/firebase-auth-compat.js"></script>
   <script src="js/firebase-config.js?v=6b9dd403"></script>
   <script src="js/presenze-stat.js?v=6dab1972"></script>
-  <script src="js/allenatore.js?v=dd13b60e"></script>
+  <script src="js/allenatore.js?v=0494c5c0"></script>
   <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>
