@@ -134,8 +134,13 @@
 
   function riepilogo(cat) {
     cat.atleti.forEach(function (a) {
-      var tot = cat.giorni.length, p = 0;
-      cat.giorni.forEach(function (g) { if (((cat.presenze[g.data] || {})[a.id]) === 'p') p++; });
+      /* Solo gli allenamenti già fatti: i giorni che verranno si possono segnare ma non contano ancora. */
+      var tot = 0, p = 0;
+      cat.giorni.forEach(function (g) {
+        if (g.data > _pres.oggi) return;
+        tot++;
+        if (((cat.presenze[g.data] || {})[a.id]) === 'p') p++;
+      });
       a._sum = p + '/' + tot;
     });
   }

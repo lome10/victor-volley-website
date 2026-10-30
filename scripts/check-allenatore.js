@@ -18,14 +18,17 @@ const docRef = (n, id) => ({
   id,
   get: async () => ({ exists: id in col(n), id, data: () => col(n)[id] }),
   /* set con merge: i campi semplici si sovrascrivono, la mappa `segnate` si unisce (come fa Firestore) */
-  set: async (d, o) => { const prima = (o && o.merge && col(n)[id]) || {}; col(n)[id] = { ...prima, ...d, ...(d.segnate ? { segnate: { ...(prima.segnate || {}), ...d.segnate } } : {}) }; }
+  set: async (d, o) => { const prima = (o && o.merge && col(n)[id]) || {}; col(n)[id] = { ...prima, ...d, ...(d.segnate ? { segnate: { ...(prima.segnate || {}), ...d.segnate } } : {}) }; },
+  delete: async () => { delete col(n)[id]; }
+});
+const filtra = (n, filtri) => ({
+  where: (c, op, v) => filtra(n, filtri.concat([[c, op, v]])),
+  get: async () => ({ docs: Object.keys(col(n)).filter((id) => filtri.every(([c, op, v]) => (op === 'in' && v.length <= 30 && v.includes(col(n)[id][c])) || (op === '==' && col(n)[id][c] === v))).map((id) => ({ id, data: () => col(n)[id] })) })
 });
 const firestore = {
   collection: (n) => ({
     doc: (id) => docRef(n, id),
-    where: (c, op, v) => ({
-      get: async () => ({ docs: Object.keys(col(n)).filter((id) => (op === 'in' && v.length <= 30 && v.includes(col(n)[id][c])) || (op === '==' && col(n)[id][c] === v)).map((id) => ({ id, data: () => col(n)[id] })) })
-    })
+    where: (c, op, v) => filtra(n, [[c, op, v]])
   }),
   getAll: async (...refs) => Promise.all(refs.map((r) => r.get()))
 };
@@ -134,14 +137,17 @@ async function t(nome, fn) { try { await fn(); n++; } catch (e) { console.error(
   col('allenamenti').t2 = { categoria: 'Under 14 F', giorno: domani, oraInizio: '18:00', validoFino: '2000-01-01' };   /* scaduto */
   col('allenamenti').t3 = { categoria: 'Serie D', giorno: weekdayOggi, oraInizio: '20:00' };                          /* non sua */
 
-  await t('presenze: il mister vede i giorni di allenamento fino a oggi (oggi compreso), gli atleti e nient\'altro', async () => {
+  await t('presenze: il mister vede i giorni di allenamento (prossimi 7 e ultimi 60, oggi compreso), gli atleti e nient\'altro', async () => {
     const r = await chiamaP('tok-ren', 'GET');
     assert.strictEqual(r.code, 200);
     assert.strictEqual(r.body.oggi, OGGI);
     const u14 = r.body.categorie.find((c) => c.categoria === 'Under 14 F');
-    assert.strictEqual(u14.giorni[0].data, OGGI, 'oggi è il primo');
+    const tra7 = new Date(OGGI + 'T00:00:00Z'); tra7.setUTCDate(tra7.getUTCDate() + 7);
+    assert.strictEqual(u14.giorni[0].data, tra7.toISOString().slice(0, 10), 'il primo è fra 7 giorni');
+    assert.ok(u14.giorni.some((g) => g.data === OGGI), 'oggi c\'è');
+    assert.ok(u14.giorni.every((g) => g.orarioId === 't1'), 'ogni giorno porta l\'id dell\'orario');
     assert.ok(u14.giorni.every((g) => ((new Date(g.data + 'T00:00:00Z').getUTCDay() + 6) % 7) + 1 === weekdayOggi), 'solo il giorno della settimana giusto');
-    assert.ok(u14.giorni.length >= 8, 'circa 60 giorni indietro: 8-9 settimane');
+    assert.ok(u14.giorni.length >= 9, 'circa 60 giorni indietro più la settimana che viene');
     assert.deepStrictEqual(u14.atleti.map((a) => a.cognome), ['Alberti', 'Verdi']);
     assert.deepStrictEqual(Object.keys(u14.atleti[0]).sort(), ['cognome', 'id', 'nome']);
     assert.ok(!r.body.categorie.some((c) => c.categoria === 'Serie D'), 'le categorie di altri non compaiono');
@@ -153,10 +159,49 @@ async function t(nome, fn) { try { await fn(); n++; } catch (e) { console.error(
     assert.strictEqual((await chiamaP('tok-ren', 'POST', { ...dati, atletaId: 'a4', stato: 'a' })).code, 200);
     let u14 = (await chiamaP('tok-ren', 'GET')).body.categorie.find((c) => c.categoria === 'Under 14 F');
     assert.deepStrictEqual(u14.presenze[OGGI], { a1: 'p', a4: 'a' });
+    /* è la stessa risposta "ci sarò / non ci sarò" delle giocatrici: stessa chiave, stesso documento */
+    const risposta = col('presenze')['a-t1-' + OGGI + '_a1'];
+    assert.ok(risposta, 'scritta in presenze');
+    assert.deepStrictEqual([risposta.risposta, risposta.tipo, risposta.eventoId, risposta.data, risposta.categoria, risposta.rispostaDa],
+      ['si', 'allenamento', 't1', OGGI, 'Under 14 F', 'ren']);
     assert.strictEqual((await chiamaP('tok-ren', 'POST', { ...dati, stato: '' })).code, 200);
     u14 = (await chiamaP('tok-ren', 'GET')).body.categorie.find((c) => c.categoria === 'Under 14 F');
-    assert.deepStrictEqual(u14.presenze[OGGI], { a1: '', a4: 'a' }, 'segnare uno non cancella gli altri');
-    assert.strictEqual(col('presenzeAllenamento')['under-14-f_' + OGGI].aggiornatoDa, 'ren');
+    assert.deepStrictEqual(u14.presenze[OGGI], { a4: 'a' }, 'toglierlo non cancella gli altri');
+    assert.ok(!col('presenze')['a-t1-' + OGGI + '_a1'], 'tolta anche da presenze');
+  });
+  await t('presenze: giocatrici, mister e dirigenti scrivono nella stessa risposta e l\'ultima vince', async () => {
+    const chiave = 'a-t1-' + OGGI + '_a1';
+    /* la giocatrice (o il genitore) dice "non ci sarò" prima dell'allenamento */
+    col('presenze')[chiave] = { eventKey: 'a-t1-' + OGGI, tipo: 'allenamento', eventoId: 't1', data: OGGI, categoria: 'Under 14 F', atletaId: 'a1', risposta: 'no', rispostaDa: 'genitore', rispostaIl: '2026-01-01T10:00:00.000Z' };
+    let u14 = (await chiamaP('tok-ren', 'GET')).body.categorie.find((c) => c.categoria === 'Under 14 F');
+    assert.strictEqual(u14.presenze[OGGI].a1, 'a', 'il mister vede la risposta della giocatrice');
+    /* il mister la corregge: c'era comunque */
+    assert.strictEqual((await chiamaP('tok-ren', 'POST', { categoria: 'Under 14 F', data: OGGI, atletaId: 'a1', stato: 'p' })).code, 200);
+    assert.strictEqual(col('presenze')[chiave].risposta, 'si');
+    assert.strictEqual(col('presenze')[chiave].rispostaDa, 'ren');
+    /* un dirigente dal pannello scrive lo stesso documento e il mister lo vede */
+    col('presenze')[chiave] = { ...col('presenze')[chiave], risposta: 'no', rispostaDa: 'dirigente', rispostaIl: '2099-01-01T00:00:00.000Z' };
+    u14 = (await chiamaP('tok-ren', 'GET')).body.categorie.find((c) => c.categoria === 'Under 14 F');
+    assert.strictEqual(u14.presenze[OGGI].a1, 'a');
+    /* le risposte a partite e ad altre categorie non finiscono nella tabella */
+    col('presenze')['p-9_a1'] = { eventKey: 'p-9', tipo: 'partita', data: OGGI, categoria: 'Under 14 F', atletaId: 'a1', risposta: 'si', rispostaDa: 'x', rispostaIl: '2099-01-02T00:00:00.000Z' };
+    col('presenze')['a-t3-' + OGGI + '_a3'] = { eventKey: 'a-t3-' + OGGI, tipo: 'allenamento', data: OGGI, categoria: 'Serie D', atletaId: 'a3', risposta: 'si', rispostaDa: 'x', rispostaIl: '2099-01-02T00:00:00.000Z' };
+    u14 = (await chiamaP('tok-ren', 'GET')).body.categorie.find((c) => c.categoria === 'Under 14 F');
+    assert.strictEqual(u14.presenze[OGGI].a1, 'a', 'una partita non cambia l\'allenamento');
+    assert.ok(!JSON.stringify(u14.presenze).includes('a3'));
+    delete col('presenze')[chiave]; delete col('presenze')['p-9_a1']; delete col('presenze')['a-t3-' + OGGI + '_a3'];
+    delete col('presenze')['a-t1-' + OGGI + '_a4'];
+  });
+  await t('presenze: si può segnare in anticipo (fino a 7 giorni) e le giornate del vecchio sistema si leggono ancora', async () => {
+    const tra7 = new Date(OGGI + 'T00:00:00Z'); tra7.setUTCDate(tra7.getUTCDate() + 7);
+    const data = tra7.toISOString().slice(0, 10);
+    assert.strictEqual((await chiamaP('tok-ren', 'POST', { categoria: 'Under 14 F', data, atletaId: 'a1', stato: 'a' })).code, 200);
+    assert.strictEqual(col('presenze')['a-t1-' + data + '_a1'].risposta, 'no');
+    delete col('presenze')['a-t1-' + data + '_a1'];
+    col('presenzeAllenamento')['under-14-f_2000-01-01'] = { categoria: 'Under 14 F', data: '2000-01-01', segnate: { a1: 'p' } };
+    const u14 = (await chiamaP('tok-ren', 'GET')).body.categorie.find((c) => c.categoria === 'Under 14 F');
+    assert.deepStrictEqual(u14.presenze['2000-01-01'], { a1: 'p' });
+    delete col('presenzeAllenamento')['under-14-f_2000-01-01'];
   });
   await t('presenze: rifiuta categoria non sua, atleta di un\'altra categoria, giorni senza allenamento, futuro, date e stati strani', async () => {
     const ok = { categoria: 'Under 14 F', data: OGGI, atletaId: 'a1', stato: 'p' };
@@ -166,8 +211,8 @@ async function t(nome, fn) { try { await fn(); n++; } catch (e) { console.error(
     await prova({ atletaId: 'inesistente' }, 403, 'atleta che non esiste');
     await prova({ data: L.dataValida('2026-02-30') ? OGGI : '2026-02-30' }, 400, 'data che non esiste');
     await prova({ data: '29/10/2026' }, 400, 'formato sbagliato');
-    const futuro = new Date(OGGI + 'T00:00:00Z'); futuro.setUTCDate(futuro.getUTCDate() + 7);
-    await prova({ data: futuro.toISOString().slice(0, 10) }, 400, 'stesso giorno della settimana ma nel futuro');
+    const futuro = new Date(OGGI + 'T00:00:00Z'); futuro.setUTCDate(futuro.getUTCDate() + 14);
+    await prova({ data: futuro.toISOString().slice(0, 10) }, 400, 'stesso giorno della settimana ma troppo in là');
     const ieri = new Date(OGGI + 'T00:00:00Z'); ieri.setUTCDate(ieri.getUTCDate() - 1);
     await prova({ data: ieri.toISOString().slice(0, 10) }, 400, 'giorno in cui non si allena');
     const vecchio = new Date(OGGI + 'T00:00:00Z'); vecchio.setUTCDate(vecchio.getUTCDate() - 7 * 12);
@@ -189,7 +234,10 @@ async function t(nome, fn) { try { await fn(); n++; } catch (e) { console.error(
     assert.strictEqual(L.idGiornata('Under 14 F', '2026-10-29'), 'under-14-f_2026-10-29');
     assert.strictEqual(L.idGiornata('Minivolley S3', '2026-10-29'), 'minivolley-s3_2026-10-29');
     /* giovedì 29/10/2026: la squadra che si allena il giovedì (giorno 4) lo ha tra i giorni */
-    assert.strictEqual(L.giorniAllenamento([{ categoria: 'S3', giorno: 4, oraInizio: '17:00' }], 'S3', '2026-10-29')[0].data, '2026-10-29');
+    const gg = L.giorniAllenamento([{ id: 'x/1', categoria: 'S3', giorno: 4, oraInizio: '17:00' }], 'S3', '2026-10-29');
+    assert.strictEqual(gg[0].data, '2026-11-05', 'il primo è il giovedì della settimana che viene');
+    assert.ok(gg.some((g) => g.data === '2026-10-29') && gg[0].orarioId === 'x/1');
+    assert.strictEqual(L.chiaveAllenamento('x/1', '2026-10-29'), 'a-x_1-2026-10-29', 'la stessa chiave dell\'area atleti');
     assert.strictEqual(L.giorniAllenamento([{ categoria: 'S3', giorno: 4, validoFino: '2026-10-22' }], 'S3', '2026-10-29')[0].data, '2026-10-22');
     const rules = fs.readFileSync(path.join(__dirname, '..', 'firestore.rules'), 'utf8');
     const m = /match \/presenzeAllenamento\/\{docId\}\s*\{([\s\S]*?)\n\s*\}/.exec(rules);

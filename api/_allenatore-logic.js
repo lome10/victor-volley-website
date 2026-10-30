@@ -50,6 +50,9 @@ function ordina(schede) {
 /** Quanti giorni indietro il mister può ancora correggere una presenza. */
 const GIORNI_INDIETRO = 60;
 
+/** Quanti giorni avanti può già segnare (chi sa in anticipo che una giocatrice mancherà). */
+const GIORNI_AVANTI = 7;
+
 /** Oggi in Italia come AAAA-MM-GG (il server gira in UTC: a mezzanotte il giorno cambia a Roma, non a Londra). */
 function oggiRoma(now) {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Rome', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now || new Date());
@@ -74,21 +77,29 @@ const aggiungiGiorni = (iso, n) => {
 const giornoSettimana = (iso) => ((new Date(iso + 'T00:00:00Z').getUTCDay() + 6) % 7) + 1;
 
 /**
- * I giorni di allenamento di una categoria fino a oggi (dal più recente), dagli orari settimanali.
- * `orari` = documenti di `allenamenti`; un orario con `validoFino` non conta dopo quella data.
+ * I giorni di allenamento di una categoria, dai prossimi GIORNI_AVANTI fino a GIORNI_INDIETRO fa (dal più recente),
+ * dagli orari settimanali. `orari` = documenti di `allenamenti` (con `id`); un orario con `validoFino` non conta dopo
+ * quella data. `orarioId` serve a scrivere nella stessa risposta "ci sarò / non ci sarò" che danno le giocatrici.
  */
 function giorniAllenamento(orari, categoria, oggi) {
   const mie = (orari || []).filter((o) => o && o.categoria === categoria && +o.giorno >= 1 && +o.giorno <= 7);
   const out = [];
-  for (let i = 0; i <= GIORNI_INDIETRO; i++) {
+  for (let i = -GIORNI_AVANTI; i <= GIORNI_INDIETRO; i++) {
     const data = aggiungiGiorni(oggi, -i);
     const g = giornoSettimana(data);
     mie.filter((o) => +o.giorno === g && !(o.validoFino && data > o.validoFino)).forEach((o) => {
-      out.push({ data, oraInizio: testo(o.oraInizio), oraFine: testo(o.oraFine), luogo: testo(o.luogo) });
+      out.push({ data, orarioId: testo(o.id), oraInizio: testo(o.oraInizio), oraFine: testo(o.oraFine), luogo: testo(o.luogo) });
     });
   }
   return out;
 }
+
+/** Stessa chiave che usa l'area atleti per un allenamento: "a-{id dell'orario}-{data}" (le "/" diventano "_"). */
+const chiaveAllenamento = (orarioId, data) => String('a-' + orarioId + '-' + data).replace(/\//g, '_');
+
+/** Un atleta in una giornata come dicono le risposte: "si"/"no" diventano "p"/"a"; la più recente vince. */
+const STATO_DA_RISPOSTA = { si: 'p', no: 'a' };
+const RISPOSTA_DA_STATO = { p: 'si', a: 'no' };
 
 /** Id del documento di una giornata: categoria "Under 14 F" + data → "under-14-f_2026-10-29". */
 function idGiornata(categoria, data) {
@@ -98,4 +109,4 @@ function idGiornata(categoria, data) {
 
 const STATI_PRESENZA = ['p', 'a', ''];
 
-module.exports = { categorieAllenatore, schedaAtleta, genitori, ordina, oggiRoma, dataValida, giorniAllenamento, idGiornata, STATI_PRESENZA, GIORNI_INDIETRO };
+module.exports = { categorieAllenatore, schedaAtleta, genitori, ordina, oggiRoma, dataValida, giorniAllenamento, idGiornata, STATI_PRESENZA, GIORNI_INDIETRO, GIORNI_AVANTI, chiaveAllenamento, STATO_DA_RISPOSTA, RISPOSTA_DA_STATO };

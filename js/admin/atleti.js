@@ -2683,8 +2683,9 @@
   };
 
   /* ================================================
-     PRESENZE (riepilogo per l'allenatore: chi ha risposto "ci sarò / non ci sarò")
-     Le risposte stanno in `presenze`, scritte da atleti e genitori dall'area atleti.
+     PRESENZE ("ci sarò / non ci sarò" di ogni atleta a partite e allenamenti)
+     Le risposte stanno in `presenze`. Le danno atleti e genitori dall'area atleti, il mister dalla sua pagina e i
+     dirigenti da qui, prima, durante o dopo l'evento: chi scrive per ultimo vince, quindi si sovrascrivono.
      Gli eventi (partite + allenamenti ricorrenti) si ricostruiscono qui con le
      stesse chiavi dell'area atleti: p-<idPartita> e a-<idAllenamento>-<data>.
   ================================================ */
@@ -2692,6 +2693,7 @@
   var PRES_ALLENAMENTI_GIORNI = 14;
   var PRES_PARTITE_GIORNI     = 60;
   var _presToken = 0;
+  var _presCat = '', _presRoster = [], _presRisp = {}, _presEvMap = {};
 
   function _presIso(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
   function _presAddDays(iso, n) { var d = new Date(iso + 'T00:00:00'); d.setDate(d.getDate() + n); return _presIso(d); }
@@ -2719,7 +2721,7 @@
     VV.getPartite()
       .filter(function (p) { return p.categoria === cat && p.data >= from && p.data <= _presAddDays(today, PRES_PARTITE_GIORNI); })
       .forEach(function (p) {
-        evs.push({ key: _presSafeId('p-' + p.id), tipo: 'partita', date: p.data, start: p.ora || '',
+        evs.push({ key: _presSafeId('p-' + p.id), eventoId: String(p.id), tipo: 'partita', date: p.data, start: p.ora || '',
                    title: (p.squadra_casa || '') + ' – ' + (p.squadra_ospite || '') });
       });
 
@@ -2728,7 +2730,7 @@
         var day = _presAddDays(today, i);
         if (_presWeekday(day) !== +t.giorno) continue;
         if (t.validoFino && day > t.validoFino) continue;
-        evs.push({ key: _presSafeId('a-' + t.id + '-' + day), tipo: 'allenamento', date: day, start: t.oraInizio || '',
+        evs.push({ key: _presSafeId('a-' + t.id + '-' + day), eventoId: String(t.id), tipo: 'allenamento', date: day, start: t.oraInizio || '',
                    title: 'Allenamento' });
       }
     });
@@ -2770,7 +2772,10 @@
       var trainings = [];
       res[2].forEach(function (d) { trainings.push(Object.assign({ id: d.id }, d.data())); });
 
-      box.innerHTML = _presenzeHtml(roster, risp, _presEvents(cat, trainings));
+      var evs = _presEvents(cat, trainings);
+      _presCat = cat; _presRoster = roster; _presRisp = risp; _presEvMap = {};
+      evs.future.concat(evs.past).forEach(function (e) { _presEvMap[e.key] = e; });
+      box.innerHTML = _presenzeHtml(evs);
     }).catch(function (err) {
       if (token !== _presToken) return;
       console.error('[Presenze]', err);
@@ -2778,46 +2783,84 @@
     });
   }
 
-  function _presenzeHtml(roster, risp, evs) {
-    if (!roster.length) return '<p class="pres-empty">Nessun atleta in questa categoria.</p>';
-
-    function names(list) {
-      return list.length
-        ? '<ul>' + list.map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') + '</ul>'
-        : '<p class="pres-none">—</p>';
-    }
-
-    function eventHtml(ev, isPast) {
-      var r  = risp[ev.key] || {};
-      var si = [], no = [], nr = [];
-      roster.forEach(function (a) {
-        var v = r[a.id];
-        (v === 'si' ? si : v === 'no' ? no : nr).push(a.nome);
-      });
-      var day = new Date(ev.date + 'T00:00:00').toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' });
-      return '<details class="pres-event' + (isPast ? ' is-past' : '') + '">' +
-        '<summary>' +
-          '<span class="pres-when">' + esc(day) + (ev.start ? ' · ' + esc(ev.start) : '') + '</span>' +
-          '<span class="pres-title">' + esc(ev.title) + '</span>' +
-          '<span class="chip ' + (ev.tipo === 'partita' ? 'chip--blue' : 'chip--gray') + '">' + (ev.tipo === 'partita' ? 'Partita' : 'Allenamento') + '</span>' +
-          '<span class="pres-counts">' +
-            '<b class="pres-si">' + si.length + ' sì</b>' +
-            '<b class="pres-no">' + no.length + ' no</b>' +
-            '<b class="pres-nr">' + nr.length + ' senza risposta</b>' +
-          '</span>' +
-        '</summary>' +
-        '<div class="pres-cols">' +
-          '<div><h4>Ci sono (' + si.length + ')</h4>' + names(si) + '</div>' +
-          '<div><h4>Non ci sono (' + no.length + ')</h4>' + names(no) + '</div>' +
-          '<div><h4>Senza risposta (' + nr.length + ')</h4>' + names(nr) + '</div>' +
-        '</div></details>';
-    }
-
+  function _presenzeHtml(evs) {
+    if (!_presRoster.length) return '<p class="pres-empty">Nessun atleta in questa categoria.</p>';
     return '<h3 class="pres-h">Prossimi impegni</h3>' +
-      (evs.future.length ? evs.future.map(function (e) { return eventHtml(e, false); }).join('') : '<p class="pres-empty">Nessun impegno in programma.</p>') +
+      (evs.future.length ? evs.future.map(function (e) { return _presEventHtml(e, false, false); }).join('') : '<p class="pres-empty">Nessun impegno in programma.</p>') +
       (evs.past.length
-        ? '<h3 class="pres-h">Ultimi ' + PRES_PASSATI_GIORNI + ' giorni</h3>' + evs.past.map(function (e) { return eventHtml(e, true); }).join('')
+        ? '<h3 class="pres-h">Ultimi ' + PRES_PASSATI_GIORNI + ' giorni</h3>' + evs.past.map(function (e) { return _presEventHtml(e, true, false); }).join('')
         : '');
+  }
+
+  /* Un evento: riepilogo in testa e, aperto, una riga per atleta con i pulsanti Sì / No (toccare di nuovo toglie la risposta). */
+  function _presEventHtml(ev, isPast, isOpen) {
+    var r  = _presRisp[ev.key] || {};
+    var si = 0, no = 0;
+    _presRoster.forEach(function (a) { if (r[a.id] === 'si') si++; else if (r[a.id] === 'no') no++; });
+    var nr = _presRoster.length - si - no;
+    var day = new Date(ev.date + 'T00:00:00').toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' });
+    var righe = _presRoster.map(function (a) {
+      var v = r[a.id] || '';
+      function btn(val, label) {
+        return '<button type="button" class="pres-btn pres-btn--' + val + (v === val ? ' is-active' : '') + '"' +
+          ' data-key="' + esc(ev.key) + '" data-atleta="' + esc(a.id) + '" data-val="' + val + '"' +
+          ' aria-pressed="' + (v === val) + '" aria-label="' + esc(a.nome + ': ' + label) + '">' + label + '</button>';
+      }
+      return '<div class="pres-row"><span class="pres-name">' + esc(a.nome) + '</span>' +
+        '<span class="pres-btns" role="group" aria-label="Presenza di ' + esc(a.nome) + '">' + btn('si', 'Sì') + btn('no', 'No') + '</span></div>';
+    }).join('');
+    return '<details class="pres-event' + (isPast ? ' is-past' : '') + '" data-key="' + esc(ev.key) + '"' + (isOpen ? ' open' : '') + '>' +
+      '<summary>' +
+        '<span class="pres-when">' + esc(day) + (ev.start ? ' · ' + esc(ev.start) : '') + '</span>' +
+        '<span class="pres-title">' + esc(ev.title) + '</span>' +
+        '<span class="chip ' + (ev.tipo === 'partita' ? 'chip--blue' : 'chip--gray') + '">' + (ev.tipo === 'partita' ? 'Partita' : 'Allenamento') + '</span>' +
+        '<span class="pres-counts">' +
+          '<b class="pres-si">' + si + ' sì</b>' +
+          '<b class="pres-no">' + no + ' no</b>' +
+          '<b class="pres-nr">' + nr + ' senza risposta</b>' +
+        '</span>' +
+      '</summary>' +
+      '<div class="pres-roster">' + righe + '</div></details>';
+  }
+
+  /* Il dirigente segna (o toglie) la risposta di un atleta: scrive lo stesso documento che scrive l'atleta. */
+  document.getElementById('presenzeBody').addEventListener('click', function (e) {
+    var btn = e.target.closest ? e.target.closest('.pres-btn') : null;
+    if (!btn) return;
+    var key = btn.dataset.key, atletaId = btn.dataset.atleta, val = btn.dataset.val;
+    var ev = _presEvMap[key], cat = _presCat;
+    if (!ev || !auth.currentUser) return;
+
+    var risp = _presRisp[key] = _presRisp[key] || {};
+    var prima = risp[atletaId] || '';
+    var dopo = prima === val ? '' : val;
+    if (dopo) risp[atletaId] = dopo; else delete risp[atletaId];
+    _presRepaint(key);
+
+    var ref = db.collection('presenze').doc(key + '_' + atletaId);
+    var op = dopo
+      ? ref.set({
+          eventKey: key, tipo: ev.tipo, eventoId: ev.eventoId, data: ev.date,
+          categoria: cat, atletaId: atletaId, risposta: dopo,
+          rispostaDa: auth.currentUser.uid, rispostaIl: new Date().toISOString()
+        })
+      : ref.delete();
+    op.catch(function (err) {
+      console.error('[Presenze] salvataggio', err);
+      if (prima) risp[atletaId] = prima; else delete risp[atletaId];
+      if (cat === _presCat) _presRepaint(key);
+      alert('Non sono riuscito a salvare la presenza. Riprova.');
+    });
+  });
+
+  /* Ridisegna un solo evento (tenendolo aperto) dopo una modifica. */
+  function _presRepaint(key) {
+    var det = document.querySelector('#presenzeBody details[data-key="' + (window.CSS && CSS.escape ? CSS.escape(key) : key) + '"]');
+    var ev = _presEvMap[key];
+    if (!det || !ev) return;
+    var tmp = document.createElement('div');
+    tmp.innerHTML = _presEventHtml(ev, det.classList.contains('is-past'), det.open);
+    det.replaceWith(tmp.firstChild);
   }
 
   /* ================================================
