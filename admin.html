@@ -9,7 +9,7 @@
   <link rel="preload" href="/assets/fonts/barlow-700-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/manrope-400-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/fonts.css?v=c0ba2518">
-  <link rel="stylesheet" href="/css/admin.css?v=bb167e02">
+  <link rel="stylesheet" href="/css/admin.css?v=311440a0">
   <link rel="stylesheet" href="/css/dirigenti.css?v=be786146">
 </head>
 <body>
@@ -923,6 +923,7 @@
             <button type="button" class="atleti-pill" data-vista="taglie">Taglie</button>
             <button type="button" class="atleti-pill" data-vista="prezzi">Prezzi</button>
             <button type="button" class="atleti-pill" data-vista="mail">Mail</button>
+            <button type="button" class="atleti-pill" data-vista="presenze">Presenze</button>
           </div>
           <div class="atleti-toolbar">
             <input type="search" id="atletiSearch" class="form-input" placeholder="Cerca per nome o codice fiscale…" autocomplete="off">
@@ -936,6 +937,7 @@
           <div id="atletiTaglie" class="is-hidden"></div>
           <div id="atletiPrezzi" class="is-hidden"></div>
           <div id="atletiMail" class="is-hidden"></div>
+          <div id="atletiPresenze" class="is-hidden"></div>
           <div class="admin-table-wrap" id="atletiElencoWrap">
             <table class="admin-table">
               <thead>
@@ -1026,6 +1028,7 @@
             <button class="atleta-tab" data-tab="certmedico">Cert. Medico</button>
             <button class="atleta-tab" data-tab="rate">Rate &amp; Quote</button>
             <button class="atleta-tab" data-tab="modulo">Modulo Iscrizione</button>
+            <button class="atleta-tab" data-tab="presenze">Presenze</button>
             <button class="atleta-tab" data-tab="note">Note</button>
             <button class="atleta-tab" data-tab="accessi">Accessi</button>
             <button class="atleta-tab" data-tab="sicurezza">Sicurezza</button>
@@ -1109,6 +1112,9 @@
           </div>
 
           <!-- Tab: Accessi (atleta e genitori che vedono questa scheda) -->
+          <!-- Tab: Presenze agli allenamenti (statistiche dell'atleta) -->
+          <div id="tabPresenze" class="atleta-tab-pane is-hidden"></div>
+
           <!-- Tab: Note (riservate ai dirigenti, salvate su atletiDati) -->
           <div id="tabNote" class="atleta-tab-pane is-hidden">
             <div class="form-grid">
@@ -2769,7 +2775,8 @@
   <script src="/js/admin.js?v=fbd74c3c"></script>
   <script src="/js/admin/prezzi-calc.js?v=681fbe4b"></script>
   <script src="/js/admin/tesseramenti-calc.js?v=905835f5"></script>
-  <script src="/js/admin/atleti.js?v=ee33c038"></script>
+  <script src="/js/presenze-stat.js?v=fbf537ab"></script>
+  <script src="/js/admin/atleti.js?v=2e8099bf"></script>
   <script src="/js/admin/cms.js?v=40296774"></script>
   <script src="/js/admin/pianoeditoriale.js?v=06732f38"></script>
   <script src="/js/admin/allenatori.js?v=9b18806d"></script>

@@ -1966,3 +1966,24 @@ button { font-family: var(--font-body); cursor: pointer; }
 .prz-nasc-mot { font-weight: 500; color: var(--a-muted); }
 .prz-nascondi { color: var(--a-muted); }
 .prz-nascondi:hover { color: #B91C1C; }
+
+/* Statistiche di presenza per atleta (vista «Presenze» dell'elenco atleti e scheda atleta) */
+.ps-periodo { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 4px 0 12px; }
+.ps-riga { cursor: pointer; }
+.ps-riga:hover td, .ps-riga:focus-visible td { background: var(--a-bg); }
+.ps-cella { display: flex; align-items: center; gap: 10px; min-width: 150px; }
+.ps-bar { flex: 1; height: 8px; border-radius: 999px; background: var(--a-border); overflow: hidden; }
+.ps-bar > span { display: block; height: 100%; }
+.ps-pct { min-width: 44px; text-align: right; }
+.ps-dots { display: inline-flex; gap: 4px; }
+.ps-dot { width: 18px; height: 18px; border-radius: 5px; border: 1px solid #94A3B8; background: #fff; }
+.ps-dot[data-s="p"] { background: #16A34A; border-color: #16A34A; }
+.ps-dot[data-s="a"] { background: var(--a-red); border-color: var(--a-red); }
+.ps-fila { color: var(--a-red); font-size: 12px; font-weight: 600; }
+.ps-tessere { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+.ps-tessera { flex: 1 1 240px; display: flex; flex-direction: column; gap: 4px; background: var(--a-card); border: 1px solid var(--a-border); border-radius: var(--a-radius); padding: 16px; }
+.ps-lab { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--a-muted); }
+.ps-grande { font-family: var(--font-head); font-size: 40px; line-height: 1.1; }
+.ps-sub { font-size: 12px; color: var(--a-muted); }
+.chip--amber { background: #FEF3C7; color: #92400E; }
+.ps-alert { padding: 10px 12px; border-radius: var(--a-radius); background: #FEF3C7; color: #78350F; font-size: 13px; font-weight: 700; margin-bottom: 12px; }

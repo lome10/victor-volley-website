@@ -13,7 +13,7 @@
   <link rel="preload" href="/assets/fonts/manrope-400-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/fonts.css?v=c0ba2518">
   <link rel="stylesheet" href="css/atleta.css?v=a3a1f15c">
-  <link rel="stylesheet" href="css/allenatore.css?v=50c9c7f1">
+  <link rel="stylesheet" href="css/allenatore.css?v=f61a7454">
 </head>
 <body>
 
@@ -39,6 +39,7 @@
       <nav class="co-tabs" aria-label="Sezioni">
         <button type="button" id="tabAtleti" class="co-tab is-active" aria-pressed="true">Atleti</button>
         <button type="button" id="tabPresenze" class="co-tab" aria-pressed="false">Presenze</button>
+        <button type="button" id="tabStat" class="co-tab" aria-pressed="false">Statistiche</button>
       </nav>
       <div id="viewAtleti">
         <h1 class="co-title">Atleti</h1>
@@ -51,6 +52,15 @@
         <p class="co-sub">Tocca la casella di un atleta per segnarlo: presente, poi assente, poi vuota. Si salva da sola.</p>
         <p id="presMsg" class="co-msg" role="status"></p>
         <div id="presList"></div>
+      </div>
+      <div id="viewStat" class="is-hidden">
+        <div id="statListaBox">
+          <h1 class="co-title">Presenze per atleta</h1>
+          <p class="co-sub">Ultimi 30 giorni. Contano solo gli allenamenti già segnati: un giorno senza risposta non abbassa la percentuale.</p>
+          <p id="statMsg" class="co-msg" role="status"></p>
+          <div id="statList"></div>
+        </div>
+        <div id="statScheda" class="is-hidden"></div>
       </div>
     </main>
   </div>
@@ -68,7 +78,8 @@
   <script src="js/vendor/firebase-firestore-compat.js"></script>
   <script src="js/vendor/firebase-auth-compat.js"></script>
   <script src="js/firebase-config.js?v=6b9dd403"></script>
-  <script src="js/allenatore.js?v=f2cfce05"></script>
+  <script src="js/presenze-stat.js?v=fbf537ab"></script>
+  <script src="js/allenatore.js?v=8cc82083"></script>
   <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

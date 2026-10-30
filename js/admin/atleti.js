@@ -1256,19 +1256,21 @@
   }
 
   function _applicaVistaAtleti() {
-    var taglie = _atletiVista === 'taglie', prezzi = _atletiVista === 'prezzi', mail = _atletiVista === 'mail';
-    document.getElementById('atletiElencoWrap').classList.toggle('is-hidden', taglie || prezzi || mail);
+    var taglie = _atletiVista === 'taglie', prezzi = _atletiVista === 'prezzi', mail = _atletiVista === 'mail', pres = _atletiVista === 'presenze';
+    document.getElementById('atletiElencoWrap').classList.toggle('is-hidden', taglie || prezzi || mail || pres);
+    document.getElementById('atletiPresenze').classList.toggle('is-hidden', !pres);
+    document.getElementById('atletiExportPdf').classList.toggle('is-hidden', pres);
     document.getElementById('atletiTaglie').classList.toggle('is-hidden', !taglie);
     document.getElementById('atletiPrezzi').classList.toggle('is-hidden', !prezzi);
     document.getElementById('atletiMail').classList.toggle('is-hidden', !mail);
     /* nei Prezzi i filtri per categoria e la ricerca non servono: la scelta si fa in «Cosa includere» */
     ['atletiSearch', 'atletiCatBar', 'atletiToggleAll'].forEach(function (id) { document.getElementById(id).classList.toggle('is-hidden', prezzi); });
     /* nella Mail l'elenco non è diviso in gruppi da comprimere */
-    document.getElementById('atletiToggleAll').classList.toggle('is-hidden', prezzi || mail);
+    document.getElementById('atletiToggleAll').classList.toggle('is-hidden', prezzi || mail || pres);
     Array.prototype.forEach.call(document.querySelectorAll('#atletiVista .atleti-pill'), function (b) {
       b.classList.toggle('is-active', b.dataset.vista === _atletiVista);
     });
-    document.getElementById('atletiExport').title = prezzi ? 'Scarica la tabella prezzi in CSV' : mail ? 'Scarica gli indirizzi mostrati in CSV' : taglie ?'Scarica le taglie mostrate in CSV' : "Scarica l'elenco mostrato in CSV";
+    document.getElementById('atletiExport').title = pres ? 'Scarica le presenze mostrate in CSV' : prezzi ? 'Scarica la tabella prezzi in CSV' : mail ? 'Scarica gli indirizzi mostrati in CSV' : taglie ?'Scarica le taglie mostrate in CSV' : "Scarica l'elenco mostrato in CSV";
     _renderAtletiRows();
   }
 
@@ -1279,6 +1281,7 @@
     if (_atletiVista === 'taglie') { _renderTaglie(); return; }
     if (_atletiVista === 'prezzi') { _renderPrezzi(); return; }
     if (_atletiVista === 'mail') { _renderMail(); return; }
+    if (_atletiVista === 'presenze') { _renderPresStat(); return; }
     if (!_atletiCache.length) {
       document.getElementById('atletiSummary').textContent = '';
       body.innerHTML = '<tr><td colspan="7"><div class="empty-state"><p>Nessun atleta registrato.</p></div></td></tr>';
@@ -1695,6 +1698,7 @@
     var list = _atletiFiltrati();
     var slug = _slugExport(), cat = _atletiCat && _atletiCat !== '__none__' ? _atletiCat : 'Tutte le categorie';
     if (_atletiVista === 'prezzi') return _datiExportPrezzi();
+    if (_atletiVista === 'presenze') return _datiExportPresenze(slug, cat);
     if (_atletiVista === 'mail') {
       var mailRighe = _righeMail();
       if (!mailRighe.length) { _avviso('Nessun indirizzo da esportare.'); return null; }
@@ -2244,13 +2248,14 @@
     _switchAtletaTab('anagrafica');
     _renderRateAdmin();
     _renderAccessiAdmin();
+    _renderPresScheda();
   }
 
   function _switchAtletaTab(tab) {
     document.querySelectorAll('.atleta-tab').forEach(function (btn) {
       btn.classList.toggle('is-active', btn.dataset.tab === tab);
     });
-    ['tabAnagrafica', 'tabCertmedico', 'tabRate', 'tabModulo', 'tabNote', 'tabAccessi', 'tabSicurezza'].forEach(function (id) {
+    ['tabAnagrafica', 'tabCertmedico', 'tabRate', 'tabModulo', 'tabPresenze', 'tabNote', 'tabAccessi', 'tabSicurezza'].forEach(function (id) {
       document.getElementById(id).classList.add('is-hidden');
     });
     document.getElementById('tab' + cap(tab)).classList.remove('is-hidden');
@@ -2861,6 +2866,164 @@
     var tmp = document.createElement('div');
     tmp.innerHTML = _presEventHtml(ev, det.classList.contains('is-past'), det.open);
     det.replaceWith(tmp.firstChild);
+  }
+
+  /* ================================================
+     STATISTICHE DI PRESENZA PER ATLETA (vista «Presenze» dell'elenco e scheda «Presenze» dell'atleta)
+     Si calcolano dalle risposte in `presenze` e dagli orari in `allenamenti`, con le regole di js/presenze-stat.js
+     (le stesse della pagina del mister): contano solo gli allenamenti già segnati.
+  ================================================ */
+  var PS_CACHE_MS = 2 * 60 * 1000;
+  var _ps = { orari: null, risp: null, alle: 0, periodo: '30', caricando: false };
+
+  function _psCarica(fine) {
+    if (_ps.orari && Date.now() - _ps.alle < PS_CACHE_MS) { fine(); return; }
+    if (_ps.caricando) return;
+    _ps.caricando = true;
+    Promise.all([db.collection('presenze').where('tipo', '==', 'allenamento').get(), db.collection('allenamenti').get()]).then(function (res) {
+      var risp = {}, quando = {};   /* risp[atletaId][data] = 'p' | 'a'; vince la risposta più recente */
+      res[0].forEach(function (d) {
+        var x = d.data(), stato = x.risposta === 'si' ? 'p' : x.risposta === 'no' ? 'a' : '';
+        if (!x.atletaId || !x.data || !stato) return;
+        var k = x.atletaId + '|' + x.data, t = String(x.rispostaIl || '');
+        if (quando[k] && quando[k] > t) return;
+        quando[k] = t;
+        (risp[x.atletaId] = risp[x.atletaId] || {})[x.data] = stato;
+      });
+      _ps.risp = risp;
+      _ps.orari = res[1].docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); });
+      _ps.alle = Date.now();
+      _ps.caricando = false;
+      fine();
+    }).catch(function (e) {
+      _ps.caricando = false;
+      console.error('[Presenze] statistiche', e);
+      _ps.errore = true;
+      fine();
+    });
+  }
+
+  /* Le date di allenamento di una categoria da `da` a oggi (comprese), dagli orari settimanali. */
+  function _psGiorni(cat, da, oggi) {
+    var mie = (_ps.orari || []).filter(function (o) { return o.categoria === cat && +o.giorno >= 1 && +o.giorno <= 7; });
+    var out = [], visti = {};
+    for (var d = da; d <= oggi; d = _presAddDays(d, 1)) {
+      var g = _presWeekday(d);
+      if (mie.some(function (o) { return +o.giorno === g && !(o.validoFino && d > o.validoFino); }) && !visti[d]) { visti[d] = true; out.push(d); }
+    }
+    return out;
+  }
+
+  function _psDa(periodo, oggi) { return periodo === 'stagione' ? PresenzeStat.inizioStagione(oggi) : _presAddDays(oggi, -29); }
+
+  function _psStat(a, periodo) {
+    var oggi = _presIso(new Date());
+    return PresenzeStat.calcola(_psGiorni(a.categoria, _psDa(periodo, oggi), oggi), (_ps.risp || {})[a.uid] || {});
+  }
+
+  function _psRighe() {
+    return _atletiFiltrati().filter(function (a) { return a.categoria; }).map(function (a) { return { a: a, s: _psStat(a, _ps.periodo) }; });
+  }
+
+  function _psPuntini(ultimi) {
+    var si = ultimi.filter(function (x) { return x === 'p'; }).length, no = ultimi.filter(function (x) { return x === 'a'; }).length;
+    return '<span class="ps-dots" role="img" aria-label="' + si + ' presenze e ' + no + ' assenze negli ultimi ' + ultimi.length + ' allenamenti">' +
+      ultimi.map(function (x) { return '<span class="ps-dot" data-s="' + x + '"></span>'; }).join('') + '</span>';
+  }
+
+  function _psPct(s) {
+    return s.pct === null ? '<span class="taglie-vuoto">niente di segnato</span>' :
+      '<span class="ps-bar"><span style="width:' + s.pct + '%;background:' + PresenzeStat.colore(s.pct) + '"></span></span><strong class="ps-pct">' + s.pct + '%</strong>';
+  }
+
+  function _renderPresStat() {
+    var box = document.getElementById('atletiPresenze');
+    if (!_ps.orari) {
+      box.innerHTML = '<p class="pres-empty">Caricamento…</p>';
+      document.getElementById('atletiSummary').textContent = '';
+      _psCarica(function () { if (_atletiVista === 'presenze') _renderPresStat(); });
+      return;
+    }
+    if (_ps.errore) { _ps.errore = false; _ps.orari = null; box.innerHTML = '<p class="pres-empty" style="color:var(--a-red)">Errore nel caricamento delle presenze.</p>'; return; }
+    var righe = _psRighe();
+    var richiamo = righe.filter(function (r) { return r.s.richiamo; }).length;
+    var media = PresenzeStat.media(righe.map(function (r) { return r.s; }));
+    document.getElementById('atletiSummary').textContent = righe.length + (righe.length === 1 ? ' atleta' : ' atleti') +
+      (media === null ? '' : ' · presenza media ' + media + '%') + (richiamo ? ' · ' + richiamo + (richiamo === 1 ? ' da richiamare' : ' da richiamare') : '');
+    var per = '<div class="ps-periodo" role="group" aria-label="Periodo">' +
+      [['30', 'Ultimi 30 giorni'], ['stagione', 'Stagione']].map(function (p) {
+        return '<button type="button" class="atleti-pill' + (_ps.periodo === p[0] ? ' is-active' : '') + '" data-periodo="' + p[0] + '" aria-pressed="' + (_ps.periodo === p[0]) + '">' + p[1] + '</button>';
+      }).join('') + '<span class="taglie-escl-hint">Contano solo gli allenamenti già segnati. «Da richiamare»: sotto il ' + PresenzeStat.SOGLIA_RICHIAMO + '%.</span></div>';
+    if (!righe.length) { box.innerHTML = per + '<div class="empty-state"><p>Nessun atleta con categoria tra quelli mostrati.</p></div>'; return; }
+    var gruppi = _categorieElenco().filter(function (c) { return righe.some(function (r) { return r.a.categoria === c; }); });
+    box.innerHTML = per + gruppi.map(function (c) {
+      var membri = righe.filter(function (r) { return r.a.categoria === c; })
+        .sort(function (x, y) { return ((x.s.pct === null) - (y.s.pct === null)) || ((x.s.pct || 0) - (y.s.pct || 0)) || (x.a.cognome || '').localeCompare(y.a.cognome || '', 'it'); });
+      return '<h3 class="pres-h">' + esc(c) + '</h3><div class="admin-table-wrap"><table class="admin-table tab-scroll"><thead><tr><th>Atleta</th><th>Presenza</th><th>Ultimi allenamenti</th><th>Assenze</th></tr></thead><tbody>' +
+        membri.map(function (r) {
+          return '<tr class="ps-riga" data-uid="' + esc(r.a.uid) + '" tabindex="0" role="button"><td><strong>' + esc(((r.a.cognome || '') + ' ' + (r.a.nome || '')).trim()) + '</strong>' +
+            (r.s.richiamo ? ' <span class="chip chip--amber">Da richiamare</span>' : '') + '</td><td><span class="ps-cella">' + _psPct(r.s) + '</span></td><td>' +
+            (r.s.segnate ? _psPuntini(r.s.ultimi) : '—') + '</td><td>' + (r.s.segnate ? r.s.no + ' su ' + r.s.segnate : '—') +
+            (r.s.assenzeDiFila >= 2 ? ' <span class="ps-fila">(' + r.s.assenzeDiFila + ' di fila)</span>' : '') + '</td></tr>';
+        }).join('') + '</tbody></table></div>';
+    }).join('');
+  }
+
+  function _datiExportPresenze(slug, cat) {
+    var righe = _psRighe();
+    if (!righe.length) { _avviso('Nessuna presenza da esportare.'); return null; }
+    var head = ['Cognome e nome', 'Categoria', 'Presenza %', 'Presente', 'Assente', 'Non segnato', 'Periodo'];
+    var periodo = _ps.periodo === 'stagione' ? 'Stagione' : 'Ultimi 30 giorni';
+    return {
+      titolo: 'Presenze agli allenamenti — ' + cat + ' (' + periodo + ')', base: 'presenze-' + slug, sensibile: false, head: head,
+      righe: righe.map(function (r) {
+        return [((r.a.cognome || '') + ' ' + (r.a.nome || '')).trim(), r.a.categoria, r.s.pct === null ? '' : r.s.pct, r.s.si, r.s.no, r.s.nr, periodo];
+      })
+    };
+  }
+
+  document.getElementById('atletiPresenze').addEventListener('click', function (e) {
+    var p = e.target.closest('[data-periodo]');
+    if (p) { _ps.periodo = p.dataset.periodo; _renderPresStat(); return; }
+    var r = e.target.closest('.ps-riga');
+    if (r) { _openAtletaDetail(r.dataset.uid); _switchAtletaTab('presenze'); }
+  });
+  document.getElementById('atletiPresenze').addEventListener('keydown', function (e) {
+    var r = e.target.closest ? e.target.closest('.ps-riga') : null;
+    if (r && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); _openAtletaDetail(r.dataset.uid); _switchAtletaTab('presenze'); }
+  });
+
+  /* Scheda «Presenze» dell'atleta: i numeri del mese e della stagione e l'elenco degli ultimi allenamenti. */
+  function _renderPresScheda() {
+    var box = document.getElementById('tabPresenze'), a = _editingAtleta;
+    if (!a) return;
+    if (!a.categoria) { box.innerHTML = '<p class="pres-empty">L\'atleta non ha una categoria: le presenze si contano per squadra.</p>'; return; }
+    if (!_ps.orari) {
+      box.innerHTML = '<p class="pres-empty">Caricamento…</p>';
+      _psCarica(function () { if (_editingAtleta === a) _renderPresScheda(); });
+      return;
+    }
+    if (_ps.errore) { _ps.errore = false; _ps.orari = null; box.innerHTML = '<p class="pres-empty" style="color:var(--a-red)">Errore nel caricamento delle presenze.</p>'; return; }
+    var oggi = _presIso(new Date());
+    var s30 = _psStat(a, '30'), sSt = _psStat(a, 'stagione');
+    var squadra = PresenzeStat.media(_atletiCache.filter(function (x) { return x.categoria === a.categoria; }).map(function (x) { return _psStat(x, '30'); }));
+    function tessera(titolo, s, extra) {
+      return '<div class="ps-tessera"><span class="ps-lab">' + titolo + '</span><strong class="ps-grande" style="color:' + PresenzeStat.colore(s.pct) + '">' + (s.pct === null ? '—' : s.pct + '%') + '</strong>' +
+        '<span class="ps-sub">' + s.si + ' presente · ' + s.no + ' assente · ' + s.nr + ' non segnati' + (extra || '') + '</span></div>';
+    }
+    var giorni = _psGiorni(a.categoria, PresenzeStat.inizioStagione(oggi), oggi).reverse().slice(0, 12);
+    var stati = (_ps.risp || {})[a.uid] || {};
+    box.innerHTML = '<div class="ps-tessere">' +
+      tessera('Ultimi 30 giorni', s30, squadra === null ? '' : ' · media squadra ' + squadra + '%') + tessera('Stagione', sSt, '') + '</div>' +
+      (s30.assenzeDiFila >= 2 ? '<p class="ps-alert">Ha saltato gli ultimi ' + s30.assenzeDiFila + ' allenamenti segnati.</p>' : '') +
+      '<h3 class="pres-h">Ultimi allenamenti</h3>' +
+      (giorni.length ? '<div class="admin-table-wrap"><table class="admin-table"><tbody>' + giorni.map(function (d) {
+        var st = stati[d] || '';
+        return '<tr><td>' + esc(new Date(d + 'T00:00:00').toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })) + '</td><td>' +
+          (st === 'p' ? '<span class="chip chip--green">Presente</span>' : st === 'a' ? '<span class="chip chip--red">Assente</span>' : '<span class="chip chip--gray">Non segnato</span>') + '</td></tr>';
+      }).join('') + '</tbody></table></div>'
+        : '<p class="pres-empty">Nessun allenamento svolto in questa stagione per la categoria ' + esc(a.categoria) + '.</p>') +
+      '<p class="taglie-escl-hint">Le presenze si segnano dal pannello Presenze o dal mister; qui si vedono solo.</p>';
   }
 
   /* ================================================

@@ -221,27 +221,194 @@
       if (!dati) return;
       _pres = dati; _presLoaded = true;
       $('presMsg').textContent = '';
+      $('statMsg').textContent = '';
       disegnaPresenze();
+      disegnaStat();
     }).catch(function (e) {
       console.error('[allenatore] presenze', e);
       $('presMsg').textContent = 'Non riesco a caricare le presenze. Controlla la connessione e riprova.';
+      $('statMsg').textContent = 'Non riesco a caricare le presenze. Controlla la connessione e riprova.';
     });
   }
 
+  /* ---------------- statistiche di presenza per atleta ----------------
+     Si calcolano da quello che la pagina ha già (gli ultimi 60 giorni di allenamenti e le presenze segnate), con le
+     regole di js/presenze-stat.js, le stesse dell'admin. Dalla scheda di un'atleta si possono correggere i giorni. */
+  var STAT_GIORNI = 30, STAT_GIORNI_LUNGO = 60;
+  var _statOrd = 'ass', _statSel = null;
+
+  function aggiungiGiorni(iso, n) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+    return new Date(Date.UTC(+m[1], +m[2] - 1, +m[3] + n)).toISOString().slice(0, 10);
+  }
+
+  /* Le statistiche di un'atleta sugli ultimi `giorni` giorni (oggi compreso). */
+  function statDi(cat, atleta, giorni) {
+    var da = aggiungiGiorni(_pres.oggi, -giorni);
+    var date = cat.giorni.filter(function (g) { return g.data <= _pres.oggi && g.data > da; }).map(function (g) { return g.data; });
+    var stati = {};
+    date.forEach(function (d) { stati[d] = (cat.presenze[d] || {})[atleta.id] || ''; });
+    return PresenzeStat.calcola(date, stati);
+  }
+
+  function puntini(ultimi) {
+    var box = el('div', 'st-dots');
+    var si = ultimi.filter(function (x) { return x === 'p'; }).length, no = ultimi.filter(function (x) { return x === 'a'; }).length;
+    box.setAttribute('role', 'img');
+    box.setAttribute('aria-label', si + ' presenze e ' + no + ' assenze negli ultimi ' + ultimi.length + ' allenamenti');
+    ultimi.forEach(function (x) { var d = el('span', 'st-dot'); d.dataset.s = x; box.appendChild(d); });
+    return box;
+  }
+
+  function disegnaStat() {
+    if (!_pres) return;
+    if (_statSel) { disegnaScheda(); return; }
+    show('statScheda', false);
+    show('statListaBox', true);
+    var lista = $('statList');
+    lista.textContent = '';
+    _pres.categorie.forEach(function (cat) {
+      lista.appendChild(el('h2', 'co-cat', cat.categoria));
+      var giaFatti = cat.giorni.filter(function (g) { return g.data <= _pres.oggi; }).length;
+      if (!cat.atleti.length || !giaFatti) {
+        lista.appendChild(el('p', 'co-none', !cat.atleti.length ? 'Non ci sono ancora atleti in questa squadra.' : 'Non ci sono ancora allenamenti svolti.'));
+        return;
+      }
+      var righe = cat.atleti.map(function (a) { return { a: a, s: statDi(cat, a, STAT_GIORNI) }; });
+      var mediaSq = PresenzeStat.media(righe.map(function (r) { return r.s; }));
+      lista.appendChild(el('p', 'co-sub', 'Media della squadra: ' + (mediaSq === null ? '—' : mediaSq + '%')));
+      var sort = el('div', 'st-sort');
+      [['ass', 'Chi manca di più'], ['nome', 'In ordine A–Z']].forEach(function (o) {
+        var b = el('button', _statOrd === o[0] ? 'is-active' : '', o[1]);
+        b.type = 'button';
+        b.setAttribute('aria-pressed', String(_statOrd === o[0]));
+        b.addEventListener('click', function () { _statOrd = o[0]; disegnaStat(); });
+        sort.appendChild(b);
+      });
+      lista.appendChild(sort);
+      if (_statOrd === 'ass') {
+        /* chi non ha niente di segnato va in fondo: non si sa se manca */
+        righe.sort(function (x, y) {
+          return ((x.s.pct === null) - (y.s.pct === null)) || ((x.s.pct || 0) - (y.s.pct || 0)) || x.a.cognome.localeCompare(y.a.cognome, 'it');
+        });
+      }
+      righe.forEach(function (r) {
+        var card = el('button', 'st-card' + (r.s.richiamo ? ' is-warn' : ''));
+        card.type = 'button';
+        var top = el('div', 'st-row');
+        top.appendChild(el('span', 'st-name', (r.a.cognome + ' ' + r.a.nome).trim()));
+        var pct = el('span', 'st-pct', r.s.pct === null ? '—' : r.s.pct + '%');
+        pct.style.color = PresenzeStat.colore(r.s.pct);
+        top.appendChild(pct);
+        var bottom = el('div', 'st-row');
+        bottom.appendChild(r.s.segnate ? puntini(r.s.ultimi) : el('span', 'co-none', 'Ancora niente di segnato'));
+        if (r.s.richiamo) bottom.appendChild(el('span', 'st-flag', 'Da richiamare'));
+        card.appendChild(top);
+        card.appendChild(bottom);
+        card.addEventListener('click', function () { _statSel = { cat: cat.categoria, id: r.a.id }; disegnaScheda(); window.scrollTo(0, 0); });
+        lista.appendChild(card);
+      });
+    });
+  }
+
+  /* Cambia lo stato di un'atleta in un giorno e lo salva; se fallisce, lo rimette com'era e lo dice in `msg`. */
+  function impostaStato(cat, giorno, atleta, dopo, msg, fine) {
+    var segnate = cat.presenze[giorno.data] = cat.presenze[giorno.data] || {};
+    var prima = segnate[atleta.id] || '';
+    segnate[atleta.id] = dopo;
+    msg.textContent = '';
+    apiPresenze('POST', { categoria: cat.categoria, data: giorno.data, atletaId: atleta.id, stato: dopo }).then(function (r) {
+      if (r.status === 401) { auth.signOut().then(function () { location.reload(); }); return; }
+      if (!r.ok) throw new Error('http ' + r.status);
+    }).catch(function (e) {
+      console.error('[allenatore] presenza', e);
+      segnate[atleta.id] = prima;
+      msg.textContent = 'Non sono riuscito a salvare: riprova.';
+    }).then(function () { fine(msg.textContent); });
+  }
+
+  function disegnaScheda(messaggio) {
+    var cat = _pres.categorie.filter(function (c) { return c.categoria === _statSel.cat; })[0];
+    var atleta = cat && cat.atleti.filter(function (a) { return a.id === _statSel.id; })[0];
+    if (!atleta) { _statSel = null; disegnaStat(); return; }
+    show('statListaBox', false);
+    show('statScheda', true);
+    var box = $('statScheda');
+    box.textContent = '';
+    var indietro = el('button', 'st-back', '‹ Atleti');
+    indietro.type = 'button';
+    indietro.addEventListener('click', function () { _statSel = null; disegnaStat(); });
+    box.appendChild(indietro);
+    box.appendChild(el('h1', 'co-title', (atleta.cognome + ' ' + atleta.nome).trim()));
+    box.appendChild(el('p', 'co-sub', cat.categoria));
+
+    var s30 = statDi(cat, atleta, STAT_GIORNI), s60 = statDi(cat, atleta, STAT_GIORNI_LUNGO);
+    var squadra = PresenzeStat.media(cat.atleti.map(function (a) { return statDi(cat, a, STAT_GIORNI); }));
+    var stat = el('div', 'st-box');
+    stat.appendChild(el('div', 'st-lab', 'Presenza · ultimi 30 giorni'));
+    var grande = el('div', 'st-big', s30.pct === null ? '—' : s30.pct + '%');
+    grande.style.color = PresenzeStat.colore(s30.pct);
+    stat.appendChild(grande);
+    if (s30.segnate) {
+      var barra = el('div', 'st-bar'), a1 = el('span'), a2 = el('span');
+      a1.style.width = (s30.si / s30.segnate * 100) + '%';
+      a2.style.width = (s30.no / s30.segnate * 100) + '%';
+      barra.appendChild(a1);
+      barra.appendChild(a2);
+      stat.appendChild(barra);
+    }
+    stat.appendChild(el('p', 'co-sub', s30.si + ' presente · ' + s30.no + ' assente · ' + s30.nr + ' non segnati' +
+      (squadra === null ? '' : ' · media squadra ' + squadra + '%')));
+    if (s30.assenzeDiFila >= 2) stat.appendChild(el('div', 'st-alert', 'Ha saltato gli ultimi ' + s30.assenzeDiFila + ' allenamenti segnati.'));
+    if (s60.segnate) stat.appendChild(el('p', 'co-sub', 'Ultimi 60 giorni: ' + s60.pct + '% (' + s60.si + ' su ' + s60.segnate + ' segnati)'));
+    box.appendChild(stat);
+
+    box.appendChild(el('h2', 'co-cat', 'Ultimi allenamenti'));
+    var msg = el('p', 'co-msg', messaggio || '');
+    msg.setAttribute('role', 'status');
+    cat.giorni.filter(function (g) { return g.data <= _pres.oggi; }).slice(0, 10).forEach(function (g) {
+      var stato = (cat.presenze[g.data] || {})[atleta.id] || '';
+      var riga = el('div', 'st-hist');
+      var quando = el('div', '', giornoCorto(g.data) + (g.oraInizio ? ' · ' + g.oraInizio : ''));
+      var yn = el('div', 'st-yn');
+      [['p', 'Sì', 'presente'], ['a', 'No', 'assente']].forEach(function (o) {
+        var b = el('button', stato === o[0] ? 'is-on' : '', o[1]);
+        b.type = 'button';
+        b.dataset.v = o[0];
+        b.setAttribute('aria-pressed', String(stato === o[0]));
+        b.setAttribute('aria-label', giornoCorto(g.data) + ': ' + o[2]);
+        b.addEventListener('click', function () {
+          yn.querySelectorAll('button').forEach(function (x) { x.disabled = true; });
+          impostaStato(cat, g, atleta, stato === o[0] ? '' : o[0], msg, function (testo) { disegnaScheda(testo); });
+        });
+        yn.appendChild(b);
+      });
+      riga.appendChild(quando);
+      riga.appendChild(yn);
+      box.appendChild(riga);
+    });
+    box.appendChild(msg);
+    box.appendChild(el('p', 'co-sub', 'Puoi correggere una presenza anche dopo l\'allenamento: si aggiorna per tutti.'));
+  }
+
   function mostra(vista) {
-    var pres = vista === 'presenze';
-    show('viewAtleti', !pres);
+    var pres = vista === 'presenze', stat = vista === 'stat', atleti = vista === 'atleti';
+    show('viewAtleti', atleti);
     show('viewPresenze', pres);
-    $('tabAtleti').classList.toggle('is-active', !pres);
-    $('tabPresenze').classList.toggle('is-active', pres);
-    $('tabAtleti').setAttribute('aria-pressed', String(!pres));
-    $('tabPresenze').setAttribute('aria-pressed', String(pres));
-    if (pres && !_presLoaded) caricaPresenze();
+    show('viewStat', stat);
+    [['tabAtleti', atleti], ['tabPresenze', pres], ['tabStat', stat]].forEach(function (t) {
+      $(t[0]).classList.toggle('is-active', t[1]);
+      $(t[0]).setAttribute('aria-pressed', String(t[1]));
+    });
+    if ((pres || stat) && !_presLoaded) caricaPresenze();
+    else if (pres && _pres) disegnaPresenze();
+    else if (stat && _pres) disegnaStat();
   }
 
   document.addEventListener('DOMContentLoaded', function () {
     $('tabAtleti').addEventListener('click', function () { mostra('atleti'); });
     $('tabPresenze').addEventListener('click', function () { mostra('presenze'); });
+    $('tabStat').addEventListener('click', function () { mostra('stat'); });
   });
 
   document.addEventListener('DOMContentLoaded', function () {
