@@ -2005,9 +2005,9 @@
     var url = (_editingAtleta && _editingAtleta.mandatiRate || {})[r.id] || '';
     return '<div class="atleta-rata-mandato">' +
       '<input type="url" id="mandato_' + esc(r.id) + '" class="form-input" value="' + esc(url) + '" autocomplete="off" ' +
-        'placeholder="Mandato: link Drive (solo dirigenti)">' +
+        'placeholder="Ricevuta: link Drive (solo dirigenti)">' +
       '<button class="btn-ghost" style="font-size:12px;padding:5px 10px" onclick="AdminActions.saveMandatoRata(\'' + esc(r.id) + '\')">Salva</button>' +
-      (url ? '<a class="btn-ghost" style="font-size:12px;padding:5px 10px" target="_blank" rel="noopener" href="' + esc(_driveViewUrl(url)) + '">Apri mandato</a>' : '') +
+      (url ? '<a class="btn-ghost" style="font-size:12px;padding:5px 10px" target="_blank" rel="noopener" href="' + esc(_driveViewUrl(url)) + '">Apri ricevuta</a>' : '') +
     '</div>';
   }
 
@@ -2024,11 +2024,11 @@
       a.mandatiRate = Object.assign({}, mappa);
       if (url) a.mandatiRate[rataId] = url; else delete a.mandatiRate[rataId];
       return _logWrite('atleta', uid, _atletaLabel(a), 'update',
-        [{ campo: 'mandato — ' + (rata && rata.note || 'rata'), prima: prima ? 'presente' : '', dopo: url ? 'presente' : '' }]);
+        [{ campo: 'ricevuta (link) — ' + (rata && rata.note || 'rata'), prima: prima ? 'presente' : '', dopo: url ? 'presente' : '' }]);
     }).then(function () {
-      _avviso(url ? 'Mandato salvato.' : 'Mandato rimosso.', 'ok');
+      _avviso(url ? 'Ricevuta salvata.' : 'Ricevuta rimossa.', 'ok');
       _renderRateAdmin();
-    }).catch(function (e) { console.error('[mandato]', e); _avviso('Errore: mandato non salvato.'); });
+    }).catch(function (e) { console.error('[mandato]', e); _avviso('Errore: ricevuta non salvata.'); });
   };
 
   document.getElementById('rataAdd').addEventListener('click', function () {
@@ -2281,7 +2281,6 @@
     _accEditUid = null;
     _switchAtletaTab('anagrafica');
     _renderRateAdmin();
-    _loadMandato(uid);
     _renderAccessiAdmin();
     _renderPresScheda();
   }
