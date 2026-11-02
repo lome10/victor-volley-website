@@ -344,7 +344,7 @@
   /* tutoreNNome resta salvato come «Cognome Nome» (lo leggono la ricevuta e le esportazioni): si ricalcola dai due campi */
   var ATLETA_DERIVATI = ['tutore1Nome', 'tutore2Nome'];
   /* `note` ha una tab sua (Note), salvata a parte su atletiDati: resta fuori dal log come gli altri dati riservati */
-  var ATLETA_SENSIBILI = ATLETA_CAMPI.filter(function (f) { return f.sens; }).map(function (f) { return f.k; }).concat(ATLETA_DERIVATI, ['note']);
+  var ATLETA_SENSIBILI = ATLETA_CAMPI.filter(function (f) { return f.sens; }).map(function (f) { return f.k; }).concat(ATLETA_DERIVATI, ['note', 'mandatoUrl']);
 
   /* «Palamà Ilaria Ilenia» → cognome «Palamà», nome «Ilaria Ilenia» (la prima parola è il cognome): serve solo per i nomi
      inseriti quando il campo era unico; chi compila può correggere. */
@@ -1997,6 +1997,33 @@
     }).join('');
   }
 
+  /* ---- Mandato di pagamento: link a un file su Drive, SOLO dirigenti ----
+     Il link sta su atletiDati (anagrafica riservata, regole: solo dirigenti), non su atleti che le famiglie leggono. */
+  function _renderMandato() {
+    var a = _editingAtleta;
+    var url = a && a.mandatoUrl || '';
+    var inp = document.getElementById('mandatoUrl');
+    if (inp) inp.value = url;
+    document.getElementById('mandatoLinkWrap').classList.toggle('is-hidden', !url);
+    if (url) document.getElementById('mandatoLink').href = _driveViewUrl(url);
+  }
+
+  document.getElementById('mandatoSave').addEventListener('click', function () {
+    var a = _editingAtleta;
+    if (!a) return;
+    var url = document.getElementById('mandatoUrl').value.trim();
+    if (url && !/^https:\/\/(drive|docs)\.google\.com\//.test(url)) { _avviso('Incolla un link di Google Drive (https://drive.google.com/…).'); return; }
+    var prima = a.mandatoUrl || '', uid = a.uid, btn = this;
+    btn.disabled = true;
+    db.collection('atletiDati').doc(uid).set({ mandatoUrl: url }, { merge: true }).then(function () {
+      a.mandatoUrl = url;
+      _renderMandato();
+      return _logWrite('atleta', uid, _atletaLabel(a), 'update', _diff({ mandatoUrl: prima }, { mandatoUrl: url }, ['mandatoUrl']));
+    }).then(function () { _avviso(url ? 'Link del mandato salvato.' : 'Link del mandato rimosso.', 'ok'); })
+      .catch(function (e) { console.error('[mandato]', e); _avviso('Errore: mandato non salvato.'); })
+      .then(function () { btn.disabled = false; });
+  });
+
   document.getElementById('rataAdd').addEventListener('click', function () {
     var a = _editingAtleta;
     if (!a) return;
@@ -2247,6 +2274,7 @@
     _accEditUid = null;
     _switchAtletaTab('anagrafica');
     _renderRateAdmin();
+    _loadMandato(uid);
     _renderAccessiAdmin();
     _renderPresScheda();
   }

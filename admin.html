@@ -9,7 +9,7 @@
   <link rel="preload" href="/assets/fonts/barlow-700-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/manrope-400-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/fonts.css?v=c0ba2518">
-  <link rel="stylesheet" href="/css/admin.css?v=03d531d8">
+  <link rel="stylesheet" href="/css/admin.css?v=a40768cc">
   <link rel="stylesheet" href="/css/dirigenti.css?v=be786146">
 </head>
 <body>
@@ -1068,6 +1068,15 @@
           <div id="tabRate" class="atleta-tab-pane is-hidden">
             <p style="font-size:12.5px;color:var(--a-muted);margin-bottom:14px">Le quote sono quelle del Budget (Rette Atleti): inserite qui o lì sono le stesse, alimentano il bilancio e le famiglie le vedono nell'area atleti.</p>
             <div id="rateAdminList" style="margin-bottom:24px"></div>
+            <div class="atleta-mandato" id="mandatoBox">
+              <div class="atleta-add-rata-title">Mandato di pagamento</div>
+              <p class="atleta-mandato-hint">Riservato ai dirigenti: la famiglia e l'atleta non lo vedono. Carica il file su Drive → tasto destro → "Ottieni link" → incolla qui.</p>
+              <input type="url" id="mandatoUrl" class="form-input" placeholder="https://drive.google.com/file/d/…/view?usp=sharing" autocomplete="off">
+              <div class="atleta-mandato-azioni" style="margin-top:10px">
+                <button id="mandatoSave" class="btn-primary" type="button">Salva</button>
+                <span id="mandatoLinkWrap" class="is-hidden"><a id="mandatoLink" href="#" target="_blank" rel="noopener" class="btn-ghost" style="font-size:12px;display:inline-flex">Apri mandato</a></span>
+              </div>
+            </div>
             <div class="atleta-add-rata">
               <div class="atleta-add-rata-title">Aggiungi quota / rata</div>
               <div class="form-grid">
@@ -2776,7 +2785,7 @@
   <script src="/js/admin/prezzi-calc.js?v=681fbe4b"></script>
   <script src="/js/admin/tesseramenti-calc.js?v=905835f5"></script>
   <script src="/js/presenze-stat.js?v=6dab1972"></script>
-  <script src="/js/admin/atleti.js?v=8528e5af"></script>
+  <script src="/js/admin/atleti.js?v=e6b05c71"></script>
   <script src="/js/admin/cms.js?v=40296774"></script>
   <script src="/js/admin/pianoeditoriale.js?v=06732f38"></script>
   <script src="/js/admin/allenatori.js?v=9b18806d"></script>
