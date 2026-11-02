@@ -1092,18 +1092,9 @@ button { font-family: var(--font-body); cursor: pointer; }
 .atleta-rate-meta { font-size: 12px; color: var(--a-muted); margin-top: 2px; }
 .atleta-rate-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
 
-/* Mandato di pagamento (solo dirigenti) */
-.atleta-mandato {
-  padding: 16px;
-  border-radius: 8px;
-  border: 1px solid var(--a-border);
-  background: var(--a-card);
-  margin-bottom: 24px;
-}
-.atleta-mandato .atleta-add-rata-title { margin-bottom: 6px; }
-.atleta-mandato-hint { font-size: 12px; color: var(--a-muted); margin: 0 0 10px; }
-.atleta-mandato-stato { font-size: 13px; color: var(--a-text); margin-bottom: 10px; word-break: break-word; }
-.atleta-mandato-azioni { display: flex; flex-wrap: wrap; gap: 8px; }
+/* Mandato di pagamento per rata (solo dirigenti) */
+.atleta-rata-mandato { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; }
+.atleta-rata-mandato .form-input { flex: 1 1 220px; min-width: 0; font-size: 12px; padding: 6px 10px; }
 
 /* ================================================
    File JSON editor

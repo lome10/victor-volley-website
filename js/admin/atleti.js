@@ -344,7 +344,7 @@
   /* tutoreNNome resta salvato come «Cognome Nome» (lo leggono la ricevuta e le esportazioni): si ricalcola dai due campi */
   var ATLETA_DERIVATI = ['tutore1Nome', 'tutore2Nome'];
   /* `note` ha una tab sua (Note), salvata a parte su atletiDati: resta fuori dal log come gli altri dati riservati */
-  var ATLETA_SENSIBILI = ATLETA_CAMPI.filter(function (f) { return f.sens; }).map(function (f) { return f.k; }).concat(ATLETA_DERIVATI, ['note', 'mandatoUrl']);
+  var ATLETA_SENSIBILI = ATLETA_CAMPI.filter(function (f) { return f.sens; }).map(function (f) { return f.k; }).concat(ATLETA_DERIVATI, ['note']);
 
   /* «Palamà Ilaria Ilenia» → cognome «Palamà», nome «Ilaria Ilenia» (la prima parola è il cognome): serve solo per i nomi
      inseriti quando il campo era unico; chi compila può correggere. */
@@ -1983,6 +1983,7 @@
           '<div class="atleta-rate-meta">€' + (+r.importo || 0).toFixed(2) +
             (r.stagione ? ' &nbsp;·&nbsp; ' + esc(r.stagione) : '') +
             (r.pagata && r.dataPagamento ? ' &nbsp;·&nbsp; pagata il ' + _fmtDate(r.dataPagamento) : '') + '</div>' +
+          _mandatoRataHtml(r) +
         '</div>' +
         '<div class="atleta-rate-actions">' +
           (r.pagata && ricOk ? _ricevutaBtn(r) : '') +
@@ -1997,32 +1998,38 @@
     }).join('');
   }
 
-  /* ---- Mandato di pagamento: link a un file su Drive, SOLO dirigenti ----
-     Il link sta su atletiDati (anagrafica riservata, regole: solo dirigenti), non su atleti che le famiglie leggono. */
-  function _renderMandato() {
-    var a = _editingAtleta;
-    var url = a && a.mandatoUrl || '';
-    var inp = document.getElementById('mandatoUrl');
-    if (inp) inp.value = url;
-    document.getElementById('mandatoLinkWrap').classList.toggle('is-hidden', !url);
-    if (url) document.getElementById('mandatoLink').href = _driveViewUrl(url);
+  /* ---- Mandato di pagamento: un link Drive per ogni rata, SOLO dirigenti ----
+     I link stanno su atletiDati.mandatiRate = { <id rata>: url } (anagrafica riservata, regole: solo dirigenti).
+     Non sulla rata: le rate le legge anche la famiglia. */
+  function _mandatoRataHtml(r) {
+    var url = (_editingAtleta && _editingAtleta.mandatiRate || {})[r.id] || '';
+    return '<div class="atleta-rata-mandato">' +
+      '<input type="url" id="mandato_' + esc(r.id) + '" class="form-input" value="' + esc(url) + '" autocomplete="off" ' +
+        'placeholder="Mandato: link Drive (solo dirigenti)">' +
+      '<button class="btn-ghost" style="font-size:12px;padding:5px 10px" onclick="AdminActions.saveMandatoRata(\'' + esc(r.id) + '\')">Salva</button>' +
+      (url ? '<a class="btn-ghost" style="font-size:12px;padding:5px 10px" target="_blank" rel="noopener" href="' + esc(_driveViewUrl(url)) + '">Apri mandato</a>' : '') +
+    '</div>';
   }
 
-  document.getElementById('mandatoSave').addEventListener('click', function () {
-    var a = _editingAtleta;
-    if (!a) return;
-    var url = document.getElementById('mandatoUrl').value.trim();
+  window.AdminActions.saveMandatoRata = function (rataId) {
+    var a = _editingAtleta, inp = document.getElementById('mandato_' + rataId);
+    if (!a || !inp) return;
+    var url = inp.value.trim();
     if (url && !/^https:\/\/(drive|docs)\.google\.com\//.test(url)) { _avviso('Incolla un link di Google Drive (https://drive.google.com/…).'); return; }
-    var prima = a.mandatoUrl || '', uid = a.uid, btn = this;
-    btn.disabled = true;
-    db.collection('atletiDati').doc(uid).set({ mandatoUrl: url }, { merge: true }).then(function () {
-      a.mandatoUrl = url;
-      _renderMandato();
-      return _logWrite('atleta', uid, _atletaLabel(a), 'update', _diff({ mandatoUrl: prima }, { mandatoUrl: url }, ['mandatoUrl']));
-    }).then(function () { _avviso(url ? 'Link del mandato salvato.' : 'Link del mandato rimosso.', 'ok'); })
-      .catch(function (e) { console.error('[mandato]', e); _avviso('Errore: mandato non salvato.'); })
-      .then(function () { btn.disabled = false; });
-  });
+    var mappa = a.mandatiRate || {}, prima = mappa[rataId] || '', uid = a.uid;
+    if (url === prima) return;
+    var rata = _rateOfAtleta(uid).find(function (x) { return x.id === rataId; });
+    var patch = {}; patch[rataId] = url ? url : firebase.firestore.FieldValue.delete();
+    db.collection('atletiDati').doc(uid).set({ mandatiRate: patch }, { merge: true }).then(function () {
+      a.mandatiRate = Object.assign({}, mappa);
+      if (url) a.mandatiRate[rataId] = url; else delete a.mandatiRate[rataId];
+      return _logWrite('atleta', uid, _atletaLabel(a), 'update',
+        [{ campo: 'mandato — ' + (rata && rata.note || 'rata'), prima: prima ? 'presente' : '', dopo: url ? 'presente' : '' }]);
+    }).then(function () {
+      _avviso(url ? 'Mandato salvato.' : 'Mandato rimosso.', 'ok');
+      _renderRateAdmin();
+    }).catch(function (e) { console.error('[mandato]', e); _avviso('Errore: mandato non salvato.'); });
+  };
 
   document.getElementById('rataAdd').addEventListener('click', function () {
     var a = _editingAtleta;
