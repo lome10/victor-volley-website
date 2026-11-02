@@ -50,10 +50,10 @@
       ev.push({ fonte: 'Tessere', nome: 'Tessera n. ' + t.numero, importo: tess.prezzo, scadenza: '' });
     });
     var superc = B._calcSupercoppa ? B._calcSupercoppa() : { prezzo: 0, totali: 0 };
-    /* tutti i 54 posti non ancora pagati, anche quelli senza nome: sono comunque un costo */
+    /* solo i posti con un nome e non ancora spuntati «Pagata»: quelli senza nome non sono da incassare */
     for (var n = 1; n <= (superc.totali || 0); n++) {
       var q = (B._supercoppa || []).filter(function (t) { return +t.numero === n; })[0];
-      if (q && q.pagata && String(q.nome || '').trim()) continue;
+      if (!q || !String(q.nome || '').trim() || q.pagata) continue;
       ev.push({ fonte: 'Evento Supercoppa Bari', nome: 'Supercoppa Bari, posto ' + n, importo: superc.prezzo, scadenza: '' });
     }
     (B._altreEntrate || []).forEach(function (v) {

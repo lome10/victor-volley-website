@@ -386,6 +386,16 @@ t('Confronto tra stagioni: totali per fonte e per categoria di spesa', () => {
   assert.deepStrictEqual(x.spese, { 'Federazione': 250, 'Senza categoria': 10 });
 });
 
+t('Supercoppa: incassato e da incassare contano solo i posti con un nome (pagati / non pagati)', () => {
+  const B = { _currentSeasonId: 's', _supercoppa: [{ numero: 1, nome: 'A', pagata: true }, { numero: 2, nome: 'B', pagata: false },
+    { numero: 3, nome: '', pagata: true }, { numero: 4, nome: '  ', pagata: false }, { numero: 5, nome: 'C', pagata: false }] };
+  const window = { Admin: { budgetShared: B, esc: (x) => x, confirm: noop, logWrite: noop, diff: noop }, AdminActions: {} };
+  new Function('window', 'document', 'db', fs.readFileSync(path.join(__dirname, '..', 'js', 'admin', 'budget', 'supercoppa.js'), 'utf8'))(window, document, {});
+  const c = B._calcSupercoppa();
+  assert.deepStrictEqual([c.assegnate, c.pagate, c.incassato, c.daIncassare, c.previsto], [3, 1, 35, 70, 105]);
+  assert.deepStrictEqual(c.righe.map((r) => r.numero), [1]);
+});
+
 t('Pipeline sponsor in elenco: stato, incassato/da incassare, responsabile, logo sul sito', () => {
   const { B } = statoCassa({
     STATI: ['prospect', 'contattato', 'in_trattativa', 'chiuso', 'rifiutato'], _dirigentiList: [{ id: 'd1', nome: 'Anna', cognome: 'Bianchi' }],
