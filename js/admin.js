@@ -33,7 +33,14 @@
      "dirigenti" — non basta più un login Firebase qualsiasi. */
   function _checkRole(user) {
     db.collection('dirigenti').doc(user.uid).get().then(function (doc) {
-      if (!doc.exists) { _showDenied(); return; }
+      if (!doc.exists) {
+        /* Non è un dirigente: se è un allenatore va alla sua pagina di sola lettura, con lo stesso login. */
+        db.collection('allenatori').doc(user.uid).get().then(function (coach) {
+          if (coach.exists) location.replace('/allenatore');
+          else _showDenied();
+        }).catch(function () { _showDenied(); });
+        return;
+      }
       var data = doc.data();
       _uid = user.uid;
       _dirigenteNome = ((data.nome || '') + ' ' + (data.cognome || '')).trim() || data.email || user.email;
@@ -82,11 +89,11 @@
   var BACKUP_COLLECTIONS = [
     'articles', 'partite', 'albums', 'categories', 'players', 'staff',
     'atleti', 'atletiRette', 'attivita', 'auditLog', 'aziende', 'bacheca',
-    'budgetSeasons', 'categorieAtleti', 'categorieSpesa', 'dirigenti',
+    'budgetSeasons', 'categorieAtleti', 'categorieSpesa', 'dirigenti', 'allenatori',
     'pianoEditoriale', 'promemoria', 'rateAtleti', 'sottospese',
     'sponsorizzazioni', 'tranchePagamento', 'vociSpesa', 'tessere', 'supercoppaBari', 'altreEntrate', 'settings', 'siteData',
     'accessi', 'allenamenti', 'atletiDati', 'comunicazioni', 'presenze',
-    'ricevute', 'contatoriRicevute', 'firme', 'notifiche', 'promemoriaInviati'
+    'ricevute', 'contatoriRicevute', 'firme', 'notifiche', 'promemoriaInviati', 'presenzeAllenamento', 'giocatoriDati'
   ];
 
   document.getElementById('btnExportBackup').addEventListener('click', function () {
@@ -208,7 +215,7 @@
   var SECTIONS = {
     dashboard: 'Dashboard', articoli: 'Articoli', calendario: 'Calendario', allenamenti: 'Allenamenti', presenze: 'Presenze', comunicazioni: 'Avvisi', pianoEditoriale: 'Piano Editoriale',
     bacheca: 'Bacheca', galleria: 'Galleria', squadre: 'Squadre',
-    sponsor: 'Sponsor', atleti: 'Atleti', dirigenti: 'Dirigenti', datiJson: 'File JSON',
+    sponsor: 'Sponsor', atleti: 'Atleti', dirigenti: 'Dirigenti', allenatori: 'Allenatori', datiJson: 'File JSON',
     log: 'Log', budget: 'Budget & Forecast', ricevute: 'Ricevute'
   };
 
@@ -302,6 +309,7 @@
     if (section === 'sponsor')    Admin.cms.renderSponsor();
     if (section === 'atleti')     Admin.atleti.render();
     if (section === 'dirigenti')  renderDirigenti();
+    if (section === 'allenatori') Admin.allenatori.render();
     if (section === 'datiJson')   renderDatiJson();
     if (section === 'log')        Admin.budget.renderLog();
     if (section === 'budget')     Admin.budget.renderActiveTab();
@@ -489,7 +497,8 @@
       return '<tr>' +
         '<td>' + esc((d.nome || '') + ' ' + (d.cognome || '')) + '</td>' +
         '<td>' + (d.senzaAccesso ? '<span style="color:var(--a-muted)">Solo taglie (senza accesso)</span>' : esc(d.email || '')) + '</td>' +
-        '<td style="text-align:right">' +
+        '<td style="text-align:right;white-space:nowrap">' +
+          (d.senzaAccesso ? '' : '<button class="btn-ghost btn-sm" onclick="AdminActions.rendiAllenatore(\'' + d.uid + '\')" title="Dagli la pagina dell\'allenatore con le sue categorie">Rendi allenatore</button> ') +
           '<button class="btn-icon btn-icon--danger" onclick="AdminActions.deleteDirigente(\'' + d.uid + '\')" title="' + (d.senzaAccesso ? 'Elimina' : 'Revoca accesso') + '">' + DEL_ICON + '</button>' +
         '</td>' +
       '</tr>';

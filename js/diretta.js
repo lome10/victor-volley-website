@@ -284,6 +284,9 @@
       .then(function (j) {
         var inCorso = !!(j && j.status === 'live' && j.home && j.away);
         if (inCorso !== partitaInCorso) { partitaInCorso = inCorso; aggiornaVideo(); }
+        /* In partita il punteggio è già nel video (overlay di Set Point Pulse): solo la classe cambia, l'iframe non si rimonta */
+        var grid = document.querySelector('.dt-live-grid');
+        if (grid) grid.classList.toggle('dt-live-grid--solo-video', inCorso);
         if (j && (j.status === 'live' || j.status === 'finished') && j.home && j.away) {
           paint(renderSpp(j), JSON.stringify(j));
         } else {

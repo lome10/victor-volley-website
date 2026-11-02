@@ -9,7 +9,7 @@
   <link rel="preload" href="/assets/fonts/barlow-700-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/manrope-400-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/fonts.css?v=c0ba2518">
-  <link rel="stylesheet" href="/css/admin.css?v=3d452546">
+  <link rel="stylesheet" href="/css/admin.css?v=0a7f5b54">
   <link rel="stylesheet" href="/css/dirigenti.css?v=be786146">
 </head>
 <body>
@@ -133,6 +133,10 @@
           <a href="#" class="admin-nav-item" data-section="dirigenti">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
             Dirigenti
+          </a>
+          <a href="#" class="admin-nav-item" data-section="allenatori">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16,11 18,13 22,9"/></svg>
+            Allenatori
           </a>
           </div>
         </div>
@@ -918,6 +922,8 @@
             <button type="button" class="atleti-pill is-active" data-vista="elenco">Elenco</button>
             <button type="button" class="atleti-pill" data-vista="taglie">Taglie</button>
             <button type="button" class="atleti-pill" data-vista="prezzi">Prezzi</button>
+            <button type="button" class="atleti-pill" data-vista="mail">Mail</button>
+            <button type="button" class="atleti-pill" data-vista="presenze">Presenze</button>
           </div>
           <div class="atleti-toolbar">
             <input type="search" id="atletiSearch" class="form-input" placeholder="Cerca per nome o codice fiscale…" autocomplete="off">
@@ -930,6 +936,8 @@
           <p id="atletiSummary" class="atleti-summary"></p>
           <div id="atletiTaglie" class="is-hidden"></div>
           <div id="atletiPrezzi" class="is-hidden"></div>
+          <div id="atletiMail" class="is-hidden"></div>
+          <div id="atletiPresenze" class="is-hidden"></div>
           <div class="admin-table-wrap" id="atletiElencoWrap">
             <table class="admin-table">
               <thead>
@@ -1020,6 +1028,7 @@
             <button class="atleta-tab" data-tab="certmedico">Cert. Medico</button>
             <button class="atleta-tab" data-tab="rate">Rate &amp; Quote</button>
             <button class="atleta-tab" data-tab="modulo">Modulo Iscrizione</button>
+            <button class="atleta-tab" data-tab="presenze">Presenze</button>
             <button class="atleta-tab" data-tab="note">Note</button>
             <button class="atleta-tab" data-tab="accessi">Accessi</button>
             <button class="atleta-tab" data-tab="sicurezza">Sicurezza</button>
@@ -1057,7 +1066,7 @@
 
           <!-- Tab: Rate -->
           <div id="tabRate" class="atleta-tab-pane is-hidden">
-            <p style="font-size:12.5px;color:var(--a-muted);margin-bottom:14px">Le quote sono quelle del Budget (Rette Atleti): inserite qui o lì sono le stesse, alimentano il bilancio e le famiglie le vedono nell'area atleti.</p>
+            <p style="font-size:12.5px;color:var(--a-muted);margin-bottom:14px">Le quote sono quelle del Budget (Rette Atleti): inserite qui o lì sono le stesse, alimentano il bilancio e le famiglie le vedono nell'area atleti. Il link della ricevuta, sotto ogni rata, lo vedono solo i dirigenti.</p>
             <div id="rateAdminList" style="margin-bottom:24px"></div>
             <div class="atleta-add-rata">
               <div class="atleta-add-rata-title">Aggiungi quota / rata</div>
@@ -1103,6 +1112,9 @@
           </div>
 
           <!-- Tab: Accessi (atleta e genitori che vedono questa scheda) -->
+          <!-- Tab: Presenze agli allenamenti (statistiche dell'atleta) -->
+          <div id="tabPresenze" class="atleta-tab-pane is-hidden"></div>
+
           <!-- Tab: Note (riservate ai dirigenti, salvate su atletiDati) -->
           <div id="tabNote" class="atleta-tab-pane is-hidden">
             <div class="form-grid">
@@ -1190,7 +1202,7 @@
       <section id="sectionPresenze" class="admin-section is-hidden">
         <div class="ga-info" style="margin-bottom:24px">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          Le risposte "ci sarò / non ci sarò" di atleti e genitori alle partite e agli allenamenti della categoria. Sono solo un'indicazione: chi non ha risposto non è per forza assente.
+          Presenze di partite e allenamenti della categoria: "Sì" e "No" li possono dare atleti e genitori, il mister e voi dirigenti, prima, durante o dopo. Chi scrive per ultimo vince, quindi si può sempre correggere. Toccando di nuovo il pulsante acceso si toglie la risposta.
         </div>
         <div class="form-group" style="max-width:280px;margin-bottom:24px">
           <label class="form-label" for="presCat">Categoria</label>
@@ -1371,6 +1383,63 @@
           <div class="form-actions">
             <button id="dirigenteFormCancel" class="btn-ghost">Annulla</button>
             <button id="dirigenteFormSave" class="btn-primary">Crea dirigente</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---- ALLENATORI ---- -->
+      <section id="sectionAllenatori" class="admin-section is-hidden">
+
+        <div class="ga-info" style="margin-bottom:24px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Gli allenatori entrano da <strong>/allenatore</strong> e vedono solo l'elenco degli atleti delle loro categorie: cognome, nome, data di nascita e telefono dei genitori. Niente altro (né pagamenti, né codice fiscale, né note mediche). I telefoni si inseriscono nella scheda dell'atleta, sotto «Genitore / tutore».
+        </div>
+
+        <div id="allenatoriList" class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Email</th>
+                <th>Categorie</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="allenatoriBody">
+              <tr><td colspan="4" style="text-align:center;color:var(--a-muted);padding:20px">—</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div id="allenatoriForm" class="is-hidden">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="allenatoreNome">Nome *</label>
+              <input type="text" id="allenatoreNome" class="form-input" placeholder="Nome">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="allenatoreCognome">Cognome *</label>
+              <input type="text" id="allenatoreCognome" class="form-input" placeholder="Cognome">
+            </div>
+          </div>
+          <div id="allenatoreAccount" class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="allenatoreEmail">Email per il login *</label>
+              <input type="email" id="allenatoreEmail" class="form-input" placeholder="Email per il login">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="allenatorePassword">Password iniziale *</label>
+              <input type="text" id="allenatorePassword" class="form-input" placeholder="Minimo 10 caratteri">
+              <button type="button" class="btn-ghost btn-sm" data-genpwd="allenatorePassword" style="margin-top:6px">Genera password</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <span class="form-label">Categorie che allena *</span>
+            <div id="allenatoreCategorie"></div>
+          </div>
+          <div class="form-actions">
+            <button id="allenatoreFormCancel" class="btn-ghost">Annulla</button>
+            <button id="allenatoreFormSave" class="btn-primary">Crea allenatore</button>
           </div>
         </div>
       </section>
@@ -1820,7 +1889,7 @@
             <div class="dg-toolbar">
               <div>
                 <div class="dg-card-title">Evento Supercoppa Bari</div>
-                <div class="dg-card-sub">54 posti da 35 € l'uno. Scrivi il nome accanto al numero per assegnare il posto e spunta «Tesserato» se la persona è tesserata nella nostra società. Spuntando «Pagata» (con la data) i 35 € contano come entrata nel Riepilogo e nel Bilancio di questa stagione. Nel preventivo contano tutti i 54 posti (1.890 €), anche quelli non ancora assegnati: sono comunque un costo.</div>
+                <div class="dg-card-sub">54 posti da 35 € l'uno. Scrivi il nome accanto al numero per assegnare il posto e spunta «Tesserato» se la persona è tesserata nella nostra società. Spuntando «Pagata» (con la data) i 35 € contano come entrata nel Riepilogo e nel Bilancio di questa stagione. Contano come «da incassare» solo i posti con un nome scritto e non ancora spuntati «Pagata»; i posti senza nome non entrano in nessuna cifra.</div>
               </div>
               <input type="search" id="supercoppaFiltro" class="dg-select-sm" placeholder="Cerca numero, nome o note" aria-label="Cerca un posto della Supercoppa">
             </div>
@@ -2700,15 +2769,17 @@
   <script src="/js/firebase-config.js?v=6b9dd403"></script>
   <script src="/js/esc.js?v=bb51449e"></script>
   <script src="/js/data.js?v=f59e753e"></script>
-  <script src="/js/db.js?v=258bd128"></script>
+  <script src="/js/db.js?v=1b6d3602"></script>
   <script src="/js/config.js?v=24603e80"></script>
   <script src="/js/photodb.js?v=15e771fb"></script>
-  <script src="/js/admin.js?v=e9946ce2"></script>
+  <script src="/js/admin.js?v=4ae9b6ae"></script>
   <script src="/js/admin/prezzi-calc.js?v=681fbe4b"></script>
   <script src="/js/admin/tesseramenti-calc.js?v=905835f5"></script>
-  <script src="/js/admin/atleti.js?v=b5ffe58a"></script>
-  <script src="/js/admin/cms.js?v=40296774"></script>
+  <script src="/js/presenze-stat.js?v=6dab1972"></script>
+  <script src="/js/admin/atleti.js?v=1c82e8cc"></script>
+  <script src="/js/admin/cms.js?v=34c25ebc"></script>
   <script src="/js/admin/pianoeditoriale.js?v=06732f38"></script>
+  <script src="/js/admin/allenatori.js?v=9b18806d"></script>
   <script src="/js/admin/bacheca.js?v=14f4be5e"></script>
   <script src="/js/admin/budget/state.js?v=0fa461ec"></script>
   <script src="/js/admin/budget/riepilogo.js?v=9e00ae2a"></script>
@@ -2719,12 +2790,12 @@
   <script src="/js/admin/budget/stagioni.js?v=99afb043"></script>
   <script src="/js/admin/budget/altre.js?v=0fb5f323"></script>
   <script src="/js/admin/budget/tessere.js?v=29a979d9"></script>
-  <script src="/js/admin/budget/supercoppa.js?v=2317d33b"></script>
+  <script src="/js/admin/budget/supercoppa.js?v=6c649552"></script>
   <script src="/js/admin/budget/spese.js?v=d73ef5ca"></script>
   <script src="/js/admin/budget/tesseramenti.js?v=3e22ef0f"></script>
   <script src="/js/admin/budget/iva.js?v=2b927099"></script>
   <script src="/js/admin/budget/exportpdf.js?v=3b3b770c"></script>
-  <script src="/js/admin/budget/cassa.js?v=e9911e1a"></script>
+  <script src="/js/admin/budget/cassa.js?v=9ecb32e3"></script>
   <script src="/js/admin/budget/bilancio.js?v=33f3846b"></script>
   <script src="/js/admin/budget/log.js?v=9343fe64"></script>
   <script src="/js/admin/budget/main.js?v=01fbae4f"></script>

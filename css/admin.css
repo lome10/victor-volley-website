@@ -1092,6 +1092,10 @@ button { font-family: var(--font-body); cursor: pointer; }
 .atleta-rate-meta { font-size: 12px; color: var(--a-muted); margin-top: 2px; }
 .atleta-rate-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
 
+/* Mandato di pagamento per rata (solo dirigenti) */
+.atleta-rata-mandato { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; }
+.atleta-rata-mandato .form-input { flex: 1 1 220px; min-width: 0; font-size: 12px; padding: 6px 10px; }
+
 /* ================================================
    File JSON editor
 ================================================ */
@@ -1708,7 +1712,6 @@ button { font-family: var(--font-body); cursor: pointer; }
   margin-bottom: 10px;
   box-shadow: var(--a-shadow);
 }
-.pres-event.is-past { opacity: .7; }
 .pres-event summary {
   display: flex;
   flex-wrap: wrap;
@@ -1725,19 +1728,20 @@ button { font-family: var(--font-body); cursor: pointer; }
 .pres-si { color: #059669; }
 .pres-no { color: var(--a-red); }
 .pres-nr { color: var(--a-muted); }
-.pres-cols {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  padding: 4px 16px 16px;
-  border-top: 1px solid var(--a-border);
+.pres-roster { padding: 4px 16px 12px; border-top: 1px solid var(--a-border); }
+.pres-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--a-border); }
+.pres-row:last-child { border-bottom: 0; }
+.pres-name { font-size: 14px; }
+.pres-btns { display: flex; gap: 6px; flex-shrink: 0; }
+.pres-btn {
+  min-width: 56px; min-height: 40px; padding: 0 14px;
+  border: 1px solid var(--a-border); border-radius: var(--a-radius);
+  background: var(--a-card); color: var(--a-muted);
+  font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
 }
-.pres-cols h4 { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--a-muted); margin: 12px 0 6px; }
-.pres-cols ul { list-style: none; font-size: 13px; }
-.pres-cols li { padding: 2px 0; }
-.pres-none { font-size: 13px; color: var(--a-muted); }
+.pres-btn--si.is-active { background: #059669; border-color: #059669; color: #fff; }
+.pres-btn--no.is-active { background: var(--a-red); border-color: var(--a-red); color: #fff; }
 @media (max-width: 700px) {
-  .pres-cols { grid-template-columns: 1fr; gap: 0; }
   .pres-counts { margin-left: 0; width: 100%; }
 }
 
@@ -1966,3 +1970,22 @@ button { font-family: var(--font-body); cursor: pointer; }
 .prz-nasc-mot { font-weight: 500; color: var(--a-muted); }
 .prz-nascondi { color: var(--a-muted); }
 .prz-nascondi:hover { color: #B91C1C; }
+
+/* Statistiche di presenza per atleta (vista «Presenze» dell'elenco atleti e scheda atleta) */
+.ps-periodo { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 4px 0 12px; }
+.ps-riga { cursor: pointer; }
+.ps-riga:hover td, .ps-riga:focus-visible td { background: var(--a-bg); }
+.ps-cella { display: flex; align-items: center; gap: 10px; min-width: 150px; }
+.ps-bar { flex: 1; height: 8px; border-radius: 999px; background: var(--a-border); overflow: hidden; }
+.ps-bar > span { display: block; height: 100%; }
+.ps-pct { min-width: 44px; text-align: right; }
+.ps-dots { display: inline-flex; gap: 4px; }
+.ps-dot { width: 18px; height: 18px; border-radius: 5px; border: 1px solid #94A3B8; background: #fff; }
+.ps-dot[data-s="p"] { background: #16A34A; border-color: #16A34A; }
+.ps-dot[data-s="a"] { background: var(--a-red); border-color: var(--a-red); }
+.ps-fila { color: var(--a-red); font-size: 12px; font-weight: 600; }
+.ps-tessere { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+.ps-tessera { flex: 1 1 240px; display: flex; flex-direction: column; gap: 4px; background: var(--a-card); border: 1px solid var(--a-border); border-radius: var(--a-radius); padding: 16px; }
+.ps-lab { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--a-muted); }
+.ps-grande { font-family: var(--font-head); font-size: 40px; line-height: 1.1; }
+.ps-sub { font-size: 12px; color: var(--a-muted); }

@@ -99,8 +99,13 @@ service cloud.firestore {
     match /albums/{document=**}     { allow read: if true; allow write: if isDirigente(); }
     match /categories/{document=**} { allow read: if true; allow write: if isDirigente(); }
     match /players/{document=**}    { allow read: if true; allow write: if isDirigente(); }
+    // Dati dei giocatori NON pubblici (oggi: anno di nascita, anche di minorenni). Un documento per giocatore,
+    // id = id del giocatore in `players`: solo dirigenti.
+    match /giocatoriDati/{playerId} { allow read, write: if isDirigente(); }
     match /staff/{document=**}      { allow read: if true; allow write: if isDirigente(); }
-    match /settings/{document=**}   { allow read: if true; allow write: if isDirigente(); }
+    // settings: pubbliche tranne «asd» (codice fiscale, affiliazione e presidente dell'ASD per le ricevute): le legge
+    // solo il pannello dei dirigenti e le funzioni del server (che non passano dalle regole).
+    match /settings/{settingId}     { allow read: if settingId != 'asd' || isDirigente(); allow write: if isDirigente(); }
     match /siteData/{document=**}   { allow read: if true; allow write: if isDirigente(); }
 
     // Registro ruoli. Ognuno può leggere solo il proprio documento (serve al
@@ -109,6 +114,21 @@ service cloud.firestore {
     match /dirigenti/{uid} {
       allow read: if signedIn() && (request.auth.uid == uid || isDirigente());
       allow write: if isDirigente();
+    }
+
+    // Allenatori — un documento per account (id = uid) con le categorie che allena. Ognuno legge solo il proprio;
+    // i dirigenti li gestiscono. NON dà accesso alle schede degli atleti: l'elenco con nome, data di nascita e
+    // telefono dei genitori lo serve api/allenatore-atleti.js, che controlla questo documento.
+    match /allenatori/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isDirigente());
+      allow write: if isDirigente();
+    }
+
+    // Presenze agli allenamenti segnate dal mister: le scrive solo la funzione del server
+    // (api/allenatore-presenze), i dirigenti le possono leggere.
+    match /presenzeAllenamento/{docId} {
+      allow read: if isDirigente();
+      allow write: if false;
     }
 
     // Area Dirigenti — dati di budget/CRM: solo dirigenti/admin, mai pubblico.
