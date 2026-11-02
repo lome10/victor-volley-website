@@ -21,10 +21,20 @@
        3-0 / 3-1 → vincitore 3 pt, perdente 0 pt
        3-2       → vincitore 2 pt, perdente 1 pt
   ---------------------------------------------------------------- */
+  /* Stesso ordine della classifica di Set Point Pulse (FIPAV): punti, partite
+     vinte, quoziente set, quoziente punti, ordine alfabetico. Il quoziente
+     punti usa i parziali dei set (campo "parziali" della partita: elenco di
+     [casa, ospite]); senza parziali vale 0 per tutti. */
+  function quoziente(fatti, subiti) {
+    if (subiti === 0) return fatti > 0 ? Infinity : 0;
+    return fatti / subiti;
+  }
+  function cmpDesc(a, b) { return a === b ? 0 : (a > b ? -1 : 1); }
+
   function calcolaClassifica(girone) {
     var map = {};
     girone.squadre.forEach(function (s) {
-      map[s.id] = { id: s.id, pg: 0, v: 0, p: 0, sf: 0, ss: 0, pts: 0 };
+      map[s.id] = { id: s.id, nome: s.nome || s.id, pg: 0, v: 0, p: 0, sf: 0, ss: 0, pf: 0, ps: 0, pts: 0 };
     });
 
     girone.partite.forEach(function (m) {
@@ -38,6 +48,10 @@
       map[m.squadra_casa].ss   += so;
       map[m.squadra_ospite].sf += so;
       map[m.squadra_ospite].ss += sc;
+      (m.parziali || []).forEach(function (set) {
+        map[m.squadra_casa].pf += +set[0];   map[m.squadra_casa].ps += +set[1];
+        map[m.squadra_ospite].pf += +set[1]; map[m.squadra_ospite].ps += +set[0];
+      });
 
       var winner = sc > so ? m.squadra_casa : m.squadra_ospite;
       var loser  = sc > so ? m.squadra_ospite : m.squadra_casa;
@@ -48,9 +62,11 @@
     });
 
     return Object.keys(map).map(function (k) { return map[k]; }).sort(function (a, b) {
-      if (b.pts !== a.pts) return b.pts - a.pts;
-      var rA = a.ss ? a.sf / a.ss : a.sf, rB = b.ss ? b.sf / b.ss : b.sf;
-      return rB - rA;
+      return cmpDesc(a.pts, b.pts)
+        || cmpDesc(a.v, b.v)
+        || cmpDesc(quoziente(a.sf, a.ss), quoziente(b.sf, b.ss))
+        || cmpDesc(quoziente(a.pf, a.ps), quoziente(b.pf, b.ps))
+        || a.nome.localeCompare(b.nome, 'it');
     });
   }
 

@@ -225,7 +225,7 @@
     return { s: s, html: logo + '<span class="gp-team-name">' + esc(s.nome) + '</span>' };
   }
 
-  function gironePartitaRow(m, squadre, isNext, categoria) {
+  function gironePartitaRow(m, squadre, categoria) {
     var c = gironeTeam(squadre, m.squadra_casa), o = gironeTeam(squadre, m.squadra_ospite);
     var vv = c.s.home || o.s.home;
     var hasScore = m.set_casa != null && m.set_ospite != null;
@@ -235,13 +235,48 @@
       var link = gcalUrl({ data: m.data, ora: m.ora, squadra_casa: c.s.nome, squadra_ospite: o.s.nome, palazzetto: m.palazzetto, categoria: categoria });
       cal = '<a class="gp-cal" href="' + esc(link) + '" target="_blank" rel="noopener noreferrer" aria-label="' + esc('Aggiungi a Google Calendar: ' + c.s.nome + ' - ' + o.s.nome) + '">' + CAL_ICON + '<span>Aggiungi</span></a>';
     }
-    return '<li class="gp-row' + (vv ? ' gp-row--vv' : '') + (isNext ? ' gp-row--next' : '') + '">' +
-      '<span class="gp-when">' + (isNext ? '<b class="gp-next-tag">Prossima</b>' : '') + esc(dataBreve(m.data, m.ora)) + '</span>' +
+    return '<li class="gp-row' + (vv ? ' gp-row--vv' : '') + '">' +
+      '<span class="gp-when">' + esc(dataBreve(m.data, m.ora)) + '</span>' +
       '<span class="gp-team gp-team--casa' + (casaWins ? ' is-win' : '') + (c.s.home ? ' gp-team--vv' : '') + '">' + c.html + '</span>' +
-      '<span class="gp-score">' + (hasScore ? esc(m.set_casa) + ' – ' + esc(m.set_ospite) : 'vs') + '</span>' +
+      '<span class="gp-score">' + (hasScore ? esc(String(m.set_casa)) + ' – ' + esc(String(m.set_ospite)) : 'vs') + '</span>' +
       '<span class="gp-team gp-team--ospite' + (hasScore && !casaWins ? ' is-win' : '') + (o.s.home ? ' gp-team--vv' : '') + '">' + o.html + '</span>' +
       (m.palazzetto || cal ? '<span class="gp-venue">' + (m.palazzetto ? PIN_ICON + '<span class="gp-venue-text">' + esc(m.palazzetto) + '</span>' : '') + cal + '</span>' : '') +
     '</li>';
+  }
+
+  /* Quanto manca alla partita (solo per date odierne o future) */
+  function countdownLabel(dateStr) {
+    var oggi = new Date(new Date().toISOString().slice(0, 10) + 'T00:00:00');
+    var d = new Date(dateStr + 'T00:00:00');
+    var n = Math.round((d - oggi) / 86400000);
+    if (n <= 0) return 'Oggi';
+    if (n === 1) return 'Domani';
+    return 'tra ' + n + ' giorni';
+  }
+  function dataEstesa(dateStr, ora) {
+    var d = new Date(dateStr + 'T00:00:00');
+    return GIORNI[d.getDay()] + ' ' + d.getDate() + ' ' + MESI[d.getMonth()].toLowerCase() + (ora ? ' · ' + ora : '');
+  }
+
+  /* Card grande con la prossima partita della Victor, sopra l'elenco delle giornate */
+  function gironeFeaturedHtml(m, squadre, categoria) {
+    var cs = Girone.squadraById(squadre, m.squadra_casa), os = Girone.squadraById(squadre, m.squadra_ospite);
+    var teamHtml = function (s) {
+      var logo = s.logo
+        ? '<img loading="lazy" decoding="async" src="' + esc(s.logo) + '" class="gp-feat-logo" alt="">'
+        : '<span class="gp-feat-logo gp-feat-logo--init">' + esc((s.nome || '?').charAt(0).toUpperCase()) + '</span>';
+      return '<div class="gp-feat-team' + (s.home ? ' gp-feat-team--vv' : '') + '">' + logo + '<span class="gp-feat-name">' + esc(s.nome) + '</span></div>';
+    };
+    var link = gcalUrl({ data: m.data, ora: m.ora, squadra_casa: cs.nome, squadra_ospite: os.nome, palazzetto: m.palazzetto, categoria: categoria });
+    return '<div class="gp-feat" id="gp-feat">' +
+      '<div class="gp-feat-head"><span class="gp-feat-lbl">Prossima partita</span><span class="gp-feat-dot">&middot;</span><span class="gp-feat-countdown">' + esc(countdownLabel(m.data)) + '</span></div>' +
+      '<div class="gp-feat-match">' + teamHtml(cs) + '<span class="gp-feat-vs">VS</span>' + teamHtml(os) + '</div>' +
+      '<div class="gp-feat-info">' +
+        '<span class="gp-feat-date">' + esc(dataEstesa(m.data, m.ora)) + '</span>' +
+        (m.palazzetto ? '<span class="gp-feat-venue">' + PIN_ICON + '<span>' + esc(m.palazzetto) + '</span></span>' : '') +
+      '</div>' +
+      '<a class="gp-feat-cal" href="' + esc(link) + '" target="_blank" rel="noopener noreferrer">' + CAL_ICON + '<span>Aggiungi al calendario</span></a>' +
+    '</div>';
   }
 
   function renderGironePartite(girone, panel) {
@@ -268,7 +303,9 @@
     });
     giornate.sort(function (a, b) { return a - b; });
 
-    wrap.innerHTML = giornate.map(function (k) {
+    var featured = prossima ? gironeFeaturedHtml(prossima, squadre, girone.categoria) : '';
+
+    wrap.innerHTML = featured + giornate.map(function (k) {
         var lista = perG[k].sort(ordina);
         var gioca = {};
         lista.forEach(function (m) { gioca[m.squadra_casa] = gioca[m.squadra_ospite] = true; });
@@ -280,7 +317,7 @@
           : d1.getDate() + ' ' + MESI_BREVI[d1.getMonth()] + ' – ' + d2.getDate() + ' ' + MESI_BREVI[d2.getMonth()]) : '';
         return '<section class="gp-giornata">' +
           '<div class="gp-giornata-head"><h3 class="gp-giornata-title">' + (k ? k + 'ª giornata' : 'Partite') + '</h3>' + (range ? '<span class="gp-giornata-range">' + esc(range) + '</span>' : '') + '</div>' +
-          '<ul class="gp-list">' + lista.map(function (m) { return gironePartitaRow(m, squadre, m === prossima, girone.categoria); }).join('') + '</ul>' +
+          '<ul class="gp-list">' + lista.map(function (m) { return gironePartitaRow(m, squadre, false, girone.categoria); }).join('') + '</ul>' +
           (k && riposa.length ? '<p class="gp-riposa">Riposa: ' + esc(riposa.join(', ')) + '</p>' : '') +
         '</section>';
       }).join('');
@@ -500,7 +537,7 @@
   document.getElementById('calSticky').addEventListener('click', function (e) {
     if (!e.target.closest('[data-role="next-go"]')) return;
     var panel = document.querySelector('.cal-cat-panel:not(.is-hidden)');
-    var row = panel && (panel.querySelector('.gp-row--next') || panel.querySelector('.fixture-row--next'));
+    var row = panel && (panel.querySelector('.gp-feat') || panel.querySelector('.fixture-row--next'));
     if (!row) return;
     row.scrollIntoView({ behavior: 'smooth', block: 'center' });
     row.classList.add('is-flash');
