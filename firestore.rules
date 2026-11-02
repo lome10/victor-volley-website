@@ -99,6 +99,9 @@ service cloud.firestore {
     match /albums/{document=**}     { allow read: if true; allow write: if isDirigente(); }
     match /categories/{document=**} { allow read: if true; allow write: if isDirigente(); }
     match /players/{document=**}    { allow read: if true; allow write: if isDirigente(); }
+    // Dati dei giocatori NON pubblici (oggi: anno di nascita, anche di minorenni). Un documento per giocatore,
+    // id = id del giocatore in `players`: solo dirigenti.
+    match /giocatoriDati/{playerId} { allow read, write: if isDirigente(); }
     match /staff/{document=**}      { allow read: if true; allow write: if isDirigente(); }
     // settings: pubbliche tranne «asd» (codice fiscale, affiliazione e presidente dell'ASD per le ricevute): le legge
     // solo il pannello dei dirigenti e le funzioni del server (che non passano dalle regole).

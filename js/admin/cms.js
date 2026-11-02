@@ -1511,7 +1511,7 @@
     document.getElementById('playerNumber').value  = player ? (player.number || '') : '';
     document.getElementById('playerRole').value    = player ? (player.role   || 'Laterale') : 'Laterale';
     document.getElementById('playerGender').value  = player ? (player.gender || 'M') : 'M';
-    document.getElementById('playerYear').value    = player ? (player.year   || '') : '';
+    _caricaAnnoGiocatore(player);
     document.getElementById('playerPhoto').value   = player ? (player.photo  || '') : '';
     document.getElementById('playerPhotoFocus').value = player ? (player.photoFocus || '50% 25%') : '50% 25%';
     if (player && player.photo) {
@@ -1532,13 +1532,43 @@
       number:      numVal  ? +numVal  : null,
       role:        document.getElementById('playerRole').value,
       gender:      document.getElementById('playerGender').value || 'M',
-      year:        yearVal ? +yearVal : null,
       photo:       document.getElementById('playerPhoto').value.trim(),
       photoFocus:  document.getElementById('playerPhotoFocus').value || '50% 25%'
     });
+    delete player.year;   /* l'anno di nascita non sta più nel documento pubblico: vedi _salvaAnnoGiocatore */
     if (!player.stagione) player.stagione = _currentAdminSeason || (VV.getCurrentSeason() || {}).id || '2025/2026';
-    DB.savePlayer(player, renderSquadre);
+    var saved = DB.savePlayer(player, renderSquadre);
+    if (saved && _annoPlayer.caricato) _salvaAnnoGiocatore(saved.id, yearVal ? +yearVal : null);
   });
+
+  /* Anno di nascita dei giocatori: raccolta privata giocatoriDati (id = id giocatore), solo dirigenti.
+     La raccolta `players` è pubblica e ci stanno solo i dati della vetrina. */
+  var _annoPlayer = { id: null, caricato: false };
+
+  function _caricaAnnoGiocatore(player) {
+    var el = document.getElementById('playerYear');
+    _annoPlayer = { id: player ? player.id : null, caricato: !player };   /* giocatore nuovo: niente da leggere */
+    el.value = '';
+    if (!player) { el.disabled = false; return; }
+    var vecchio = player.year || '';   /* dato non ancora spostato dal documento pubblico */
+    el.disabled = true;
+    db.collection('giocatoriDati').doc(String(player.id)).get().then(function (snap) {
+      if (_annoPlayer.id !== player.id) return;
+      el.value = snap.exists && snap.data().year ? snap.data().year : vecchio;
+      _annoPlayer.caricato = true;
+    }).catch(function (e) {
+      console.error('[Giocatore] anno di nascita', e);
+      if (_annoPlayer.id === player.id) el.value = vecchio;   /* non letto: al salvataggio non viene toccato */
+    }).then(function () { if (_annoPlayer.id === player.id) el.disabled = false; });
+  }
+
+  function _salvaAnnoGiocatore(id, anno) {
+    var ref = db.collection('giocatoriDati').doc(String(id));
+    (anno ? ref.set({ year: anno }) : ref.delete()).catch(function (e) {
+      console.error('[Giocatore] salvataggio anno di nascita', e);
+      alert('Anno di nascita non salvato: riprova.');
+    });
+  }
 
   document.getElementById('playerCancel').addEventListener('click', renderSquadre);
 

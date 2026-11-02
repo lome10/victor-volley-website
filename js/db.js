@@ -330,7 +330,10 @@
       if (cb) cb();
       /* cascade Firestore in background */
       var ops = [_remove('categories', id)];
-      players.forEach(function (p) { ops.push(_remove('players', p.id)); });
+      players.forEach(function (p) {
+        ops.push(_remove('players', p.id));
+        ops.push(_col('giocatoriDati').doc(String(p.id)).delete());
+      });
       staff.forEach(function (s)   { ops.push(_remove('staff',   s.id)); });
       Promise.all(ops).then(function () {
         _audit('categoria', String(id), 'Categoria — ' + (before ? before.name : id), 'delete', [{ campo: '(record, con giocatori/staff collegati)', prima: 'presente', dopo: null }]);
@@ -354,6 +357,7 @@
       _remove('players', id).then(function () {
         _audit('giocatore', String(id), 'Giocatore — ' + (before ? before.name : id), 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]);
       }).catch(function (e) { console.error('[DB] deletePlayer', e); });
+      _col('giocatoriDati').doc(String(id)).delete().catch(function (e) { console.error('[DB] deletePlayer anno di nascita', e); });
     },
 
     /* ---- STAFF ----------------------------------------------- */
