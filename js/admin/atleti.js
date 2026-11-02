@@ -1987,6 +1987,7 @@
         '</div>' +
         '<div class="atleta-rate-actions">' +
           (r.pagata && ricOk ? _ricevutaBtn(r) : '') +
+          (r.pagata ? '' : window.AdminActions.sospendiPromemoriaBtnHtml(r, 'btn-ghost')) +
           '<button class="btn-ghost" style="font-size:12px;padding:5px 10px;color:' +
             (r.pagata ? 'var(--a-green)' : 'var(--a-text)') +
             '" onclick="AdminActions.toggleRataScheda(\'' + esc(r.id) + '\')">' +

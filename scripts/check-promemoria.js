@@ -145,5 +145,34 @@ t('differenza in giorni a cavallo del cambio ora', () => {
   assert.strictEqual(L.giorniTra('2026-03-28', '2026-03-30'), 2);   // 29 marzo 2026: ora legale
 });
 
+/* ---- rata sospesa dai dirigenti, giorno dopo per l'anteprima ---- */
+t('rata con promemoria sospesi: niente pagamento né validità', () => {
+  [7, 1, -1, -8].forEach((g) => assert.deepStrictEqual(run([atleta()], [rata(g, { sospendiPromemoria: true, scadenza: addDays(OGGI, g) })]), []));
+  assert.deepStrictEqual(run([atleta()], [rataVal(7, { sospendiPromemoria: true })]), []);
+});
+t('sospendere una rata non ferma le altre rate né il certificato', () => {
+  const p = run([atleta({ certMedicoScadenza: addDays(OGGI, 7) })], [rata(7, { sospendiPromemoria: true }), rata(7, { id: 'r2' })]);
+  assert.deepStrictEqual(p.map((x) => x.tipo).sort(), ['certificato', 'rata']);
+  assert.ok(p.find((x) => x.tipo === 'rata').chiave.startsWith('pag_r2_'));
+});
+t('rata non sospesa (flag falso o assente): i promemoria partono', () => {
+  assert.strictEqual(run([atleta()], [rata(7, { sospendiPromemoria: false })]).length, 1);
+  assert.strictEqual(run([atleta()], [rata(7)]).length, 1);
+});
+t('ogni promemoria di rata porta l’id della rata (per i pulsanti dell’anteprima)', () => {
+  assert.strictEqual(run([atleta()], [rata(7)])[0].rataId, 'r1');
+});
+t('aggiungiGiorni: confini di mese, anno e cambio ora', () => {
+  assert.strictEqual(L.aggiungiGiorni('2026-10-31', 1), '2026-11-01');
+  assert.strictEqual(L.aggiungiGiorni('2026-12-31', 1), '2027-01-01');
+  assert.strictEqual(L.aggiungiGiorni('2026-10-24', 1), '2026-10-25');
+});
+t('anteprima di domani = quello che il job calcolerà domani', () => {
+  const domani = L.aggiungiGiorni(OGGI, 1);
+  const rate = [rata(8)];   // fra 8 giorni oggi: domani sono 7 → promemoria p7
+  assert.deepStrictEqual(L.costruisciPromemoria({ atleti: [atleta()], rate, oggi: OGGI }), []);
+  assert.strictEqual(L.costruisciPromemoria({ atleti: [atleta()], rate, oggi: domani }).length, 1);
+});
+
 if (process.exitCode) { console.error('\nCollaudo promemoria: PROBLEMI (vedi sopra).'); }
 else { console.log('OK: ' + passed + ' verifiche sui promemoria (soglie, esclusioni, email, fuso orario).'); }

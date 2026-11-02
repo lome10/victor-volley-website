@@ -23,8 +23,8 @@ const crypto = require('crypto');
 const { getApp } = require('./_firebase');
 const L = require('./_promemoria-logic');
 const { configEmail, inviaEmail } = require('./_email');
+const { docId, calcolaDaInviare } = require('./_promemoria-calcolo');
 
-const hash8 = (s) => crypto.createHash('sha256').update(s).digest('hex').slice(0, 12);
 const mask = (e) => e.replace(/^(.).*@(.).*(\..+)$/, '$1***@$2***$3');
 
 module.exports = async function handler(req, res) {
@@ -52,31 +52,8 @@ module.exports = async function handler(req, res) {
 
   try {
     const oggi = L.oggiRoma();
-    const [atletiSnap, rateSnap, optOutSnap] = await Promise.all([
-      db.collection('atleti').get(),
-      db.collection('rateAtleti').where('pagata', '==', false).get(),
-      db.collection('notifiche').where('email', '==', false).get()
-    ]);
-    const atleti = atletiSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
-    const rate = rateSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
-    const nonVogliono = new Set(optOutSnap.docs.map((d) => d.id));
-
-    const calcolati = L.costruisciPromemoria({ atleti, rate, oggi });
-
-    // già inviati: un documento per (promemoria, destinatario)
-    const docId = (chiave, email) => chiave + '__' + hash8(email);
-    const coppie = [];
-    calcolati.forEach((p) => p.destinatari.forEach((d) => coppie.push({ p, d, id: docId(p.chiave, d.email) })));
-    const esistenti = new Set();
-    for (let i = 0; i < coppie.length; i += 300) {
-      const refs = coppie.slice(i, i + 300).map((c) => db.collection('promemoriaInviati').doc(c.id));
-      if (refs.length) (await db.getAll(...refs)).forEach((s) => { if (s.exists) esistenti.add(s.id); });
-    }
-    const daInviare = calcolati.map((p) => ({
-      ...p, destinatari: p.destinatari.filter((d) => !esistenti.has(docId(p.chiave, d.email)))
-    })).filter((p) => p.destinatari.length);
-
-    const gruppi = L.raggruppaPerDestinatario(daInviare, nonVogliono);
+    // calcolo condiviso con l'anteprima dei dirigenti: api/_promemoria-calcolo.js
+    const { calcolati, esistenti, gruppi } = await calcolaDaInviare(db, oggi);
     const riepilogo = { oggi, calcolati: calcolati.length, giaInviati: esistenti.size, destinatari: gruppi.length, inviati: 0, errori: 0 };
 
     if (dry) {

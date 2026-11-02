@@ -25,6 +25,12 @@ function oggiRoma(now) {
     .format(now || new Date());
 }
 
+/** `iso` (YYYY-MM-DD) spostata di `n` giorni. */
+function aggiungiGiorni(iso, n) {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
+}
+
 /** Giorni da `da` a `a` (entrambe YYYY-MM-DD); positivo se `a` è nel futuro. */
 function giorniTra(da, a) {
   const p = (s) => { const [y, m, d] = s.split('-').map(Number); return Date.UTC(y, m - 1, d); };
@@ -79,7 +85,8 @@ function costruisciPromemoria({ atleti, rate, oggi }) {
   const dataOk = (s) => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
 
   rate.forEach((r) => {
-    if (r.pagata) return;
+    /* sospendiPromemoria: la società ha bloccato i promemoria di questa rata (es. pagamento in verifica) */
+    if (r.pagata || r.sospendiPromemoria) return;
     const haPag = dataOk(r.scadenzaPagamento), haVal = dataOk(r.scadenza);
     if (!haPag && !haVal) return;
     const a = perId.get(r.atletaId);
@@ -87,7 +94,7 @@ function costruisciPromemoria({ atleti, rate, oggi }) {
     const dest = destinatariDi(a);
     if (!dest.length) return;
     const cosa = '«' + (r.note || 'Quota') + '» (€ ' + eur(r.importo) + ')';
-    const base = { atletaId: a.id, atletaNome: nomeAtleta(a), tipo: 'rata', destinatari: dest };
+    const base = { atletaId: a.id, atletaNome: nomeAtleta(a), tipo: 'rata', rataId: r.id, destinatari: dest };
     const gVal = haVal ? giorniTra(oggi, r.scadenza) : null;       // >0 futuro, <0 validità finita
     const validaFinita = gVal != null && gVal < 0;
 
@@ -212,6 +219,6 @@ function componiEmail(g, siteUrl) {
 
 module.exports = {
   SOGLIE_RATA_PRIMA, SOGLIE_RATA_DOPO, SOGLIE_VALIDITA_PRIMA, SOGLIE_VALIDITA_DOPO, SOGLIE_CERT_PRIMA,
-  oggiRoma, giorniTra, emailValida, destinatariDi,
+  oggiRoma, aggiungiGiorni, giorniTra, emailValida, destinatariDi,
   costruisciPromemoria, raggruppaPerDestinatario, componiEmail
 };

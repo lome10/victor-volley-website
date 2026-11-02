@@ -251,6 +251,7 @@
           '<div style="font-size:12px;color:var(--dg-muted);display:flex;flex-wrap:wrap;gap:4px 0;margin-top:3px">' + DG.dateRataHtml(r) + '</div>' +
         '</div>' +
         '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0">' +
+          (r.pagata ? '' : DG.sospendiPromemoriaBtnHtml(r, 'dg-btn-ghost dg-btn-sm')) +
           '<label class="dg-check" style="font-size:12px"><input type="checkbox"' + (r.pagata ? ' checked' : '') + ' onchange="DG.toggleRataAtleta(\'' + r.id + '\', this.checked)"> Pagata</label>' +
           '<button class="dg-btn-icon-only" title="Elimina" onclick="DG.deleteRataAtleta(\'' + r.id + '\')">' + B._delIconSm() + '</button>' +
         '</div>' +
@@ -342,6 +343,73 @@
         .catch(function (e) { alert('Errore: ' + e.message); });
     });
   }
+
+  /* ---- Promemoria email: sospensione per rata e anteprima di domani ----
+     Il flag `sospendiPromemoria` sulla rata ferma i promemoria (pagamento e validità) di quella rata: lo rispetta il
+     job (api/_promemoria-logic.js). L'anteprima chiede al server quello che partirà domani (stesso calcolo del job). */
+  DG.sospendiPromemoriaBtnHtml = function (r, cls) {
+    var sosp = !!r.sospendiPromemoria;
+    return '<button type="button" class="' + cls + '" style="font-size:12px;padding:5px 10px" title="' +
+      (sosp ? 'I promemoria email di questa rata sono fermi: clicca per riattivarli' : 'Ferma i promemoria email di questa rata (es. pagamento in verifica)') + '"' +
+      ' onclick="AdminActions.toggleSospendiPromemoria(\'' + esc(r.id) + '\',' + (sosp ? 'false' : 'true') + ')">' +
+      (sosp ? 'Promemoria sospesi · Riattiva' : 'Sospendi promemoria') + '</button>';
+  };
+
+  DG.toggleSospendiPromemoria = function (id, sospendi) {
+    var r = B._rateAtleti.find(function (x) { return x.id === id; });
+    if (!r) return Promise.resolve();
+    var old = { sospendiPromemoria: !!r.sospendiPromemoria };
+    var patch = { sospendiPromemoria: !!sospendi };
+    var a = B._atletiRette.find(function (x) { return x.id === r.atletaRettaId; });
+    r.sospendiPromemoria = !!sospendi;
+    return db.collection('rateAtleti').doc(id).update(patch)
+      .then(function () { return _logWrite('rataAtleti', id, 'Rata — ' + (a ? a.cognome + ' ' + a.nome : ''), 'update', _diff(old, patch, ['sospendiPromemoria'])); })
+      .then(function () { _renderRateAtletaModal(); _renderRateAdmin(); return _promemoriaCaricato ? _caricaPromemoriaDomani() : null; })
+      .catch(function (e) { r.sospendiPromemoria = old.sospendiPromemoria; _renderRateAtletaModal(); _renderRateAdmin(); alert('Errore: ' + e.message); });
+  };
+
+  var _promemoriaCaricato = false;
+  function _caricaPromemoriaDomani() {
+    var el = document.getElementById('promemoriaDomaniBody');
+    if (!el) return Promise.resolve();
+    el.innerHTML = '<p class="dg-muted">Calcolo in corso…</p>';
+    return auth.currentUser.getIdToken().then(function (token) {
+      return fetch('/api/promemoria-anteprima', { headers: { 'Authorization': 'Bearer ' + token } });
+    }).then(function (res) {
+      return res.json().catch(function () { return {}; }).then(function (d) {
+        if (!res.ok) throw new Error(d.error || ('Errore ' + res.status));
+        return d;
+      });
+    }).then(_renderPromemoriaDomani).catch(function (e) {
+      el.innerHTML = '<p class="dg-muted">Non riesco a calcolare l’anteprima (' + esc((e && e.message) || 'errore') + ').</p>';
+    });
+  }
+
+  function _renderPromemoriaDomani(d) {
+    var el = document.getElementById('promemoriaDomaniBody');
+    if (!el) return;
+    if (!d.promemoria.length) {
+      el.innerHTML = '<p class="dg-muted">Domani (' + esc(_fmtDate(d.giorno)) + ') non parte nessun promemoria.</p>';
+      return;
+    }
+    el.innerHTML = '<p style="font-size:13px;margin:0 0 8px"><strong>' + d.promemoria.length + '</strong> promemoria in <strong>' + d.email + '</strong> email, domani ' + esc(_fmtDate(d.giorno)) + ' mattina.</p>' +
+      d.promemoria.map(function (p) {
+        var r = p.rataId ? B._rateAtleti.find(function (x) { return x.id === p.rataId; }) : null;
+        var azioni = r
+          ? '<button type="button" class="dg-btn-ghost dg-btn-sm" style="font-size:12px;padding:5px 10px" onclick="AdminActions.manageRateAtleta(\'' + esc(r.atletaRettaId) + '\')">Apri rate</button>' +
+            DG.sospendiPromemoriaBtnHtml(r, 'dg-btn-ghost dg-btn-sm')
+          : '';
+        return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:8px 10px;background:#f8fafc;border-radius:8px;margin-bottom:6px">' +
+          '<div style="font-size:13px;min-width:0;flex:1 1 260px">' + esc(p.testo) +
+            '<div style="font-size:11px;color:var(--dg-muted);margin-top:2px">' + (p.tipo === 'certificato' ? 'Certificato medico' : p.tipo === 'validita' ? 'Validità quota' : 'Quota') + ' · ' + p.destinatari + (p.destinatari === 1 ? ' destinatario' : ' destinatari') + '</div></div>' +
+          '<div style="display:flex;gap:6px;flex-wrap:wrap">' + azioni + '</div></div>';
+      }).join('');
+  }
+
+  document.addEventListener('click', function (e) {
+    if (e.target.closest && e.target.closest('[data-esub="rette"]')) { _promemoriaCaricato = true; _caricaPromemoriaDomani(); }
+    else if (e.target.closest && e.target.closest('#promemoriaDomaniAggiorna')) { _promemoriaCaricato = true; _caricaPromemoriaDomani(); }
+  });
 
   /* ---- Esportato per gli altri file del Budget ---- */
   B._addRataAtleta = _addRataAtleta;
