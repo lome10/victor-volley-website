@@ -36,7 +36,9 @@ module.exports = async function handler(req, res) {
 
   const secret = process.env.CRON_SECRET;
   if (!secret) return res.status(200).json({ skipped: 'CRON_SECRET non configurata' });
-  if (req.headers.authorization !== 'Bearer ' + secret) return res.status(401).json({ error: 'Non autorizzato.' });
+  /* confronto a tempo costante (si confrontano le impronte, che hanno sempre la stessa lunghezza) */
+  const sha = (s) => crypto.createHash('sha256').update(String(s)).digest();
+  if (!crypto.timingSafeEqual(sha(req.headers.authorization || ''), sha('Bearer ' + secret))) return res.status(401).json({ error: 'Non autorizzato.' });
 
   const dry = String((req.query && req.query.dry) || '') === '1';
   const cfg = configEmail();

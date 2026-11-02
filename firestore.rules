@@ -100,7 +100,9 @@ service cloud.firestore {
     match /categories/{document=**} { allow read: if true; allow write: if isDirigente(); }
     match /players/{document=**}    { allow read: if true; allow write: if isDirigente(); }
     match /staff/{document=**}      { allow read: if true; allow write: if isDirigente(); }
-    match /settings/{document=**}   { allow read: if true; allow write: if isDirigente(); }
+    // settings: pubbliche tranne «asd» (codice fiscale, affiliazione e presidente dell'ASD per le ricevute): le legge
+    // solo il pannello dei dirigenti e le funzioni del server (che non passano dalle regole).
+    match /settings/{settingId}     { allow read: if settingId != 'asd' || isDirigente(); allow write: if isDirigente(); }
     match /siteData/{document=**}   { allow read: if true; allow write: if isDirigente(); }
 
     // Registro ruoli. Ognuno può leggere solo il proprio documento (serve al
