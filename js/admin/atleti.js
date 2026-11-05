@@ -444,6 +444,20 @@
              catastale: c.slice(11, 15).join('') };
   }
 
+  /* Tabella dei comuni (codice catastale → [nome, sigla provincia]), scaricata solo quando serve. Fonte: comuni-json (MIT), ISTAT. */
+  var _comuniCat = null;
+  function _caricaComuni() {
+    if (_comuniCat) return Promise.resolve(_comuniCat);
+    return fetch('/data/comuni-catastali.json').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (j) { _comuniCat = j; return j; });
+  }
+  function _normNome(t) { return String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().replace(/[^A-Z]/g, ''); }
+  /* { luogo, provincia } dal codice catastale; i codici che iniziano con Z sono stati esteri (provincia «EE», il nome va scritto a mano) */
+  function _luogoDaCatastale(cod) {
+    if (cod.charAt(0) === 'Z') return Promise.resolve({ estero: true, provincia: 'EE' });
+    return _caricaComuni().then(function (t) { var c = t[cod]; return c ? { luogo: c[0], provincia: c[1] } : null; }).catch(function () { return null; });
+  }
+
   function _collegaParserCF() {
     var cfEl = _campoEl('codiceFiscale');
     if (!cfEl || cfEl.dataset.cfParser) return;
@@ -467,6 +481,23 @@
       }
       var testo = (r.controlloOk ? '' : 'Il carattere di controllo non torna: probabile errore di battitura. ') + (msg.length ? 'Dal codice fiscale: ' + msg.join(', ') + '.' : 'Dati coerenti con il codice fiscale.');
       hint.textContent = testo;
+      var lu = _campoEl('luogoNascita'), pn = _campoEl('provinciaNascita');
+      if (!lu && !pn) return;
+      _luogoDaCatastale(r.catastale).then(function (x) {
+        if (cfEl.value.trim().toUpperCase().replace(/\s+/g, '') !== cf) return;   /* nel frattempo il codice è cambiato */
+        var m2 = [];
+        if (!x) { hint.textContent = testo + ' Luogo di nascita non trovato per il codice «' + r.catastale + '»: scrivilo a mano.'; return; }
+        if (pn) {
+          if (!pn.value) { pn.value = x.provincia; m2.push('provincia di nascita'); }
+          else if (pn.value.toUpperCase() !== x.provincia) m2.push('ATTENZIONE: la provincia di nascita del codice è ' + x.provincia);
+        }
+        if (lu && x.luogo) {
+          if (!lu.value) { lu.value = x.luogo; m2.push('luogo di nascita'); }
+          else if (_normNome(lu.value) !== _normNome(x.luogo)) m2.push('ATTENZIONE: il luogo di nascita del codice è ' + x.luogo);
+        }
+        if (x.estero && lu && !lu.value) m2.push('nato all’estero: scrivi lo Stato nel luogo di nascita');
+        if (m2.length) hint.textContent = testo.replace(/\.$/, '') + (msg.length ? ', ' : ': ') + m2.join(', ') + '.';
+      });
     };
     cfEl.addEventListener('input', leggi);
     cfEl.addEventListener('change', leggi);
