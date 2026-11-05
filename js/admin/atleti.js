@@ -1410,17 +1410,34 @@
   var TESS_CAMPI = ['cognome', 'nome', 'sesso', 'luogoNascita', 'provinciaNascita', 'codiceFiscale', 'indirizzo', 'cap', 'citta', 'provincia'];
   var TESS_PUB = ['nome', 'cognome'];   /* su `atleti`; gli altri campi stanno su `atletiDati` (come nella scheda) */
   var TESS_LARG = { cognome: 130, nome: 120, sesso: 64, luogoNascita: 150, provinciaNascita: 64, codiceFiscale: 170, indirizzo: 200, cap: 76, citta: 140, provincia: 64 };
+  var _tessFiltro = 'tutti';   /* tutti | completi | incompleti: vale per la tabella e per gli export */
+  function _tessCompleto(a) { return TESS_CAMPI.every(function (k) { return String(a[k] == null ? '' : a[k]).trim(); }); }
+  function _tessAtleti() {
+    var base = _atletiFiltrati();
+    if (_tessFiltro === 'completi') return base.filter(_tessCompleto);
+    if (_tessFiltro === 'incompleti') return base.filter(function (a) { return !_tessCompleto(a); });
+    return base;
+  }
   function _righeTess() {
-    return _atletiFiltrati().map(function (a) {
+    return _tessAtleti().map(function (a) {
       return TESS_CAMPI.map(function (k) { return a[k] == null ? '' : String(a[k]).trim(); });
     });
   }
 
   function _tessSummary() {
-    var lista = _atletiFiltrati();
-    var incompleti = lista.filter(function (a) { return TESS_CAMPI.some(function (k) { return !String(a[k] == null ? '' : a[k]).trim(); }); }).length;
-    document.getElementById('atletiSummary').textContent = lista.length + (lista.length === 1 ? ' atleta' : ' atleti') +
-      (incompleti ? ' · ' + incompleti + ' con dati da completare' : '');
+    var base = _atletiFiltrati(), ok = base.filter(_tessCompleto).length, tot = base.length;
+    document.getElementById('atletiSummary').textContent = tot + (tot === 1 ? ' atleta' : ' atleti') + ' · ' + ok + ' completi · ' + (tot - ok) + ' da completare';
+    Array.prototype.forEach.call(document.querySelectorAll('#atletiTess .tess-filtro'), function (b) {
+      var f = b.dataset.f, nn = f === 'completi' ? ok : f === 'incompleti' ? tot - ok : tot;
+      b.querySelector('b').textContent = nn;
+    });
+  }
+
+  function _tessFiltroHtml() {
+    return '<div class="atleti-cats" role="group" aria-label="Filtro completezza" style="margin-bottom:8px">' +
+      [['tutti', 'Tutti'], ['completi', 'Completi'], ['incompleti', 'Da completare']].map(function (f) {
+        return '<button type="button" class="atleti-pill tess-filtro' + (_tessFiltro === f[0] ? ' is-active' : '') + '" data-f="' + f[0] + '">' + f[1] + ' <b></b></button>';
+      }).join('') + '</div>';
   }
 
   function _tessCella(a, k) {
@@ -1434,16 +1451,24 @@
   }
 
   function _renderTess() {
-    var box = document.getElementById('atletiTess'), lista = _atletiFiltrati();
-    _tessSummary();
-    if (!lista.length) { box.innerHTML = '<div class="empty-state"><p>Nessun atleta corrisponde ai filtri.</p></div>'; return; }
-    box.innerHTML = '<p class="taglie-escl-hint">Dati per il tesseramento (Esporta CSV, Excel o PDF). Modifica direttamente le caselle: si salva appena esci dalla casella e il dato cambia anche nella scheda dell’atleta. Le caselle vuote sono evidenziate.</p>' +
+    var box = document.getElementById('atletiTess'), lista = _tessAtleti();
+    var vuoto = '<div class="empty-state"><p>' + (_tessFiltro === 'completi' ? 'Nessun atleta ha ancora tutti i dati completi.' : _tessFiltro === 'incompleti' ? 'Tutti gli atleti mostrati hanno i dati completi.' : 'Nessun atleta corrisponde ai filtri.') + '</p></div>';
+    if (!lista.length) { box.innerHTML = _tessFiltroHtml() + vuoto; _tessSummary(); return; }
+    box.innerHTML = _tessFiltroHtml() + '<p class="taglie-escl-hint">Dati per il tesseramento (Esporta CSV, Excel o PDF). Modifica direttamente le caselle: si salva appena esci dalla casella e il dato cambia anche nella scheda dell’atleta. Le caselle vuote sono evidenziate.</p>' +
       '<style>.tess-in.is-vuoto{background:rgba(255,193,7,.16)}.tess-in.is-err{outline:2px solid #d9534f}.tess-in.is-ok{outline:2px solid #3c9a5f}</style>' +
       '<div class="admin-table-wrap"><table class="admin-table tab-scroll"><thead><tr>' + TESS_HEAD.map(function (h) { return '<th>' + esc(h) + '</th>'; }).join('') + '</tr></thead><tbody>' +
       lista.map(function (a) {
         return '<tr>' + TESS_CAMPI.map(function (k) { return '<td>' + _tessCella(a, k) + '</td>'; }).join('') + '</tr>';
       }).join('') + '</tbody></table></div>';
+    _tessSummary();
   }
+
+  document.getElementById('atletiTess').addEventListener('click', function (e) {
+    var b = e.target.closest('.tess-filtro');
+    if (!b || b.dataset.f === _tessFiltro) return;
+    _tessFiltro = b.dataset.f;
+    _renderTess();
+  });
 
   /* Salva una casella: stessi documenti, stesse regole e stesso registro modifiche della scheda dell'atleta. */
   document.getElementById('atletiTess').addEventListener('change', function (e) {
@@ -1929,8 +1954,9 @@
       var tessDati = _righeTess();
       if (!tessDati.length) { _avviso('Nessun atleta da esportare.'); return null; }
       return {
-        pdf: { tipo: 'Dati di tesseramento', landscape: true, gruppi: [{ nome: 'Dati di tesseramento', sub: tessDati.length + ' atleti', head: TESS_HEAD, righe: tessDati }] },
-        titolo: 'Tesseramento — ' + cat, base: 'tesseramento-' + slug, sensibile: true,
+        pdf: { tipo: 'Dati di tesseramento', landscape: true, gruppi: [{ nome: 'Dati di tesseramento' + (_tessFiltro === 'completi' ? ' — solo atleti completi' : _tessFiltro === 'incompleti' ? ' — atleti da completare' : ''), sub: tessDati.length + ' atleti', head: TESS_HEAD, righe: tessDati }] },
+        titolo: 'Tesseramento' + (_tessFiltro === 'completi' ? ' (solo completi)' : _tessFiltro === 'incompleti' ? ' (da completare)' : '') + ' — ' + cat,
+        base: 'tesseramento' + (_tessFiltro === 'tutti' ? '' : '-' + _tessFiltro) + '-' + slug, sensibile: true,
         avviso: 'Il file contiene dati personali di minori (codice fiscale, luogo di nascita, indirizzo). Conservalo in un posto sicuro e cancellalo quando non serve più. Procedere?',
         head: TESS_HEAD, righe: tessDati
       };
