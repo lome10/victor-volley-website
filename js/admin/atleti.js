@@ -1418,15 +1418,26 @@
     if (_tessFiltro === 'incompleti') return base.filter(function (a) { return !_tessCompleto(a); });
     return base;
   }
+  /* Chi è escluso dall'export: si ricorda su questo browser (non si azzera aggiornando la pagina). */
+  var _tessEsclusi = (function () {
+    try { var v = JSON.parse(localStorage.getItem('vv_tess_esclusi') || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; }
+  })();
+  function _salvaTessEsclusi() {
+    try { localStorage.setItem('vv_tess_esclusi', JSON.stringify(_tessEsclusi)); } catch (e) { /* senza storage vale finché la pagina è aperta */ }
+  }
+  function _tessIncluso(a) { return _tessEsclusi.indexOf(a.uid) === -1; }
   function _righeTess() {
-    return _tessAtleti().map(function (a) {
+    return _tessAtleti().filter(_tessIncluso).map(function (a) {
       return TESS_CAMPI.map(function (k) { return a[k] == null ? '' : String(a[k]).trim(); });
     });
   }
 
   function _tessSummary() {
     var base = _atletiFiltrati(), ok = base.filter(_tessCompleto).length, tot = base.length;
-    document.getElementById('atletiSummary').textContent = tot + (tot === 1 ? ' atleta' : ' atleti') + ' · ' + ok + ' completi · ' + (tot - ok) + ' da completare';
+    var inc = _tessAtleti().filter(_tessIncluso).length;
+    document.getElementById('atletiSummary').textContent = tot + (tot === 1 ? ' atleta' : ' atleti') + ' · ' + ok + ' completi · ' + (tot - ok) + ' da completare · ' + inc + ' nell’export';
+    var all = document.getElementById('tessSelTutti'), vis = _tessAtleti();
+    if (all) { all.checked = vis.length > 0 && inc === vis.length; all.indeterminate = inc > 0 && inc < vis.length; }
     Array.prototype.forEach.call(document.querySelectorAll('#atletiTess .tess-filtro'), function (b) {
       var f = b.dataset.f, nn = f === 'completi' ? ok : f === 'incompleti' ? tot - ok : tot;
       b.querySelector('b').textContent = nn;
@@ -1454,14 +1465,31 @@
     var box = document.getElementById('atletiTess'), lista = _tessAtleti();
     var vuoto = '<div class="empty-state"><p>' + (_tessFiltro === 'completi' ? 'Nessun atleta ha ancora tutti i dati completi.' : _tessFiltro === 'incompleti' ? 'Tutti gli atleti mostrati hanno i dati completi.' : 'Nessun atleta corrisponde ai filtri.') + '</p></div>';
     if (!lista.length) { box.innerHTML = _tessFiltroHtml() + vuoto; _tessSummary(); return; }
-    box.innerHTML = _tessFiltroHtml() + '<p class="taglie-escl-hint">Dati per il tesseramento (Esporta CSV, Excel o PDF). Modifica direttamente le caselle: si salva appena esci dalla casella e il dato cambia anche nella scheda dell’atleta. Le caselle vuote sono evidenziate.</p>' +
+    box.innerHTML = _tessFiltroHtml() + '<p class="taglie-escl-hint">Dati per il tesseramento (Esporta CSV, Excel o PDF). Modifica direttamente le caselle: si salva appena esci dalla casella e il dato cambia anche nella scheda dell’atleta. Le caselle vuote sono evidenziate. Con la spunta a sinistra scegli chi entra nell’export (la scelta resta su questo browser).</p>' +
       '<style>.tess-in.is-vuoto{background:rgba(255,193,7,.16)}.tess-in.is-err{outline:2px solid #d9534f}.tess-in.is-ok{outline:2px solid #3c9a5f}</style>' +
-      '<div class="admin-table-wrap"><table class="admin-table tab-scroll"><thead><tr>' + TESS_HEAD.map(function (h) { return '<th>' + esc(h) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      '<div class="admin-table-wrap"><table class="admin-table tab-scroll"><thead><tr><th title="Includi nell’export"><input type="checkbox" id="tessSelTutti" aria-label="Includi o escludi tutti gli atleti mostrati"></th>' + TESS_HEAD.map(function (h) { return '<th>' + esc(h) + '</th>'; }).join('') + '</tr></thead><tbody>' +
       lista.map(function (a) {
-        return '<tr>' + TESS_CAMPI.map(function (k) { return '<td>' + _tessCella(a, k) + '</td>'; }).join('') + '</tr>';
+        return '<tr><td><input type="checkbox" class="tess-sel" data-uid="' + esc(a.uid) + '"' + (_tessIncluso(a) ? ' checked' : '') + ' aria-label="Includi ' + esc(_atletaLabel(a)) + ' nell’export"></td>' + TESS_CAMPI.map(function (k) { return '<td>' + _tessCella(a, k) + '</td>'; }).join('') + '</tr>';
       }).join('') + '</tbody></table></div>';
     _tessSummary();
   }
+
+  document.getElementById('atletiTess').addEventListener('change', function (e) {
+    var el = e.target;
+    if (el.id === 'tessSelTutti') {
+      var uids = _tessAtleti().map(function (a) { return a.uid; });
+      _tessEsclusi = _tessEsclusi.filter(function (u) { return uids.indexOf(u) === -1; }).concat(el.checked ? [] : uids);
+      _salvaTessEsclusi();
+      Array.prototype.forEach.call(document.querySelectorAll('#atletiTess .tess-sel'), function (c) { c.checked = el.checked; });
+      _tessSummary();
+    } else if (el.classList && el.classList.contains('tess-sel')) {
+      var i = _tessEsclusi.indexOf(el.dataset.uid);
+      if (el.checked && i !== -1) _tessEsclusi.splice(i, 1);
+      if (!el.checked && i === -1) _tessEsclusi.push(el.dataset.uid);
+      _salvaTessEsclusi();
+      _tessSummary();
+    }
+  });
 
   document.getElementById('atletiTess').addEventListener('click', function (e) {
     var b = e.target.closest('.tess-filtro');
@@ -1952,7 +1980,7 @@
     if (_atletiVista === 'presenze') return _datiExportPresenze(slug, cat);
     if (_atletiVista === 'tess') {
       var tessDati = _righeTess();
-      if (!tessDati.length) { _avviso('Nessun atleta da esportare.'); return null; }
+      if (!tessDati.length) { _avviso('Nessun atleta da esportare: controlla il filtro e le caselle di spunta.'); return null; }
       return {
         pdf: { tipo: 'Dati di tesseramento', landscape: true, gruppi: [{ nome: 'Dati di tesseramento' + (_tessFiltro === 'completi' ? ' — solo atleti completi' : _tessFiltro === 'incompleti' ? ' — atleti da completare' : ''), sub: tessDati.length + ' atleti', head: TESS_HEAD, righe: tessDati }] },
         titolo: 'Tesseramento' + (_tessFiltro === 'completi' ? ' (solo completi)' : _tessFiltro === 'incompleti' ? ' (da completare)' : '') + ' — ' + cat,
