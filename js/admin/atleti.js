@@ -458,10 +458,49 @@
     return _caricaComuni().then(function (t) { var c = t[cod]; return c ? { luogo: c[0], provincia: c[1] } : null; }).catch(function () { return null; });
   }
 
+  /* ---- Il contrario: calcolo del codice fiscale da cognome, nome, data, sesso e luogo di nascita.
+     Non si può scoprire l'omocodia (due persone con lo stesso codice): per i casi rari vale quello dell'Agenzia delle Entrate. ---- */
+  function _lettereCF(t) { return String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().replace(/[^A-Z]/g, ''); }
+  function _consVoc(t) {
+    var l = _lettereCF(t);
+    return { c: l.replace(/[AEIOU]/g, ''), v: l.replace(/[^AEIOU]/g, '') };
+  }
+  function _codiceCognome(t) { var x = _consVoc(t); return (x.c + x.v + 'XXX').slice(0, 3); }
+  function _codiceNome(t) {
+    var x = _consVoc(t), c = x.c.length >= 4 ? x.c.charAt(0) + x.c.charAt(2) + x.c.charAt(3) : x.c;
+    return (c + x.v + 'XXX').slice(0, 3);
+  }
+  var CF_PARI = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  function _calcolaCF(o) {   /* o: cognome, nome, dataNascita (AAAA-MM-GG), sesso (M|F), catastale */
+    var d = /^(\d{4})-(\d{2})-(\d{2})$/.exec(o.dataNascita || '');
+    if (!d || !/^[A-Z]\d{3}$/.test(o.catastale || '') || (o.sesso !== 'M' && o.sesso !== 'F')) return '';
+    var gg = parseInt(d[3], 10) + (o.sesso === 'F' ? 40 : 0);
+    var base = _codiceCognome(o.cognome) + _codiceNome(o.nome) + d[1].slice(2) + CF_MESI.charAt(parseInt(d[2], 10) - 1) + (gg < 10 ? '0' : '') + gg + o.catastale;
+    var somma = 0, i;
+    for (i = 0; i < 15; i++) {
+      var ch = base.charAt(i), v = /[0-9]/.test(ch) ? ch.charCodeAt(0) - 48 : ch.charCodeAt(0) - 65;
+      somma += (i % 2 === 0) ? CF_DISPARI[v] : v;
+    }
+    return base + CF_PARI.charAt(somma % 26);
+  }
+  /* codice catastale dal nome del comune (con la sigla provincia se il nome esiste in più province) */
+  function _catastaleDaLuogo(luogo, prov) {
+    return _caricaComuni().then(function (t) {
+      var q = _normNome(luogo), trovati = Object.keys(t).filter(function (k) { return _normNome(t[k][0]) === q; });
+      if (trovati.length > 1 && prov) trovati = trovati.filter(function (k) { return t[k][1] === prov; });
+      return trovati.length === 1 ? { cod: trovati[0] } : { n: trovati.length };
+    });
+  }
+
   function _collegaParserCF() {
     var cfEl = _campoEl('codiceFiscale');
     if (!cfEl || cfEl.dataset.cfParser) return;
     cfEl.dataset.cfParser = '1';
+    var calc = document.createElement('button');
+    calc.type = 'button'; calc.className = 'btn-ghost btn-sm'; calc.style.marginTop = '6px';
+    calc.textContent = 'Calcola dal luogo e dalla data';
+    calc.title = 'Ricava il codice fiscale da cognome, nome, sesso, data e luogo di nascita';
+    cfEl.parentNode.appendChild(calc);
     var hint = document.createElement('div');
     hint.id = 'af_cfHint'; hint.className = 'form-hint'; hint.setAttribute('aria-live', 'polite');
     cfEl.parentNode.appendChild(hint);
@@ -499,6 +538,27 @@
         if (m2.length) hint.textContent = testo.replace(/\.$/, '') + (msg.length ? ', ' : ': ') + m2.join(', ') + '.';
       });
     };
+    calc.addEventListener('click', function () {
+      var v = function (k) { var e = _campoEl(k); return e ? e.value.trim() : ''; };
+      var manca = [['cognome', 'cognome'], ['nome', 'nome'], ['sesso', 'sesso'], ['dataNascita', 'data di nascita'], ['luogoNascita', 'luogo di nascita']]
+        .filter(function (x) { return !v(x[0]); }).map(function (x) { return x[1]; });
+      if (manca.length) { hint.textContent = 'Per calcolare il codice fiscale mancano: ' + manca.join(', ') + '.'; return; }
+      _catastaleDaLuogo(v('luogoNascita'), v('provinciaNascita').toUpperCase()).then(function (r) {
+        if (!r.cod) {
+          hint.textContent = r.n > 1 ? 'Ci sono più comuni con questo nome: scrivi anche la provincia di nascita.'
+            : 'Luogo di nascita non trovato nella tabella dei comuni (se è all’estero o è un comune soppresso, il codice va inserito a mano).';
+          return;
+        }
+        var cf = _calcolaCF({ cognome: v('cognome'), nome: v('nome'), sesso: v('sesso'), dataNascita: v('dataNascita'), catastale: r.cod });
+        if (!cf) { hint.textContent = 'Dati non sufficienti per calcolare il codice fiscale.'; return; }
+        var attuale = cfEl.value.trim().toUpperCase().replace(/\s+/g, '');
+        if (attuale && attuale !== cf) { hint.textContent = 'Il codice calcolato è ' + cf + ', diverso da quello inserito: non l’ho sostituito. Controlla i dati o il codice.'; return; }
+        if (attuale === cf) { hint.textContent = 'Il codice inserito coincide con quello calcolato dai dati.'; return; }
+        cfEl.value = cf;
+        cfEl.dispatchEvent(new Event('input', { bubbles: true }));
+        hint.textContent = 'Codice fiscale calcolato: ' + cf + '. Se è diverso dal tesserino, correggilo (casi rari di omocodia).';
+      });
+    });
     cfEl.addEventListener('input', leggi);
     cfEl.addEventListener('change', leggi);
   }
