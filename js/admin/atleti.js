@@ -288,6 +288,7 @@
       { k: 'sesso',         l: 'Sesso',             t: 'select', o: [['', '—'], ['F', 'Femmina'], ['M', 'Maschio']] },
       { k: 'dataNascita',   l: 'Data di nascita',   t: 'date', sens: true },
       { k: 'luogoNascita',  l: 'Luogo di nascita',  t: 'text', sens: true },
+      { k: 'provinciaNascita', l: 'Provincia di nascita (sigla, EE se estero)', t: 'text', upper: true, max: 2, sens: true },
       { k: 'codiceFiscale', l: 'Codice fiscale',    t: 'text', upper: true, max: 16, sens: true }
     ] },
     { titolo: 'Residenza', campi: [
@@ -437,6 +438,7 @@
     if (v.tutore1CodiceFiscale && !cf.test(v.tutore1CodiceFiscale)) return 'Il codice fiscale del tutore 1 deve avere 16 caratteri.';
     if (v.cap && !/^\d{5}$/.test(v.cap)) return 'Il CAP deve avere 5 cifre.';
     if (v.provincia && !/^[A-Z]{2}$/.test(v.provincia)) return 'La provincia va indicata con la sigla (2 lettere).';
+    if (v.provinciaNascita && !/^[A-Z]{2}$/.test(v.provinciaNascita)) return 'La provincia di nascita va indicata con la sigla (2 lettere).';
     var mail = ['emailContatto', 'tutore1Email', 'tutore2Email'].filter(function (k) { return v[k] && !email.test(v[k]); })[0];
     if (mail) return 'L\'indirizzo email non è valido: ' + v[mail];
     return '';
@@ -1255,9 +1257,85 @@
       }).join('') + '</tbody></table></div>';
   }
 
+  /* ---- Vista «Tesseramento»: i dati anagrafici per il tesseramento, una riga per atleta. Sola lettura: si modificano
+     dalla scheda dell'atleta. Rispetta categoria e ricerca. Le caselle vuote sono evidenziate. ---- */
+  var TESS_HEAD = ['Cognome', 'Nome', 'M/F', 'Luogo di nascita', 'Prov. nascita', 'Codice fiscale', 'Indirizzo', 'CAP', 'Comune', 'Prov.'];
+  var TESS_CAMPI = ['cognome', 'nome', 'sesso', 'luogoNascita', 'provinciaNascita', 'codiceFiscale', 'indirizzo', 'cap', 'citta', 'provincia'];
+  var TESS_PUB = ['nome', 'cognome'];   /* su `atleti`; gli altri campi stanno su `atletiDati` (come nella scheda) */
+  var TESS_LARG = { cognome: 130, nome: 120, sesso: 64, luogoNascita: 150, provinciaNascita: 64, codiceFiscale: 170, indirizzo: 200, cap: 76, citta: 140, provincia: 64 };
+  function _righeTess() {
+    return _atletiFiltrati().map(function (a) {
+      return TESS_CAMPI.map(function (k) { return a[k] == null ? '' : String(a[k]).trim(); });
+    });
+  }
+
+  function _tessSummary() {
+    var lista = _atletiFiltrati();
+    var incompleti = lista.filter(function (a) { return TESS_CAMPI.some(function (k) { return !String(a[k] == null ? '' : a[k]).trim(); }); }).length;
+    document.getElementById('atletiSummary').textContent = lista.length + (lista.length === 1 ? ' atleta' : ' atleti') +
+      (incompleti ? ' · ' + incompleti + ' con dati da completare' : '');
+  }
+
+  function _tessCella(a, k) {
+    var v = a[k] == null ? '' : String(a[k]).trim();
+    var base = 'class="form-input tess-in' + (v ? '' : ' is-vuoto') + '" data-uid="' + esc(a.uid) + '" data-k="' + k + '" aria-label="' + esc(TESS_HEAD[TESS_CAMPI.indexOf(k)]) + ' di ' + esc(_atletaLabel(a)) + '" style="min-width:' + TESS_LARG[k] + 'px;padding:4px 6px"';
+    if (k === 'sesso') {
+      return '<select ' + base + '>' + [['', '—'], ['F', 'F'], ['M', 'M']].map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === v ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select>';
+    }
+    var max = { codiceFiscale: 16, cap: 5, provincia: 2, provinciaNascita: 2 }[k];
+    return '<input type="text" ' + base + ' value="' + esc(v) + '"' + (max ? ' maxlength="' + max + '"' : '') + ' placeholder="—">';
+  }
+
+  function _renderTess() {
+    var box = document.getElementById('atletiTess'), lista = _atletiFiltrati();
+    _tessSummary();
+    if (!lista.length) { box.innerHTML = '<div class="empty-state"><p>Nessun atleta corrisponde ai filtri.</p></div>'; return; }
+    box.innerHTML = '<p class="taglie-escl-hint">Dati per il tesseramento (Esporta CSV, Excel o PDF). Modifica direttamente le caselle: si salva appena esci dalla casella e il dato cambia anche nella scheda dell’atleta. Le caselle vuote sono evidenziate.</p>' +
+      '<style>.tess-in.is-vuoto{background:rgba(255,193,7,.16)}.tess-in.is-err{outline:2px solid #d9534f}.tess-in.is-ok{outline:2px solid #3c9a5f}</style>' +
+      '<div class="admin-table-wrap"><table class="admin-table tab-scroll"><thead><tr>' + TESS_HEAD.map(function (h) { return '<th>' + esc(h) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      lista.map(function (a) {
+        return '<tr>' + TESS_CAMPI.map(function (k) { return '<td>' + _tessCella(a, k) + '</td>'; }).join('') + '</tr>';
+      }).join('') + '</tbody></table></div>';
+  }
+
+  /* Salva una casella: stessi documenti, stesse regole e stesso registro modifiche della scheda dell'atleta. */
+  document.getElementById('atletiTess').addEventListener('change', function (e) {
+    var el = e.target.closest('.tess-in');
+    if (!el) return;
+    var a = _atletiCache.find(function (x) { return x.uid === el.dataset.uid; });
+    if (!a) return;
+    var k = el.dataset.k, prima = a[k] == null ? '' : String(a[k]);
+    var dopo = el.value.trim();
+    if (['codiceFiscale', 'provincia', 'provinciaNascita'].indexOf(k) !== -1) dopo = dopo.toUpperCase().replace(/\s+/g, '');
+    if (dopo === prima.trim()) { el.value = dopo; return; }
+    var prova = { nome: a.nome, cognome: a.cognome }; prova[k] = dopo;
+    var err = _validaAtleta(prova);
+    if (err) { el.classList.add('is-err'); el.classList.remove('is-ok'); _avviso(err); el.value = prima; return; }
+    var patch = {}; patch[k] = dopo;
+    el.disabled = true;
+    (TESS_PUB.indexOf(k) !== -1 ? db.collection('atleti').doc(a.uid).update(patch) : db.collection('atletiDati').doc(a.uid).set(patch, { merge: true })).then(function () {
+      var before = Object.assign({}, a);
+      a[k] = dopo;
+      el.value = dopo;
+      el.classList.toggle('is-vuoto', !dopo);
+      el.classList.remove('is-err'); el.classList.add('is-ok');
+      setTimeout(function () { el.classList.remove('is-ok'); }, 1500);
+      _tessSummary();
+      /* se la scheda di questo atleta è aperta, la casella corrispondente si aggiorna */
+      var f = document.getElementById('af_' + k);
+      if (f && _editingAtleta && _editingAtleta.uid === a.uid) f.value = dopo;
+      if (k === 'nome' || k === 'cognome') (a.categoria ? _ensureIscrizione(a) : _syncIscrizione(a)).catch(function (er) { console.error('[Atleti] iscrizione', er); });
+      return _logWrite('atleta', a.uid, _atletaLabel(a), 'update', _diff(before, patch, [k]));
+    }).catch(function (er) {
+      el.value = prima; el.classList.add('is-err');
+      _avviso('Non salvato: ' + er.message);
+    }).then(function () { el.disabled = false; });
+  });
+
   function _applicaVistaAtleti() {
-    var taglie = _atletiVista === 'taglie', prezzi = _atletiVista === 'prezzi', mail = _atletiVista === 'mail', pres = _atletiVista === 'presenze';
-    document.getElementById('atletiElencoWrap').classList.toggle('is-hidden', taglie || prezzi || mail || pres);
+    var taglie = _atletiVista === 'taglie', prezzi = _atletiVista === 'prezzi', mail = _atletiVista === 'mail', pres = _atletiVista === 'presenze', tess = _atletiVista === 'tess';
+    document.getElementById('atletiElencoWrap').classList.toggle('is-hidden', taglie || prezzi || mail || pres || tess);
+    document.getElementById('atletiTess').classList.toggle('is-hidden', !tess);
     document.getElementById('atletiPresenze').classList.toggle('is-hidden', !pres);
     document.getElementById('atletiExportPdf').classList.toggle('is-hidden', pres);
     document.getElementById('atletiTaglie').classList.toggle('is-hidden', !taglie);
@@ -1266,11 +1344,11 @@
     /* nei Prezzi i filtri per categoria e la ricerca non servono: la scelta si fa in «Cosa includere» */
     ['atletiSearch', 'atletiCatBar', 'atletiToggleAll'].forEach(function (id) { document.getElementById(id).classList.toggle('is-hidden', prezzi); });
     /* nella Mail l'elenco non è diviso in gruppi da comprimere */
-    document.getElementById('atletiToggleAll').classList.toggle('is-hidden', prezzi || mail || pres);
+    document.getElementById('atletiToggleAll').classList.toggle('is-hidden', prezzi || mail || pres || tess);
     Array.prototype.forEach.call(document.querySelectorAll('#atletiVista .atleti-pill'), function (b) {
       b.classList.toggle('is-active', b.dataset.vista === _atletiVista);
     });
-    document.getElementById('atletiExport').title = pres ? 'Scarica le presenze mostrate in CSV' : prezzi ? 'Scarica la tabella prezzi in CSV' : mail ? 'Scarica gli indirizzi mostrati in CSV' : taglie ?'Scarica le taglie mostrate in CSV' : "Scarica l'elenco mostrato in CSV";
+    document.getElementById('atletiExport').title = pres ? 'Scarica le presenze mostrate in CSV' : prezzi ? 'Scarica la tabella prezzi in CSV' : mail ? 'Scarica gli indirizzi mostrati in CSV' : tess ? 'Scarica i dati di tesseramento mostrati in CSV' : taglie ?'Scarica le taglie mostrate in CSV' : "Scarica l'elenco mostrato in CSV";
     _renderAtletiRows();
   }
 
@@ -1281,6 +1359,7 @@
     if (_atletiVista === 'taglie') { _renderTaglie(); return; }
     if (_atletiVista === 'prezzi') { _renderPrezzi(); return; }
     if (_atletiVista === 'mail') { _renderMail(); return; }
+    if (_atletiVista === 'tess') { _renderTess(); return; }
     if (_atletiVista === 'presenze') { _renderPresStat(); return; }
     if (!_atletiCache.length) {
       document.getElementById('atletiSummary').textContent = '';
@@ -1699,6 +1778,16 @@
     var slug = _slugExport(), cat = _atletiCat && _atletiCat !== '__none__' ? _atletiCat : 'Tutte le categorie';
     if (_atletiVista === 'prezzi') return _datiExportPrezzi();
     if (_atletiVista === 'presenze') return _datiExportPresenze(slug, cat);
+    if (_atletiVista === 'tess') {
+      var tessDati = _righeTess();
+      if (!tessDati.length) { _avviso('Nessun atleta da esportare.'); return null; }
+      return {
+        pdf: { tipo: 'Dati di tesseramento', landscape: true, gruppi: [{ nome: 'Dati di tesseramento', sub: tessDati.length + ' atleti', head: TESS_HEAD, righe: tessDati }] },
+        titolo: 'Tesseramento — ' + cat, base: 'tesseramento-' + slug, sensibile: true,
+        avviso: 'Il file contiene dati personali di minori (codice fiscale, luogo di nascita, indirizzo). Conservalo in un posto sicuro e cancellalo quando non serve più. Procedere?',
+        head: TESS_HEAD, righe: tessDati
+      };
+    }
     if (_atletiVista === 'mail') {
       var mailRighe = _righeMail();
       if (!mailRighe.length) { _avviso('Nessun indirizzo da esportare.'); return null; }
