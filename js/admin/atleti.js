@@ -1406,10 +1406,10 @@
 
   /* ---- Vista «Tesseramento»: i dati anagrafici per il tesseramento, una riga per atleta. Sola lettura: si modificano
      dalla scheda dell'atleta. Rispetta categoria e ricerca. Le caselle vuote sono evidenziate. ---- */
-  var TESS_HEAD = ['Cognome', 'Nome', 'M/F', 'Luogo di nascita', 'Prov. nascita', 'Codice fiscale', 'Indirizzo', 'CAP', 'Comune', 'Prov.'];
-  var TESS_CAMPI = ['cognome', 'nome', 'sesso', 'luogoNascita', 'provinciaNascita', 'codiceFiscale', 'indirizzo', 'cap', 'citta', 'provincia'];
+  var TESS_HEAD = ['Cognome', 'Nome', 'M/F', 'Data di nascita', 'Luogo di nascita', 'Prov. nascita', 'Codice fiscale', 'Indirizzo', 'CAP', 'Comune', 'Prov.'];
+  var TESS_CAMPI = ['cognome', 'nome', 'sesso', 'dataNascita', 'luogoNascita', 'provinciaNascita', 'codiceFiscale', 'indirizzo', 'cap', 'citta', 'provincia'];
   var TESS_PUB = ['nome', 'cognome'];   /* su `atleti`; gli altri campi stanno su `atletiDati` (come nella scheda) */
-  var TESS_LARG = { cognome: 130, nome: 120, sesso: 64, luogoNascita: 150, provinciaNascita: 64, codiceFiscale: 170, indirizzo: 200, cap: 76, citta: 140, provincia: 64 };
+  var TESS_LARG = { cognome: 130, nome: 120, sesso: 64, dataNascita: 140, luogoNascita: 150, provinciaNascita: 64, codiceFiscale: 170, indirizzo: 200, cap: 76, citta: 140, provincia: 64 };
   var _tessFiltro = 'tutti';   /* tutti | completi | incompleti: vale per la tabella e per gli export */
   function _tessCompleto(a) { return TESS_CAMPI.every(function (k) { return String(a[k] == null ? '' : a[k]).trim(); }); }
   function _tessAtleti() {
@@ -1428,7 +1428,10 @@
   function _tessIncluso(a) { return _tessEsclusi.indexOf(a.uid) === -1; }
   function _righeTess() {
     return _tessAtleti().filter(_tessIncluso).map(function (a) {
-      return TESS_CAMPI.map(function (k) { return a[k] == null ? '' : String(a[k]).trim(); });
+      return TESS_CAMPI.map(function (k) {
+        var v = a[k] == null ? '' : String(a[k]).trim();
+        return k === 'dataNascita' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v.split('-').reverse().join('/') : v;   /* nel file: gg/mm/aaaa */
+      });
     });
   }
 
@@ -1457,6 +1460,7 @@
     if (k === 'sesso') {
       return '<select ' + base + '>' + [['', '—'], ['F', 'F'], ['M', 'M']].map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === v ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select>';
     }
+    if (k === 'dataNascita') return '<input type="date" ' + base + ' value="' + esc(v) + '">';
     var max = { codiceFiscale: 16, cap: 5, provincia: 2, provinciaNascita: 2 }[k];
     return '<input type="text" ' + base + ' value="' + esc(v) + '"' + (max ? ' maxlength="' + max + '"' : '') + ' placeholder="—">';
   }
@@ -1524,6 +1528,7 @@
       /* se la scheda di questo atleta è aperta, la casella corrispondente si aggiorna */
       var f = document.getElementById('af_' + k);
       if (f && _editingAtleta && _editingAtleta.uid === a.uid) f.value = dopo;
+      if (k === 'dataNascita' || k === 'categoria') _ricalcolaTesseramenti();
       if (k === 'nome' || k === 'cognome') (a.categoria ? _ensureIscrizione(a) : _syncIscrizione(a)).catch(function (er) { console.error('[Atleti] iscrizione', er); });
       return _logWrite('atleta', a.uid, _atletaLabel(a), 'update', _diff(before, patch, [k]));
     }).catch(function (er) {
