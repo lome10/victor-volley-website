@@ -2141,7 +2141,7 @@
         setTimeout(stampa, 2000);
       }
     };
-    if (d.sensibile) confirm(d.avviso || 'Il file contiene dati personali di minori (codice fiscale, indirizzo, telefoni). Conservalo in un posto sicuro e cancellalo quando non serve più. Procedere?', run);
+    if (d.sensibile) confirm(d.avviso || 'Il file contiene dati personali di minori (codice fiscale, indirizzo, telefoni). Conservalo in un posto sicuro e cancellalo quando non serve più. Procedere?', run, 'Scarica');
     else run();
   }
   document.getElementById('atletiExport').addEventListener('click', function () { _esporta('csv'); });

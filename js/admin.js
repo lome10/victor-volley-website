@@ -389,8 +389,12 @@
   ================================================ */
   var _confirmCb = null;
 
-  function confirm(text, cb) {
+  /* okLabel: testo del pulsante di conferma (predefinito «Elimina»; per azioni non distruttive, es. «Scarica») */
+  function confirm(text, cb, okLabel) {
     document.getElementById('confirmText').textContent = text;
+    var ok = document.getElementById('confirmOk');
+    ok.textContent = okLabel || 'Elimina';
+    ok.className = okLabel ? 'btn-primary' : 'btn-danger';
     _confirmCb = cb;
     document.getElementById('confirmModal').classList.remove('is-hidden');
   }
