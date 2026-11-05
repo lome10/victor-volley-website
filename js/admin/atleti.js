@@ -416,6 +416,62 @@
     _aggiornaCostoTesseramento();
   }
 
+  /* ---- Lettura del codice fiscale: data di nascita e sesso si ricavano dal codice stesso.
+     Controlla anche il carattere finale (errori di battitura) e gestisce l'omocodia. Il luogo di nascita
+     (codice catastale) non si ricava: serve la tabella dei comuni. ---- */
+  var CF_MESI = 'ABCDEHLMPRST';
+  var CF_OMOCODIA = 'LMNPQRSTUV';
+  var CF_DISPARI = [1, 0, 5, 7, 9, 13, 15, 17, 19, 21, 2, 4, 18, 20, 11, 3, 6, 8, 12, 14, 16, 10, 22, 25, 24, 23];
+  function _parseCF(cf) {
+    cf = String(cf || '').toUpperCase().replace(/\s+/g, '');
+    if (!/^[A-Z]{6}[0-9LMNPQRSTUV]{2}[A-Z][0-9LMNPQRSTUV]{2}[A-Z][0-9LMNPQRSTUV]{3}[A-Z]$/.test(cf)) return null;
+    var c = cf.split('');
+    [6, 7, 9, 10, 12, 13, 14].forEach(function (i) { var o = CF_OMOCODIA.indexOf(c[i]); if (o !== -1) c[i] = String(o); });
+    var somma = 0, i;
+    for (i = 0; i < 15; i++) {
+      var ch = cf.charAt(i), v = /[0-9]/.test(ch) ? ch.charCodeAt(0) - 48 : ch.charCodeAt(0) - 65;
+      somma += (i % 2 === 0) ? CF_DISPARI[v] : v;
+    }
+    var controlloOk = String.fromCharCode(65 + somma % 26) === cf.charAt(15);
+    var mese = CF_MESI.indexOf(c[8]) + 1, gg = parseInt(c[9] + c[10], 10), femmina = gg > 40;
+    if (femmina) gg -= 40;
+    var aa = parseInt(c[6] + c[7], 10), anno = 2000 + aa;
+    if (anno > new Date().getFullYear()) anno = 1900 + aa;
+    var d = new Date(anno, mese - 1, gg);
+    if (!mese || d.getFullYear() !== anno || d.getMonth() !== mese - 1 || d.getDate() !== gg) return null;
+    var p2 = function (x) { return (x < 10 ? '0' : '') + x; };
+    return { dataNascita: anno + '-' + p2(mese) + '-' + p2(gg), sesso: femmina ? 'F' : 'M', controlloOk: controlloOk,
+             catastale: c.slice(11, 15).join('') };
+  }
+
+  function _collegaParserCF() {
+    var cfEl = _campoEl('codiceFiscale');
+    if (!cfEl || cfEl.dataset.cfParser) return;
+    cfEl.dataset.cfParser = '1';
+    var hint = document.createElement('div');
+    hint.id = 'af_cfHint'; hint.className = 'form-hint'; hint.setAttribute('aria-live', 'polite');
+    cfEl.parentNode.appendChild(hint);
+    var leggi = function () {
+      var cf = cfEl.value.trim().toUpperCase().replace(/\s+/g, '');
+      if (cf.length < 16) { hint.textContent = cf ? 'Servono 16 caratteri (ne hai scritti ' + cf.length + ').' : ''; return; }
+      var r = _parseCF(cf);
+      if (!r) { hint.textContent = 'Codice fiscale non valido: controlla i caratteri.'; return; }
+      var msg = [], dn = _campoEl('dataNascita'), sx = _campoEl('sesso');
+      if (dn) {
+        if (!dn.value) { dn.value = r.dataNascita; dn.dispatchEvent(new Event('change', { bubbles: true })); msg.push('data di nascita'); }
+        else if (dn.value !== r.dataNascita) msg.push('ATTENZIONE: la data di nascita del codice (' + r.dataNascita.split('-').reverse().join('/') + ') è diversa da quella inserita');
+      }
+      if (sx) {
+        if (!sx.value) { sx.value = r.sesso; msg.push('sesso'); }
+        else if (sx.value !== r.sesso) msg.push('ATTENZIONE: il sesso del codice (' + r.sesso + ') è diverso da quello inserito');
+      }
+      var testo = (r.controlloOk ? '' : 'Il carattere di controllo non torna: probabile errore di battitura. ') + (msg.length ? 'Dal codice fiscale: ' + msg.join(', ') + '.' : 'Dati coerenti con il codice fiscale.');
+      hint.textContent = testo;
+    };
+    cfEl.addEventListener('input', leggi);
+    cfEl.addEventListener('change', leggi);
+  }
+
   /* Aggiorna la voce «Tesseramenti atleti» nelle Spese (una sottospesa per squadra). Un errore qui non deve bloccare la scheda. */
   function _ricalcolaTesseramenti() {
     return Admin.budget.ricalcolaTesseramenti(_atletiCache).catch(function (e) { console.error('[Atleti] tesseramenti', e); });
@@ -2343,6 +2399,7 @@
 
     document.getElementById('detAnagraficaFields').innerHTML = _atletaFormHtml(_editingAtleta);
     _collegaCostoTesseramento();
+    _collegaParserCF();
     document.getElementById('detAnagraficaMsg').textContent = '';
 
     document.getElementById('detNote').value = _editingAtleta.note || '';
