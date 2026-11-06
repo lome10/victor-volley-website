@@ -337,6 +337,23 @@ button.cal-next:focus-visible { outline: 3px solid var(--c-azzurro); outline-off
 .gp-team-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
 .gp-team.is-win .gp-team-name { font-weight: 800; color: #fff; }
 .gp-team--vv .gp-team-name { color: #fff; font-weight: 800; }
+
+/* Card «Prossima partita» sopra le giornate (markup in js/pages/calendario-1.js, gironeFeaturedHtml) */
+.gp-feat { display: flex; flex-direction: column; gap: 14px; margin-bottom: 18px; padding: 18px 16px; border-radius: 14px; background: rgba(0,140,253,0.14); border: 1px solid rgba(0,140,253,0.4); color: #fff; }
+.gp-feat-head { display: flex; align-items: center; gap: 8px; font: 700 12px var(--font-body); letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,0.8); }
+.gp-feat-dot { opacity: .6; }
+.gp-feat-countdown { color: var(--c-azzurro); }
+.gp-feat-match { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); align-items: center; gap: 12px; }
+.gp-feat-team { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; text-align: center; }
+.gp-feat-logo { width: 64px; height: 64px; object-fit: contain; border-radius: 12px; background: rgba(255,255,255,0.92); padding: 4px; flex-shrink: 0; }
+.gp-feat-logo--init { display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.08); font: 800 24px var(--sport-font-display); color: rgba(255,255,255,0.55); padding: 0; }
+.gp-feat-name { max-width: 100%; font: 600 14px var(--font-body); color: rgba(255,255,255,0.8); overflow-wrap: anywhere; }
+.gp-feat-team--vv .gp-feat-name { font-weight: 800; color: #fff; }
+.gp-feat-vs { font: 800 14px var(--sport-font-display); letter-spacing: .1em; color: rgba(255,255,255,0.6); }
+.gp-feat-info { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 16px; font: 600 13px var(--font-body); color: rgba(255,255,255,0.85); }
+.gp-feat-venue { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.gp-feat-venue svg, .gp-feat-cal svg { width: 14px; height: 14px; flex-shrink: 0; }
+.gp-feat-cal { align-self: center; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 16px; border-radius: 99px; font: 600 13px var(--font-body); color: var(--c-azzurro); background: rgba(0,140,253,0.12); border: 1px solid rgba(0,140,253,0.3); text-decoration: none; white-space: nowrap; }
 .gp-score { text-align: center; font: 800 14px var(--sport-font-display); color: rgba(255,255,255,0.65); }
 .gp-venue { grid-column: 2 / -1; display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 12px; color: rgba(255,255,255,0.62); }
 .gp-venue-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1 1 auto; }
