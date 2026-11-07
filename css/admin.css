@@ -1857,9 +1857,9 @@ button { font-family: var(--font-body); cursor: pointer; }
 
   /* bersagli di almeno 40–44 px, con più aria tra i pulsanti delle tabelle (modifica / cestino) */
   .btn-primary, .btn-ghost, .btn-danger { min-height: 44px; justify-content: center; }
-  .btn-icon { width: 40px; height: 40px; }
+  .btn-icon { width: 44px; height: 44px; }
   .table-actions { gap: 10px; }
-  .btn-sm, .atleti-pill { min-height: 36px; }
+  .btn-sm, .atleti-pill, .taglie-voce-chip { min-height: 44px; }
   .admin-nav-item { padding: 13px 12px; }
   .admin-menu-toggle { width: 44px; height: 44px; }
   .admin-table td { padding: 12px 12px; }
@@ -1911,7 +1911,7 @@ button { font-family: var(--font-body); cursor: pointer; }
   .admin-table:not(.tab-scroll) tr:last-child { border-bottom: none; }
   .admin-table:not(.tab-scroll) td { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 0; border: 0; font-size: 13px; text-align: right; }
   .admin-table:not(.tab-scroll) td[data-label]::before { content: attr(data-label); flex: 0 0 auto; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--a-muted); text-align: left; }
-  .admin-table:not(.tab-scroll) td.is-titolo { order: -1; display: block; text-align: left; margin-bottom: 2px; padding-right: 104px; font-size: 14px; }
+  .admin-table:not(.tab-scroll) td.is-titolo { order: -1; display: block; text-align: left; margin-bottom: 2px; padding-right: 112px; font-size: 14px; }
   .admin-table:not(.tab-scroll) td.is-titolo::before { display: none; }
   .admin-table:not(.tab-scroll) td.is-titolo .table-title { max-width: none; }
   .admin-table:not(.tab-scroll) td.is-azioni { position: absolute; top: 8px; right: 10px; display: block; padding: 0; }
