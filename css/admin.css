@@ -1878,6 +1878,14 @@ button { font-family: var(--font-body); cursor: pointer; }
   #topbarActions:has(> :nth-child(2)) { flex: 1 1 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   #topbarActions:has(> :nth-child(2)) > * { width: 100%; min-width: 0; white-space: normal; line-height: 1.2; justify-content: center; text-align: center; }
 
+  /* Taglie: nelle tabelle larghe (fino a 1300 px) la prima colonna (atleta, capo, categoria) resta ferma mentre si scorre di lato */
+  .taglie-table th:first-child, .taglie-table td:first-child:not([colspan]),
+  .taglie-escl-table th:first-child, .taglie-escl-table td:first-child:not([colspan]) {
+    position: sticky; left: 0; z-index: 2; background: var(--a-card); box-shadow: 1px 0 0 var(--a-border);
+    min-width: 104px; max-width: 150px; white-space: normal; overflow-wrap: anywhere;
+  }
+  .taglie-table th:first-child, .taglie-escl-table th:first-child { background: #F8FAFC; }
+
   /* schede dell'atleta: una riga che scorre di lato, senza andare a capo */
   .atleta-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; scroll-snap-type: x proximity; }
   .atleta-tabs::-webkit-scrollbar { display: none; }
