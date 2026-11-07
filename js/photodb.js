@@ -71,17 +71,49 @@
     });
   }
 
-  function _upload(blob, fileName) {
-    var fd = new FormData();
-    fd.append('file', blob, fileName);
-    fd.append('upload_preset', _preset());
-    return fetch('https://api.cloudinary.com/v1_1/' + _cloud() + '/image/upload', { method: 'POST', body: fd })
-      .then(function (res) {
-        return res.json().then(function (j) {
-          if (!res.ok) throw new Error((j && j.error && j.error.message) || ('HTTP ' + res.status));
-          return j;
-        });
+  /* Firma del caricamento (solo dal pannello admin, dove c'è l'accesso): /api/cloudinary-firma.
+     Risolve con { apiKey, timestamp, signature, uploadPreset }, oppure con null se il server non ha ancora le
+     chiavi di Cloudinary (503 "chiavi-mancanti") o se non c'è un accesso: allora si carica come prima, col preset
+     senza firma, e lo si scrive in console (una volta sola). Ogni altro errore della firma blocca il caricamento. */
+  var _avvisoChiavi = false;
+  function _firma() {
+    var u = global.auth && global.auth.currentUser;
+    if (!u) return Promise.resolve(null);
+    return u.getIdToken().then(function (token) {
+      return fetch('/api/cloudinary-firma', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } });
+    }).then(function (res) {
+      return res.json().catch(function () { return {}; }).then(function (d) {
+        if (res.status === 503 && d.codice === 'chiavi-mancanti') {
+          if (!_avvisoChiavi) { _avvisoChiavi = true; console.warn('[cloudinary] chiavi mancanti sul server: carico senza firma (preset non firmato).'); }
+          return null;
+        }
+        if (!res.ok) throw new Error(d.error || ('Firma non riuscita (HTTP ' + res.status + ')'));
+        return d;
       });
+    });
+  }
+
+  /* Caricamento di un'immagine su Cloudinary, firmato se possibile. Usato anche da js/admin/cms.js.
+     Risolve con la risposta di Cloudinary (secure_url, public_id, width, height...). */
+  function _upload(blob, fileName) {
+    return _firma().then(function (f) {
+      var fd = new FormData();
+      fd.append('file', blob, fileName);
+      if (f) {
+        fd.append('api_key', f.apiKey);
+        fd.append('timestamp', String(f.timestamp));
+        fd.append('signature', f.signature);
+        fd.append('upload_preset', f.uploadPreset);
+      } else {
+        fd.append('upload_preset', _preset());
+      }
+      return fetch('https://api.cloudinary.com/v1_1/' + _cloud() + '/image/upload', { method: 'POST', body: fd });
+    }).then(function (res) {
+      return res.json().then(function (j) {
+        if (!res.ok) throw new Error((j && j.error && j.error.message) || ('HTTP ' + res.status));
+        return j;
+      });
+    });
   }
 
   function _uploadWithRetry(blob, fileName, attempt) {
@@ -96,6 +128,9 @@
     init: function (cb) { cb && cb(); },
 
     isConfigured: _configured,
+
+    /* Un singolo caricamento (firmato quando il server ha le chiavi). */
+    uploadImage: _upload,
 
     /* Carica i file su Cloudinary e li aggiunge all'album.
        onProgress(done, total) · onDone(addedCount, failedNames[]) */

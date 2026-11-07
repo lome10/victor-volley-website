@@ -880,16 +880,8 @@
   function _uploadImage(blob, folder, ext, cb) {
     var fileName = folder + '-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9) + '.' + ext;
     function attempt(n) {
-      var fd = new FormData();
-      fd.append('file', blob, fileName);
-      fd.append('upload_preset', window.CLOUDINARY_PRESET);
-      fetch('https://api.cloudinary.com/v1_1/' + window.CLOUDINARY_CLOUD + '/image/upload', { method: 'POST', body: fd })
-        .then(function (res) {
-          return res.json().then(function (j) {
-            if (!res.ok) throw new Error((j && j.error && j.error.message) || ('HTTP ' + res.status));
-            return j;
-          });
-        })
+      /* Stesso caricamento della galleria (js/photodb.js): chiede la firma a /api/cloudinary-firma. */
+      window.PhotoDB.uploadImage(blob, fileName)
         .then(function (j) { cb(null, j.secure_url); })
         .catch(function (err) {
           if (n >= IMG_UPLOAD_RETRIES) { cb(err); return; }
