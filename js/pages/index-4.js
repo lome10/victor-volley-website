@@ -68,11 +68,11 @@
       });
     }
 
-    /* Niente autoplay su telefono/tablet stretto (diversi MB di video) né con risparmio dati o movimento ridotto:
-       il video parte dal pulsante, con l'audio. Su schermo largo resta lo sfondo muto in loop. */
+    /* Lo sfondo muto in loop parte da solo su PC e su telefono (playsinline: su iPhone resta nel riquadro).
+       Resta il pulsante play, con l'audio, solo con risparmio dati attivo o movimento ridotto (accessibilita'). */
     var saveData = !!(navigator.connection && navigator.connection.saveData);
     var mm = function (q) { return !!(window.matchMedia && window.matchMedia(q).matches); };
-    if (saveData || mm('(max-width: 900px)') || mm('(prefers-reduced-motion: reduce)')) {
+    if (saveData || mm('(prefers-reduced-motion: reduce)')) {
       box.innerHTML = '<button type="button" class="maglia-video-play" aria-label="Guarda il video: ' + safeTitle + '">' + poster +
         '<span class="maglia-video-btn" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30"><path fill="currentColor" d="M8 5v14l11-7z"/></svg></span></button>';
       box.querySelector('button').addEventListener('click', function () { load(false); });
