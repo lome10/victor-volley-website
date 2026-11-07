@@ -2,7 +2,8 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "functions": {
-    "api/invia-ricevuta.js": { "includeFiles": "{assets/logo.png,js/ricevuta-doc.js}", "maxDuration": 30 }
+    "api/invia-ricevuta.js": { "includeFiles": "{assets/logo.png,js/ricevuta-doc.js}", "maxDuration": 30 },
+    "api/news-anteprima.js": { "includeFiles": "news-dettaglio.html", "maxDuration": 10 }
   },
   "crons": [
     { "path": "/api/promemoria", "schedule": "0 6 * * *" }
@@ -26,6 +27,13 @@
     {
       "source": "/sitemap.xml",
       "destination": "/api/sitemap"
+    },
+    {
+      "source": "/news-dettaglio",
+      "has": [
+        { "type": "header", "key": "user-agent", "value": ".*(facebookexternalhit|WhatsApp|Twitterbot|TelegramBot|LinkedInBot|Slackbot|Discordbot|Googlebot|bingbot|Applebot).*" }
+      ],
+      "destination": "/api/news-anteprima"
     }
   ],
   "headers": [
