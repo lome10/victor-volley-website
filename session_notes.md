@@ -3,7 +3,7 @@
 File di coordinamento: va aggiornato **alla fine di ogni sessione** e **ad ogni cambiamento**.
 Ordine: stato attuale → da fare → da verificare → decisioni → registro sessioni.
 
-Ultimo aggiornamento: 2026-11-02 (calendario e classifica Prima Divisione, promemoria rate)
+Ultimo aggiornamento: 2026-11-07 (nessuna modifica al codice; sessione su Set Point Pulse)
 
 ---
 
@@ -520,3 +520,5 @@ Modello Excel del dirigente analizzato; scelte dell'utente: importo libero (una 
 - **Promemoria di pagamento: controllo e correzione (2026-11-02, richiesta dell'utente; commit `d7edb02`)**: verificato che le mail di rata partono solo per le rate non pagate (`pagata == false`), mai per quelle pagate; 70 promemoria inviati finora (24/10, 30/10, 1/11), 15 dei quali su rate che oggi risultano pagate con `dataPagamento` = 2/11 (pagamento registrato dopo l'invio). Aggiunti: (1) anteprima «Promemoria in partenza domani» in Budget → Rette atleti (`api/promemoria-anteprima.js`, solo dirigenti, senza indirizzi, stessa funzione del job in `api/_promemoria-calcolo.js`); (2) campo `sospendiPromemoria` sulla rata, con pulsante «Sospendi promemoria / Riattiva» nel modal delle rate e nella scheda atleta; la logica lo rispetta (pagamento e validità), il certificato medico no. 7 test in `scripts/check-promemoria.js` (73 verifiche). Provato dal vivo: endpoint 401 senza login e 200 da dirigente (domani nessun promemoria), sospendi/riattiva su una rata vera (`0JvWC9wSfKRAlPGTduAY`, 2 righe nel registro modifiche), elenco disegnato con risposta finta. **Non provato:** elenco con promemoria veri. Prossimo giro utile: solleciti a 8 giorni di ritardo (~8/11) per le rate con scadenza 31/10 ancora aperte: segnare i pagamenti prima, e controllare l'anteprima la sera del 7/11.
 
 - **Nessuna modifica a questo repo (2026-11-04, Dino n.1)**: sessione su Set Point Pulse e LomeOS (check mattutino, usage Supabase, calendario del sync FIPAV, rinomina LifeOS in LomeOS). Dettagli in `set-point-pulse/SESSION_NOTES.md`.
+
+- **Nessuna modifica a questo repo (2026-11-07, Dino n.1)**: sessione su Set Point Pulse (logo sponsor a tutta area in modalita' sponsor, niente blocco al passaggio tra sponsor del Display; dettagli in `set-point-pulse/SESSION_NOTES.md`). Fatto solo `git pull --ff-only` (22 commit di altre sessioni: news, anteprime di condivisione, firma Cloudinary, admin da telefono). **Promemoria della nota del 2/11:** la sera del 7/11 controllare l'anteprima dei promemoria delle rate (Rette) e segnare prima i pagamenti; solleciti a 8 giorni di ritardo previsti verso l'8/11.
