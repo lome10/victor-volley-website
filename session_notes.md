@@ -122,6 +122,12 @@ Piano: file separati caricati in ordine, namespace comune `window.Admin`, nessun
 
 ## Registro sessioni
 
+### 2026-11-07 (sera) — nessuna modifica a questo repo; replay di Set Point Pulse pensato per la Victor
+
+- Sessione su Set Point Pulse (vedi `set-point-pulse/SESSION_NOTES.md`, sezione «Dino n.1 — 7/11 sera»). La **Victor Volley e' il primo (e per ora unico) club** che usera' il **replay** sul tabellone: tasto «Replay» in `/control` sotto i punti, ultimi 7 secondi della diretta sul tabellone `/display`.
+- Il piano Pro e' su misura: il modulo `video-replay` per la Victor lo abilita Lorenzo da `/admin`, e indirizzo e ritardo della diretta li salva lui nel menu di `/control`. Il video passa da Cloudflare Stream (PRISM sul telefono manda un secondo canale RTMP, oltre a YouTube): il sito della Victor non c'entra.
+- Nessun impatto su `victor-volley-website`: nessun file toccato, nessun push. Da guardare a parte: se il tabellone della palestra e' il PC giusto per la prova.
+
 ### 2026-10-01
 - Menù laterale admin riorganizzato in gruppi comprimibili con scrollbar sottile → commit `b9a7c17`.
 - Rimossa la tab Girone dall'admin, con CSS e JS collegati → commit `ada9a9d`.
