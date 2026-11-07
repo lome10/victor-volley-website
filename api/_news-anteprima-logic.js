@@ -1,5 +1,5 @@
 /**
- * Anteprima di condivisione di un articolo (solo logica, nessuna rete): prende la pagina news-dettaglio.html e
+ * Anteprima di condivisione di un articolo (solo logica, nessuna rete): prende la pagina news-articolo.html (servita anche come /news-dettaglio) e
  * sostituisce titolo, descrizione, immagine e indirizzo con quelli dell'articolo vero, così WhatsApp, Facebook,
  * Telegram ecc. (che non eseguono JavaScript) mostrano l'articolo e non «Articolo — Victor Volley».
  * Stesse regole del sito (js/pages/news-dettaglio-1.js): titolo «<titolo> — Victor Volley», riassunto = excerpt o prime

@@ -12,7 +12,7 @@ const fs = require('fs');
 const path = require('path');
 
 const radice = path.join(__dirname, '..');
-const pagina = fs.readFileSync(path.join(radice, 'news-dettaglio.html'), 'utf8');
+const pagina = fs.readFileSync(path.join(radice, 'news-articolo.html'), 'utf8');
 
 let articoli = [];       // finti, come li restituisce Firestore
 let chiamate = [];
@@ -125,7 +125,18 @@ async function t(nome, fn) {
     const re = new RegExp(rw.has[0].value);
     for (const ua of ['WhatsApp/2.23.20.0 A', 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)', 'TelegramBot (like TwitterBot)', 'Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)', 'Slackbot-LinkExpanding 1.0', 'Twitterbot/1.0', 'LinkedInBot/1.0', 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)']) assert.ok(re.test(ua), ua);
     for (const ua of ['Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Safari/604.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0 Safari/537.36', '']) assert.ok(!re.test(ua), ua);
-    assert.ok(/news-dettaglio\.html/.test(v.functions['api/news-anteprima.js'].includeFiles));
+    assert.strictEqual(v.functions['api/news-anteprima.js'].includeFiles, 'news-articolo.html');
+  });
+  await t('vercel.json: /news-dettaglio per tutti gli altri va alla pagina, DOPO la regola dei crawler; nessun file statico con quel nome', () => {
+    const regole = v.rewrites.map((r, i) => [r, i]).filter(([r]) => r.source === '/news-dettaglio');
+    assert.strictEqual(regole.length, 2);
+    assert.ok(regole[0][0].has && regole[0][0].destination === '/api/news-anteprima');
+    assert.ok(!regole[1][0].has && regole[1][0].destination === '/news-articolo' && regole[1][1] > regole[0][1]);
+    /* Su Vercel un file statico vince sui rewrite: con cleanUrls news-dettaglio.html servirebbe /news-dettaglio da solo e la regola dei crawler non scatterebbe mai. */
+    assert.ok(!fs.existsSync(path.join(radice, 'news-dettaglio.html')));
+    assert.ok(fs.existsSync(path.join(radice, 'news-articolo.html')));
+    const h = v.headers.find((x) => x.source === '/news-articolo');
+    assert.ok(h && h.headers.some((x) => x.key === 'X-Robots-Tag' && /noindex/.test(x.value)));
   });
 
   if (!process.exitCode) console.log('OK: ' + n + ' verifiche sull\'anteprima di condivisione delle news.');

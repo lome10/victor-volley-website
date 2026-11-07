@@ -1,7 +1,7 @@
 /**
  * Pagina di un articolo con l'anteprima giusta per chi condivide (funzione serverless Vercel). Raggiunta solo dai
  * crawler dei social e dei motori di ricerca (rewrite con controllo dello User-Agent in vercel.json): gli utenti
- * normali restano sulla pagina statica news-dettaglio.html.
+ * normali restano sulla pagina statica news-articolo.html (rewrite su /news-dettaglio).
  *
  * GET /news-dettaglio?id=N  ->  /api/news-anteprima?id=N
  *
@@ -55,7 +55,7 @@ module.exports = async function handler(req, res) {
     res.setHeader('Allow', 'GET, HEAD');
     return res.status(405).send('Metodo non consentito.');
   }
-  const pagina = fs.readFileSync(path.join(__dirname, '..', 'news-dettaglio.html'), 'utf8');
+  const pagina = fs.readFileSync(path.join(__dirname, '..', 'news-articolo.html'), 'utf8');
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
 
   const id = L.idDaQuery(req.query && req.query.id);
