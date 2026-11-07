@@ -31,7 +31,7 @@
     document.getElementById('magliaTeaserSection').classList.add('maglia-teaser--video');
     var box = document.getElementById('magliaVideo');
     var safeTitle = (title || 'Presentazione maglia').replace(/"/g, '&quot;');
-    var poster = '<img class="maglia-video-poster" src="https://i.ytimg.com/vi/' + id + '/sddefault.jpg" alt="" decoding="async" ' +
+    var poster = '<img class="maglia-video-poster" src="https://i.ytimg.com/vi/' + id + '/sddefault.jpg" alt="" fetchpriority="high" ' +
       'data-fallback="https://i.ytimg.com/vi/' + id + '/hqdefault.jpg">';
     box.innerHTML = poster;
     box.hidden = false;
