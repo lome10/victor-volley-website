@@ -56,10 +56,13 @@
     if (isLive && hasChannel) {
       if (msgEl) msgEl.hidden = true;
       el.innerHTML =
-        '<iframe src="https://www.youtube.com/embed/live_stream?channel=' + encodeURIComponent(channelId) + '&autoplay=1" ' +
+        '<iframe src="https://www.youtube.com/embed/live_stream?channel=' + encodeURIComponent(channelId) + '&autoplay=1&mute=1&enablejsapi=1&origin=' + encodeURIComponent(location.origin) + '" ' +
           'title="Diretta YouTube Victor Volley" ' +
           'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" ' +
           'allowfullscreen></iframe>' +
+        /* Il browser non fa partire da sola una diretta con l'audio acceso (a chi non ha mai interagito col sito):
+           parte muta e questo tasto, essendo un tocco dell'utente, riaccende l'audio. */
+        '<button type="button" class="dt-unmute" id="direttaUnmute">&#128266; Attiva audio</button>' +
         '<a class="dt-video-fallback" href="' + CHANNEL_URL + '/live" target="_blank" rel="noopener">Guarda su YouTube &#8599;</a>';
       return;
     }
@@ -294,6 +297,19 @@
         }
       });
   }
+
+  /* «Attiva audio»: comanda il lettore YouTube dell'iframe (enablejsapi=1) senza caricare altre librerie. */
+  document.addEventListener('click', function (e) {
+    var btn = e.target && e.target.closest ? e.target.closest('#direttaUnmute') : null;
+    if (!btn) return;
+    var frame = document.querySelector('#direttaVideo iframe');
+    if (frame && frame.contentWindow) {
+      ['unMute', 'setVolume'].forEach(function (fn) {
+        frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: fn, args: fn === 'setVolume' ? [100] : [] }), 'https://www.youtube.com');
+      });
+    }
+    btn.remove();
+  });
 
   function init() {
     var el = document.getElementById('direttaTabellone');

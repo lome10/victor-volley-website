@@ -3505,6 +3505,24 @@ button[type="submit"][aria-busy="true"] { opacity: 0.7; cursor: progress; }
 }
 .dt-video-fallback:hover { background: rgba(0,0,0,0.8); }
 
+/* «Attiva audio» sopra la diretta (parte muta: il browser non permette l'audio automatico). */
+.dt-unmute {
+  position: absolute;
+  left: 10px;
+  bottom: 52px;
+  z-index: 2;
+  background: rgba(0,0,0,0.75);
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 20px;
+  cursor: pointer;
+}
+.dt-unmute:hover { background: rgba(0,0,0,0.9); }
+
 .dt-tabellone {
   background: var(--c-navy);
   border-radius: 16px;
