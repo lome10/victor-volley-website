@@ -3030,6 +3030,9 @@
   var PRES_PARTITE_GIORNI     = 60;
   var _presToken = 0;
   var _presCat = '', _presRoster = [], _presRisp = {}, _presEvMap = {};
+  /* Eccezioni di un solo giorno agli orari settimanali (collezione `allenamentiEccezioni`, id = chiave dell'evento
+     «a-<idAllenamento>-<data originale>»): { annullato } oppure { data, oraInizio, oraFine, luogo } per uno spostamento. */
+  var _presEcc = {};
 
   function _presIso(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
   function _presAddDays(iso, n) { var d = new Date(iso + 'T00:00:00'); d.setDate(d.getDate() + n); return _presIso(d); }
@@ -3066,8 +3069,18 @@
         var day = _presAddDays(today, i);
         if (_presWeekday(day) !== +t.giorno) continue;
         if (t.validoFino && day > t.validoFino) continue;
-        evs.push({ key: _presSafeId('a-' + t.id + '-' + day), eventoId: String(t.id), tipo: 'allenamento', date: day, start: t.oraInizio || '',
-                   title: 'Allenamento' });
+        var key = _presSafeId('a-' + t.id + '-' + day);
+        var ecc = _presEcc[key] || {};
+        /* Spostato = stesso allenamento (stessa chiave, quindi le risposte restano) ma in un'altra data o ora. */
+        var ev = {
+          key: key, eventoId: String(t.id), tipo: 'allenamento', origDate: day,
+          date: ecc.data || day, start: ecc.oraInizio || t.oraInizio || '',
+          end: typeof ecc.oraFine === 'string' ? ecc.oraFine : (t.oraFine || ''),
+          luogo: typeof ecc.luogo === 'string' ? ecc.luogo : (t.luogo || ''),
+          title: 'Allenamento', annullato: ecc.annullato === true, spostato: !!_presEcc[key] && ecc.annullato !== true,
+          base: { start: t.oraInizio || '', end: t.oraFine || '', luogo: t.luogo || '' }
+        };
+        evs.push(ev);
       }
     });
 
@@ -3088,9 +3101,12 @@
     Promise.all([
       db.collection('atleti').where('categoria', '==', cat).get(),
       db.collection('presenze').where('categoria', '==', cat).get(),
-      db.collection('allenamenti').where('categoria', '==', cat).get()
+      db.collection('allenamenti').where('categoria', '==', cat).get(),
+      db.collection('allenamentiEccezioni').where('categoria', '==', cat).get()
     ]).then(function (res) {
       if (token !== _presToken) return;
+      _presEcc = {};
+      res[3].forEach(function (d) { _presEcc[d.id] = d.data(); });
 
       var roster = [];
       res[0].forEach(function (d) {
@@ -3145,18 +3161,51 @@
       return '<div class="pres-row"><span class="pres-name">' + esc(a.nome) + '</span>' +
         '<span class="pres-btns" role="group" aria-label="Presenza di ' + esc(a.nome) + '">' + btn('si', 'Sì') + btn('no', 'No') + '</span></div>';
     }).join('');
-    return '<details class="pres-event' + (isPast ? ' is-past' : '') + '" data-key="' + esc(ev.key) + '"' + (isOpen ? ' open' : '') + '>' +
+    var isTrain = ev.tipo === 'allenamento';
+    /* Allenamento di un solo giorno diverso dal solito: spostato (data/ora/luogo) o annullato. */
+    var stato = ev.annullato ? '<span class="chip chip--red">Annullato</span>' : (ev.spostato ? '<span class="chip chip--blue">Modificato</span>' : '');
+    var corpo = ev.annullato
+      ? '<p class="pres-empty">Allenamento annullato per questo giorno: non si segnano le presenze.</p>'
+      : righe;
+    return '<details class="pres-event' + (isPast ? ' is-past' : '') + (ev.annullato ? ' is-cancelled' : '') + '" data-key="' + esc(ev.key) + '"' + (isOpen ? ' open' : '') + '>' +
       '<summary>' +
         '<span class="pres-when">' + esc(day) + (ev.start ? ' · ' + esc(ev.start) : '') + '</span>' +
-        '<span class="pres-title">' + esc(ev.title) + '</span>' +
-        '<span class="chip ' + (ev.tipo === 'partita' ? 'chip--blue' : 'chip--gray') + '">' + (ev.tipo === 'partita' ? 'Partita' : 'Allenamento') + '</span>' +
-        '<span class="pres-counts">' +
+        '<span class="pres-title"' + (ev.annullato ? ' style="text-decoration:line-through"' : '') + '>' + esc(ev.title) + (isTrain && ev.luogo ? ' · ' + esc(ev.luogo) : '') + '</span>' +
+        '<span class="chip ' + (ev.tipo === 'partita' ? 'chip--blue' : 'chip--gray') + '">' + (ev.tipo === 'partita' ? 'Partita' : 'Allenamento') + '</span>' + stato +
+        (ev.annullato ? '' : '<span class="pres-counts">' +
           '<b class="pres-si">' + si + ' sì</b>' +
           '<b class="pres-no">' + no + ' no</b>' +
           '<b class="pres-nr">' + nr + ' senza risposta</b>' +
-        '</span>' +
+        '</span>') +
       '</summary>' +
-      '<div class="pres-roster">' + righe + '</div></details>';
+      (isTrain ? _presEditHtml(ev) : '') +
+      '<div class="pres-roster">' + corpo + '</div></details>';
+  }
+
+  /* «Modifica questo giorno»: sposta l'allenamento (data, ora, luogo) o lo annulla, solo per quel giorno. Gli orari
+     settimanali non cambiano. Le risposte già date restano (la chiave dell'evento è quella del giorno originale). */
+  var _presEditing = {};
+  function _presEditHtml(ev) {
+    var k = esc(ev.key);
+    if (!_presEditing[ev.key]) {
+      return '<div class="pres-edit"><button type="button" class="btn-ghost btn-sm" data-edit="open" data-key="' + k + '">' +
+        (ev.annullato ? 'Ripristina o modifica questo giorno' : 'Modifica questo giorno (spostato o annullato)') + '</button></div>';
+    }
+    function f(id, label, type, val, extra) {
+      return '<label class="pres-edit-f"><span>' + label + '</span><input type="' + type + '" data-f="' + id + '" value="' + esc(val || '') + '"' + (extra || '') + '></label>';
+    }
+    return '<div class="pres-edit pres-edit--open">' +
+      '<p class="pres-edit-hint">Valido solo per questo giorno (orario normale: ' + esc(ev.base.start) + (ev.base.end ? ' – ' + esc(ev.base.end) : '') + (ev.base.luogo ? ', ' + esc(ev.base.luogo) : '') + ').</p>' +
+      '<div class="pres-edit-grid">' +
+        f('data', 'Data', 'date', ev.date) + f('inizio', 'Inizio', 'time', ev.start) + f('fine', 'Fine', 'time', ev.end) +
+        f('luogo', 'Luogo', 'text', ev.luogo, ' maxlength="120"') +
+      '</div>' +
+      '<div class="pres-edit-actions">' +
+        '<button type="button" class="btn-primary btn-sm" data-edit="save" data-key="' + k + '">Salva spostamento</button>' +
+        '<button type="button" class="btn-danger btn-sm" data-edit="cancel" data-key="' + k + '">Annulla questo allenamento</button>' +
+        ((ev.annullato || ev.spostato) ? '<button type="button" class="btn-ghost btn-sm" data-edit="reset" data-key="' + k + '">Torna all\'orario normale</button>' : '') +
+        '<button type="button" class="btn-ghost btn-sm" data-edit="close" data-key="' + k + '">Chiudi</button>' +
+      '</div></div>';
   }
 
   /* Il dirigente segna (o toglie) la risposta di un atleta: scrive lo stesso documento che scrive l'atleta. */
@@ -3189,6 +3238,48 @@
     });
   });
 
+  /* Modifica di un solo giorno: sposta (data, ora, luogo), annulla o torna all'orario normale. */
+  document.getElementById('presenzeBody').addEventListener('click', function (e) {
+    var btn = e.target.closest ? e.target.closest('[data-edit]') : null;
+    if (!btn) return;
+    var key = btn.dataset.key, azione = btn.dataset.edit, ev = _presEvMap[key], cat = _presCat;
+    if (!ev || !auth.currentUser) return;
+
+    if (azione === 'open' || azione === 'close') { _presEditing[key] = azione === 'open'; _presRepaint(key); return; }
+
+    var ref = db.collection('allenamentiEccezioni').doc(key);
+    var before = _presEcc[key] || {};
+    var label = 'Allenamento — ' + cat + ' ' + ev.origDate;
+    var op, dopo;
+
+    if (azione === 'reset') {
+      op = ref.delete(); dopo = null;
+    } else if (azione === 'cancel') {
+      if (!window.confirm('Annullare l\'allenamento del ' + ev.origDate + '? Solo per quel giorno: gli orari settimanali non cambiano.')) return;
+      dopo = { categoria: cat, orarioId: ev.eventoId, dataOriginale: ev.origDate, annullato: true };
+    } else if (azione === 'save') {
+      var det = btn.closest('details');
+      var val = function (f) { var i = det.querySelector('[data-f="' + f + '"]'); return i ? i.value.trim() : ''; };
+      var data = val('data'), inizio = val('inizio'), fine = val('fine');
+      if (!/^d{4}-d{2}-d{2}$/.test(data) || !inizio) { _avviso('Data e ora di inizio sono obbligatorie.'); return; }
+      if (fine && fine <= inizio) { _avviso('L\'ora di fine deve essere dopo quella di inizio.'); return; }
+      dopo = { categoria: cat, orarioId: ev.eventoId, dataOriginale: ev.origDate, annullato: false, data: data, oraInizio: inizio, oraFine: fine, luogo: val('luogo') };
+    } else { return; }
+
+    if (dopo) { dopo.aggiornatoDa = auth.currentUser.uid; dopo.aggiornatoIl = new Date().toISOString(); op = ref.set(dopo); }
+    btn.disabled = true;
+    op.then(function () {
+      return _logWrite('allenamento', ev.eventoId, label, 'update', _diff(before, dopo || {}, ['annullato', 'data', 'oraInizio', 'oraFine', 'luogo']));
+    }).then(function () {
+      _presEditing[key] = false;
+      if (cat === _presCat) _loadPresenzeAdmin();   /* ricarica: l'ordine può cambiare */
+    }).catch(function (err) {
+      console.error('[Presenze] eccezione', err);
+      btn.disabled = false;
+      _avviso('Errore: non sono riuscito a salvare la modifica. Riprova.');
+    });
+  });
+
   /* Ridisegna un solo evento (tenendolo aperto) dopo una modifica. */
   function _presRepaint(key) {
     var det = document.querySelector('#presenzeBody details[data-key="' + (window.CSS && CSS.escape ? CSS.escape(key) : key) + '"]');
@@ -3211,7 +3302,7 @@
     if (_ps.orari && Date.now() - _ps.alle < PS_CACHE_MS) { fine(); return; }
     if (_ps.caricando) return;
     _ps.caricando = true;
-    Promise.all([db.collection('presenze').where('tipo', '==', 'allenamento').get(), db.collection('allenamenti').get()]).then(function (res) {
+    Promise.all([db.collection('presenze').where('tipo', '==', 'allenamento').get(), db.collection('allenamenti').get(), db.collection('allenamentiEccezioni').get()]).then(function (res) {
       var risp = {}, quando = {};   /* risp[atletaId][data] = 'p' | 'a'; vince la risposta più recente */
       res[0].forEach(function (d) {
         var x = d.data(), stato = x.risposta === 'si' ? 'p' : x.risposta === 'no' ? 'a' : '';
@@ -3223,6 +3314,8 @@
       });
       _ps.risp = risp;
       _ps.orari = res[1].docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); });
+      _ps.ecc = {};
+      res[2].forEach(function (d) { _ps.ecc[d.id] = d.data(); });
       _ps.alle = Date.now();
       _ps.caricando = false;
       fine();
@@ -3238,11 +3331,19 @@
   function _psGiorni(cat, da, oggi) {
     var mie = (_ps.orari || []).filter(function (o) { return o.categoria === cat && +o.giorno >= 1 && +o.giorno <= 7; });
     var out = [], visti = {};
-    for (var d = da; d <= oggi; d = _presAddDays(d, 1)) {
+    /* Una data per allenamento, tenendo conto dei giorni annullati o spostati (le risposte stanno alla data nuova). */
+    for (var d = _presAddDays(da, -14); d <= _presAddDays(oggi, 14); d = _presAddDays(d, 1)) {
       var g = _presWeekday(d);
-      if (mie.some(function (o) { return +o.giorno === g && !(o.validoFino && d > o.validoFino); }) && !visti[d]) { visti[d] = true; out.push(d); }
+      mie.forEach(function (o) {
+        if (+o.giorno !== g || (o.validoFino && d > o.validoFino)) return;
+        var ecc = (_ps.ecc || {})[_presSafeId('a-' + o.id + '-' + d)] || {};
+        if (ecc.annullato === true) return;
+        var quando = ecc.data || d;
+        if (quando < da || quando > oggi || visti[quando]) return;
+        visti[quando] = true; out.push(quando);
+      });
     }
-    return out;
+    return out.sort();
   }
 
   function _psDa(periodo, oggi) { return periodo === 'stagione' ? PresenzeStat.inizioStagione(oggi) : _presAddDays(oggi, -29); }

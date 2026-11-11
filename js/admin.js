@@ -92,7 +92,7 @@
     'budgetSeasons', 'categorieAtleti', 'categorieSpesa', 'dirigenti', 'allenatori',
     'pianoEditoriale', 'promemoria', 'rateAtleti', 'sottospese',
     'sponsorizzazioni', 'tranchePagamento', 'vociSpesa', 'tessere', 'supercoppaBari', 'altreEntrate', 'settings', 'siteData',
-    'accessi', 'allenamenti', 'atletiDati', 'comunicazioni', 'presenze',
+    'accessi', 'allenamenti', 'allenamentiEccezioni', 'atletiDati', 'comunicazioni', 'presenze',
     'ricevute', 'contatoriRicevute', 'firme', 'notifiche', 'promemoriaInviati', 'presenzeAllenamento', 'giocatoriDati'
   ];
 

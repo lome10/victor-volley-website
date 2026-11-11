@@ -2003,3 +2003,13 @@ button { font-family: var(--font-body); cursor: pointer; }
 .ps-lab { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--a-muted); }
 .ps-grande { font-family: var(--font-head); font-size: 40px; line-height: 1.1; }
 .ps-sub { font-size: 12px; color: var(--a-muted); }
+
+/* Presenze: modifica di un solo giorno (allenamento spostato o annullato) */
+.pres-edit { padding: 8px 16px 0; }
+.pres-edit--open { background: var(--a-bg, #f8fafc); border-top: 1px solid var(--a-border); padding-bottom: 12px; }
+.pres-edit-hint { margin: 6px 0 10px; font-size: 12px; color: var(--a-muted); }
+.pres-edit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.pres-edit-f { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--a-muted); }
+.pres-edit-f input { font: inherit; padding: 8px 10px; border: 1px solid var(--a-border); border-radius: 8px; color: var(--a-text); background: var(--a-white, #fff); }
+.pres-edit-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.pres-event.is-cancelled summary { opacity: .75; }

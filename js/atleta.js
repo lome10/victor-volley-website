@@ -18,6 +18,7 @@
   var _presToken     = 0;
   var _agendaEvents  = {};  /* eventKey → evento mostrato nel calendario */
   var _allenamenti = [];  /* orari settimanali, collezione `allenamenti` */
+  var _eccezioni = {};    /* un solo giorno diverso dal solito (spostato/annullato), collezione `allenamentiEccezioni` */
   var _dataReady   = false;
   var _dataLoading = false;
   var _dataWaiters = [];
@@ -207,7 +208,11 @@
       db.collection('allenamenti').get().then(function (snap) {
         _allenamenti = [];
         snap.forEach(function (d) { _allenamenti.push(Object.assign({}, d.data(), { id: d.id })); });
-      }).catch(function (e) { console.error('[atleta] allenamenti', e); })
+      }).catch(function (e) { console.error('[atleta] allenamenti', e); }),
+      db.collection('allenamentiEccezioni').get().then(function (snap) {
+        _eccezioni = {};
+        snap.forEach(function (d) { _eccezioni[d.id] = d.data(); });
+      }).catch(function (e) { console.error('[atleta] eccezioni allenamenti', e); })
     ]).then(function () {
       _dataReady = true;
       _dataLoading = false;
@@ -709,10 +714,14 @@
         var day = _addDays(today, i);
         if (_weekday(day) !== +t.giorno) continue;
         if (t.validoFino && day > t.validoFino) break;
+        var key = _safeId('a-' + t.id + '-' + day);
+        var ecc = _eccezioni[key] || {};
+        if (ecc.annullato === true) continue;   /* annullato solo per quel giorno */
         events.push({
-          tipo: 'allenamento', date: day, start: t.oraInizio || '', end: t.oraFine || '',
-          key: _safeId('a-' + t.id + '-' + day), eventoId: String(t.id),
-          title: 'Allenamento', luogo: t.luogo || '', note: t.note || ''
+          tipo: 'allenamento', date: ecc.data || day, start: ecc.oraInizio || t.oraInizio || '',
+          end: typeof ecc.oraFine === 'string' ? ecc.oraFine : (t.oraFine || ''),
+          key: key, eventoId: String(t.id),
+          title: 'Allenamento', luogo: typeof ecc.luogo === 'string' ? ecc.luogo : (t.luogo || ''), note: t.note || ''
         });
       }
     });

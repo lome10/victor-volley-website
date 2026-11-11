@@ -96,6 +96,8 @@ service cloud.firestore {
     match /articles/{document=**}   { allow read: if true; allow write: if isDirigente(); }
     match /partite/{document=**}    { allow read: if true; allow write: if isDirigente(); }
     match /allenamenti/{document=**} { allow read: if true; allow write: if isDirigente(); }
+    // Eccezioni di un solo giorno agli orari settimanali (allenamento spostato o annullato). Id = a-{orario}-{data originale}.
+    match /allenamentiEccezioni/{document=**} { allow read: if true; allow write: if isDirigente(); }
     match /albums/{document=**}     { allow read: if true; allow write: if isDirigente(); }
     match /categories/{document=**} { allow read: if true; allow write: if isDirigente(); }
     match /players/{document=**}    { allow read: if true; allow write: if isDirigente(); }

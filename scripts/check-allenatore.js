@@ -244,6 +244,27 @@ async function t(nome, fn) { try { await fn(); n++; } catch (e) { console.error(
     assert.ok(m, 'manca la regola');
     assert.ok(/allow read: if isDirigente\(\)/.test(m[1]) && /allow write: if false/.test(m[1]));
   });
+  await t('presenze: un allenamento spostato o annullato per un solo giorno', () => {
+    const orari = [{ id: 'x1', categoria: 'S3', giorno: 4, oraInizio: '17:00', oraFine: '18:30', luogo: 'Palestra A' }];
+    const base = L.giorniAllenamento(orari, 'S3', '2026-10-29');
+    const key = L.chiaveAllenamento('x1', '2026-11-05');
+    // annullato: quel giovedì sparisce, gli altri restano
+    const annullato = L.giorniAllenamento(orari, 'S3', '2026-10-29', { [key]: { annullato: true } });
+    assert.strictEqual(annullato.length, base.length - 1);
+    assert.ok(!annullato.some((g) => g.data === '2026-11-05'));
+    // spostato al venerdì con altra ora: cambia data e ora, la chiave resta quella del giorno originale, il luogo resta
+    const spostato = L.giorniAllenamento(orari, 'S3', '2026-10-29', { [key]: { data: '2026-11-06', oraInizio: '19:00', oraFine: '20:30' } });
+    const g = spostato.find((x) => x.dataOriginale === '2026-11-05');
+    assert.strictEqual(g.data, '2026-11-06');
+    assert.strictEqual(g.oraInizio, '19:00');
+    assert.strictEqual(g.luogo, 'Palestra A');
+    assert.strictEqual(L.chiaveAllenamento(g.orarioId, g.dataOriginale), key);
+    assert.ok(!spostato.some((x) => x.data === '2026-11-05'));
+    // senza eccezioni nulla cambia
+    assert.deepStrictEqual(L.giorniAllenamento(orari, 'S3', '2026-10-29', {}).map((x) => x.data), base.map((x) => x.data));
+    const rules = fs.readFileSync(path.join(__dirname, '..', 'firestore.rules'), 'utf8');
+    assert.ok(rules.includes('match /allenamentiEccezioni/{document=**} { allow read: if true; allow write: if isDirigente(); }'));
+  });
   await t('le regole di Firestore: ognuno legge solo il proprio profilo, scrivono solo i dirigenti', () => {
     const rules = fs.readFileSync(path.join(__dirname, '..', 'firestore.rules'), 'utf8');
     const m = /match \/allenatori\/\{uid\}\s*\{([\s\S]*?)\n\s*\}/.exec(rules);

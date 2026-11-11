@@ -81,17 +81,26 @@ const giornoSettimana = (iso) => ((new Date(iso + 'T00:00:00Z').getUTCDay() + 6)
  * dagli orari settimanali. `orari` = documenti di `allenamenti` (con `id`); un orario con `validoFino` non conta dopo
  * quella data. `orarioId` serve a scrivere nella stessa risposta "ci sarò / non ci sarò" che danno le giocatrici.
  */
-function giorniAllenamento(orari, categoria, oggi) {
+function giorniAllenamento(orari, categoria, oggi, eccezioni) {
   const mie = (orari || []).filter((o) => o && o.categoria === categoria && +o.giorno >= 1 && +o.giorno <= 7);
   const out = [];
   for (let i = -GIORNI_AVANTI; i <= GIORNI_INDIETRO; i++) {
     const data = aggiungiGiorni(oggi, -i);
     const g = giornoSettimana(data);
     mie.filter((o) => +o.giorno === g && !(o.validoFino && data > o.validoFino)).forEach((o) => {
-      out.push({ data, orarioId: testo(o.id), oraInizio: testo(o.oraInizio), oraFine: testo(o.oraFine), luogo: testo(o.luogo) });
+      // Eccezione di un solo giorno (allenamento spostato o annullato): vedi `allenamentiEccezioni`.
+      const ecc = (eccezioni || {})[chiaveAllenamento(testo(o.id), data)];
+      if (ecc && ecc.annullato === true) return;
+      out.push({
+        data: ecc && dataValida(ecc.data) ? ecc.data : data, dataOriginale: data, orarioId: testo(o.id),
+        oraInizio: testo(ecc && ecc.oraInizio ? ecc.oraInizio : o.oraInizio),
+        oraFine: testo(ecc && typeof ecc.oraFine === 'string' ? ecc.oraFine : o.oraFine),
+        luogo: testo(ecc && typeof ecc.luogo === 'string' ? ecc.luogo : o.luogo)
+      });
     });
   }
-  return out;
+  // Dal più recente: uno spostamento può far passare un allenamento davanti a un altro.
+  return out.sort((a, b) => (a.data + a.oraInizio < b.data + b.oraInizio ? 1 : a.data + a.oraInizio > b.data + b.oraInizio ? -1 : 0));
 }
 
 /** Stessa chiave che usa l'area atleti per un allenamento: "a-{id dell'orario}-{data}" (le "/" diventano "_"). */

@@ -67,6 +67,11 @@ module.exports = async function handler(req, res) {
     const orari = [];
     orariSnap.forEach((snap) => snap.docs.forEach((d) => orari.push({ ...d.data(), id: d.id })));
 
+    // Eccezioni di un solo giorno (allenamento spostato o annullato), per chiave `a-{orario}-{data originale}`.
+    const eccSnap = await Promise.all(gruppi(categorie, 10).map((g) => db.collection('allenamentiEccezioni').where('categoria', 'in', g).get()));
+    const eccezioni = {};
+    eccSnap.forEach((snap) => snap.docs.forEach((d) => { eccezioni[d.id] = d.data(); }));
+
     if (req.method === 'POST') {
       const body = typeof req.body === 'string' ? safeJson(req.body) : (req.body || {});
       const { categoria, data, atletaId } = body;
@@ -75,7 +80,7 @@ module.exports = async function handler(req, res) {
       if (!dataValida(data)) return fail(res, 400, 'Data non valida.');
       if (!STATI_PRESENZA.includes(stato)) return fail(res, 400, 'Stato non valido.');
       if (typeof atletaId !== 'string' || !atletaId || atletaId.includes('/')) return fail(res, 400, 'Atleta non valido.');
-      const allenamenti = giorniAllenamento(orari, categoria, oggi).filter((g) => g.data === data);
+      const allenamenti = giorniAllenamento(orari, categoria, oggi, eccezioni).filter((g) => g.data === data);
       if (!allenamenti.length) {
         return fail(res, 400, 'In quel giorno la squadra non si allena (o è troppo lontano).');
       }
@@ -85,7 +90,8 @@ module.exports = async function handler(req, res) {
       // Stessa risposta "ci sarò / non ci sarò" che danno giocatrici e dirigenti: l'ultima scritta vince.
       const adesso = new Date().toISOString();
       await Promise.all(allenamenti.map((g) => {
-        const eventKey = chiaveAllenamento(g.orarioId, data);
+        // La chiave resta quella del giorno originale: se l'allenamento è stato spostato, le risposte restano le stesse.
+        const eventKey = chiaveAllenamento(g.orarioId, g.dataOriginale);
         const ref = db.collection('presenze').doc(eventKey + '_' + atletaId);
         if (!stato) return ref.delete();
         return ref.set({
@@ -120,7 +126,7 @@ module.exports = async function handler(req, res) {
         recente[k] = String(x.rispostaIl || '');
         (presenze[x.data] = presenze[x.data] || {})[x.atletaId] = stato;
       });
-      risultato.push({ categoria, giorni: giorniAllenamento(orari, categoria, oggi), atleti, presenze });
+      risultato.push({ categoria, giorni: giorniAllenamento(orari, categoria, oggi, eccezioni), atleti, presenze });
     }
     res.setHeader('Cache-Control', 'no-store');
     return res.status(200).json({ oggi, categorie: risultato });
