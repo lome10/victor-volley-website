@@ -10,6 +10,8 @@
 const SITE = 'https://www.victorvolley.it';
 const PROJECT = 'victor-volley';
 const API_KEY = 'AIzaSyAEwljngFef_1WGZBdQ-SAqAvLwyXGxjmk';
+/* La chiave web di Firebase è limitata ai referrer del sito: le chiamate dal server non hanno un Referer da sole, quindi lo mandiamo noi. */
+const REFERER = 'https://www.victorvolley.it/';
 
 const STATIC_PAGES = ['/', '/news', '/squadre', '/calendario', '/galleria', '/sponsor', '/contatti', '/unisciti-a-noi', '/diretta', '/privacy'];
 
@@ -36,7 +38,7 @@ async function readCollection(name, fields) {
     const qs = fields.map((f) => 'mask.fieldPaths=' + encodeURIComponent(f)).join('&');
     const url = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents/${name}?pageSize=300&${qs}&key=${API_KEY}` +
       (pageToken ? '&pageToken=' + encodeURIComponent(pageToken) : '');
-    const res = await fetch(url);
+    const res = await fetch(url, { headers: { 'Referer': REFERER } });
     if (!res.ok) throw new Error(name + ': HTTP ' + res.status);
     const data = await res.json();
     (data.documents || []).forEach((d) => {

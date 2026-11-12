@@ -19,7 +19,7 @@ let chiamate = [];
 let firestoreRotto = false;
 const campo = (v) => (typeof v === 'string' ? { stringValue: v } : typeof v === 'boolean' ? { booleanValue: v } : { integerValue: String(v) });
 global.fetch = async (url, opt) => {
-  chiamate.push({ url, body: JSON.parse(opt.body) });
+  chiamate.push({ url, body: JSON.parse(opt.body), headers: opt.headers });
   if (firestoreRotto) return { ok: false, status: 500, json: async () => ({}) };
   const idCercato = Number(chiamate[chiamate.length - 1].body.structuredQuery.where.fieldFilter.value.integerValue);
   const a = articoli.find((x) => x.id === idCercato);
@@ -75,6 +75,7 @@ async function t(nome, fn) {
   await t('la query a Firestore: una sola, raccolta articles, campo id, limite 1', async () => {
     await chiedi('7');
     assert.strictEqual(chiamate.length, 1);
+    assert.strictEqual(chiamate[0].headers.Referer, 'https://www.victorvolley.it/', 'la chiave web è limitata ai referrer del sito');
     const q = chiamate[0].body.structuredQuery;
     assert.strictEqual(q.from[0].collectionId, 'articles'); assert.strictEqual(q.limit, 1);
     assert.strictEqual(q.where.fieldFilter.value.integerValue, '7');
@@ -145,6 +146,21 @@ async function t(nome, fn) {
     assert.ok(fs.existsSync(path.join(radice, 'news-articolo.html')));
     const h = v.headers.find((x) => x.source === '/news-articolo');
     assert.ok(h && h.headers.some((x) => x.key === 'X-Robots-Tag' && /noindex/.test(x.value)));
+  });
+
+  await t('sitemap: ogni chiamata a Firestore con la chiave web manda il Referer del sito', async () => {
+    const vistiUrl = [];
+    global.fetch = async (url, opt) => { vistiUrl.push({ url: String(url), referer: opt && opt.headers && opt.headers.Referer }); return { ok: true, status: 200, json: async () => ({ documents: [] }) }; };
+    const sitemap = require('../api/sitemap');
+    const r = res(); await sitemap({ method: 'GET', query: {}, headers: {} }, r);
+    assert.strictEqual(r.code, 200);
+    assert.ok(vistiUrl.length >= 2 && vistiUrl.every((c) => /firestore\.googleapis\.com/.test(c.url) && c.referer === 'https://www.victorvolley.it/'), JSON.stringify(vistiUrl));
+  });
+  await t('nessun altro punto del server chiama googleapis con la chiave web senza Referer', async () => {
+    for (const f of fs.readdirSync(path.join(radice, 'api')).filter((x) => x.endsWith('.js'))) {
+      const s = fs.readFileSync(path.join(radice, 'api', f), 'utf8');
+      if (/googleapis\.com[^`'"]*[?&]key=/.test(s) && /AIza/.test(s)) assert.ok(/Referer/.test(s) && /REFERER/.test(s), f + ' usa la chiave web senza Referer');
+    }
   });
 
   if (!process.exitCode) console.log('OK: ' + n + ' verifiche sull\'anteprima di condivisione delle news.');

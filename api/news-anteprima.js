@@ -17,6 +17,8 @@ const L = require('./_news-anteprima-logic');
 
 const PROJECT = 'victor-volley';
 const API_KEY = 'AIzaSyAEwljngFef_1WGZBdQ-SAqAvLwyXGxjmk';
+/* La chiave web di Firebase è limitata ai referrer del sito: le chiamate dal server non hanno un Referer da sole, quindi lo mandiamo noi. */
+const REFERER = 'https://www.victorvolley.it/';
 
 function valore(f) {
   if (!f) return undefined;
@@ -32,7 +34,7 @@ async function leggiArticolo(id) {
   const url = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents:runQuery?key=${API_KEY}`;
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'Referer': REFERER },
     body: JSON.stringify({
       structuredQuery: {
         from: [{ collectionId: 'articles' }],
