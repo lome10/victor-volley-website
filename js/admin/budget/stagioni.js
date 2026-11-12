@@ -137,7 +137,7 @@
     var altre = d.altre.reduce(function (t, x) { return t + (x.pagata ? (+x.importo || 0) : 0); }, 0);
     var perCat = {}, spese = 0;
     d.voci.forEach(function (v) {
-      var s = +v.importoSostenuto || 0; if (!s) return;
+      var s = +v.importoSostenuto || 0; if (!s || (v.isIva && !v.pagata)) return;
       var c = v.categoriaSpesaId ? d.nomeCategoria(v.categoriaSpesaId) : 'Senza categoria';
       perCat[c] = (perCat[c] || 0) + s; spese += s;
     });

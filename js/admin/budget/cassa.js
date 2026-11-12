@@ -79,7 +79,9 @@
     var auto = v.dataSpesa && B._trimestreIvaDaData ? B._trimestreIvaDaData(v.dataSpesa) : null;
     return auto ? auto.scadenza : '';
   }
-  function _ivaDaVersare() { return B._vociSpesa.filter(function (v) { return v.isIva && !v.pagata && ((+v.importoPreventivato || 0) - (+v.importoSostenuto || 0)) > 0; }); }
+  /* IVA non ancora versata: il saldo per cassa (Panoramica/Bilancio) non l'ha ancora sottratta, quindi esce per intero alla scadenza. */
+  function _impIvaDaVersare(v) { return Math.max(+v.importoPreventivato || 0, +v.importoSostenuto || 0); }
+  function _ivaDaVersare() { return B._vociSpesa.filter(function (v) { return v.isIva && !v.pagata && _impIvaDaVersare(v) > 0; }); }
 
   /* ---- numeri unificati ---- */
   function _calcNumeri(oggi) {
@@ -110,7 +112,7 @@
       if (v.dataSpesa) segna(usc, v.dataSpesa, res); else senzaUsc += res;
     });
     _ivaDaVersare().forEach(function (v) {
-      var res = (+v.importoPreventivato || 0) - (+v.importoSostenuto || 0), scad = _scadenzaIva(v);
+      var res = _impIvaDaVersare(v), scad = _scadenzaIva(v);
       if (scad) segna(usc, scad, res); else senzaUsc += res;
     });
     var fine = _season().dataFine ? _mese(_season().dataFine) : '';
@@ -180,7 +182,7 @@
       out.push({ liv: 'bad', testo: n.ritardoN + (n.ritardoN === 1 ? ' incasso in ritardo' : ' incassi in ritardo') + ' (' + B._eur(n.ritardoEur) + '): ' + parti.join(' e '), tab: (n.ritardoAltre > n.ritardoRate && n.ritardoAltre > n.ritardoTranche) ? 'altre' : n.ritardoRate >= n.ritardoTranche ? 'rette' : 'sponsor', cta: 'Apri' });
     }
     if (n.spese.entro30n) out.push({ liv: 'warn', testo: n.spese.entro30n + (n.spese.entro30n === 1 ? ' spesa scaduta o in scadenza' : ' spese scadute o in scadenza') + ' entro 30 giorni (' + B._eur(n.spese.entro30eur) + ')', tab: 'spese', spese: 'in-scadenza', cta: 'Apri spese' });
-    var iva = _ivaDaVersare().map(function (v) { return { scad: _scadenzaIva(v), imp: (+v.importoPreventivato || 0) - (+v.importoSostenuto || 0) }; })
+    var iva = _ivaDaVersare().map(function (v) { return { scad: _scadenzaIva(v), imp: _impIvaDaVersare(v) }; })
       .filter(function (x) { return x.scad && _giorniA(x.scad, oggi) <= 45; });
     if (iva.length) {
       var prossima = iva.map(function (x) { return x.scad; }).sort()[0];

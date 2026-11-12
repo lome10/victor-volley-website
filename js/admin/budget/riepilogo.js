@@ -22,7 +22,8 @@
     var tessere = B._calcTessere().incassato;
     var altre = B._calcAltreEntrate ? B._calcAltreEntrate().incassato : 0;
     var supercoppa = B._calcSupercoppa ? B._calcSupercoppa().incassato : 0;
-    var uscite = B._vociSpesa.reduce(function (s, v) { return s + (+v.importoSostenuto || 0); }, 0);
+    /* Per cassa, come il Bilancio: l'IVA conta come uscita solo quando è spuntata «versata». */
+    var uscite = B._vociSpesa.reduce(function (s, v) { return s + (!v.isIva || v.pagata ? (+v.importoSostenuto || 0) : 0); }, 0);
     var entrateConfermate = sponsorChiusi + rette + tessere + supercoppa + altre;
     var saldo = entrateConfermate - uscite;
     var season = B._seasons.find(function (s) { return s.id === B._currentSeasonId; }) || {};

@@ -522,4 +522,38 @@ t('Pipeline sponsor: pagato / totale con percentuale (mai oltre il 100%)', () =>
   assert.deepStrictEqual(f(0)({ importoConfermato: 0 }), { pagato: 0, totale: 0, pct: 0 });
 });
 
+/* ---------- IVA per cassa: lo stesso dato dà lo stesso saldo in Panoramica, Bilancio, Cassa ---------- */
+t('IVA per cassa: sottratta dai saldi solo se «versata»; Panoramica = Bilancio = punto di partenza della previsione', () => {
+  const { doc } = ambienteDom();
+  const mk = (versata) => {
+    const B = {
+      _currentSeasonId: 's1', _seasons: [{ id: 's1', nome: '2026/2027', dataFine: tra(300) }],
+      _sponsorizzazioni: [{ id: 'sp1', seasonId: 's1', aziendaId: 'az1', stato: 'chiuso', importoConfermato: 2000 }],
+      _tranche: [{ sponsorizzazioneId: 'sp1', importo: 2000, scadenza: tra(-30), pagato: true, dataIncasso: tra(-30) }],
+      _categorieAtleti: [], _atletiRette: [], _rateAtleti: [], _altreEntrate: [], _tessere: [], _categorieSpesa: [{ id: 'c1', nome: 'Federazione' }],
+      _vociSpesa: [
+        voce({ categoriaSpesaId: 'c1', importoPreventivato: 500, importoSostenuto: 500, dataSpesa: tra(-20) }),
+        voce({ categoriaSpesaId: 'c1', isIva: true, importoPreventivato: 220, importoSostenuto: 220, dataSpesa: tra(-20), ivaScadenza: tra(40), pagata: versata })],
+      _calcTessere: () => ({ prezzo: 0, assegnate: 0, pagate: 0, incassato: 0, daIncassare: 0, righe: [] }),
+      _calcRetteAtleti: () => ({ totIncassato: 0, totPrevisto: 0, righe: [] }),
+      _sponsorIncassato: () => 2000, _sponsorDaIncassare: () => 0, _aziendaById: (id) => ({ ragioneSociale: id }), _categoriaSpesaById: () => ({ nome: 'Federazione' }),
+      _trimestreIvaDaData: () => null, _renderIvaRiepilogo: noop, _renderStatCards: noop, _renderCharts: noop, _renderBilancio: noop, _delIconSm: () => '', _speseFilterCategoriaId: '', _speseExpanded: {}, _sottospese: []
+    };
+    B._sponsorChiusi = () => B._sponsorizzazioni.filter((s) => s.seasonId === B._currentSeasonId && s.stato === 'chiuso');
+    const esc = (x) => String(x == null ? '' : x);
+    const window = { Admin: { budgetShared: B, esc, fmtDate: (d) => d, fmtDateLong: (d) => d, avviso: noop, logWrite: () => Promise.resolve(), diff: () => [] }, AdminActions: {} };
+    ['bilancio.js', 'spese.js', 'riepilogo.js', 'cassa.js'].forEach((f) => new Function('window', 'document', 'db', fs.readFileSync(path.join(__dirname, '..', 'js', 'admin', 'budget', f), 'utf8'))(window, doc, {}));
+    return B;
+  };
+  [false, true].forEach((versata) => {
+    const B = mk(versata), r = B._calcRiepilogo(), bil = B._calcBilancioMensile(), p = B._calcPrevisioneCassa(oggi), k = B._calcSpeseKpi(oggi);
+    const atteso = 2000 - 500 - (versata ? 220 : 0);
+    assert.strictEqual(r.saldo, atteso, 'Panoramica (versata=' + versata + ')');
+    assert.strictEqual(bil.totEntrate - bil.totUscite, atteso, 'Bilancio mensile = Riepilogo generale del PDF');
+    assert.strictEqual(p.inizio, atteso, 'la previsione parte dal saldo per cassa');
+    assert.strictEqual(k.speso, 500 + (versata ? 220 : 0), 'Spese: l’IVA non versata non è «speso»');
+    assert.strictEqual(p.righe[p.righe.length - 1].saldo, 2000 - 500 - 220, 'a fine previsione l’IVA è sottratta una volta sola, versata o no');
+  });
+});
+
 Promise.all(asincrone).then(() => console.log(process.exitCode ? 'Collaudo fallito.' : 'OK: ' + passed + ' verifiche su Bilancio, Spese e cassa.'));

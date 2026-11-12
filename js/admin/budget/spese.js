@@ -239,7 +239,9 @@
     var k = { prev: 0, speso: 0, daPagare: 0, ivaPrev: 0, entro30n: 0, entro30eur: 0, senzaData: 0, anomalie: 0 };
     B._vociSpesa.forEach(function (v) {
       var p = +v.importoPreventivato || 0, s = +v.importoSostenuto || 0;
-      k.prev += p; k.speso += s; k.daPagare += Math.max(0, p - s);
+      k.prev += p;
+      /* IVA per cassa: finché non è «versata» non è speso, ed esce per intero. */
+      if (v.isIva && !v.pagata) { k.daPagare += Math.max(p, s); } else { k.speso += s; k.daPagare += Math.max(0, p - s); }
       if (v.isIva) { k.ivaPrev += p; return; }
       if (_urgenzaVoce(v, oggi)) { k.entro30n++; k.entro30eur += Math.max(0, p - s); }
       if (!v.dataSpesa && _statoVoce(v) !== 'pagata') k.senzaData++;
