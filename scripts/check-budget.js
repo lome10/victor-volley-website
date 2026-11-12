@@ -10,6 +10,8 @@ const fs = require('fs');
 const path = require('path');
 
 let passed = 0;
+const asincrone = [];
+function ta(nome, fn) { asincrone.push(fn().then(() => { passed++; }, (e) => { console.error('FALLITO: ' + nome + '\n  ' + (e.stack || e.message).split('\n').slice(0, 4).join('\n  ')); process.exitCode = 1; })); }
 function t(nome, fn) { try { fn(); passed++; } catch (e) { console.error('FALLITO: ' + nome + '\n  ' + (e.stack || e.message).split('\n').slice(0, 4).join('\n  ')); process.exitCode = 1; } }
 
 /* ---------- ambiente finto ---------- */
@@ -51,6 +53,18 @@ t('tranche pagata senza data d’incasso (dati vecchi): resta la scadenza', () =
 t('tranche pagata di uno sponsor non chiuso: non entra (stesso filtro di Panoramica e Per categoria)', () => {
   const B = stato({ _tranche: [{ sponsorizzazioneId: 'sp9', importo: 800, scadenza: '2026-09-30', pagato: true, dataIncasso: '2026-09-30' }] });
   assert.strictEqual(B._calcBilancioMensile().totEntrate, 0);
+});
+ta('IVA già versata il cui importo cresce: la spunta torna da versare (e resta se non cresce)', async () => {
+  const scritture = [];
+  const dbx = { collection: () => ({ doc: () => ({ update: (p) => { scritture.push(p); return Promise.resolve(); } }) }) };
+  const madre = (sost) => ({ id: 'm', categoria: 'Palestra', ivaAliquota: 22, importoPreventivato: 1000, importoSostenuto: sost, ivaVoceSpesaId: 'f' });
+  const figlia = () => ({ id: 'f', isIva: true, pagata: true, categoria: 'IVA Palestra', importoSostenuto: 220, importoPreventivato: 220 });
+  let x = caricaSpese({ _currentSeasonId: 's1', _vociSpesa: [madre(1000), figlia()], _trimestreIvaDaData: () => null }, dbx);
+  await x.B._syncSpesaIva(x.B._vociSpesa[0]);
+  assert.strictEqual(scritture[0].pagata, undefined, 'stesso importo: la spunta resta'); assert.strictEqual(x.B._vociSpesa[1].pagata, true);
+  x = caricaSpese({ _currentSeasonId: 's1', _vociSpesa: [madre(1500), figlia()], _trimestreIvaDaData: () => null }, dbx);
+  await x.B._syncSpesaIva(x.B._vociSpesa[0]);
+  assert.strictEqual(scritture[1].pagata, false, 'importo cresciuto: da versare'); assert.strictEqual(x.B._vociSpesa[1].pagata, false);
 });
 t('tranche non pagata o di un’altra stagione: non entra', () => {
   const B = stato({ _tranche: [{ sponsorizzazioneId: 'sp1', importo: 700, scadenza: '2026-09-30', pagato: false }, { sponsorizzazioneId: 'sp2', importo: 900, scadenza: '2026-09-30', pagato: true, dataIncasso: '2026-09-30' }] });
@@ -116,12 +130,12 @@ function ambienteDom() {
 const iso = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');   // data locale, come nel codice
 const oggi = iso(new Date());
 const tra = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return iso(d); };
-function caricaSpese(B) {
+function caricaSpese(B, dbx) {
   B._sponsorChiusi = B._sponsorChiusi || (() => B._sponsorizzazioni.filter((s) => s.seasonId === B._currentSeasonId && s.stato === 'chiuso'));   // come in state.js
   const { doc, els } = ambienteDom();
   const esc = (x) => String(x == null ? '' : x).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const window = { Admin: { budgetShared: B, esc, fmtDate: (d) => d, avviso: noop, logWrite: () => Promise.resolve(), diff: () => [] }, AdminActions: {} };
-  ['bilancio.js', 'spese.js'].forEach((f) => new Function('window', 'document', 'db', fs.readFileSync(path.join(__dirname, '..', 'js', 'admin', 'budget', f), 'utf8'))(window, doc, {}));
+  ['bilancio.js', 'spese.js'].forEach((f) => new Function('window', 'document', 'db', fs.readFileSync(path.join(__dirname, '..', 'js', 'admin', 'budget', f), 'utf8'))(window, doc, dbx || {}));
   return { B, els, DG: window.AdminActions };
 }
 function statoSpese(voci, extra) {
@@ -478,4 +492,4 @@ t('Pipeline sponsor: pagato / totale con percentuale (mai oltre il 100%)', () =>
   assert.deepStrictEqual(f(0)({ importoConfermato: 0 }), { pagato: 0, totale: 0, pct: 0 });
 });
 
-console.log(process.exitCode ? 'Collaudo fallito.' : 'OK: ' + passed + ' verifiche su Bilancio, Spese e cassa.');
+Promise.all(asincrone).then(() => console.log(process.exitCode ? 'Collaudo fallito.' : 'OK: ' + passed + ' verifiche su Bilancio, Spese e cassa.'));

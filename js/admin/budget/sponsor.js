@@ -679,6 +679,9 @@
     if (figlia) {
       var old = { categoria: figlia.categoria, importoPreventivato: figlia.importoPreventivato, importoSostenuto: figlia.importoSostenuto, ivaAliquota: figlia.ivaAliquota };
       var patch = { categoria: nome, importoPreventivato: preventivato, importoSostenuto: sostenuto, ivaAliquota: aliquotaVersata };
+      /* se l'IVA da versare cresce (nuove tranche incassate) dopo che era stata spuntata «versata», la spunta non vale più per la parte nuova:
+         torna da versare, altrimenti l'intero importo risulterebbe già pagato all'Erario */
+      if (figlia.pagata && sostenuto > (+figlia.importoSostenuto || 0)) { patch.pagata = false; old.pagata = true; }
       return db.collection('vociSpesa').doc(figlia.id).update(patch)
         .then(function () { return _logWrite('voceSpesa', figlia.id, 'Spesa — ' + nome, 'update', _diff(old, patch, Object.keys(patch))); })
         .then(function () { Object.assign(figlia, patch); });

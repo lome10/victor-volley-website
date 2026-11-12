@@ -680,6 +680,8 @@
     if (figlia) {
       var old = { categoria: figlia.categoria, importoSostenuto: figlia.importoSostenuto, importoPreventivato: figlia.importoPreventivato, ivaAliquota: figlia.ivaAliquota, dataSpesa: figlia.dataSpesa };
       var patch = { categoria: nome, importoSostenuto: importoIva, importoPreventivato: importoIvaPreventivato, ivaAliquota: aliquota, dataSpesa: v.dataSpesa || '' };
+      /* IVA già spuntata «versata» ma l'importo cresce: la spunta non copre la parte nuova, torna da versare */
+      if (figlia.pagata && importoIva > (+figlia.importoSostenuto || 0)) { patch.pagata = false; old.pagata = true; }
       /* La scadenza di versamento si ricalcola solo se non è mai stata forzata a mano sulla voce IVA. */
       if (!figlia.ivaScadenzaManuale) {
         old.ivaTrimestre = figlia.ivaTrimestre || ''; old.ivaScadenza = figlia.ivaScadenza || '';
@@ -690,6 +692,7 @@
         .then(function () {
           figlia.categoria = nome; figlia.importoSostenuto = importoIva; figlia.importoPreventivato = importoIvaPreventivato; figlia.ivaAliquota = aliquota; figlia.dataSpesa = v.dataSpesa || '';
           if (patch.ivaTrimestre !== undefined) { figlia.ivaTrimestre = patch.ivaTrimestre; figlia.ivaScadenza = patch.ivaScadenza; }
+          if (patch.pagata === false) figlia.pagata = false;
         });
     }
 
