@@ -23,6 +23,7 @@ const { oggiRoma } = require('./_promemoria-logic');
 const { creaPdf } = require('./_ricevuta-pdf');
 const R = require('./_ricevuta-logic');
 const { puoGestireAtleti } = require('./_ruolo');
+const emettiRicevuta = require('./_emetti-ricevuta');
 
 function fail(res, status, message) {
   res.setHeader('Cache-Control', 'no-store');
@@ -31,6 +32,8 @@ function fail(res, status, message) {
 const mask = (e) => e.replace(/^(.).*@(.).*(\..+)$/, '$1***@$2***$3');
 
 module.exports = async function handler(req, res) {
+  /* /api/emetti-ricevuta è riscritto qui da vercel.json (limite di 12 funzioni): stesso controllo di token e ruolo, nel suo file. */
+  if (/[?&]azione=emetti(&|$)/.test(req.url || '')) return emettiRicevuta(req, res);
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return fail(res, 405, 'Metodo non consentito.');

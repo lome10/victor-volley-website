@@ -78,7 +78,7 @@ if (manifest) {
 const vercel = exists('vercel.json') ? checkJson('vercel.json') : null;
 if (vercel) {
   (vercel.rewrites || []).forEach((r) => {
-    if (/^\/api\//.test(r.destination) && !exists(r.destination.slice(1) + '.js')) fail('vercel.json: manca la funzione ' + r.destination);
+    if (/^\/api\//.test(r.destination) && !exists(r.destination.slice(1).split('?')[0] + '.js')) fail('vercel.json: manca la funzione ' + r.destination);
   });
 }
 

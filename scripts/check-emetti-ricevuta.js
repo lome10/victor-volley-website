@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Collaudo dell'emissione ricevute con numero dal server:  node scripts/check-emetti-ricevuta.js
- * api/emetti-ricevuta.js con Firestore e Firebase Auth finti (nessuna rete). Verifica: permessi (ruoli), validazione,
+ * api/_emetti-ricevuta.js con Firestore e Firebase Auth finti (nessuna rete). Verifica: permessi (ruoli), validazione,
  * numerazione che prosegue dal contatore e non si azzera, due richieste insieme = numeri diversi, numero già occupato
  * saltato, Dati ASD / firma / bollo / emessaDa decisi dal server (il browser non li falsifica), invio ripetuto con la
  * stessa chiave = nessun doppione. La prova con transazioni VERE (emulatore) è in scripts/check-emissione-emulatore.js.
@@ -41,7 +41,7 @@ require.cache[require.resolve(path.join('..', 'api', '_firebase.js'))] = {
   id: 'fb', filename: 'fb', loaded: true,
   exports: { getApp: () => app, stessaOrigine: (r) => !r.headers.origin || new URL(r.headers.origin).host === r.headers.host, safeJson: (s) => { try { return JSON.parse(s); } catch (e) { return {}; } } }
 };
-const emetti = require('../api/emetti-ricevuta');
+const emetti = require('../api/_emetti-ricevuta');
 
 const res = () => { const r = { code: 200, body: null }; r.status = (c) => { r.code = c; return r; }; r.json = (b) => { r.body = b; return r; }; r.setHeader = () => {}; return r; };
 const chiama = async (body, tok, extra) => { const r = res(); await emetti({ method: 'POST', headers: { host: 'www.victorvolley.it', ...(tok === null ? {} : { authorization: 'Bearer ' + (tok || 'tok-pres') }), ...(extra || {}) }, body }, r); return r; };
@@ -150,6 +150,15 @@ async function t(nome, fn) { try { await fn(); n++; } catch (e) { console.error(
     const orig = db.runTransaction; db.runTransaction = async () => { throw new Error('segreto interno'); };
     const r = await chiama(valido()); db.runTransaction = orig;
     assert.strictEqual(r.code, 500); assert.ok(/riprova/i.test(r.body.error) && !/segreto/.test(r.body.error));
+  });
+
+  await t('smistamento: /api/emetti-ricevuta riscritto su invia-ricevuta?azione=emetti emette come la funzione diretta (stessi controlli)', async () => {
+    const smista = require('../api/invia-ricevuta');
+    const via = async (tok, url) => { const r = res(); await smista({ method: 'POST', url, headers: { host: 'www.victorvolley.it', ...(tok ? { authorization: 'Bearer ' + tok } : {}) }, body: valido() }, r); return r; };
+    assert.strictEqual((await via(null, '/api/invia-ricevuta?azione=emetti')).code, 401);
+    assert.strictEqual((await via('tok-prs', '/api/invia-ricevuta?azione=emetti')).code, 403);
+    const ok = await via('tok-mas', '/api/invia-ricevuta?azione=emetti');
+    assert.strictEqual(ok.code, 200); assert.ok(ok.body.id && ok.body.ricevuta && ok.body.ricevuta.numero);
   });
 
   if (!process.exitCode) console.log('OK: ' + n + ' verifiche sull\'emissione delle ricevute con numero dal server.');

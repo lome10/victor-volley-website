@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Emissione ricevute con TRANSAZIONI VERE (emulatore Firestore):  node scripts/check-emissione-emulatore.js
- * Esegue api/emetti-ricevuta.js con il vero Admin SDK collegato all'emulatore (progetto finto «demo-vv»; non tocca il
+ * Esegue api/_emetti-ricevuta.js con il vero Admin SDK collegato all'emulatore (progetto finto «demo-vv»; non tocca il
  * database vero) e lancia 25 emissioni insieme: i numeri devono essere tutti diversi e consecutivi a partire dal contatore
  * che c'è (non da 1), il contatore deve chiudersi allineato. Le regole che chiudono contatori e creazione ricevute al browser
  * sono collaudate in scripts/check-rules.js (il server passa dall'Admin SDK, che non le attraversa). Parte da solo con «firebase emulators:exec».
@@ -28,7 +28,7 @@ require.cache[require.resolve(path.join('..', 'api', '_firebase.js'))] = {
   id: 'fb', filename: 'fb', loaded: true,
   exports: { getApp: () => app, stessaOrigine: () => true, safeJson: (s) => { try { return JSON.parse(s); } catch (e) { return {}; } } }
 };
-const emetti = require('../api/emetti-ricevuta');
+const emetti = require('../api/_emetti-ricevuta');
 const res = () => { const r = { code: 200, body: null }; r.status = (c) => { r.code = c; return r; }; r.json = (b) => { r.body = b; return r; }; r.setHeader = () => {}; return r; };
 const chiama = async (body) => { const r = res(); await emetti({ method: 'POST', headers: { host: 'x', authorization: 'Bearer t' }, body }, r); return r; };
 const valido = (extra) => Object.assign({

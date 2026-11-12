@@ -4,6 +4,8 @@
  * questa funzione, con l'account di servizio, dentro una transazione. Le regole di Firestore (da pubblicare DOPO il
  * codice) negheranno al browser la scrittura di contatoriRicevute e la creazione di ricevute.
  *
+ * (Su Vercel Hobby le funzioni sono max 12: questo file ha il _ davanti e lo serve api/invia-ricevuta.js; vercel.json riscrive
+ * /api/emetti-ricevuta -> /api/invia-ricevuta?azione=emetti, quindi l'URL per il pannello non cambia.)
  * POST /api/emetti-ricevuta
  *   Authorization: Bearer <ID token Firebase del dirigente>
  *   { chiave?, data, importo, tipoIncasso, causale, modalita, riferimento, note, atletaId, rateIds, pagatore, atleta }
