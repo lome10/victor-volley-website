@@ -267,8 +267,8 @@
               <div id="stagionForm" class="is-hidden" style="max-width:480px;margin-top:16px">
                 <div class="form-grid">
                   <div class="form-group form-full">
-                    <label class="form-label">Nome stagione *</label>
-                    <input type="text" id="stagioneName" class="form-input" placeholder="es. 2026/2027" maxlength="20">
+                    <label for="stagioneName" class="form-label">Nome stagione *</label>
+                    <input aria-required="true" type="text" id="stagioneName" class="form-input" placeholder="es. 2026/2027" maxlength="20">
                     <p style="font-size:12px;color:var(--a-muted);margin-top:4px">Usa il formato AAAA/AAAA, es. 2026/2027</p>
                   </div>
                   <div class="form-group form-full">
@@ -300,20 +300,20 @@
                   </label>
                 </div>
                 <div class="form-group form-full">
-                  <label class="form-label">Titolo</label>
+                  <label for="magliaTitle" class="form-label">Titolo</label>
                   <input type="text" id="magliaTitle" class="form-input" maxlength="60" placeholder="es. Nuova maglia 2026/27">
                 </div>
                 <div class="form-group form-full">
-                  <label class="form-label">Sottotitolo</label>
+                  <label for="magliaSubtitle" class="form-label">Sottotitolo</label>
                   <textarea id="magliaSubtitle" class="form-input" rows="3" maxlength="200" placeholder="es. Il reveal si avvicina: presto potrai ruotarla, ingrandirla ed esplorarla in un render 3D interattivo."></textarea>
                 </div>
                 <div class="form-group form-full">
-                  <label class="form-label">Link video YouTube (opzionale)</label>
+                  <label for="magliaVideoUrl" class="form-label">Link video YouTube (opzionale)</label>
                   <input type="url" id="magliaVideoUrl" class="form-input" placeholder="es. https://www.youtube.com/watch?v=...">
                   <span style="font-size:12px;color:var(--a-muted)">Se compilato, il video prende il posto del countdown. Lascia vuoto per rimettere il countdown.</span>
                 </div>
                 <div class="form-group form-full">
-                  <label class="form-label">Data e ora del reveal (per il countdown)</label>
+                  <label for="magliaRevealDate" class="form-label">Data e ora del reveal (per il countdown)</label>
                   <input type="datetime-local" id="magliaRevealDate" class="form-input">
                 </div>
               </div>
@@ -347,15 +347,15 @@
         <div id="articoliForm" class="is-hidden">
           <div class="form-grid">
             <div class="form-group form-full">
-              <label class="form-label">Titolo *</label>
-              <input type="text" id="artTitle" class="form-input" placeholder="Titolo dell'articolo">
+              <label for="artTitle" class="form-label">Titolo *</label>
+              <input aria-required="true" type="text" id="artTitle" class="form-input" placeholder="Titolo dell'articolo">
             </div>
             <div class="form-group form-full">
               <label class="form-label">Categorie (massimo 2) *</label>
               <div id="artCategoriesBox" style="display:flex;flex-wrap:wrap;gap:8px"></div>
             </div>
             <div class="form-group">
-              <label class="form-label">Data</label>
+              <label for="artDate" class="form-label">Data</label>
               <input type="date" id="artDate" class="form-input">
             </div>
             <div class="form-group form-full">
@@ -363,7 +363,7 @@
 
                 <!-- sinistra: label + controlli -->
                 <div style="flex:1;min-width:0">
-                  <label class="form-label">Immagine di copertina</label>
+                  <label for="artImage" class="form-label">Immagine di copertina</label>
                   <div style="display:flex;gap:8px;align-items:center">
                     <input type="url" id="artImage" class="form-input" placeholder="URL esterno (https://...) oppure carica un file →">
                     <input type="hidden" id="artPhotoFocus" value="">
@@ -404,7 +404,7 @@
               </div>
             </div>
             <div class="form-group form-full">
-              <label class="form-label">Sponsor sopra l'articolo (massimo 3)</label>
+              <label for="artSponsor1" class="form-label">Sponsor sopra l'articolo (massimo 3)</label>
               <div style="display:flex;gap:8px;flex-wrap:wrap">
                 <select id="artSponsor1" class="form-input" style="flex:1;min-width:160px"></select>
                 <select id="artSponsor2" class="form-input" style="flex:1;min-width:160px"></select>
@@ -412,7 +412,7 @@
               </div>
             </div>
             <div class="form-group form-full">
-              <label class="form-label">Estratto</label>
+              <label for="artExcerpt" class="form-label">Estratto</label>
               <textarea id="artExcerpt" class="form-input form-textarea" rows="2" placeholder="Breve descrizione (max 200 caratteri)"></textarea>
             </div>
             <div class="form-group form-full">
@@ -500,19 +500,19 @@
         <div id="calendarioForm" class="is-hidden">
           <div class="form-grid">
             <div class="form-group">
-              <label class="form-label">Data *</label>
-              <input type="date" id="matchDate" class="form-input">
+              <label for="matchDate" class="form-label">Data *</label>
+              <input aria-required="true" type="date" id="matchDate" class="form-input">
             </div>
             <div class="form-group">
-              <label class="form-label">Ora</label>
+              <label for="matchTime" class="form-label">Ora</label>
               <input type="time" id="matchTime" class="form-input" value="18:30">
             </div>
             <div class="form-group">
-              <label class="form-label">Categoria</label>
+              <label for="matchCategory" class="form-label">Categoria</label>
               <select id="matchCategory" class="form-input"></select>
             </div>
             <div class="form-group">
-              <label class="form-label">Squadra di casa</label>
+              <label for="matchHomeTeam" class="form-label">Squadra di casa</label>
               <input type="text" id="matchHomeTeam" class="form-input" placeholder="Squadra di casa" list="gironeTeamNames" autocomplete="off">
               <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
                 <input type="text" id="matchHomeLogo" class="form-input form-input--sm" placeholder="Logo (solo se la squadra non è nell'elenco del girone)" style="flex:1;min-width:0">
@@ -525,7 +525,7 @@
               </div>
             </div>
             <div class="form-group">
-              <label class="form-label">Squadra ospite</label>
+              <label for="matchAwayTeam" class="form-label">Squadra ospite</label>
               <input type="text" id="matchAwayTeam" class="form-input" placeholder="Avversario" list="gironeTeamNames" autocomplete="off">
               <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
                 <input type="text" id="matchAwayLogo" class="form-input form-input--sm" placeholder="Logo (solo se la squadra non è nell'elenco del girone)" style="flex:1;min-width:0">
@@ -538,18 +538,18 @@
               </div>
             </div>
             <div class="form-group form-full">
-              <label class="form-label">Palazzetto / Luogo</label>
+              <label for="matchVenue" class="form-label">Palazzetto / Luogo</label>
               <input type="text" id="matchVenue" class="form-input" placeholder="es. Palazzetto ARKÉ — Melissano">
             </div>
             <div class="form-group">
-              <label class="form-label">Stato</label>
+              <label for="matchStato" class="form-label">Stato</label>
               <select id="matchStato" class="form-input" onchange="AdminActions.toggleResultFields()">
                 <option value="programmata">Programmata</option>
                 <option value="conclusa">Conclusa</option>
               </select>
             </div>
             <div class="form-group" id="matchResultGroup" style="display:none">
-              <label class="form-label">Set (casa – ospite)</label>
+              <label for="matchSetCasa" class="form-label">Set (casa – ospite)</label>
               <div style="display:flex;gap:10px;align-items:center">
                 <input type="number" id="matchSetCasa" class="form-input" min="0" max="3" placeholder="0" style="width:72px;text-align:center">
                 <span style="color:var(--a-muted);font-size:18px;font-weight:700;flex-shrink:0">–</span>
@@ -557,7 +557,7 @@
               </div>
             </div>
             <div class="form-group form-full">
-              <label class="form-label">Tabellone live Set Point Pulse (opzionale)</label>
+              <label for="matchSppCode" class="form-label">Tabellone live Set Point Pulse (opzionale)</label>
               <input type="text" id="matchSppCode" class="form-input" placeholder="scrivi «sì» per attivarlo">
               <p class="form-hint">Se la partita è programmata per oggi e questo campo è compilato (basta qualsiasi testo, il codice partita non serve), in "Diretta" compare il tabellone live della società, che segue da solo la partita in corso su Set Point Pulse.</p>
             </div>
@@ -575,11 +575,11 @@
         <div id="pianoEditorialeList">
           <div class="pe-cal-toolbar">
             <div class="pe-cal-nav">
-              <button id="peMonthPrev" type="button" class="btn-icon" title="Mese precedente">
+              <button id="peMonthPrev" type="button" class="btn-icon" title="Mese precedente" aria-label="Mese precedente">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="15,18 9,12 15,6"/></svg>
               </button>
               <span id="peMonthLabel" class="pe-cal-month-label"></span>
-              <button id="peMonthNext" type="button" class="btn-icon" title="Mese successivo">
+              <button id="peMonthNext" type="button" class="btn-icon" title="Mese successivo" aria-label="Mese successivo">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="9,18 15,12 9,6"/></svg>
               </button>
               <button id="peMonthToday" type="button" class="btn-ghost" style="font-size:12px;padding:6px 12px">Oggi</button>
@@ -593,15 +593,15 @@
         <div id="pianoEditorialeForm" class="is-hidden">
           <div class="form-grid">
             <div class="form-group form-full">
-              <label class="form-label">Titolo *</label>
-              <input type="text" id="peTitolo" class="form-input" placeholder="es. Video allenamento squadra U18">
+              <label for="peTitolo" class="form-label">Titolo *</label>
+              <input aria-required="true" type="text" id="peTitolo" class="form-input" placeholder="es. Video allenamento squadra U18">
             </div>
             <div class="form-group">
-              <label class="form-label">Data *</label>
-              <input type="date" id="peData" class="form-input">
+              <label for="peData" class="form-label">Data *</label>
+              <input aria-required="true" type="date" id="peData" class="form-input">
             </div>
             <div class="form-group">
-              <label class="form-label">Ora</label>
+              <label for="peOra" class="form-label">Ora</label>
               <input type="time" id="peOra" class="form-input">
             </div>
             <div class="form-group form-full">
@@ -609,11 +609,11 @@
               <div id="pePiattaformeBox" style="display:flex;flex-wrap:wrap;gap:8px"></div>
             </div>
             <div class="form-group">
-              <label class="form-label">Collega articolo</label>
+              <label for="peArticolo" class="form-label">Collega articolo</label>
               <select id="peArticolo" class="form-input"></select>
             </div>
             <div class="form-group">
-              <label class="form-label">Stato</label>
+              <label for="peStato" class="form-label">Stato</label>
               <select id="peStato" class="form-input">
                 <option value="daFare">Da fare</option>
                 <option value="pronto">Pronto</option>
@@ -621,7 +621,7 @@
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Responsabile</label>
+              <label for="peResponsabile" class="form-label">Responsabile</label>
               <select id="peResponsabile" class="form-input"></select>
             </div>
             <div class="form-group form-full">
@@ -630,7 +630,7 @@
               <p style="font-size:12px;color:var(--a-muted);margin-top:4px">Spunta gli sponsor che compaiono o vengono citati in questo contenuto. Il numero accanto al nome è quanti contenuti ha lo sponsor, compreso questo se lo spunti.</p>
             </div>
             <div class="form-group form-full">
-              <label class="form-label">Note / testo</label>
+              <label for="peNote" class="form-label">Note / testo</label>
               <textarea id="peNote" class="form-input form-textarea" rows="3" placeholder="Caption, bozza testo, appunti..."></textarea>
             </div>
           </div>
@@ -687,7 +687,7 @@
 
         <!-- Selettore stagione -->
         <div id="squadreStagionBar" style="display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--a-border)">
-          <label class="form-label" style="margin:0;white-space:nowrap">Stagione:</label>
+          <label for="squadreStagioneSelect" class="form-label" style="margin:0;white-space:nowrap">Stagione:</label>
           <select id="squadreStagioneSelect" class="form-input" style="max-width:200px"></select>
         </div>
 
@@ -700,23 +700,23 @@
         <div id="squadreCatForm" class="is-hidden">
           <div class="form-grid">
             <div class="form-group form-full">
-              <label class="form-label">Nome categoria *</label>
-              <input type="text" id="catName" class="form-input" placeholder="es. Prima Divisione">
+              <label for="catName" class="form-label">Nome categoria *</label>
+              <input aria-required="true" type="text" id="catName" class="form-input" placeholder="es. Prima Divisione">
             </div>
             <div class="form-group">
-              <label class="form-label">Abbreviazione (max 4 car.)</label>
+              <label for="catAbbr" class="form-label">Abbreviazione (max 4 car.)</label>
               <input type="text" id="catAbbr" class="form-input" placeholder="es. PD" maxlength="4">
             </div>
             <div class="form-group">
-              <label class="form-label">Colore</label>
+              <label for="catColor" class="form-label">Colore</label>
               <input type="color" id="catColor" class="form-input" style="height:40px;padding:4px 6px" value="#008CFD">
             </div>
             <div class="form-group form-full">
-              <label class="form-label">Descrizione</label>
+              <label for="catDescription" class="form-label">Descrizione</label>
               <input type="text" id="catDescription" class="form-input" placeholder="es. Campionato senior FIPAV">
             </div>
             <div class="form-group form-full">
-              <label class="form-label">Orari allenamento</label>
+              <label for="catSchedule" class="form-label">Orari allenamento</label>
               <input type="text" id="catSchedule" class="form-input" placeholder="es. Lunedì e Mercoledì ore 19:00">
             </div>
             <div class="form-group form-full">
@@ -744,15 +744,15 @@
         <div id="squadrePlayerForm" class="is-hidden">
           <div class="form-grid">
             <div class="form-group">
-              <label class="form-label">Nome e cognome *</label>
-              <input type="text" id="playerName" class="form-input" placeholder="es. Maria Rossi">
+              <label for="playerName" class="form-label">Nome e cognome *</label>
+              <input aria-required="true" type="text" id="playerName" class="form-input" placeholder="es. Maria Rossi">
             </div>
             <div class="form-group">
-              <label class="form-label">Numero di maglia</label>
+              <label for="playerNumber" class="form-label">Numero di maglia</label>
               <input type="number" id="playerNumber" class="form-input" min="1" max="99" placeholder="es. 7">
             </div>
             <div class="form-group">
-              <label class="form-label">Ruolo</label>
+              <label for="playerRole" class="form-label">Ruolo</label>
               <select id="playerRole" class="form-input">
                 <option>Palleggiatore</option>
                 <option>Laterale</option>
@@ -763,18 +763,18 @@
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Genere</label>
+              <label for="playerGender" class="form-label">Genere</label>
               <select id="playerGender" class="form-input">
                 <option value="M">Maschile</option>
                 <option value="F">Femminile</option>
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Anno di nascita</label>
+              <label for="playerYear" class="form-label">Anno di nascita</label>
               <input type="number" id="playerYear" class="form-input" placeholder="es. 2005" min="1970" max="2020">
             </div>
             <div class="form-group form-full">
-              <label class="form-label">Foto</label>
+              <label for="playerPhoto" class="form-label">Foto</label>
               <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
                 <input type="text" id="playerPhoto" class="form-input form-input--sm" placeholder="URL foto" style="flex:1;min-width:0">
                 <input type="hidden" id="playerPhotoFocus" value="50% 25%">
@@ -812,11 +812,11 @@
         <div id="squadreStaffForm" class="is-hidden">
           <div class="form-grid">
             <div class="form-group">
-              <label class="form-label">Nome e cognome *</label>
-              <input type="text" id="staffName" class="form-input" placeholder="es. Marco Bianchi">
+              <label for="staffName" class="form-label">Nome e cognome *</label>
+              <input aria-required="true" type="text" id="staffName" class="form-input" placeholder="es. Marco Bianchi">
             </div>
             <div class="form-group">
-              <label class="form-label">Ruolo</label>
+              <label for="staffRole" class="form-label">Ruolo</label>
               <select id="staffRole" class="form-input">
                 <option>Allenatore</option>
                 <option>Assistente allenatore</option>
@@ -827,7 +827,7 @@
               </select>
             </div>
             <div class="form-group form-full">
-              <label class="form-label">Foto</label>
+              <label for="staffPhoto" class="form-label">Foto</label>
               <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
                 <input type="text" id="staffPhoto" class="form-input form-input--sm" placeholder="URL foto" style="flex:1;min-width:0">
                 <input type="hidden" id="staffPhotoFocus" value="50% 25%">
@@ -873,20 +873,20 @@
         <div id="galleriaForm" class="is-hidden">
           <div class="form-grid">
             <div class="form-group form-full">
-              <label class="form-label">Titolo album *</label>
-              <input type="text" id="albumTitle" class="form-input" placeholder="es. Prima giornata vs Avversario">
+              <label for="albumTitle" class="form-label">Titolo album *</label>
+              <input aria-required="true" type="text" id="albumTitle" class="form-input" placeholder="es. Prima giornata vs Avversario">
             </div>
             <div class="form-group form-full">
-              <label class="form-label">Indirizzo della pagina (slug) *</label>
-              <input type="text" id="albumSlug" class="form-input" placeholder="es. prima-giornata-vs-avversario" maxlength="60" autocomplete="off">
+              <label for="albumSlug" class="form-label">Indirizzo della pagina (slug) *</label>
+              <input aria-required="true" type="text" id="albumSlug" class="form-input" placeholder="es. prima-giornata-vs-avversario" maxlength="60" autocomplete="off">
               <span id="albumSlugHint" style="font-size:12px;color:var(--a-muted)"></span>
             </div>
             <div class="form-group">
-              <label class="form-label">Data</label>
+              <label for="albumDate" class="form-label">Data</label>
               <input type="date" id="albumDate" class="form-input">
             </div>
             <div class="form-group">
-              <label class="form-label">Categoria</label>
+              <label for="albumCategory" class="form-label">Categoria</label>
               <select id="albumCategory" class="form-input"></select>
             </div>
           </div>
@@ -966,47 +966,47 @@
         <div id="atletiForm" class="is-hidden">
           <div class="form-grid">
             <div class="form-group">
-              <label class="form-label">Nome *</label>
-              <input type="text" id="atletaNome" class="form-input" placeholder="Nome">
+              <label for="atletaNome" class="form-label">Nome *</label>
+              <input aria-required="true" type="text" id="atletaNome" class="form-input" placeholder="Nome">
             </div>
             <div class="form-group">
-              <label class="form-label">Cognome *</label>
-              <input type="text" id="atletaCognome" class="form-input" placeholder="Cognome">
+              <label for="atletaCognome" class="form-label">Cognome *</label>
+              <input aria-required="true" type="text" id="atletaCognome" class="form-input" placeholder="Cognome">
             </div>
             <div class="form-group">
-              <label class="form-label">Categoria</label>
+              <label for="atletaCategoria" class="form-label">Categoria</label>
               <select id="atletaCategoria" class="form-input"><option value="">Nessuna</option></select>
             </div>
             <div class="form-group">
-              <label class="form-label">Scad. Cert. Medico</label>
+              <label for="atletaCertScadenza" class="form-label">Scad. Cert. Medico</label>
               <input type="date" id="atletaCertScadenza" class="form-input">
             </div>
             <div class="form-group form-full">
               <p style="font-size:12px;color:var(--a-muted)">Serve <strong>almeno un accesso</strong> tra atleta e genitore. Per i più piccoli basta il genitore. Un genitore con più figli usa lo stesso login: basta ripetere la sua email, e se esiste già viene collegato senza creare un nuovo account.</p>
             </div>
             <div class="form-group">
-              <label class="form-label">Accesso atleta &mdash; email</label>
+              <label for="atletaEmail" class="form-label">Accesso atleta &mdash; email</label>
               <input type="email" id="atletaEmail" autocomplete="off" class="form-input" placeholder="Facoltativo">
             </div>
             <div class="form-group">
-              <label class="form-label">Accesso atleta &mdash; password iniziale</label>
+              <label for="atletaPassword" class="form-label">Accesso atleta &mdash; password iniziale</label>
               <input type="text" id="atletaPassword" autocomplete="new-password" class="form-input" placeholder="Minimo 10 caratteri">
               <button type="button" class="btn-ghost btn-sm" data-genpwd="atletaPassword" style="margin-top:6px">Genera password</button>
             </div>
             <div class="form-group">
-              <label class="form-label">Accesso genitore &mdash; cognome</label>
+              <label for="genitoreCognome" class="form-label">Accesso genitore &mdash; cognome</label>
               <input type="text" id="genitoreCognome" class="form-input" placeholder="Facoltativo (es. Rossi)">
             </div>
             <div class="form-group">
-              <label class="form-label">Accesso genitore &mdash; nome</label>
+              <label for="genitoreNome" class="form-label">Accesso genitore &mdash; nome</label>
               <input type="text" id="genitoreNome" class="form-input" placeholder="Facoltativo (es. Maria Chiara)">
             </div>
             <div class="form-group">
-              <label class="form-label">Accesso genitore &mdash; email</label>
+              <label for="genitoreEmail" class="form-label">Accesso genitore &mdash; email</label>
               <input type="email" id="genitoreEmail" autocomplete="off" class="form-input" placeholder="Facoltativo">
             </div>
             <div class="form-group">
-              <label class="form-label">Accesso genitore &mdash; password iniziale</label>
+              <label for="genitorePassword" class="form-label">Accesso genitore &mdash; password iniziale</label>
               <input type="text" id="genitorePassword" autocomplete="new-password" class="form-input" placeholder="Vuoto = invio email con link per sceglierla">
               <button type="button" class="btn-ghost btn-sm" data-genpwd="genitorePassword" style="margin-top:6px">Genera password</button>
             </div>
@@ -1051,11 +1051,11 @@
           <div id="tabCertmedico" class="atleta-tab-pane is-hidden">
             <div class="form-grid">
               <div class="form-group">
-                <label class="form-label">Data scadenza</label>
+                <label for="detCertScadenza" class="form-label">Data scadenza</label>
                 <input type="date" id="detCertScadenza" class="form-input">
               </div>
               <div class="form-group">
-                <label class="form-label">Link PDF (Google Drive)</label>
+                <label for="certPdfUrl" class="form-label">Link PDF (Google Drive)</label>
                 <input type="url" id="certPdfUrl" class="form-input" placeholder="https://drive.google.com/file/d/…/view?usp=sharing">
                 <p style="font-size:12px;color:var(--a-muted);margin-top:5px">Carica su Drive → tasto destro → "Ottieni link" → imposta <strong>Chiunque con il link</strong> → incolla qui.</p>
                 <div id="certPdfLinkWrap" class="is-hidden" style="margin-top:8px">
@@ -1076,19 +1076,19 @@
               <div class="atleta-add-rata-title">Aggiungi quota / rata</div>
               <div class="form-grid">
                 <div class="form-group">
-                  <label class="form-label">Descrizione</label>
+                  <label for="rataDesc" class="form-label">Descrizione</label>
                   <input type="text" id="rataDesc" class="form-input" placeholder="es. Prima rata">
                 </div>
                 <div class="form-group">
-                  <label class="form-label">Importo (€)</label>
+                  <label for="rataImporto" class="form-label">Importo (€)</label>
                   <input type="number" id="rataImporto" class="form-input" min="0" step="0.01" placeholder="0.00">
                 </div>
                 <div class="form-group">
-                  <label class="form-label">Pagamento entro</label>
+                  <label for="rataScadenzaPag" class="form-label">Pagamento entro</label>
                   <input type="date" id="rataScadenzaPag" class="form-input">
                 </div>
                 <div class="form-group">
-                  <label class="form-label">Valida fino al</label>
+                  <label for="rataScadenza" class="form-label">Valida fino al</label>
                   <input type="date" id="rataScadenza" class="form-input">
                 </div>
               </div>
@@ -1102,7 +1102,7 @@
           <div id="tabModulo" class="atleta-tab-pane is-hidden">
             <div class="form-grid">
               <div class="form-group">
-                <label class="form-label">Link PDF (Google Drive)</label>
+                <label for="moduloPdfUrl" class="form-label">Link PDF (Google Drive)</label>
                 <input type="url" id="moduloPdfUrl" class="form-input" placeholder="https://drive.google.com/file/d/…/view?usp=sharing">
                 <p style="font-size:12px;color:var(--a-muted);margin-top:5px">Carica su Drive → tasto destro → "Ottieni link" → imposta <strong>Chiunque con il link</strong> → incolla qui.</p>
                 <div id="moduloPdfLinkWrap" class="is-hidden" style="margin-top:8px">
@@ -1140,19 +1140,19 @@
               <div class="atleta-add-rata-title">Aggiungi accesso genitore</div>
               <div class="form-grid">
                 <div class="form-group">
-                  <label class="form-label">Cognome</label>
+                  <label for="accCognome" class="form-label">Cognome</label>
                   <input type="text" id="accCognome" class="form-input" placeholder="es. Rossi">
                 </div>
                 <div class="form-group">
-                  <label class="form-label">Nome</label>
+                  <label for="accNome" class="form-label">Nome</label>
                   <input type="text" id="accNome" class="form-input" placeholder="es. Maria Chiara">
                 </div>
                 <div class="form-group">
-                  <label class="form-label">Email</label>
+                  <label for="accEmail" class="form-label">Email</label>
                   <input type="email" id="accEmail" autocomplete="off" class="form-input" placeholder="Email per il login">
                 </div>
                 <div class="form-group">
-                  <label class="form-label">Password iniziale</label>
+                  <label for="accPassword" class="form-label">Password iniziale</label>
                   <input type="text" id="accPassword" autocomplete="new-password" class="form-input" placeholder="Vuoto = invio email con link per sceglierla">
               <button type="button" class="btn-ghost btn-sm" data-genpwd="accPassword" style="margin-top:6px">Genera password</button>
                 </div>
@@ -1184,11 +1184,11 @@
                 <p class="sicurezza-opt-desc">Da usare se l'email non arriva. Comunica la password all'atleta in modo sicuro.</p>
                 <div class="form-grid" style="width:100%">
                   <div class="form-group form-full">
-                    <label class="form-label">Nuova password</label>
+                    <label for="newPassword" class="form-label">Nuova password</label>
                     <input type="password" id="newPassword" class="form-input" placeholder="Minimo 10 caratteri" autocomplete="new-password">
                   </div>
                   <div class="form-group form-full">
-                    <label class="form-label">Conferma password</label>
+                    <label for="confirmPassword" class="form-label">Conferma password</label>
                     <input type="password" id="confirmPassword" class="form-input" placeholder="Ripeti la password" autocomplete="new-password">
                   </div>
                 </div>
@@ -1237,8 +1237,8 @@
         <div id="comunicazioniForm" class="is-hidden">
           <div class="form-grid">
             <div class="form-group">
-              <label class="form-label">Destinatari *</label>
-              <select id="comDest" class="form-input"></select>
+              <label for="comDest" class="form-label">Destinatari *</label>
+              <select aria-required="true" id="comDest" class="form-input"></select>
             </div>
             <div class="form-group">
               <label class="form-label">Importanza</label>
@@ -1258,15 +1258,15 @@
               <p style="font-size:12px;color:var(--a-muted);margin-top:5px">Senza data resta in cima finché non lo togli. Dopo la data torna un avviso normale.</p>
             </div>
             <div class="form-group form-full">
-              <label class="form-label">Titolo *</label>
-              <input type="text" id="comTitolo" class="form-input" maxlength="120" placeholder="es. Allenamento di giovedì annullato">
+              <label for="comTitolo" class="form-label">Titolo *</label>
+              <input aria-required="true" type="text" id="comTitolo" class="form-input" maxlength="120" placeholder="es. Allenamento di giovedì annullato">
             </div>
             <div class="form-group form-full">
-              <label class="form-label">Testo *</label>
-              <textarea id="comTesto" class="form-input form-textarea" rows="6" maxlength="3000" placeholder="Scrivi qui il messaggio. I link vengono resi cliccabili."></textarea>
+              <label for="comTesto" class="form-label">Testo *</label>
+              <textarea aria-required="true" id="comTesto" class="form-input form-textarea" rows="6" maxlength="3000" placeholder="Scrivi qui il messaggio. I link vengono resi cliccabili."></textarea>
             </div>
             <div class="form-group form-full">
-              <label class="form-label">Link allegato (facoltativo)</label>
+              <label for="comAllegato" class="form-label">Link allegato (facoltativo)</label>
               <input type="url" id="comAllegato" class="form-input" placeholder="https://drive.google.com/file/d/…/view?usp=sharing">
               <p style="font-size:12px;color:var(--a-muted);margin-top:5px">Per moduli o locandine: carica su Drive, imposta <strong>Chiunque con il link</strong> e incolla qui.</p>
             </div>
@@ -1302,32 +1302,32 @@
         <div id="allenamentiForm" class="is-hidden">
           <div class="form-grid">
             <div class="form-group">
-              <label class="form-label">Categoria *</label>
-              <select id="allenCat" class="form-input"></select>
+              <label for="allenCat" class="form-label">Categoria *</label>
+              <select aria-required="true" id="allenCat" class="form-input"></select>
             </div>
             <div class="form-group">
-              <label class="form-label">Giorno *</label>
-              <select id="allenGiorno" class="form-input"></select>
+              <label for="allenGiorno" class="form-label">Giorno *</label>
+              <select aria-required="true" id="allenGiorno" class="form-input"></select>
             </div>
             <div class="form-group">
-              <label class="form-label">Inizio *</label>
-              <input type="time" id="allenInizio" class="form-input">
+              <label for="allenInizio" class="form-label">Inizio *</label>
+              <input aria-required="true" type="time" id="allenInizio" class="form-input">
             </div>
             <div class="form-group">
-              <label class="form-label">Fine</label>
+              <label for="allenFine" class="form-label">Fine</label>
               <input type="time" id="allenFine" class="form-input">
             </div>
             <div class="form-group">
-              <label class="form-label">Luogo</label>
+              <label for="allenLuogo" class="form-label">Luogo</label>
               <input type="text" id="allenLuogo" class="form-input" placeholder="es. ARKÈ Melissano">
             </div>
             <div class="form-group">
-              <label class="form-label">Valido fino al</label>
+              <label for="allenFino" class="form-label">Valido fino al</label>
               <input type="date" id="allenFino" class="form-input">
               <p style="font-size:12px;color:var(--a-muted);margin-top:5px">Vuoto = ricorre per un anno dall'aggiunta al calendario. Meglio indicare la fine della stagione.</p>
             </div>
             <div class="form-group form-full">
-              <label class="form-label">Note</label>
+              <label for="allenNote" class="form-label">Note</label>
               <input type="text" id="allenNote" class="form-input" placeholder="Visibili ad atleti e genitori (es. portare le scarpe da palestra)">
             </div>
           </div>
@@ -1367,19 +1367,19 @@
         <div id="dirigentiForm" class="is-hidden">
           <div class="form-grid">
             <div class="form-group">
-              <label class="form-label">Nome *</label>
-              <input type="text" id="dirigenteNome" class="form-input" placeholder="Nome">
+              <label for="dirigenteNome" class="form-label">Nome *</label>
+              <input aria-required="true" type="text" id="dirigenteNome" class="form-input" placeholder="Nome">
             </div>
             <div class="form-group">
-              <label class="form-label">Cognome *</label>
-              <input type="text" id="dirigenteCognome" class="form-input" placeholder="Cognome">
+              <label for="dirigenteCognome" class="form-label">Cognome *</label>
+              <input aria-required="true" type="text" id="dirigenteCognome" class="form-input" placeholder="Cognome">
             </div>
             <div class="form-group">
-              <label class="form-label">Email</label>
+              <label for="dirigenteEmail" class="form-label">Email</label>
               <input type="email" id="dirigenteEmail" class="form-input" placeholder="Email per il login">
             </div>
             <div class="form-group">
-              <label class="form-label">Password iniziale</label>
+              <label for="dirigentePassword" class="form-label">Password iniziale</label>
               <input type="text" id="dirigentePassword" class="form-input" placeholder="Minimo 10 caratteri">
               <button type="button" class="btn-ghost btn-sm" data-genpwd="dirigentePassword" style="margin-top:6px">Genera password</button>
             </div>
@@ -1508,15 +1508,15 @@
           <h3 class="sp-form-title">Testi dei livelli (pagina Partner)</h3>
           <div class="sp-form-grid">
             <div class="form-group form-full">
-              <label class="form-label">Sottotitolo Gold</label>
+              <label for="spSubGold" class="form-label">Sottotitolo Gold</label>
               <input type="text" id="spSubGold" class="form-input">
             </div>
             <div class="form-group form-full">
-              <label class="form-label">Sottotitolo Silver</label>
+              <label for="spSubSilver" class="form-label">Sottotitolo Silver</label>
               <input type="text" id="spSubSilver" class="form-input">
             </div>
             <div class="form-group form-full">
-              <label class="form-label">Sottotitolo Bronze</label>
+              <label for="spSubBronze" class="form-label">Sottotitolo Bronze</label>
               <input type="text" id="spSubBronze" class="form-input">
             </div>
           </div>
@@ -1531,9 +1531,9 @@
           <h3 class="sp-form-title" id="spFormTitle">Nuovo sponsor</h3>
           <div class="sp-form-grid">
             <div class="form-group">
-              <label class="form-label">Logo *</label>
+              <label for="spLogoUrl" class="form-label">Logo *</label>
               <div style="display:flex;gap:8px;align-items:center">
-                <input type="text" id="spLogoUrl" class="form-input" placeholder="URL immagine (o carica file →)">
+                <input aria-required="true" type="text" id="spLogoUrl" class="form-input" placeholder="URL immagine (o carica file →)">
                 <label class="btn-ghost" style="cursor:pointer;padding:6px 14px;white-space:nowrap;flex-shrink:0" title="Carica PNG/JPG/SVG — poi potrai ritagliare e zoomare">
                   Carica
                   <input type="file" id="spLogoFile" accept="image/*" style="display:none">
@@ -1553,7 +1553,7 @@
                     <img id="spLogoEditorImg" src="" alt="" draggable="false" style="position:absolute;left:50%;top:50%;user-select:none;pointer-events:none">
                   </div>
                   <div style="flex:1;min-width:160px">
-                    <label style="font-size:11px;color:var(--a-muted);display:block;margin-bottom:4px">Zoom</label>
+                    <label for="spLogoEditorZoom" style="font-size:11px;color:var(--a-muted);display:block;margin-bottom:4px">Zoom</label>
                     <input type="range" id="spLogoEditorZoom" min="50" max="300" value="100" style="width:100%">
                     <div class="form-actions" style="margin-top:12px">
                       <button type="button" id="spLogoEditorCancel" class="btn-ghost">Annulla</button>
@@ -1564,24 +1564,24 @@
               </div>
             </div>
             <div class="form-group">
-              <label class="form-label">Nome sponsor *</label>
-              <input type="text" id="spNome" class="form-input" placeholder="es. Comune di Melissano">
+              <label for="spNome" class="form-label">Nome sponsor *</label>
+              <input aria-required="true" type="text" id="spNome" class="form-input" placeholder="es. Comune di Melissano">
             </div>
             <div class="form-group">
-              <label class="form-label">Sito web</label>
+              <label for="spUrl" class="form-label">Sito web</label>
               <input type="url" id="spUrl" class="form-input" placeholder="https://...">
             </div>
             <div class="form-group">
-              <label class="form-label">Collegato a (pipeline sponsor)</label>
+              <label for="spAzienda" class="form-label">Collegato a (pipeline sponsor)</label>
               <select id="spAzienda" class="form-input"></select>
               <p style="font-size:12px;color:var(--a-muted);margin-top:4px">Collega il logo all'azienda del Budget: così nella pipeline si vede chi è sul sito e qui si vede a che punto è il contributo. Resta nei dati riservati dei dirigenti, non sul sito pubblico.</p>
             </div>
             <div class="form-group">
-              <label class="form-label">Posizione nel nastro</label>
+              <label for="spOrder" class="form-label">Posizione nel nastro</label>
               <input type="number" id="spOrder" class="form-input" min="1" value="1" style="max-width:100px">
             </div>
             <div class="form-group">
-              <label class="form-label">Livello</label>
+              <label for="spLivello" class="form-label">Livello</label>
               <select id="spLivello" class="form-input">
                 <option value="gold">Gold</option>
                 <option value="silver" selected>Silver</option>
@@ -1589,7 +1589,7 @@
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Ripetizioni nel ticker</label>
+              <label for="spRipetizioni" class="form-label">Ripetizioni nel ticker</label>
               <input type="number" id="spRipetizioni" class="form-input" min="1" value="3" style="max-width:100px" title="Quante volte il logo compare nel nastro scorrevole Silver/Bronze — non si applica ai Gold">
               <p style="font-size:12px;color:var(--a-muted);margin-top:4px">Più ripetizioni = più visibilità nel nastro. Di norma i Silver dovrebbero averne più dei Bronze: è qui che si vede il vantaggio di un contributo maggiore.</p>
             </div>
@@ -2223,42 +2223,42 @@
     </div>
     <div class="dg-modal-body">
       <div class="dg-form-group">
-        <label class="dg-form-label">Azienda esistente</label>
+        <label for="newSponsorAziendaSelect" class="dg-form-label">Azienda esistente</label>
         <select id="newSponsorAziendaSelect" class="dg-form-input">
           <option value="">— Crea nuova azienda —</option>
         </select>
       </div>
       <div id="newAziendaFields">
         <div class="dg-form-group">
-          <label class="dg-form-label">Ragione sociale *</label>
-          <input type="text" id="newAziendaNome" class="dg-form-input" placeholder="Nome azienda">
+          <label for="newAziendaNome" class="dg-form-label">Ragione sociale *</label>
+          <input aria-required="true" type="text" id="newAziendaNome" class="dg-form-input" placeholder="Nome azienda">
         </div>
         <div class="dg-form-grid">
           <div class="dg-form-group">
-            <label class="dg-form-label">Settore</label>
+            <label for="newAziendaSettore" class="dg-form-label">Settore</label>
             <input type="text" id="newAziendaSettore" class="dg-form-input">
           </div>
           <div class="dg-form-group">
-            <label class="dg-form-label">Referente</label>
+            <label for="newAziendaReferente" class="dg-form-label">Referente</label>
             <input type="text" id="newAziendaReferente" class="dg-form-input">
           </div>
           <div class="dg-form-group">
-            <label class="dg-form-label">Telefono</label>
+            <label for="newAziendaTelefono" class="dg-form-label">Telefono</label>
             <input type="text" id="newAziendaTelefono" class="dg-form-input">
           </div>
           <div class="dg-form-group">
-            <label class="dg-form-label">Email</label>
+            <label for="newAziendaEmail" class="dg-form-label">Email</label>
             <input type="email" id="newAziendaEmail" class="dg-form-input">
           </div>
         </div>
       </div>
       <div class="dg-form-grid">
         <div class="dg-form-group">
-          <label class="dg-form-label">Importo stimato (€)</label>
+          <label for="newSponsorImporto" class="dg-form-label">Importo stimato (€)</label>
           <input type="number" id="newSponsorImporto" class="dg-form-input" min="0" step="50">
         </div>
         <div class="dg-form-group">
-          <label class="dg-form-label">Probabilità chiusura</label>
+          <label for="newSponsorProbabilita" class="dg-form-label">Probabilità chiusura</label>
           <select id="newSponsorProbabilita" class="dg-form-input">
             <option value="0.2">20%</option>
             <option value="0.5" selected>50%</option>
@@ -2266,11 +2266,11 @@
           </select>
         </div>
         <div class="dg-form-group">
-          <label class="dg-form-label">Responsabile</label>
+          <label for="newSponsorResponsabile" class="dg-form-label">Responsabile</label>
           <select id="newSponsorResponsabile" class="dg-form-input"></select>
         </div>
         <div class="dg-form-group">
-          <label class="dg-form-label">Tipologia</label>
+          <label for="newSponsorTipologia" class="dg-form-label">Tipologia</label>
           <select id="newSponsorTipologia" class="dg-form-input">
             <option value="denaro">Denaro</option>
             <option value="servizi">Servizi</option>
@@ -2295,8 +2295,8 @@
     </div>
     <div class="dg-modal-body">
       <div class="dg-form-group">
-        <label class="dg-form-label">Nome stagione *</label>
-        <input type="text" id="seasonNomeInput" class="dg-form-input" placeholder="es. 2026/2027">
+        <label for="seasonNomeInput" class="dg-form-label">Nome stagione *</label>
+        <input aria-required="true" type="text" id="seasonNomeInput" class="dg-form-input" placeholder="es. 2026/2027">
       </div>
       <label id="seasonCopiaWrap" class="dg-check" style="margin-bottom:12px">
         <input type="checkbox" id="seasonCopiaBudget" checked>
@@ -2304,15 +2304,15 @@
       </label>
       <div class="dg-form-grid">
         <div class="dg-form-group">
-          <label class="dg-form-label">Data inizio</label>
+          <label for="seasonInizioInput" class="dg-form-label">Data inizio</label>
           <input type="date" id="seasonInizioInput" class="dg-form-input">
         </div>
         <div class="dg-form-group">
-          <label class="dg-form-label">Data fine</label>
+          <label for="seasonFineInput" class="dg-form-label">Data fine</label>
           <input type="date" id="seasonFineInput" class="dg-form-input">
         </div>
         <div class="dg-form-group">
-          <label class="dg-form-label">Obiettivo saldo (€)</label>
+          <label for="seasonObiettivoInput" class="dg-form-label">Obiettivo saldo (€)</label>
           <input type="number" id="seasonObiettivoInput" class="dg-form-input" min="0" step="100">
         </div>
       </div>
@@ -2334,15 +2334,15 @@
     <div class="dg-modal-body">
       <p style="font-size:13px;color:var(--dg-muted);margin-bottom:16px">Vale solo per il tuo account. Nessuna email verrà inviata.</p>
       <div class="dg-form-group">
-        <label class="dg-form-label">Password attuale</label>
+        <label for="myPwdCurrent" class="dg-form-label">Password attuale</label>
         <input type="password" id="myPwdCurrent" class="dg-form-input" autocomplete="current-password">
       </div>
       <div class="dg-form-group">
-        <label class="dg-form-label">Nuova password</label>
+        <label for="myPwdNew" class="dg-form-label">Nuova password</label>
         <input type="password" id="myPwdNew" class="dg-form-input" placeholder="Minimo 10 caratteri" autocomplete="new-password">
       </div>
       <div class="dg-form-group">
-        <label class="dg-form-label">Conferma nuova password</label>
+        <label for="myPwdConfirm" class="dg-form-label">Conferma nuova password</label>
         <input type="password" id="myPwdConfirm" class="dg-form-input" placeholder="Ripeti la password" autocomplete="new-password">
       </div>
       <p id="myPwdMsg" class="sicurezza-msg is-hidden"></p>
@@ -2365,7 +2365,7 @@
     <div class="dg-modal-body">
       <div id="artCategoriesModalList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px"></div>
       <div class="dg-form-group">
-        <label class="dg-form-label">Nuova categoria</label>
+        <label for="artCategoriesNewInput" class="dg-form-label">Nuova categoria</label>
         <div style="display:flex;gap:8px">
           <input type="text" id="artCategoriesNewInput" class="dg-form-input" placeholder="es. Eventi" style="flex:1;min-width:0">
           <button id="artCategoriesAddBtn" class="dg-btn-primary" style="width:auto;flex-shrink:0">Aggiungi</button>
@@ -2386,11 +2386,11 @@
     </div>
     <div class="dg-modal-body">
       <div class="dg-form-group">
-        <label class="dg-form-label">Nome categoria *</label>
-        <input type="text" id="categoriaNomeInput" class="dg-form-input" placeholder="es. Under 13 Maschile">
+        <label for="categoriaNomeInput" class="dg-form-label">Nome categoria *</label>
+        <input aria-required="true" type="text" id="categoriaNomeInput" class="dg-form-input" placeholder="es. Under 13 Maschile">
       </div>
       <div class="dg-form-group">
-        <label class="dg-form-label">Retta unitaria (€)</label>
+        <label for="categoriaRettaInput" class="dg-form-label">Retta unitaria (€)</label>
         <input type="number" id="categoriaRettaInput" class="dg-form-input" min="0" step="10" value="0">
         <p class="dg-card-sub" style="margin-top:4px">Valore suggerito quando aggiungi un atleta a questa categoria — modificabile per singolo atleta.</p>
       </div>
@@ -2412,16 +2412,16 @@
     <div class="dg-modal-body">
       <div class="dg-form-grid">
         <div class="dg-form-group">
-          <label class="dg-form-label">Nome *</label>
-          <input type="text" id="atletaRettaNomeInput" class="dg-form-input">
+          <label for="atletaRettaNomeInput" class="dg-form-label">Nome *</label>
+          <input aria-required="true" type="text" id="atletaRettaNomeInput" class="dg-form-input">
         </div>
         <div class="dg-form-group">
-          <label class="dg-form-label">Cognome *</label>
-          <input type="text" id="atletaRettaCognomeInput" class="dg-form-input">
+          <label for="atletaRettaCognomeInput" class="dg-form-label">Cognome *</label>
+          <input aria-required="true" type="text" id="atletaRettaCognomeInput" class="dg-form-input">
         </div>
       </div>
       <div class="dg-form-group">
-        <label class="dg-form-label">Categoria</label>
+        <label for="atletaRettaCategoriaSelect" class="dg-form-label">Categoria</label>
         <select id="atletaRettaCategoriaSelect" class="dg-form-input"></select>
       </div>
     </div>
@@ -2443,20 +2443,20 @@
       <div id="rateAtletaList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px"></div>
       <div class="dg-form-grid">
         <div class="dg-form-group">
-          <label class="dg-form-label">Importo (€)</label>
+          <label for="rataAtletaImporto" class="dg-form-label">Importo (€)</label>
           <input type="number" id="rataAtletaImporto" class="dg-form-input" min="0" step="10">
         </div>
         <div class="dg-form-group">
-          <label class="dg-form-label">Pagamento entro</label>
+          <label for="rataAtletaScadenzaPag" class="dg-form-label">Pagamento entro</label>
           <input type="date" id="rataAtletaScadenzaPag" class="dg-form-input" value="">
         </div>
         <div class="dg-form-group">
-          <label class="dg-form-label">Valida fino al</label>
+          <label for="rataAtletaScadenza" class="dg-form-label">Valida fino al</label>
           <input type="date" id="rataAtletaScadenza" class="dg-form-input" value="">
         </div>
       </div>
       <div class="dg-form-group">
-        <label class="dg-form-label">Note</label>
+        <label for="rataAtletaNote" class="dg-form-label">Note</label>
         <input type="text" id="rataAtletaNote" class="dg-form-input" placeholder="es. Prima rata">
       </div>
       <div class="dg-form-actions">
@@ -2478,25 +2478,25 @@
     </div>
     <div class="dg-modal-body">
       <div class="dg-form-group">
-        <label class="dg-form-label">Voce *</label>
-        <input type="text" id="spesaCategoriaInput" class="dg-form-input" placeholder="es. Affitto palestra ottobre">
+        <label for="spesaCategoriaInput" class="dg-form-label">Voce *</label>
+        <input aria-required="true" type="text" id="spesaCategoriaInput" class="dg-form-input" placeholder="es. Affitto palestra ottobre">
       </div>
       <div class="dg-form-group">
-        <label class="dg-form-label">Categoria</label>
+        <label for="spesaCategoriaSpesaSelect" class="dg-form-label">Categoria</label>
         <select id="spesaCategoriaSpesaSelect" class="dg-form-input"></select>
       </div>
       <div class="dg-form-grid">
         <div class="dg-form-group">
-          <label class="dg-form-label">Preventivato (€)</label>
+          <label for="spesaPreventivatoInput" class="dg-form-label">Preventivato (€)</label>
           <input type="number" id="spesaPreventivatoInput" class="dg-form-input" min="0" step="any" value="0">
         </div>
         <div class="dg-form-group">
-          <label class="dg-form-label">Sostenuto (€)</label>
+          <label for="spesaSostenutoInput" class="dg-form-label">Sostenuto (€)</label>
           <input type="number" id="spesaSostenutoInput" class="dg-form-input" min="0" step="any" value="0">
         </div>
       </div>
       <div class="dg-form-group">
-        <label class="dg-form-label">IVA %</label>
+        <label for="spesaIvaInput" class="dg-form-label">IVA %</label>
         <input type="number" id="spesaIvaInput" class="dg-form-input" min="0" step="any" placeholder="0">
         <p class="dg-card-sub" style="margin-top:4px">Se impostata, genera automaticamente una voce di spesa separata "IVA &lt;nome&gt;" con l'importo calcolato.</p>
       </div>
@@ -2508,12 +2508,12 @@
         </select>
       </div>
       <div class="dg-form-group">
-        <label class="dg-form-label">Data sostenuta</label>
+        <label for="spesaDataInput" class="dg-form-label">Data sostenuta</label>
         <input type="date" id="spesaDataInput" class="dg-form-input">
         <p class="dg-card-sub" style="margin-top:4px">Facoltativa: serve a collocare la spesa nel mese giusto nel Bilancio.</p>
       </div>
       <div class="dg-form-group">
-        <label class="dg-form-label">Note</label>
+        <label for="spesaNoteInput" class="dg-form-label">Note</label>
         <input type="text" id="spesaNoteInput" class="dg-form-input">
       </div>
     </div>
@@ -2534,7 +2534,7 @@
     <div class="dg-modal-body">
       <div id="categorieSpesaModalList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px"></div>
       <div class="dg-form-group">
-        <label class="dg-form-label">Nuova categoria</label>
+        <label for="categoriaSpesaNewInput" class="dg-form-label">Nuova categoria</label>
         <div style="display:flex;gap:8px">
           <input type="text" id="categoriaSpesaNewInput" class="dg-form-input" placeholder="es. Trasferte" style="flex:1;min-width:0">
           <button id="categoriaSpesaAddBtn" class="dg-btn-primary" style="width:auto;flex-shrink:0">Aggiungi</button>
@@ -2557,7 +2557,7 @@
     <div class="dg-modal-body">
       <div id="dimensioniModalList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px"></div>
       <div class="dg-form-group">
-        <label class="dg-form-label">Nuova dimensione</label>
+        <label for="dimensioneNewNomeInput" class="dg-form-label">Nuova dimensione</label>
         <div style="display:flex;gap:8px">
           <input type="text" id="dimensioneNewNomeInput" class="dg-form-input" placeholder="es. 70x100 cm" style="flex:1;min-width:0">
           <input type="number" id="dimensioneNewPrezzoInput" class="dg-form-input" placeholder="Prezzo €" min="0" step="0.5" style="width:110px;flex-shrink:0">
@@ -2582,15 +2582,15 @@
     <div class="dg-modal-body">
       <p id="kbCreatoInfo" class="dg-card-sub is-hidden" style="margin-bottom:14px"></p>
       <div class="dg-form-group">
-        <label class="dg-form-label">Titolo *</label>
-        <input type="text" id="kbTitolo" class="dg-form-input" placeholder="es. Prenotare palazzetto per il torneo">
+        <label for="kbTitolo" class="dg-form-label">Titolo *</label>
+        <input aria-required="true" type="text" id="kbTitolo" class="dg-form-input" placeholder="es. Prenotare palazzetto per il torneo">
       </div>
       <div class="dg-form-group">
-        <label class="dg-form-label">Descrizione</label>
+        <label for="kbDescrizione" class="dg-form-label">Descrizione</label>
         <textarea id="kbDescrizione" class="dg-form-input" rows="3" placeholder="Dettagli, note..."></textarea>
       </div>
       <div class="dg-form-group">
-        <label class="dg-form-label">Stato</label>
+        <label for="kbStato" class="dg-form-label">Stato</label>
         <select id="kbStato" class="dg-form-input">
           <option value="daFare">Da fare</option>
           <option value="inCorso">In corso</option>
@@ -2598,7 +2598,7 @@
         </select>
       </div>
       <div class="dg-form-group">
-        <label class="dg-form-label">Priorità</label>
+        <label for="kbPriorita" class="dg-form-label">Priorità</label>
         <select id="kbPriorita" class="dg-form-input">
           <option value="alta">Alta</option>
           <option value="media" selected>Media</option>
@@ -2606,11 +2606,11 @@
         </select>
       </div>
       <div class="dg-form-group">
-        <label class="dg-form-label">Assegnata a</label>
+        <label for="kbResponsabile" class="dg-form-label">Assegnata a</label>
         <select id="kbResponsabile" class="dg-form-input"></select>
       </div>
       <div class="dg-form-group">
-        <label class="dg-form-label">Scadenza</label>
+        <label for="kbScadenza" class="dg-form-label">Scadenza</label>
         <input type="date" id="kbScadenza" class="dg-form-input">
       </div>
     </div>
