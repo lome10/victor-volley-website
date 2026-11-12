@@ -239,6 +239,10 @@
     };
 
     var ref = before ? db.collection('bacheca').doc(before.id) : db.collection('bacheca').doc();
+    /* pulsante spento finché non finisce: un secondo tocco creerebbe un'attività doppia */
+    var btn = this;
+    if (btn.disabled) return;
+    btn.disabled = true;
     ref.set(item).then(function () {
       var saved = Object.assign({ id: ref.id }, item);
       if (before) _kbItems = _kbItems.map(function (x) { return x.id === ref.id ? saved : x; });
@@ -251,7 +255,7 @@
     }).catch(function (e) {
       console.error('[bacheca] save', e);
       alert('Errore nel salvataggio. Riprova.');
-    });
+    }).then(function () { btn.disabled = false; });
   });
 
   document.getElementById('kbDelete').addEventListener('click', function () {

@@ -428,6 +428,10 @@
 
     var before = _peEditing;
     var ref = before ? db.collection('pianoEditoriale').doc(before.id) : db.collection('pianoEditoriale').doc();
+    /* pulsante spento finché non finisce: un secondo tocco creerebbe un contenuto doppio */
+    var btn = this;
+    if (btn.disabled) return;
+    btn.disabled = true;
     ref.set(item).then(function () {
       var saved = Object.assign({ id: ref.id }, item);
       if (before) _peItems = _peItems.map(function (x) { return x.id === ref.id ? saved : x; });
@@ -439,7 +443,7 @@
     }).catch(function (e) {
       console.error('[pianoEditoriale] save', e);
       alert('Errore nel salvataggio. Riprova.');
-    });
+    }).then(function () { btn.disabled = false; });
   });
 
   document.getElementById('peDelete').addEventListener('click', function () {
