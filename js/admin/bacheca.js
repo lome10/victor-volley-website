@@ -27,16 +27,17 @@
   var KB_PRIORITA_ORDER = { alta: 0, media: 1, bassa: 2 };
   var KB_PRIORITA_LABEL = { alta: 'Alta', media: 'Media', bassa: 'Bassa' };
 
+  /* cb(errore): errore è null se il caricamento è riuscito. Se fallisce NON si segna «caricato»:
+     la bacheca mostra il motivo e «Riprova» invece di una lavagna vuota. */
   function _loadBacheca(cb) {
-    if (_kbLoaded) { cb(); return; }
+    if (_kbLoaded) { cb(null); return; }
     db.collection('bacheca').get().then(function (snap) {
       _kbItems = snap.docs.map(_mapDoc);
       _kbLoaded = true;
-      cb();
+      cb(null);
     }).catch(function (e) {
       console.error('[bacheca] load', e);
-      _kbLoaded = true;
-      cb();
+      cb(e || new Error('errore'));
     });
   }
 
@@ -54,7 +55,16 @@
   }
 
   function renderBacheca() {
-    _loadBacheca(function () {
+    _loadBacheca(function (err) {
+      if (err) {
+        /* niente «Nuova attività» finché i dati non sono caricati: salverebbe su una bacheca che non si vede */
+        document.getElementById('topbarActions').innerHTML = '';
+        var box = document.getElementById('kbBoard');
+        box.innerHTML = '<div class="empty-state" role="alert"><p>Non riesco a caricare la bacheca. ' + esc(window.DB.errorMessage(err)) + '</p>' +
+          '<button type="button" class="btn-ghost" id="kbRetry" style="margin-top:12px">Riprova</button></div>';
+        document.getElementById('kbRetry').addEventListener('click', function () { this.disabled = true; this.textContent = 'Riprovo…'; renderBacheca(); });
+        return;
+      }
       setTopbarBtn('Nuova attività', function () { _openKbModal(null, 'daFare'); });
       _renderKbBoard();
     });

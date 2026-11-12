@@ -34,16 +34,17 @@
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   }
 
+  /* cb(errore): errore è null se il caricamento è riuscito. Se fallisce NON si segna «caricato»:
+     il calendario mostra il motivo e «Riprova» invece di sembrare vuoto. */
   function _loadPianoEditoriale(cb) {
-    if (_peLoaded) { cb(); return; }
+    if (_peLoaded) { cb(null); return; }
     db.collection('pianoEditoriale').get().then(function (snap) {
       _peItems = snap.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); });
       _peLoaded = true;
-      cb();
+      cb(null);
     }).catch(function (e) {
       console.error('[pianoEditoriale] load', e);
-      _peLoaded = true;
-      cb();
+      cb(e || new Error('errore'));
     });
   }
 
@@ -61,8 +62,19 @@
   }
 
   function renderPianoEditoriale() {
-    _loadPianoEditoriale(function () {
+    _loadPianoEditoriale(function (err) {
       showSubview('pianoEditoriale', 'list');
+      if (err) {
+        /* niente «Nuovo contenuto» finché i dati non sono caricati */
+        document.getElementById('topbarActions').innerHTML = '';
+        document.getElementById('peSponsorPanel').innerHTML = '';
+        var grid = document.getElementById('peCalGrid');
+        grid.className = '';
+        grid.innerHTML = '<div class="empty-state" role="alert"><p>Non riesco a caricare il piano editoriale. ' + esc(window.DB.errorMessage(err)) + '</p>' +
+          '<button type="button" class="btn-ghost" id="peRetry" style="margin-top:12px">Riprova</button></div>';
+        document.getElementById('peRetry').addEventListener('click', function () { this.disabled = true; this.textContent = 'Riprovo…'; renderPianoEditoriale(); });
+        return;
+      }
       setTopbarBtn('Nuovo contenuto', function () { _openPeForm(null, null); });
       _renderPeFilterBox();
       _renderPeGrid();
