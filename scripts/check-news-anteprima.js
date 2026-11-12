@@ -64,6 +64,14 @@ async function t(nome, fn) {
     const h = (await chiedi('7')).body;
     for (const re of [/<title>/g, /og:title"/g, /og:description"/g, /name="description"/g, /og:image"/g, /og:url"/g, /rel="canonical"/g, /og:type"/g]) assert.strictEqual(conta(h, re), 1, String(re));
   });
+  await t('parametri dei social (igsh, mibextid, si, fb_*, utm_*) ignorati: anteprima dell articolo; parametro sconosciuto: pagina generica senza Firestore', async () => {
+    for (const q of [{ id: '7', igsh: 'x' }, { id: '7', mibextid: 'y', si: 'z' }, { id: '7', fb_action_ids: '1', utm_source: 'ig' }]) {
+      const r = res(); chiamate = []; await handler({ method: 'GET', query: q, headers: {} }, r);
+      assert.ok(r.body.includes('og:title') && chiamate.length === 1, JSON.stringify(q));
+    }
+    const r = res(); chiamate = []; await handler({ method: 'GET', query: { id: '7', x: '123' }, headers: {} }, r);
+    assert.strictEqual(chiamate.length, 0);
+  });
   await t('la query a Firestore: una sola, raccolta articles, campo id, limite 1', async () => {
     await chiedi('7');
     assert.strictEqual(chiamate.length, 1);

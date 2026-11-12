@@ -61,7 +61,7 @@ module.exports = async function handler(req, res) {
   /* Parametri previsti: id, più quelli di tracciamento che i social aggiungono ai link condivisi (fbclid, utm_*…).
      Con qualunque altro parametro si serve la pagina com'è, senza leggere Firestore: così una query diversa a ogni
      richiesta non aggira la cache né moltiplica le letture. */
-  const TRACCIAMENTO = /^(id|fbclid|gclid|igshid|ref|ref_src|utm_[a-z_]+)$/i;
+  const TRACCIAMENTO = /^(id|fbclid|gclid|igshid|igsh|mibextid|si|ref|ref_src|utm_[a-z_]+|fb_[a-z_]+)$/i;
   const previsti = Object.keys(req.query || {}).every((k) => TRACCIAMENTO.test(k));
   const id = previsti ? L.idDaQuery(req.query && req.query.id) : 0;
   let html = pagina, cache = 'public, s-maxage=60, stale-while-revalidate=300';
