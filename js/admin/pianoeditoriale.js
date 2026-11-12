@@ -416,14 +416,14 @@
 
   document.getElementById('peSave').addEventListener('click', function () {
     var titolo = document.getElementById('peTitolo').value.trim();
-    if (!titolo) { alert('Il titolo è obbligatorio.'); return; }
+    if (!titolo) { A.avviso('Il titolo è obbligatorio.'); return; }
     var data = document.getElementById('peData').value;
-    if (!data) { alert('La data è obbligatoria.'); return; }
+    if (!data) { A.avviso('La data è obbligatoria.'); return; }
     var piattaforme = Array.prototype.map.call(
       document.querySelectorAll('#pePiattaformeBox .pePiattaformaCheck:checked'),
       function (cb) { return cb.value; }
     );
-    if (!piattaforme.length) { alert('Seleziona almeno una piattaforma.'); return; }
+    if (!piattaforme.length) { A.avviso('Seleziona almeno una piattaforma.'); return; }
     var articoloRaw = document.getElementById('peArticolo').value;
 
     var item = {
@@ -454,7 +454,7 @@
       renderPianoEditoriale();
     }).catch(function (e) {
       console.error('[pianoEditoriale] save', e);
-      alert('Errore nel salvataggio. Riprova.');
+      A.avviso('Errore nel salvataggio. Riprova.', 'errore');
     }).then(function () { btn.disabled = false; });
   });
 
@@ -469,7 +469,7 @@
         renderPianoEditoriale();
       }).catch(function (e) {
         console.error('[pianoEditoriale] delete', e);
-        alert('Errore durante l\'eliminazione. Riprova.');
+        A.avviso('Errore durante l\'eliminazione. Riprova.', 'errore');
       });
     });
   });

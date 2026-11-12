@@ -82,7 +82,7 @@
     box.querySelectorAll('.artCategoryCheck').forEach(function (cb) {
       cb.addEventListener('change', function () {
         var checked = box.querySelectorAll('.artCategoryCheck:checked');
-        if (checked.length > 2) { cb.checked = false; alert('Puoi selezionare al massimo 2 categorie per articolo.'); }
+        if (checked.length > 2) { cb.checked = false; A.avviso('Puoi selezionare al massimo 2 categorie per articolo.'); }
       });
     });
   }
@@ -137,12 +137,12 @@
 
   document.getElementById('artSave').addEventListener('click', function () {
     var title = document.getElementById('artTitle').value.trim();
-    if (!title) { alert('Il titolo è obbligatorio.'); return; }
+    if (!title) { A.avviso('Il titolo è obbligatorio.'); return; }
     var categories = Array.prototype.map.call(
       document.querySelectorAll('#artCategoriesBox .artCategoryCheck:checked'),
       function (cb) { return cb.value; }
     );
-    if (!categories.length) { alert('Seleziona almeno una categoria.'); return; }
+    if (!categories.length) { A.avviso('Seleziona almeno una categoria.'); return; }
     var sponsorIds = ['artSponsor1', 'artSponsor2', 'artSponsor3']
       .map(function (selId) { return document.getElementById(selId).value; })
       .filter(function (v) { return v !== ''; })
@@ -189,7 +189,7 @@
     var name  = input.value.trim();
     if (!name) return;
     var cats = VV.getCategorieArticoli();
-    if (cats.indexOf(name) >= 0) { alert('Categoria già esistente.'); return; }
+    if (cats.indexOf(name) >= 0) { A.avviso('Categoria già esistente.'); return; }
     cats = cats.concat([name]);
     DB.saveCategorieArticoli(cats, function () {
       input.value = '';
@@ -324,11 +324,11 @@
 
   document.getElementById('matchSave').addEventListener('click', function () {
     var data = document.getElementById('matchDate').value;
-    if (!data) { alert('La data è obbligatoria.'); return; }
+    if (!data) { A.avviso('La data è obbligatoria.'); return; }
     var squadraCasa   = document.getElementById('matchHomeTeam').value.trim();
     var squadraOspite = document.getElementById('matchAwayTeam').value.trim();
-    if (!squadraCasa)   { alert('La squadra di casa è obbligatoria.'); return; }
-    if (!squadraOspite) { alert('La squadra ospite è obbligatoria.'); return; }
+    if (!squadraCasa)   { A.avviso('La squadra di casa è obbligatoria.'); return; }
+    if (!squadraOspite) { A.avviso('La squadra ospite è obbligatoria.'); return; }
     var logoCasa   = document.getElementById('matchHomeLogo').value.trim();
     var logoOspite = document.getElementById('matchAwayLogo').value.trim();
     var stato     = document.getElementById('matchStato').value;
@@ -667,7 +667,7 @@
       navigator.clipboard.writeText(list).catch(function () {});
     }
     var shown = ids.slice(0, 15).join('\n') + (ids.length > 15 ? '\n… e altre ' + (ids.length - 15) : '');
-    alert(
+    A.avviso(
       (ids.length === 1 ? 'Il file è rimasto su Cloudinary.' : 'I ' + ids.length + ' file sono rimasti su Cloudinary.') +
       ' Per cancellarli: apri la Media Library (si sta aprendo in una nuova scheda), incolla ' +
       (ids.length === 1 ? 'l\'id' : 'gli id (già copiati negli appunti)') + ' nella ricerca ed elimina.\n\n' + shown
@@ -818,7 +818,7 @@
 
     if (!PhotoDB.isConfigured()) {
       progress.classList.add('is-hidden');
-      alert('Cloudinary non è ancora configurato: imposta CLOUDINARY_CLOUD in js/config.js.');
+      A.avviso('Cloudinary non è ancora configurato: imposta CLOUDINARY_CLOUD in js/config.js.');
       this.value = '';
       return;
     }
@@ -835,8 +835,8 @@
         loadPhotos(_currentAlbumId);
         input.value = '';
         if (failed && failed.length) {
-          alert(failed.length + ' foto non caricate (' + count + ' ok):\n' + failed.slice(0, 15).join('\n') +
-            (failed.length > 15 ? '\n…' : '') + '\n\nRiprova a caricare solo queste.');
+          A.avviso(failed.length + ' foto non caricate (' + count + ' ok):\n' + failed.slice(0, 15).join('\n') +
+            (failed.length > 15 ? '\n…' : '') + '\n\nRiprova a caricare solo queste.', 'errore');
         }
       }
     );
@@ -844,11 +844,11 @@
 
   document.getElementById('albumSave').addEventListener('click', function () {
     var title = document.getElementById('albumTitle').value.trim();
-    if (!title) { alert('Il titolo è obbligatorio.'); return; }
+    if (!title) { A.avviso('Il titolo è obbligatorio.'); return; }
     var slug = document.getElementById('albumSlug').value.trim().replace(/^-+|-+$/g, '').replace(/-{2,}/g, '-') || VV.slugify(title);
-    if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) { alert('Lo slug può contenere solo lettere minuscole, numeri e trattini.'); return; }
+    if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) { A.avviso('Lo slug può contenere solo lettere minuscole, numeri e trattini.'); return; }
     var clash = VV.getAlbums().some(function (o) { return o.id !== _albumEditingId && VV.getAlbumSlug(o) === slug; });
-    if (clash) { alert('Esiste già un album con questo indirizzo: "' + slug + '". Scegline un altro.'); return; }
+    if (clash) { A.avviso('Esiste già un album con questo indirizzo: "' + slug + '". Scegline un altro.'); return; }
     var fields = {
       title:    title,
       slug:     slug,
@@ -1261,7 +1261,7 @@
           saveBtn.disabled = true;
           _uploadImage(blob, 'matches', 'png', function (err, url) {
             saveBtn.disabled = false;
-            if (err) { console.error('[admin] upload logo squadra', err); alert('Errore caricamento logo, riprova.'); return; }
+            if (err) { console.error('[admin] upload logo squadra', err); A.avviso('Errore caricamento logo, riprova.', 'errore'); return; }
             document.getElementById(cfg.url).value = url;
           });
         });
@@ -1451,7 +1451,7 @@
 
   document.getElementById('catSave').addEventListener('click', function () {
     var name = document.getElementById('catName').value.trim();
-    if (!name) { alert('Il nome è obbligatorio.'); return; }
+    if (!name) { A.avviso('Il nome è obbligatorio.'); return; }
     var abbr = document.getElementById('catAbbr').value.trim().toUpperCase() || name.slice(0, 3).toUpperCase();
     var cat = Object.assign({}, _catEditing || {}, {
       name:          name,
@@ -1517,7 +1517,7 @@
 
   document.getElementById('playerSave').addEventListener('click', function () {
     var name = document.getElementById('playerName').value.trim();
-    if (!name) { alert('Il nome è obbligatorio.'); return; }
+    if (!name) { A.avviso('Il nome è obbligatorio.'); return; }
     var numVal  = document.getElementById('playerNumber').value;
     var yearVal = document.getElementById('playerYear').value;
     var player = Object.assign({}, _playerEditing || {}, {
@@ -1560,7 +1560,7 @@
     var ref = db.collection('giocatoriDati').doc(String(id));
     (anno ? ref.set({ year: anno }) : ref.delete()).catch(function (e) {
       console.error('[Giocatore] salvataggio anno di nascita', e);
-      alert('Anno di nascita non salvato: riprova.');
+      A.avviso('Anno di nascita non salvato: riprova.', 'errore');
     });
   }
 
@@ -1586,7 +1586,7 @@
 
   document.getElementById('staffSave').addEventListener('click', function () {
     var name = document.getElementById('staffName').value.trim();
-    if (!name) { alert('Il nome è obbligatorio.'); return; }
+    if (!name) { A.avviso('Il nome è obbligatorio.'); return; }
     var person = Object.assign({}, _staffEditing || {}, {
       categoryId: _currentCatId,
       name:       name,
@@ -1680,7 +1680,7 @@
         saveBtn.disabled = true;
         _uploadImage(blob, 'players', 'jpg', function (err, url) {
           saveBtn.disabled = false;
-          if (err) { console.error('[admin] upload foto giocatore', err); alert('Errore caricamento foto, riprova.'); return; }
+          if (err) { console.error('[admin] upload foto giocatore', err); A.avviso('Errore caricamento foto, riprova.', 'errore'); return; }
           document.getElementById('playerPhoto').value = url;
         });
       });
@@ -1705,7 +1705,7 @@
         saveBtn.disabled = true;
         _uploadImage(blob, 'staff', 'jpg', function (err, url) {
           saveBtn.disabled = false;
-          if (err) { console.error('[admin] upload foto staff', err); alert('Errore caricamento foto, riprova.'); return; }
+          if (err) { console.error('[admin] upload foto staff', err); A.avviso('Errore caricamento foto, riprova.', 'errore'); return; }
           document.getElementById('staffPhoto').value = url;
         });
       });
@@ -1756,7 +1756,7 @@
 
   document.getElementById('stagioneSave').addEventListener('click', function () {
     var name = document.getElementById('stagioneName').value.trim();
-    if (!name) { alert('Il nome è obbligatorio.'); return; }
+    if (!name) { A.avviso('Il nome è obbligatorio.'); return; }
     var setCurrent = document.getElementById('stagioneCurrent').checked;
     if (setCurrent) VV.setCurrentSeason(null); /* deseleziona tutte */
     var season = { id: name, name: name, current: setCurrent };
@@ -1785,10 +1785,10 @@
   document.getElementById('magliaSave').addEventListener('click', function () {
     var revealRaw = document.getElementById('magliaRevealDate').value;
     var title = document.getElementById('magliaTitle').value.trim();
-    if (!title) { alert('Il titolo è obbligatorio.'); return; }
+    if (!title) { A.avviso('Il titolo è obbligatorio.'); return; }
     var videoUrl = document.getElementById('magliaVideoUrl').value.trim();
     if (videoUrl && !/(youtu\.be\/|youtube(-nocookie)?\.com\/)/.test(videoUrl)) {
-      alert('Il link deve essere un video YouTube (youtube.com o youtu.be).'); return;
+      A.avviso('Il link deve essere un video YouTube (youtube.com o youtu.be).'); return;
     }
     var obj = {
       enabled:    document.getElementById('magliaEnabled').checked,
@@ -1872,8 +1872,8 @@
     document.getElementById('spFormSave').onclick = function () {
       var nome = document.getElementById('spNome').value.trim();
       var logo = document.getElementById('spLogoUrl').value.trim();
-      if (!nome) { alert('Il nome è obbligatorio.'); return; }
-      if (!logo) { alert('Il logo è obbligatorio: carica un\'immagine per questo sponsor.'); return; }
+      if (!nome) { A.avviso('Il nome è obbligatorio.'); return; }
+      if (!logo) { A.avviso('Il logo è obbligatorio: carica un\'immagine per questo sponsor.'); return; }
       var item = {
         id:          _spEditing ? _spEditing.id : Date.now(),
         nome:        nome,
@@ -2047,7 +2047,7 @@
       canvas.toBlob(function (blob) {
         _uploadImage(blob, 'sponsors', 'png', function (err, url) {
           saveBtn.disabled = false;
-          if (err) { console.error('[admin] upload logo sponsor', err); alert('Errore caricamento logo, riprova.'); return; }
+          if (err) { console.error('[admin] upload logo sponsor', err); A.avviso('Errore caricamento logo, riprova.', 'errore'); return; }
           document.getElementById('spLogoUrl').value = url;
         });
       }, 'image/png');

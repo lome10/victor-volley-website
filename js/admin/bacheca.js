@@ -192,7 +192,7 @@
       return _logWrite('bacheca', id, 'Bacheca — ' + item.titolo, 'update', [{ campo: 'stato', prima: beforeStato || null, dopo: stato }]);
     }).catch(function (e) {
       console.error('[bacheca] move', e);
-      alert('Errore nello spostamento. Riprova.');
+      A.avviso('Errore nello spostamento. Riprova.', 'errore');
       item.stato = beforeStato;
       _renderKbBoard();
     });
@@ -233,7 +233,7 @@
 
   document.getElementById('kbSave').addEventListener('click', function () {
     var titolo = document.getElementById('kbTitolo').value.trim();
-    if (!titolo) { alert('Il titolo è obbligatorio.'); return; }
+    if (!titolo) { A.avviso('Il titolo è obbligatorio.'); return; }
 
     var before = _kbEditing;
     var item = {
@@ -264,7 +264,7 @@
       _renderKbBoard();
     }).catch(function (e) {
       console.error('[bacheca] save', e);
-      alert('Errore nel salvataggio. Riprova.');
+      A.avviso('Errore nel salvataggio. Riprova.', 'errore');
     }).then(function () { btn.disabled = false; });
   });
 
@@ -280,7 +280,7 @@
         _renderKbBoard();
       }).catch(function (e) {
         console.error('[bacheca] delete', e);
-        alert('Errore durante l\'eliminazione. Riprova.');
+        A.avviso('Errore durante l\'eliminazione. Riprova.', 'errore');
       });
     });
   });

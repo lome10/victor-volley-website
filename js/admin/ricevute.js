@@ -76,7 +76,7 @@
       _atleti = res[0].docs.map(function (doc) { return Object.assign({}, dati[doc.id] || {}, doc.data(), { uid: doc.id }); });
       _atleti.sort(function (a, b) { return ((a.cognome || '') + (a.nome || '')).localeCompare((b.cognome || '') + (b.nome || '')); });
       cb();
-    }).catch(function (e) { console.error('[ricevute] atleti', e); alert('Non riesco a caricare gli atleti. Riprova.'); });
+    }).catch(function (e) { console.error('[ricevute] atleti', e); A.avviso('Non riesco a caricare gli atleti. Riprova.'); });
   }
 
   function _asdCompleto() { return !!(_asd.denominazione && _asd.codiceFiscale); }
@@ -229,13 +229,13 @@
 
   function openDoc(id) {
     var r = _ric.find(function (x) { return x.id === id; });
-    if (r && !Doc.open(r)) alert('Il browser ha bloccato la finestra della ricevuta. Consenti i popup per questo sito e riprova.');
+    if (r && !Doc.open(r)) A.avviso('Il browser ha bloccato la finestra della ricevuta. Consenti i popup per questo sito e riprova.');
   }
 
   /* ---------- CSV (registro filtrato) ---------- */
   document.getElementById('ricExportCsv').addEventListener('click', function () {
     var rows = _filtrate().slice().reverse();
-    if (!rows.length) { alert('Nessuna ricevuta da esportare con questi filtri.'); return; }
+    if (!rows.length) { A.avviso('Nessuna ricevuta da esportare con questi filtri.'); return; }
     var head = ['Numero', 'Data', 'Pagatore', 'CF pagatore', 'Atleta', 'CF atleta', 'Tipo incasso', 'Causale', 'Importo',
       'Modalità', 'Riferimento', 'Bollo', 'Stato', 'Data annullamento', 'Motivo annullamento', 'Note'];
     function cell(v) {
@@ -406,7 +406,7 @@
   function openEmit(ctx) {
     ensureLoaded(function () {
       if (!_asdCompleto()) {
-        alert('Prima di emettere ricevute compila i «Dati ASD» (denominazione e codice fiscale).');
+        A.avviso('Prima di emettere ricevute compila i «Dati ASD» (denominazione e codice fiscale).');
         openAsd();
         return;
       }
@@ -503,7 +503,7 @@
       creata = r;
       _ric.push(r);
       if (w) Doc.writeTo(w, r);
-      else alert('Ricevuta ' + r.numero + ' generata. Il browser ha bloccato la finestra del PDF: consenti i popup per questo sito e usa «PDF» nel registro.');
+      else A.avviso('Ricevuta ' + r.numero + ' generata. Il browser ha bloccato la finestra del PDF: consenti i popup per questo sito e usa «PDF» nel registro.');
       _filtro.anno = _filtro.anno && String(r.anno) !== _filtro.anno ? String(r.anno) : _filtro.anno;
       return _logWrite('ricevuta', r.id, 'Ricevuta ' + r.numero, 'create', [
         { campo: 'numero', prima: null, dopo: r.numero }, { campo: 'importo', prima: null, dopo: r.importo }]);

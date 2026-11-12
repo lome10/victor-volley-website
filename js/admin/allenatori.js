@@ -96,7 +96,7 @@
   window.AdminActions.rendiAllenatore = function (uid) {
     db.collection('dirigenti').doc(uid).get().then(function (doc) {
       var d = doc.exists ? Object.assign({ uid: doc.id }, doc.data()) : null;
-      if (!d || d.senzaAccesso || !d.email) { alert('Questa persona non ha un account con accesso: crea un nuovo allenatore dalla sezione Allenatori.'); return; }
+      if (!d || d.senzaAccesso || !d.email) { A.avviso('Questa persona non ha un account con accesso: crea un nuovo allenatore dalla sezione Allenatori.'); return; }
       A.goTo('allenatori');
       _editingUid = null;
       _promoting = d;
@@ -110,7 +110,7 @@
       _byId('allenatoreCategorie').innerHTML = _categoryBoxes([]);
       var btn = _byId('allenatoreFormSave');
       btn.textContent = 'Rendi allenatore'; btn.disabled = false;
-    }).catch(function (err) { alert('Errore: ' + DB.errorMessage(err)); });
+    }).catch(function (err) { A.avviso('Errore: ' + DB.errorMessage(err), 'errore'); });
   };
 
   window.AdminActions.deleteAllenatore = function (uid) {
@@ -121,7 +121,7 @@
           return _logWrite('allenatore', uid, 'Allenatore — ' + (target ? (target.cognome || '') + ' ' + (target.nome || '') : uid), 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]);
         })
         .then(function () { _cache = _cache.filter(function (a) { return a.uid !== uid; }); _renderRows(); })
-        .catch(function (e) { alert('Errore: ' + DB.errorMessage(e)); });
+        .catch(function (e) { A.avviso('Errore: ' + DB.errorMessage(e), 'errore'); });
     });
   };
 
@@ -141,14 +141,14 @@
       db.collection('allenatori').doc(uid).update({ categorie: categorie })
         .then(function () { return _logWrite('allenatore', uid, 'Allenatore — ' + (before.cognome || '') + ' ' + (before.nome || ''), 'update', _diff(before, { categorie: categorie }, ['categorie'])); })
         .then(render)
-        .catch(function (err) { alert('Errore: ' + DB.errorMessage(err)); btn.textContent = 'Salva le categorie'; btn.disabled = false; });
+        .catch(function (err) { A.avviso('Errore: ' + DB.errorMessage(err), 'errore'); btn.textContent = 'Salva le categorie'; btn.disabled = false; });
       return;
     }
 
     /* Dirigente con account già attivo: nessun account nuovo, si crea solo il documento con le categorie. */
     if (_promoting) {
       var d = _promoting;
-      if (!categorie.length) { alert('Scegli almeno una categoria: senza, l\'allenatore non vedrebbe nessun atleta.'); return; }
+      if (!categorie.length) { A.avviso('Scegli almeno una categoria: senza, l\'allenatore non vedrebbe nessun atleta.'); return; }
       btn.textContent = 'Salvataggio…'; btn.disabled = true;
       var nuovo = { uid: d.uid, nome: d.nome || '', cognome: d.cognome || '', email: d.email || '', categorie: categorie, createdAt: new Date().toISOString() };
       db.collection('allenatori').doc(d.uid).get().then(function (esiste) {
@@ -157,7 +157,7 @@
       }).then(function () {
         return _logWrite('allenatore', d.uid, 'Allenatore — ' + (d.cognome || '') + ' ' + (d.nome || ''), 'create', _diff({}, nuovo, ['nome', 'cognome', 'email', 'categorie']));
       }).then(function () { _promoting = null; render(); })
-        .catch(function (err) { alert('Errore: ' + DB.errorMessage(err)); btn.textContent = 'Rendi allenatore'; btn.disabled = false; });
+        .catch(function (err) { A.avviso('Errore: ' + DB.errorMessage(err), 'errore'); btn.textContent = 'Rendi allenatore'; btn.disabled = false; });
       return;
     }
 
@@ -165,10 +165,10 @@
     var cognome = _byId('allenatoreCognome').value.trim();
     var email = _byId('allenatoreEmail').value.trim();
     var pwd = _byId('allenatorePassword').value;
-    if (!nome || !cognome) { alert('Nome e cognome sono obbligatori.'); return; }
-    if (!email || !pwd) { alert('Servono sia l\'email sia la password per il login.'); return; }
-    if (pwd.length < 10) { alert('La password deve avere almeno 10 caratteri.'); return; }
-    if (!categorie.length) { alert('Scegli almeno una categoria: senza, l\'allenatore non vedrebbe nessun atleta.'); return; }
+    if (!nome || !cognome) { A.avviso('Nome e cognome sono obbligatori.'); return; }
+    if (!email || !pwd) { A.avviso('Servono sia l\'email sia la password per il login.'); return; }
+    if (pwd.length < 10) { A.avviso('La password deve avere almeno 10 caratteri.'); return; }
+    if (!categorie.length) { A.avviso('Scegli almeno una categoria: senza, l\'allenatore non vedrebbe nessun atleta.'); return; }
 
     btn.textContent = 'Creazione…'; btn.disabled = true;
     /* secondary app per non disconnettere chi sta usando il pannello */
@@ -188,7 +188,7 @@
       })
       .then(render)
       .catch(function (err) {
-        alert('Errore: ' + DB.errorMessage(err));
+        A.avviso('Errore: ' + DB.errorMessage(err), 'errore');
         btn.textContent = 'Crea allenatore'; btn.disabled = false;
       });
   });
