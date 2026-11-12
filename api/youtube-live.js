@@ -26,15 +26,12 @@ const HEADERS = {
   'Cookie': 'SOCS=CAI; CONSENT=YES+1'
 };
 
-let diagnosi = null; // riempito solo con ?debug=1
 async function scarica(url) {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), 6000);
   try {
     const r = await fetch(url, { signal: ctrl.signal, headers: HEADERS });
-    const testo = r.ok ? await r.text() : '';
-    if (diagnosi) diagnosi.push({ url: url.replace(/channel_id=.*/, 'channel_id=…'), http: r.status, finale: r.url.slice(0, 80), byte: testo.length, isLiveNow: /"isLiveNow":true/.test(testo), playability: (/"playabilityStatus":\{"status":"(\w+)"/.exec(testo) || [])[1] || null });
-    return testo;
+    return r.ok ? await r.text() : '';
   } finally { clearTimeout(t); }
 }
 
@@ -56,9 +53,14 @@ function eRiproducibile(html) {
 }
 
 module.exports = async function handler(req, res) {
+  /* Nessun parametro previsto: con una query diversa a ogni richiesta la cache della CDN non regge e ogni volta si
+     interrogherebbe YouTube. Chi ne manda riceve subito un errore, senza uscire dal server. */
+  if (req && req.query && Object.keys(req.query).length) {
+    res.setHeader('Cache-Control', 'no-store');
+    return res.status(400).json({ error: 'Parametri non previsti.' });
+  }
   res.setHeader('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60');
   let live = false, lastVideoId = null;
-  diagnosi = req && req.query && req.query.debug ? [] : null;
   try {
     live = eInDiretta(await scarica('https://www.youtube.com/channel/' + CHANNEL_ID + '/live'));
   } catch (e) {
@@ -76,7 +78,7 @@ module.exports = async function handler(req, res) {
       console.warn('[youtube-live] ultimo video non ricavabile:', e && e.message);
     }
   }
-  res.status(200).json(diagnosi ? { live, lastVideoId, diagnosi } : { live, lastVideoId });
+  res.status(200).json({ live, lastVideoId });
 };
 
 module.exports.eInDiretta = eInDiretta;
