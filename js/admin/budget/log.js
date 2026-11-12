@@ -186,15 +186,19 @@
   function _saveNewSpesa() {
     var categoria = val('spesaCategoriaInput').trim();
     if (!categoria) { alert('Inserisci il nome della voce di spesa.'); return; }
+    /* Netto (default): gli importi sono quelli scritti. Lordo (IVA inclusa, solo con aliquota): la voce conta il netto e conserva il lordo scritto. */
+    var inPrev = +val('spesaPreventivatoInput') || 0, inSost = +val('spesaSostenutoInput') || 0, aliq = +val('spesaIvaInput') || 0;
+    var lordo = val('spesaIvaModoSelect') === 'lordo' && aliq > 0;
     var data = {
       seasonId: B._currentSeasonId, categoria: categoria,
       categoriaSpesaId: val('spesaCategoriaSpesaSelect'),
-      importoPreventivato: +val('spesaPreventivatoInput') || 0,
-      importoSostenuto: +val('spesaSostenutoInput') || 0,
-      ivaAliquota: +val('spesaIvaInput') || 0,
+      importoPreventivato: lordo ? B._dividiIva(inPrev, aliq, 'lordo').netto : inPrev,
+      importoSostenuto: lordo ? B._dividiIva(inSost, aliq, 'lordo').netto : inSost,
+      ivaAliquota: aliq,
       dataSpesa: val('spesaDataInput'),
       note: val('spesaNoteInput').trim()
     };
+    if (lordo) { data.ivaModo = 'lordo'; data.importoPreventivatoLordo = inPrev; data.importoSostenutoLordo = inSost; }
     var ref = db.collection('vociSpesa').doc();
     ref.set(data).then(function () {
       data.id = ref.id;

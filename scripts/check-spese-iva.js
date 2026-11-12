@@ -80,4 +80,25 @@ t('Passare da lordo ad aliquota 0 toglie la voce IVA', async () => {
   assert.deepStrictEqual(B._vociSpesa.map((x) => x.id), ['m']);
 });
 
+t('Modulo «Nuova voce»: lordo salva il netto sulla voce e il lordo scritto; netto (default) salva come prima', async () => {
+  const prova = async (campi) => {
+    const { B, scritti } = carica([]);
+    const valori = Object.assign({ spesaCategoriaInput: 'Divise', spesaCategoriaSpesaSelect: '', spesaPreventivatoInput: '1220', spesaSostenutoInput: '610', spesaIvaInput: '22', spesaIvaModoSelect: 'netto', spesaDataInput: '2026-11-01', spesaNoteInput: '' }, campi);
+    const window = { Admin: { budgetShared: B, val: (id) => valori[id] == null ? '' : String(valori[id]), esc: (x) => x, logWrite: () => Promise.resolve(), diff: () => [], openModal: noop, closeModal: noop }, AdminActions: {} };
+    B._renderSpese = noop; B._renderStatCards = noop; B._renderCharts = noop; B._renderBilancio = noop;
+    new Function('window', 'document', 'db', fs.readFileSync(path.join(__dirname, '..', 'js', 'admin', 'budget', 'log.js'), 'utf8'))(window, document, { collection: () => ({ doc: () => ({ id: 'n', set: (d) => { scritti.push(d); return Promise.resolve(); }, update: () => Promise.resolve() }) }) });
+    B._saveNewSpesa();
+    await new Promise((r) => setTimeout(r, 20));
+    return { voce: scritti[0], iva: scritti[1] };
+  };
+  const l = await prova({ spesaIvaModoSelect: 'lordo' });
+  assert.deepStrictEqual([l.voce.importoPreventivato, l.voce.importoSostenuto, l.voce.ivaModo, l.voce.importoPreventivatoLordo, l.voce.importoSostenutoLordo], [1000, 500, 'lordo', 1220, 610]);
+  assert.strictEqual(l.iva.importoPreventivato, 220); assert.strictEqual(l.iva.importoSostenuto, 110);
+  const n = await prova({});
+  assert.deepStrictEqual([n.voce.importoPreventivato, n.voce.importoSostenuto, n.voce.ivaModo], [1220, 610, undefined]);
+  assert.strictEqual(n.iva.importoPreventivato, 268.4);
+  const z = await prova({ spesaIvaModoSelect: 'lordo', spesaIvaInput: '' });
+  assert.deepStrictEqual([z.voce.importoPreventivato, z.voce.ivaModo, z.iva], [1220, undefined, undefined], 'lordo senza aliquota: nessuna IVA');
+});
+
 Promise.all(asincrone).then(() => console.log(process.exitCode ? 'Collaudo fallito.' : 'OK: ' + passed + ' verifiche sull’IVA delle voci di spesa (netto, lordo, decimali).'));

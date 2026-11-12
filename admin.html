@@ -2487,17 +2487,24 @@
       <div class="dg-form-grid">
         <div class="dg-form-group">
           <label class="dg-form-label">Preventivato (€)</label>
-          <input type="number" id="spesaPreventivatoInput" class="dg-form-input" min="0" step="10" value="0">
+          <input type="number" id="spesaPreventivatoInput" class="dg-form-input" min="0" step="any" value="0">
         </div>
         <div class="dg-form-group">
           <label class="dg-form-label">Sostenuto (€)</label>
-          <input type="number" id="spesaSostenutoInput" class="dg-form-input" min="0" step="10" value="0">
+          <input type="number" id="spesaSostenutoInput" class="dg-form-input" min="0" step="any" value="0">
         </div>
       </div>
       <div class="dg-form-group">
         <label class="dg-form-label">IVA %</label>
-        <input type="number" id="spesaIvaInput" class="dg-form-input" min="0" step="1" placeholder="0">
+        <input type="number" id="spesaIvaInput" class="dg-form-input" min="0" step="any" placeholder="0">
         <p class="dg-card-sub" style="margin-top:4px">Se impostata, genera automaticamente una voce di spesa separata "IVA &lt;nome&gt;" con l'importo calcolato.</p>
+      </div>
+      <div class="dg-form-group">
+        <label class="dg-form-label" for="spesaIvaModoSelect">L'importo inserito è</label>
+        <select id="spesaIvaModoSelect" class="dg-form-input">
+          <option value="netto" selected>Netto (IVA da aggiungere)</option>
+          <option value="lordo">Lordo (IVA inclusa)</option>
+        </select>
       </div>
       <div class="dg-form-group">
         <label class="dg-form-label">Data sostenuta</label>

@@ -289,7 +289,8 @@
       document.getElementById('spesaCategoriaSpesaSelect').innerHTML = B._categorieSpesaOptionsHtml('');
       document.getElementById('spesaPreventivatoInput').value = 0;
       document.getElementById('spesaSostenutoInput').value = 0;
-      document.getElementById('spesaIvaInput').value = ''; document.getElementById('spesaIvaInput').step = 'any';   /* aliquote libere, anche con decimali */
+      document.getElementById('spesaIvaInput').value = '';
+      document.getElementById('spesaIvaModoSelect').value = 'netto';
       document.getElementById('spesaDataInput').value = '';
       document.getElementById('spesaNoteInput').value = '';
       _openBudgetModal('newSpesaModal');
