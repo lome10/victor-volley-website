@@ -13,7 +13,7 @@
   /* ---- OBIETTIVO / RIEPILOGO ---- */
   function _calcRiepilogo() {
     var cur = B._sponsorizzazioni.filter(function (s) { return s.seasonId === B._currentSeasonId; });
-    var chiusi = cur.filter(function (s) { return s.stato === 'chiuso'; });
+    var chiusi = B._sponsorChiusi();
     var sponsorChiusi = chiusi.reduce(function (s, x) { return s + B._sponsorIncassato(x); }, 0);
     var sponsorDaIncassare = chiusi.reduce(function (s, x) { return s + B._sponsorDaIncassare(x); }, 0);
     var sponsorPotenziali = cur.filter(function (s) { return s.stato !== 'chiuso' && s.stato !== 'rifiutato'; })
@@ -37,7 +37,7 @@
 
   /* Scompone "entrate confermate" nelle singole fonti (sponsor chiusi + categorie rette + tessere), condiviso da UI e export PDF. */
   function _calcEntrateConfermateDettaglio() {
-    var cur = B._sponsorizzazioni.filter(function (s) { return s.seasonId === B._currentSeasonId && s.stato === 'chiuso'; });
+    var cur = B._sponsorChiusi();
     var righe = cur.map(function (s) {
       var az = B._aziendaById(s.aziendaId);
       return { tipo: 'Sponsor', nome: az ? az.ragioneSociale : '—', importo: B._sponsorIncassato(s) };
@@ -287,7 +287,7 @@
   }
 
   function _cashflowStats() {
-    var curIds = B._sponsorizzazioni.filter(function (s) { return s.seasonId === B._currentSeasonId && s.stato === 'chiuso'; }).map(function (s) { return s.id; });
+    var curIds = B._sponsorChiusi().map(function (s) { return s.id; });
     var list = B._tranche.filter(function (t) { return curIds.indexOf(t.sponsorizzazioneId) !== -1; });
     var pagate = list.filter(function (t) { return t.pagato; });
     var daPagare = list.filter(function (t) { return !t.pagato; });

@@ -708,7 +708,7 @@
      così non restano duplicate rispetto all'unica voce consolidata per sponsor. Agisce solo sulla
      stagione correntemente selezionata (i dati di spesa sono caricati per stagione). */
   DG.migraIvaSponsor = function () {
-    var candidati = B._sponsorizzazioni.filter(function (s) { return s.seasonId === B._currentSeasonId && s.stato === 'chiuso'; });
+    var candidati = B._sponsorChiusi();
     if (!candidati.length) { alert('Nessuno sponsor "chiuso" in questa stagione: niente da ricalcolare.'); return; }
     confirm('Ricalcolare l\'IVA per ' + candidati.length + ' sponsor "chiusi" di questa stagione? Le eventuali vecchie voci IVA generate per singola tranche pagata verranno unificate in una sola voce per sponsor (preventivato all\'11% dell\'importo confermato, sostenuto sulle tranche già incassate).', function () {
       var orfane = [];

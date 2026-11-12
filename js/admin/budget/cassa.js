@@ -30,7 +30,7 @@
   function _incassiAttesi() {
     var ev = [];
     var chiusi = {};
-    B._sponsorizzazioni.forEach(function (s) { if (s.seasonId === B._currentSeasonId && s.stato === 'chiuso') chiusi[s.id] = s; });
+    B._sponsorChiusi().forEach(function (s) { chiusi[s.id] = s; });
     B._tranche.forEach(function (t) {
       var s = chiusi[t.sponsorizzazioneId];
       if (!s || t.pagato) return;
@@ -66,8 +66,7 @@
   /* sponsor chiusi senza nessuna tranche: contano come incassati per intero ma non hanno una data */
   function _sponsorSenzaPiano() {
     var n = 0, eur = 0;
-    B._sponsorizzazioni.forEach(function (s) {
-      if (s.seasonId !== B._currentSeasonId || s.stato !== 'chiuso') return;
+    B._sponsorChiusi().forEach(function (s) {
       var ha = B._tranche.some(function (t) { return t.sponsorizzazioneId === s.id; });
       if (!ha && (+s.importoConfermato || 0) > 0) { n++; eur += +s.importoConfermato; }
     });
@@ -156,7 +155,7 @@
       (riga || generali).spese += importo;
     });
     var r = B._calcRiepilogo(), att = _incassiAttesi();
-    var sponsorPrev = _somma(B._sponsorizzazioni, function (s) { return s.seasonId === B._currentSeasonId && s.stato === 'chiuso' ? (+s.importoConfermato || 0) : 0; });
+    var sponsorPrev = _somma(B._sponsorChiusi(), function (s) { return +s.importoConfermato || 0; });
     var tess = B._calcTessere();
     var altre = B._calcAltreEntrate ? B._calcAltreEntrate() : { previsto: 0 };
     var superc = B._calcSupercoppa ? B._calcSupercoppa() : { previsto: 0 };

@@ -17,6 +17,7 @@ const noop = () => {};
 const el = () => ({ addEventListener: noop, innerHTML: '', value: '', style: {}, classList: { add: noop, remove: noop, toggle: noop } });
 const document = { getElementById: el, addEventListener: noop, querySelector: el, querySelectorAll: () => [] };
 function carica(B) {
+  B._sponsorChiusi = B._sponsorChiusi || (() => B._sponsorizzazioni.filter((s) => s.seasonId === B._currentSeasonId && s.stato === 'chiuso'));   // come in state.js
   const window = { Admin: { budgetShared: B }, AdminActions: {} };
   const src = fs.readFileSync(path.join(__dirname, '..', 'js', 'admin', 'budget', 'bilancio.js'), 'utf8');
   new Function('window', 'document', src)(window, document);
@@ -25,7 +26,7 @@ function carica(B) {
 function stato(extra) {
   const B = Object.assign({
     _currentSeasonId: 's1',
-    _sponsorizzazioni: [{ id: 'sp1', seasonId: 's1', aziendaId: 'az1' }, { id: 'sp2', seasonId: 's0', aziendaId: 'az2' }],
+    _sponsorizzazioni: [{ id: 'sp1', seasonId: 's1', aziendaId: 'az1', stato: 'chiuso' }, { id: 'sp2', seasonId: 's0', aziendaId: 'az2', stato: 'chiuso' }, { id: 'sp9', seasonId: 's1', aziendaId: 'az9', stato: 'in_trattativa' }],
     _tranche: [], _atletiRette: [], _rateAtleti: [], _vociSpesa: [], _categorieSpesa: [{ id: 'c1', nome: 'Federazione' }, { id: 'c2', nome: 'Società' }],
     _aziendaById: (id) => ({ ragioneSociale: 'Azienda ' + id }),
     _atletaRettaById: (id) => ({ nome: 'Luca', cognome: 'Rossi', id }),
@@ -46,6 +47,10 @@ t('tranche pagata: conta nel mese della data d’incasso, non della scadenza', (
 t('tranche pagata senza data d’incasso (dati vecchi): resta la scadenza', () => {
   const B = stato({ _tranche: [{ sponsorizzazioneId: 'sp1', importo: 500, scadenza: '2026-08-31', pagato: true }] });
   assert.ok(/Agosto 2026/.test(B._calcBilancioMensile().righe[0].label));
+});
+t('tranche pagata di uno sponsor non chiuso: non entra (stesso filtro di Panoramica e Per categoria)', () => {
+  const B = stato({ _tranche: [{ sponsorizzazioneId: 'sp9', importo: 800, scadenza: '2026-09-30', pagato: true, dataIncasso: '2026-09-30' }] });
+  assert.strictEqual(B._calcBilancioMensile().totEntrate, 0);
 });
 t('tranche non pagata o di un’altra stagione: non entra', () => {
   const B = stato({ _tranche: [{ sponsorizzazioneId: 'sp1', importo: 700, scadenza: '2026-09-30', pagato: false }, { sponsorizzazioneId: 'sp2', importo: 900, scadenza: '2026-09-30', pagato: true, dataIncasso: '2026-09-30' }] });
@@ -112,6 +117,7 @@ const iso = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, 
 const oggi = iso(new Date());
 const tra = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return iso(d); };
 function caricaSpese(B) {
+  B._sponsorChiusi = B._sponsorChiusi || (() => B._sponsorizzazioni.filter((s) => s.seasonId === B._currentSeasonId && s.stato === 'chiuso'));   // come in state.js
   const { doc, els } = ambienteDom();
   const esc = (x) => String(x == null ? '' : x).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const window = { Admin: { budgetShared: B, esc, fmtDate: (d) => d, avviso: noop, logWrite: () => Promise.resolve(), diff: () => [] }, AdminActions: {} };
@@ -250,6 +256,7 @@ function statoCassa(extra) {
     _trimestreIvaDaData: () => null, _aziendaById: (id) => ({ ragioneSociale: 'Azienda ' + id }), _switchBudgetTab: (x) => { B._tabAperta = x; },
     _atletaRettaById: () => null, _sponsorDaIncassare: () => 0, _calcRetteAtleti: () => ({ totIncassato: 0, totPrevisto: 0, righe: [] })
   }, extra || {});
+  B._sponsorChiusi = B._sponsorChiusi || (() => B._sponsorizzazioni.filter((s) => s.seasonId === B._currentSeasonId && s.stato === 'chiuso'));   // come in state.js
   const window = { Admin: { budgetShared: B, esc, fmtDate: (d) => d, fmtDateLong: (d) => d, avviso: noop, logWrite: () => Promise.resolve(), diff: () => [] }, AdminActions: {}, VV: B.__VV };
   ['bilancio.js', 'spese.js', 'altre.js', 'stagioni.js', 'sponsor-elenco.js', 'cassa.js'].forEach((f) => new Function('window', 'document', 'db', fs.readFileSync(path.join(__dirname, '..', 'js', 'admin', 'budget', f), 'utf8'))(window, doc, {}));
   return { B, els };

@@ -27,7 +27,7 @@
      filtro (facoltativo): 'fonte:<Sponsor|Retta atleti|Tessere|Altre entrate>' tiene solo quelle entrate (e nessuna uscita);
      'cat:<id categoria spesa>' tiene solo le uscite di quella categoria ('cat:' = senza categoria). */
   function _calcBilancioMensile(filtro) {
-    var curIds = B._sponsorizzazioni.filter(function (s) { return s.seasonId === B._currentSeasonId; }).map(function (s) { return s.id; });
+    var curIds = B._sponsorChiusi().map(function (s) { return s.id; });
     var entrateSponsor = B._tranche.filter(function (t) { return t.pagato && curIds.indexOf(t.sponsorizzazioneId) !== -1; })
       .map(function (t) {
         var s = B._sponsorizzazioni.find(function (x) { return x.id === t.sponsorizzazioneId; });
@@ -49,8 +49,8 @@
     });
     /* Sponsor chiusi senza piano di pagamento: contano come incassati per intero (regola storica, vedi _sponsorIncassato),
        ma non hanno una data. Finiscono in «Entrate senza data», come le spese senza data. */
-    var entrateSenzaPiano = B._sponsorizzazioni.filter(function (s) {
-      return s.seasonId === B._currentSeasonId && s.stato === 'chiuso' && (+s.importoConfermato || 0) > 0 &&
+    var entrateSenzaPiano = B._sponsorChiusi().filter(function (s) {
+      return (+s.importoConfermato || 0) > 0 &&
         !B._tranche.some(function (t) { return t.sponsorizzazioneId === s.id; });
     }).map(function (s) {
       var az = B._aziendaById(s.aziendaId);
@@ -119,7 +119,7 @@
      "Da incassare" = quanto è già previsto ma non ancora pagato. Uscite con la stessa regola del Saldo mensile
      (sostenute; l'IVA solo se versata), raggruppate per categoria di spesa. */
   function _calcBilancioPerCategoria() {
-    var curSp = B._sponsorizzazioni.filter(function (s) { return s.seasonId === B._currentSeasonId && s.stato === 'chiuso'; });
+    var curSp = B._sponsorChiusi();
     var sponsorInc = curSp.reduce(function (s, x) { return s + B._sponsorIncassato(x); }, 0);
     var sponsorDa = curSp.reduce(function (s, x) { return s + B._sponsorDaIncassare(x); }, 0);
     var rette = B._calcRetteAtleti();

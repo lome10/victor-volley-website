@@ -44,6 +44,11 @@
   B._curSponsorId = null;
   B._curAziendaId = null;
   B._activeBudgetTab = 'riepilogo';
+  /* Filtro unico «sponsor chiusi della stagione aperta»: Panoramica, Bilancio, Per categoria, Cassa e IVA contano le stesse sponsorizzazioni.
+     Prima il Bilancio mensile prendeva anche le tranche pagate di sponsor non (o non più) chiusi, e i totali non coincidevano. */
+  B._sponsorChiusi = function () {
+    return B._sponsorizzazioni.filter(function (s) { return s.seasonId === B._currentSeasonId && s.stato === 'chiuso'; });
+  };
   B.STATI = ['prospect', 'contattato', 'in_trattativa', 'chiuso', 'rifiutato'];
 
 })();
