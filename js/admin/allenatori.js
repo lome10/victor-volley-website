@@ -110,7 +110,7 @@
       _byId('allenatoreCategorie').innerHTML = _categoryBoxes([]);
       var btn = _byId('allenatoreFormSave');
       btn.textContent = 'Rendi allenatore'; btn.disabled = false;
-    }).catch(function (err) { alert('Errore: ' + err.message); });
+    }).catch(function (err) { alert('Errore: ' + DB.errorMessage(err)); });
   };
 
   window.AdminActions.deleteAllenatore = function (uid) {
@@ -121,7 +121,7 @@
           return _logWrite('allenatore', uid, 'Allenatore — ' + (target ? (target.cognome || '') + ' ' + (target.nome || '') : uid), 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]);
         })
         .then(function () { _cache = _cache.filter(function (a) { return a.uid !== uid; }); _renderRows(); })
-        .catch(function (e) { alert('Errore: ' + e.message); });
+        .catch(function (e) { alert('Errore: ' + DB.errorMessage(e)); });
     });
   };
 
@@ -141,7 +141,7 @@
       db.collection('allenatori').doc(uid).update({ categorie: categorie })
         .then(function () { return _logWrite('allenatore', uid, 'Allenatore — ' + (before.cognome || '') + ' ' + (before.nome || ''), 'update', _diff(before, { categorie: categorie }, ['categorie'])); })
         .then(render)
-        .catch(function (err) { alert('Errore: ' + err.message); btn.textContent = 'Salva le categorie'; btn.disabled = false; });
+        .catch(function (err) { alert('Errore: ' + DB.errorMessage(err)); btn.textContent = 'Salva le categorie'; btn.disabled = false; });
       return;
     }
 
@@ -157,7 +157,7 @@
       }).then(function () {
         return _logWrite('allenatore', d.uid, 'Allenatore — ' + (d.cognome || '') + ' ' + (d.nome || ''), 'create', _diff({}, nuovo, ['nome', 'cognome', 'email', 'categorie']));
       }).then(function () { _promoting = null; render(); })
-        .catch(function (err) { alert('Errore: ' + err.message); btn.textContent = 'Rendi allenatore'; btn.disabled = false; });
+        .catch(function (err) { alert('Errore: ' + DB.errorMessage(err)); btn.textContent = 'Rendi allenatore'; btn.disabled = false; });
       return;
     }
 
@@ -188,7 +188,7 @@
       })
       .then(render)
       .catch(function (err) {
-        alert('Errore: ' + (err.code === 'auth/email-already-in-use' ? 'Email già registrata.' : err.message));
+        alert('Errore: ' + DB.errorMessage(err));
         btn.textContent = 'Crea allenatore'; btn.disabled = false;
       });
   });

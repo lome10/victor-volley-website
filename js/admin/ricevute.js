@@ -150,7 +150,7 @@
         if (!res.ok) throw new Error(d.error || ('Errore ' + res.status));
         A.avviso('Ricevuta di esempio inviata a ' + d.a[0] + '. Se non arriva, controlla lo spam.', 'ok');
       });
-    }).catch(function (e) { A.avviso('Errore: ' + ((e && e.message) || 'riprova più tardi.'), 'errore'); });
+    }).catch(function (e) { A.avviso('Errore: ' + DB.errorMessage(e), 'errore'); });
   }
 
   function _filtrate() {
@@ -516,7 +516,7 @@
     }).catch(function (e) {
       console.error('[ricevute] crea', e);
       if (w && !creata) w.close();
-      err.textContent = 'Errore: ' + (e && e.message ? e.message : 'impossibile emettere la ricevuta. Riprova.');
+      err.textContent = 'Errore: ' + DB.errorMessage(e);
     }).then(function () { btn.disabled = false; });
   });
 
@@ -548,7 +548,7 @@
       }
       return { testo: 'Ricevuta ' + r.numero + ': ' + (MOTIVI_NO[d.motivo] || 'email non inviata.'), tipo: 'avviso' };
     }).catch(function (e) {
-      return { testo: 'Ricevuta ' + r.numero + ': l’email non è partita (' + ((e && e.message) || 'errore') + '). Usa «Invia email» nel registro per riprovare.', tipo: 'errore' };
+      return { testo: 'Ricevuta ' + r.numero + ': l’email non è partita (' + DB.errorMessage(e) + '). Usa «Invia email» nel registro per riprovare.', tipo: 'errore' };
     });
   }
 

@@ -320,7 +320,7 @@
         return _logWrite('pianoEditoriale', id, 'Piano editoriale — ' + item.titolo, 'update', [{ campo: 'data', prima: prima, dopo: ymd }]);
       }).catch(function (err) {
         console.error('[pianoEditoriale] sposta', err);
-        A.avviso('Non sono riuscito a spostare il contenuto: ' + err.message, 'errore');
+        A.avviso('Non sono riuscito a spostare il contenuto: ' + DB.errorMessage(err), 'errore');
       });
     });
   })();

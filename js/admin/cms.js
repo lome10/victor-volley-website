@@ -474,7 +474,7 @@
       _gironeStatus('');
     }).catch(function (e) {
       console.error('[admin] squadre girone', e);
-      _gironeStatus('Impossibile caricare l’elenco: ' + e.message, 'var(--a-red)');
+      _gironeStatus('Impossibile caricare l’elenco: ' + DB.errorMessage(e), 'var(--a-red)');
     });
   }
 
@@ -539,7 +539,7 @@
         { campo: 'gironi', prima: gironiPrima, dopo: gironiDopo }
       ]);
     }).catch(function (e) {
-      _gironeStatus('Errore: ' + e.message, 'var(--a-red)');
+      _gironeStatus('Errore: ' + DB.errorMessage(e), 'var(--a-red)');
     });
   }
 
@@ -2080,7 +2080,7 @@
         o.a.sponsorSitoId = o.v;
         return window.Admin.logWrite('azienda', o.a.id, 'Azienda — ' + (o.a.ragioneSociale || ''), 'update', [{ campo: 'logo sul sito', prima: o.v == null ? 'collegato' : 'non collegato', dopo: o.v == null ? 'non collegato' : 'collegato' }]);
       });
-    })).catch(function (e) { window.Admin.avviso('Collegamento alla pipeline non salvato: ' + e.message, 'errore'); });
+    })).catch(function (e) { window.Admin.avviso('Collegamento alla pipeline non salvato: ' + DB.errorMessage(e), 'errore'); });
   }
   function _pipelineDiSponsor(s) {
     var B = _budgetB();
