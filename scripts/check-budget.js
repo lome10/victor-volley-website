@@ -491,6 +491,27 @@ ta('IVA sponsor: una voce NUOVA prende data e trimestre dall’ultimo incasso (o
   await b.f({ id: 'x', seasonId: 's1', aziendaId: 'az', stato: 'chiuso', importoConfermato: 2000, ivaVoceSpesaId: 'g' });
   assert.strictEqual(b.scritti.length, 0, 'la voce esistente non viene ricreata');
 });
+ta('IVA sponsor senza piano di pagamento: l’IVA sostenuta segue l’incasso intero; con le tranche passa alle sole pagate (niente doppio conteggio)', async () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', 'js', 'admin', 'budget', 'sponsor.js'), 'utf8').split(String.fromCharCode(13)).join('');
+  const i = src.indexOf('function _trancheOf'), j = src.indexOf('B._sponsorIvaCalc ='), k = src.indexOf('function _syncSponsorIva'), l = src.indexOf('/* Migrazione una tantum');
+  const esegui = async (tranche, sp) => {
+    const patch = [];
+    const figlia = { id: 'g', isIva: true, importoSostenuto: 0, importoPreventivato: 0, dataSpesa: '2026-10-01', ivaTrimestre: 'T4', ivaScadenza: '2027-03-16' };
+    const B = { _todayISO: () => '2026-11-12', _tranche: tranche, _vociSpesa: [figlia], _aziendaById: () => ({ ragioneSociale: 'Rossi' }), _trimestreIvaDaData: () => null };
+    const db = { collection: () => ({ doc: () => ({ update: (p) => { patch.push(p); return Promise.resolve(); }, delete: () => Promise.resolve() }) }) };
+    const f = new Function('B', 'db', '_logWrite', '_diff', src.slice(i, j) + src.slice(j, j + 'B._sponsorIvaCalc = _sponsorIvaCalc;'.length) + '\n' + src.slice(k, l) + '; return _syncSponsorIva;')(B, db, () => Promise.resolve(), () => []);
+    await f(Object.assign({ id: 'x', seasonId: 's1', aziendaId: 'az', stato: 'chiuso', importoConfermato: 6100, ivaVoceSpesaId: 'g', ivaInclusaPct: 22, ivaVersarePct: 11 }, sp || {}));
+    return patch[0];
+  };
+  const senza = await esegui([]);
+  assert.strictEqual(senza.importoSostenuto, 550, 'nessuna tranche: sostenuto = IVA dell’incasso intero'); assert.strictEqual(senza.importoPreventivato, 550);
+  const conTranche = await esegui([{ sponsorizzazioneId: 'x', pagato: false, importo: 6100, scadenza: '2027-01-31' }]);
+  assert.strictEqual(conTranche.importoSostenuto, 0, 'aggiunta una tranche non pagata: sostenuto 0, non 550 + altro');
+  const meta = await esegui([{ sponsorizzazioneId: 'x', pagato: true, importo: 3050, dataIncasso: '2026-10-05' }, { sponsorizzazioneId: 'x', pagato: false, importo: 3050, scadenza: '2027-01-31' }]);
+  assert.strictEqual(meta.importoSostenuto, 275, 'solo la tranche pagata');
+  const aperto = await esegui([], { stato: 'in_trattativa' });
+  assert.ok(!aperto || !aperto.importoSostenuto, 'sponsor non chiuso: niente IVA sostenuta');
+});
 t('IVA sponsor: senza IVA compresa resta il comportamento storico (11% dell’importo)', () => {
   const f = ivaSponsor();
   assert.deepStrictEqual([f(1000, {}).ivaInclusa, f(1000, {}).daVersare], [0, 110]);

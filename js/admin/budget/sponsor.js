@@ -609,7 +609,11 @@
       data.id = ref.id;
       B._tranche.push(data);
       return _logWrite('tranchePagamento', ref.id, 'Tranche — ' + (az ? az.ragioneSociale : ''), 'create', _diff({}, data, Object.keys(data)));
-    }).then(function () { _refreshAccordionSection('pagamenti'); B._renderStatCards(); B._renderCharts(); B._renderCashflow(); B._renderBilancio(); })
+    }).then(function () {
+      /* la prima tranche toglie lo sponsor dal «incassato per intero senza piano»: l'IVA sostenuta passa alle sole tranche pagate */
+      var s = B._sponsorizzazioni.find(function (x) { return x.id === data.sponsorizzazioneId; });
+      return s ? _syncSponsorIva(s) : null;
+    }).then(function () { _refreshAccordionSection('pagamenti'); B._renderStatCards(); B._renderCharts(); B._renderCashflow(); B._renderBilancio(); B._renderSpese(); })
       .catch(function (e) { alert('Errore: ' + e.message); });
   };
 
@@ -657,8 +661,13 @@
      preventivato e sostenuto tornano entrambi a zero (es. lo stato torna indietro da "chiuso"). */
   function _syncSponsorIva(s) {
     var preventivato = s.stato === 'chiuso' ? _sponsorIvaCalc(s.importoConfermato, s).daVersare : 0;
-    var pagate = _trancheOf(s.id).filter(function (t) { return t.pagato; });
-    var incassato = pagate.reduce(function (sum, t) { return sum + (+t.importo || 0); }, 0);
+    /* Incassato = quello che conta _sponsorIncassato: con tranche, la somma delle pagate; SENZA piano di pagamento, lo sponsor chiuso
+       conta incassato per intero (importo confermato) e l'IVA sostenuta lo segue. Non è una somma: appena si aggiunge una tranche si
+       passa alle sole pagate (aggiungere/togliere tranche richiama questo calcolo), quindi niente doppio conteggio. */
+    var trs = _trancheOf(s.id);
+    var incassato = trs.length
+      ? trs.filter(function (t) { return t.pagato; }).reduce(function (sum, t) { return sum + (+t.importo || 0); }, 0)
+      : (s.stato === 'chiuso' ? (+s.importoConfermato || 0) : 0);
     var sostenuto = _sponsorIvaCalc(incassato, s).daVersare;
     var aliquotaVersata = _sponsorIvaCalc(0, s).versarePct;
     var figlia = s.ivaVoceSpesaId ? B._vociSpesa.find(function (x) { return x.id === s.ivaVoceSpesaId; }) : null;
@@ -782,7 +791,7 @@
         .then(function () { return _logWrite('tranchePagamento', id, 'Tranche — ' + (az ? az.ragioneSociale : ''), 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]); })
         .then(function () {
           B._tranche = B._tranche.filter(function (x) { return x.id !== id; });
-          return (t && t.pagato && s) ? _syncSponsorIva(s) : null;
+          return (t && s) ? _syncSponsorIva(s) : null;   /* anche se non pagata: l'ultima tranche tolta riporta lo sponsor «incassato per intero» */
         })
         .then(function () {
           _refreshAccordionSection('pagamenti'); B._renderStatCards(); B._renderCharts(); B._renderCashflow(); B._renderBilancio(); B._renderSpese();
