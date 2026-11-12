@@ -9,7 +9,7 @@
   <link rel="preload" href="/assets/fonts/barlow-700-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/manrope-400-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/fonts.css?v=c0ba2518">
-  <link rel="stylesheet" href="/css/admin.css?v=7c129648">
+  <link rel="stylesheet" href="/css/admin.css?v=695b67c3">
   <link rel="stylesheet" href="/css/dirigenti.css?v=be786146">
 </head>
 <body>
@@ -1212,7 +1212,12 @@
           <label class="form-label" for="presCat">Categoria</label>
           <select id="presCat" class="form-input"></select>
         </div>
+        <div id="presVista" class="atleti-cats" role="group" aria-label="Vista presenze" style="margin-bottom:16px">
+          <button type="button" class="atleti-pill is-active" data-pvista="impegni" aria-pressed="true">Impegni</button>
+          <button type="button" class="atleti-pill" data-pvista="mese" aria-pressed="false">Mese</button>
+        </div>
         <div id="presenzeBody"></div>
+        <div id="presMese" class="is-hidden"></div>
       </section>
 
       <!-- ---- AVVISI (comunicazioni a atleti e genitori) ---- -->
@@ -2796,7 +2801,7 @@
   <script src="/js/admin/prezzi-calc.js?v=681fbe4b"></script>
   <script src="/js/admin/tesseramenti-calc.js?v=905835f5"></script>
   <script src="/js/presenze-stat.js?v=6dab1972"></script>
-  <script src="/js/admin/atleti.js?v=515ee9a5"></script>
+  <script src="/js/admin/atleti.js?v=4c684059"></script>
   <script src="/js/admin/cms.js?v=36a0f06b"></script>
   <script src="/js/admin/pianoeditoriale.js?v=263db8cd"></script>
   <script src="/js/admin/allenatori.js?v=54f97df7"></script>

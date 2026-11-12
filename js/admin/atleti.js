@@ -3163,10 +3163,10 @@
         return '<option value="' + esc(c.name) + '">' + esc(c.name) + '</option>';
       }).join('');
     sel.value = prev;
-    _loadPresenzeAdmin();
+    _presAggiorna();
   }
 
-  document.getElementById('presCat').addEventListener('change', _loadPresenzeAdmin);
+  document.getElementById('presCat').addEventListener('change', function () { _presAggiorna(); });
 
   function _presEvents(cat, trainings) {
     var today = _presIso(new Date());
@@ -3538,6 +3538,120 @@
   document.getElementById('atletiPresenze').addEventListener('keydown', function (e) {
     var r = e.target.closest ? e.target.closest('.ps-riga') : null;
     if (r && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); _openAtletaDetail(r.dataset.uid); _switchAtletaTab('presenze'); }
+  });
+
+  /* ================================================
+     VISTA MENSILE (sezione «Presenze» → Mese): atleti x giorni di allenamento del mese, per la categoria scelta.
+     Solo lettura. Stesse regole di PresenzeStat: i giorni senza risposta e quelli futuri non contano nella percentuale.
+  ================================================ */
+  var _pm = { vista: 'impegni', mese: null, roster: [], cat: '', alle: 0, token: 0 };
+
+  function _presAggiorna() {
+    var mese = _pm.vista === 'mese';
+    document.getElementById('presenzeBody').classList.toggle('is-hidden', mese);
+    document.getElementById('presMese').classList.toggle('is-hidden', !mese);
+    Array.prototype.forEach.call(document.querySelectorAll('#presVista [data-pvista]'), function (b) {
+      var on = b.dataset.pvista === _pm.vista;
+      b.classList.toggle('is-active', on);
+      b.setAttribute('aria-pressed', on);
+    });
+    if (mese) _pmRender(); else _loadPresenzeAdmin();
+  }
+
+  function _pmSposta(ym, n) {
+    var d = new Date(+ym.slice(0, 4), +ym.slice(5, 7) - 1 + n, 1);
+    return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2);
+  }
+
+  function _pmRender() {
+    var box = document.getElementById('presMese');
+    var cat = document.getElementById('presCat').value;
+    if (!cat) { box.innerHTML = '<p class="pres-empty">Scegli una categoria per vedere il mese.</p>'; return; }
+    var oggi = _presIso(new Date());
+    if (!_pm.mese) _pm.mese = oggi.slice(0, 7);
+    var token = ++_pm.token;
+    var pronto = _ps.orari && Date.now() - _ps.alle < PS_CACHE_MS && _pm.cat === cat && Date.now() - _pm.alle < PS_CACHE_MS;
+    if (!pronto) {
+      box.innerHTML = '<p class="pres-empty">Caricamento…</p>';
+      Promise.all([
+        db.collection('atleti').where('categoria', '==', cat).get(),
+        new Promise(function (ok) { _psCarica(ok); })
+      ]).then(function (res) {
+        if (token !== _pm.token) return;
+        if (_ps.errore || !_ps.orari) { _ps.errore = false; _ps.orari = null; box.innerHTML = '<p class="pres-empty" style="color:var(--a-red)">Errore nel caricamento delle presenze.</p>'; return; }
+        var roster = [];
+        res[0].forEach(function (d) { var x = d.data(); roster.push({ id: d.id, cognome: x.cognome || '', nome: x.nome || '' }); });
+        roster.sort(function (a, b) { return (a.cognome + ' ' + a.nome).localeCompare(b.cognome + ' ' + b.nome, 'it'); });
+        _pm.roster = roster; _pm.cat = cat; _pm.alle = Date.now();
+        _pmDisegna(cat, oggi);
+      }).catch(function (e) {
+        if (token !== _pm.token) return;
+        console.error('[Presenze] mese', e);
+        box.innerHTML = '<p class="pres-empty" style="color:var(--a-red)">Errore nel caricamento delle presenze.</p>';
+      });
+      return;
+    }
+    _pmDisegna(cat, oggi);
+  }
+
+  function _pmDisegna(cat, oggi) {
+    var box = document.getElementById('presMese');
+    var ym = _pm.mese, y = +ym.slice(0, 4), m = +ym.slice(5, 7);
+    var ultimoGiorno = new Date(y, m, 0).getDate();
+    var primo = ym + '-01', ultimo = ym + '-' + ('0' + ultimoGiorno).slice(-2);
+    var titolo = new Date(y, m - 1, 1).toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
+    var inCorso = ym >= oggi.slice(0, 7);
+    var giorni = _psGiorni(cat, primo, ultimo);
+    var passati = giorni.filter(function (d) { return d <= oggi; });
+    var nav = '<div class="pm-nav"><button type="button" class="btn btn-outline btn-sm" data-pm="-1" aria-label="Mese precedente">‹</button>' +
+      '<strong class="pm-titolo" aria-live="polite">' + esc(titolo.charAt(0).toUpperCase() + titolo.slice(1)) + ' · ' + esc(cat) + '</strong>' +
+      '<button type="button" class="btn btn-outline btn-sm" data-pm="1" aria-label="Mese successivo"' + (inCorso ? ' disabled' : '') + '>›</button></div>';
+    if (!_pm.roster.length) { box.innerHTML = nav + '<p class="pres-empty">Nessun atleta in questa categoria.</p>'; return; }
+    if (!giorni.length) { box.innerHTML = nav + '<p class="pres-empty">Nessun allenamento in programma in questo mese.</p>'; return; }
+    var nomiG = ['D', 'L', 'M', 'M', 'G', 'V', 'S'];
+    var righe = _pm.roster.map(function (a) {
+      var stati = (_ps.risp || {})[a.id] || {};
+      return { a: a, stati: stati, s: PresenzeStat.calcola(passati, stati) };
+    });
+    var media = PresenzeStat.media(righe.map(function (r) { return r.s; }));
+    var testa = '<tr><th scope="col" class="pm-nome">Atleta</th>' + giorni.map(function (d) {
+      var dt = new Date(d + 'T00:00:00');
+      return '<th scope="col" class="pm-g' + (d > oggi ? ' is-futuro' : '') + '" title="' + esc(dt.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })) + '">' +
+        nomiG[dt.getDay()] + '<br>' + dt.getDate() + '</th>';
+    }).join('') + '<th scope="col" class="pm-tot">Sì</th><th scope="col" class="pm-tot">No</th><th scope="col" class="pm-tot">Non seg.</th><th scope="col" class="pm-tot">%</th></tr>';
+    var corpo = righe.map(function (r) {
+      var nome = (r.a.cognome + ' ' + r.a.nome).trim();
+      return '<tr><th scope="row" class="pm-nome">' + esc(nome) + '</th>' + giorni.map(function (d) {
+        var st = r.stati[d];
+        if (d > oggi) return '<td class="pm-c is-futuro" aria-label="' + esc(nome) + ', ' + d + ': non ancora">·</td>';
+        return st === 'p' ? '<td class="pm-c" data-s="p" aria-label="' + esc(nome) + ', ' + d + ': presente">P</td>'
+          : st === 'a' ? '<td class="pm-c" data-s="a" aria-label="' + esc(nome) + ', ' + d + ': assente">A</td>'
+          : '<td class="pm-c" data-s="" aria-label="' + esc(nome) + ', ' + d + ': non segnato">–</td>';
+      }).join('') + '<td class="pm-tot">' + r.s.si + '</td><td class="pm-tot">' + r.s.no + '</td><td class="pm-tot">' + r.s.nr + '</td>' +
+        '<td class="pm-tot"><strong style="color:' + PresenzeStat.colore(r.s.pct) + '">' + (r.s.pct === null ? '—' : r.s.pct + '%') + '</strong></td></tr>';
+    }).join('');
+    var pie = '<tr><th scope="row" class="pm-nome">Presenti nel giorno</th>' + giorni.map(function (d) {
+      if (d > oggi) return '<td class="pm-c is-futuro">·</td>';
+      var n = righe.filter(function (r) { return r.stati[d] === 'p'; }).length;
+      var segn = righe.filter(function (r) { return r.stati[d] === 'p' || r.stati[d] === 'a'; }).length;
+      return '<td class="pm-c">' + (segn ? n + '/' + segn : '–') + '</td>';
+    }).join('') + '<td class="pm-tot" colspan="3">Media</td><td class="pm-tot"><strong>' + (media === null ? '—' : media + '%') + '</strong></td></tr>';
+    box.innerHTML = nav +
+      '<p class="taglie-escl-hint" style="margin-bottom:10px">P presente · A assente · – non segnato. Contano solo gli allenamenti già segnati: i giorni senza risposta non abbassano la percentuale. «Presenti nel giorno» = presenti / segnati.</p>' +
+      '<div class="admin-table-wrap pm-wrap"><table class="admin-table pm-tab"><thead>' + testa + '</thead><tbody>' + corpo + '</tbody><tfoot>' + pie + '</tfoot></table></div>';
+  }
+
+  document.getElementById('presVista').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-pvista]');
+    if (!b) return;
+    _pm.vista = b.dataset.pvista;
+    _presAggiorna();
+  });
+  document.getElementById('presMese').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-pm]');
+    if (!b || b.disabled) return;
+    _pm.mese = _pmSposta(_pm.mese, +b.dataset.pm);
+    _pmRender();
   });
 
   /* Scheda «Presenze» dell'atleta: i numeri del mese e della stagione e l'elenco degli ultimi allenamenti. */
