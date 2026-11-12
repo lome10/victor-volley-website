@@ -2461,16 +2461,23 @@
       testo += ' Verranno eliminate anche ' + rate.length + (rate.length === 1 ? ' rata' : ' rate') +
         (pagato ? ' (già incassati €' + pagato.toFixed(2) + ': spariranno dal bilancio)' : '') + '.';
     }
+    var abbPagata = _abbVoce(uid);
+    if (abbPagata && abbPagata.pagata) {
+      testo += ' Verrà eliminato anche l'incasso Abbigliamento (€' + Math.round(+abbPagata.importo || 0) + ': sparirà dal bilancio).';
+    }
     confirm(testo, function () {
       Promise.all([
         db.collection('atletiRette').where('atletaId', '==', uid).get(),
-        db.collection('rateAtleti').where('atletaId', '==', uid).get()
+        db.collection('rateAtleti').where('atletaId', '==', uid).get(),
+        db.collection('altreEntrate').where('atletaId', '==', uid).get()
       ]).then(function (res) {
         var batch = db.batch();
         batch.delete(db.collection('atleti').doc(uid));
         batch.delete(db.collection('atletiDati').doc(uid));
         res[0].forEach(function (d) { batch.delete(d.ref); });
         res[1].forEach(function (d) { batch.delete(d.ref); });
+        /* incassi Abbigliamento di ogni stagione (altreEntrate con atletaId): senza questo restavano a bilancio, orfani */
+        res[2].forEach(function (d) { if ((d.data() || {}).tipo === ABB_TIPO) batch.delete(d.ref); });
         return batch.commit();
       }).then(function () {
         return _logWrite('atleta', uid, 'Atleta — ' + (target ? target.cognome + ' ' + target.nome : uid), 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]);
@@ -2478,6 +2485,7 @@
         _atletiCache = _atletiCache.filter(function (a) { return a.uid !== uid; });
         _bs().atletiRette = _bs().atletiRette.filter(function (x) { return x.atletaId !== uid; });
         _bs().rateAtleti  = _bs().rateAtleti.filter(function (r) { return r.atletaId !== uid; });
+        _bs().altreEntrate = (_bs().altreEntrate || []).filter(function (x) { return !(x.tipo === ABB_TIPO && x.atletaId === uid); });
         _reconcileAccessi();
         _renderAtletiRows();
         _refreshBudgetViews();
