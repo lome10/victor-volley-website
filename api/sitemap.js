@@ -58,6 +58,11 @@ function entry(path, lastmod) {
 }
 
 module.exports = async (req, res) => {
+  /* Nessun parametro previsto: una query diversa a ogni richiesta aggirerebbe la cache e rileggerebbe Firestore. */
+  if (req && req.query && Object.keys(req.query).length) {
+    res.setHeader('Cache-Control', 'no-store');
+    return res.status(400).send('Parametri non previsti.');
+  }
   const urls = STATIC_PAGES.map((p) => entry(p));
   let complete = true;
 
