@@ -1239,6 +1239,8 @@ main, footer.site-footer {
 
 @media (max-width: 900px) {
   .news-cards { --card-h: 400px; }
+  /* frecce con bersaglio da 44 px per il dito */
+  .news-cards-arrow { width: 44px; height: 44px; }
 }
 
 @media (max-width: 640px) {
