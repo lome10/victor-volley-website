@@ -150,7 +150,7 @@
     var patch = {}; patch[field] = nv;
     db.collection('atletiRette').doc(id).update(patch)
       .then(function () { return _logWrite('atletaRetta', id, 'Atleta — ' + a.cognome + ' ' + a.nome, 'update', _diff(old, patch, [field])); })
-      .then(function () { _renderRette(); B._renderStatCards(); B._renderCharts(); })
+      .then(function () { _renderRette(); B._renderStatCards(); B._renderCharts(); B._renderBilancio(); })
       .catch(function (e) { alert('Errore: ' + e.message); });
   };
 
@@ -167,7 +167,7 @@
         .then(function () {
           B._atletiRette = B._atletiRette.filter(function (x) { return x.id !== id; });
           B._rateAtleti = B._rateAtleti.filter(function (x) { return x.atletaRettaId !== id; });
-          _renderRette(); B._renderStatCards(); B._renderCharts();
+          _renderRette(); B._renderStatCards(); B._renderCharts(); B._renderBilancio();
         })
         .catch(function (e) { alert('Errore: ' + e.message); });
     });
@@ -236,7 +236,7 @@
     r[campo] = valore;
     db.collection('rateAtleti').doc(id).update(patch)
       .then(function () { return _logWrite('rataAtleti', id, 'Rata — ' + (a ? a.cognome + ' ' + a.nome : ''), 'update', _diff(old, patch, [campo])); })
-      .then(function () { _renderRateAtletaModal(); _renderRette(); B._renderStatCards(); B._renderCharts(); _renderRateAdmin(); _renderAtletiRows(); })
+      .then(function () { _renderRateAtletaModal(); _renderRette(); B._renderStatCards(); B._renderCharts(); B._renderBilancio(); _renderRateAdmin(); _renderAtletiRows(); })
       .catch(function (e) { r[campo] = old[campo]; _renderRateAtletaModal(); _renderRateAdmin(); alert('Errore: ' + e.message); });
   };
 
@@ -283,7 +283,7 @@
       document.getElementById('rataAtletaScadenzaPag').value = '';
       document.getElementById('rataAtletaNote').value = '';
       _renderRateAtletaModal();
-      _renderRette(); B._renderStatCards(); B._renderCharts();
+      _renderRette(); B._renderStatCards(); B._renderCharts(); B._renderBilancio();
       _renderRateAdmin(); _renderAtletiRows();
     }).catch(function (e) { alert('Errore: ' + e.message); });
   }
@@ -337,7 +337,7 @@
         .then(function () { return _logWrite('rataAtleti', id, 'Rata — ' + (a ? a.cognome + ' ' + a.nome : ''), 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]); })
         .then(function () {
           B._rateAtleti = B._rateAtleti.filter(function (x) { return x.id !== id; });
-          _renderRateAtletaModal(); _renderRette(); B._renderStatCards(); B._renderCharts();
+          _renderRateAtletaModal(); _renderRette(); B._renderStatCards(); B._renderCharts(); B._renderBilancio();
           _renderRateAdmin(); _renderAtletiRows();
         })
         .catch(function (e) { alert('Errore: ' + e.message); });
