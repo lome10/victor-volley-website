@@ -71,6 +71,10 @@
     (escludiIds || []).forEach(function (id) { if (id) skip[id] = true; });
     voci.forEach(function (v) { if (v.tesseramenti) skip[v.id] = true; });
     voci.forEach(function (v) { if (skip[v.id] && v.ivaVoceSpesaId) skip[v.ivaVoceSpesaId] = true; });
+    /* difesa: una voce IVA «orfana» (collegamento ivaVoceSpesaId perso, per esempio per una scrittura a meta') si riconosce dal nome «IVA <voce>» */
+    var nomiSaltati = {};
+    voci.forEach(function (v) { if (skip[v.id] && !v.isIva) nomiSaltati['IVA ' + v.categoria] = true; });
+    voci.forEach(function (v) { if (v.isIva && nomiSaltati[v.categoria]) skip[v.id] = true; });
     voci = voci.filter(function (v) { return !skip[v.id]; });
     var perId = {}, out = { voci: [], categorie: [] };
     voci.forEach(function (v) { perId[v.id] = v; });

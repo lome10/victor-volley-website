@@ -404,6 +404,11 @@ t('Copia del budget: le voci automatiche (Tesseramenti, Materiali sponsor) e la 
     { id: 'p1', categoria: 'Materiali sponsor — Pezzi', importoPreventivato: 100 }];
   const r = B._copiaBudgetDati(voci, [], 's2', nuovoId, ['m1', 'p1']);
   assert.deepStrictEqual(r.voci.map((x) => x.data.categoria).sort(), ['IVA Palestra', 'Palestra']);
+  const orfane = [{ id: 'v1', categoria: 'Palestra', importoPreventivato: 1000 }, { id: 't1', categoria: 'Tesseramenti atleti', tesseramenti: true, importoPreventivato: 500 },
+    { id: 'o1', categoria: 'IVA Tesseramenti atleti', isIva: true, importoPreventivato: 110 }, { id: 'o2', categoria: 'IVA Materiali sponsor — Pezzi', isIva: true, importoPreventivato: 22 },
+    { id: 'p1', categoria: 'Materiali sponsor — Pezzi', importoPreventivato: 100 }];
+  const r2 = B._copiaBudgetDati(orfane, [], 's2', nuovoId, ['p1']);
+  assert.deepStrictEqual(r2.voci.map((x) => x.data.categoria), ['Palestra'], 'anche l’IVA senza collegamento alla voce madre si salta, riconosciuta dal nome')
 });
 t('Confronto tra stagioni: totali per fonte e per categoria di spesa', () => {
   const { B } = statoCassa();
