@@ -371,6 +371,19 @@ t('Copia del budget: voci a zero speso, date +1 anno, IVA collegata rifatta, nie
   assert.deepStrictEqual([i.importoSostenuto, i.pagata, i.ivaScadenza, i.ivaTrimestre], [0, false, '2027-11-16', '']);
   assert.deepStrictEqual(r.categorie[0].data, { seasonId: 's2', nome: 'Under 13', rettaUnitaria: 105 });
 });
+t('Copia del budget: le voci automatiche (Tesseramenti, Materiali sponsor) e la loro IVA non si copiano', () => {
+  const { B } = statoCassa();
+  let n = 0; const nuovoId = () => 'n' + (++n);
+  const voci = [
+    { id: 'v1', categoria: 'Palestra', importoPreventivato: 1000, ivaAliquota: 22, ivaVoceSpesaId: 'v2' },
+    { id: 'v2', categoria: 'IVA Palestra', isIva: true, importoPreventivato: 220 },
+    { id: 't1', categoria: 'Tesseramenti atleti', tesseramenti: true, importoPreventivato: 500 },
+    { id: 'm1', categoria: 'Materiali sponsor — Stampe', importoPreventivato: 300, ivaAliquota: 22, ivaVoceSpesaId: 'm2' },
+    { id: 'm2', categoria: 'IVA Materiali sponsor — Stampe', isIva: true, importoPreventivato: 66 },
+    { id: 'p1', categoria: 'Materiali sponsor — Pezzi', importoPreventivato: 100 }];
+  const r = B._copiaBudgetDati(voci, [], 's2', nuovoId, ['m1', 'p1']);
+  assert.deepStrictEqual(r.voci.map((x) => x.data.categoria).sort(), ['IVA Palestra', 'Palestra']);
+});
 t('Confronto tra stagioni: totali per fonte e per categoria di spesa', () => {
   const { B } = statoCassa();
   const dati = { sponsorizzazioni: [{ id: 'a', stato: 'chiuso' }, { id: 'b', stato: 'prospect' }], sponsorIncassato: (s) => (s.id === 'a' ? 500 : 999),

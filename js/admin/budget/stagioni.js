@@ -63,7 +63,15 @@
   /* Puro: dalle voci e categorie di una stagione ai documenti della nuova (nessuna scrittura).
      Voci: preventivato e categoria restano, speso e «pagata» ripartono da zero, date +1 anno, nessun pagamento
      né documento. L'IVA collegata alle voci copiate si copia con il collegamento rifatto; l'IVA degli sponsor no. */
-  function _copiaBudgetDati(voci, categorie, nuovaStagioneId, nuovoId) {
+  /* escludiIds (facoltativo): id di voci create in automatico (Materiali sponsor). «Tesseramenti atleti» si riconosce dal marcatore
+     `tesseramenti`. Queste voci NON si copiano (né la loro IVA): la nuova stagione le genera da sola dai propri dati, mentre una
+     copia avrebbe perso il marcatore e le avrebbe duplicate. */
+  function _copiaBudgetDati(voci, categorie, nuovaStagioneId, nuovoId, escludiIds) {
+    var skip = {};
+    (escludiIds || []).forEach(function (id) { if (id) skip[id] = true; });
+    voci.forEach(function (v) { if (v.tesseramenti) skip[v.id] = true; });
+    voci.forEach(function (v) { if (skip[v.id] && v.ivaVoceSpesaId) skip[v.ivaVoceSpesaId] = true; });
+    voci = voci.filter(function (v) { return !skip[v.id]; });
     var perId = {}, out = { voci: [], categorie: [] };
     voci.forEach(function (v) { perId[v.id] = v; });
     var figlie = {};
@@ -96,7 +104,8 @@
   /* Scrive la copia a blocchi (un batch Firestore arriva a 500 operazioni). */
   function _copiaBudget(daId, aId) {
     var dati = _copiaBudgetDati(B._vociSpesa.filter(function (v) { return v.seasonId === daId; }), B._categorieAtleti.filter(function (c) { return c.seasonId === daId; }), aId,
-      function () { return db.collection('vociSpesa').doc().id; });
+      function () { return db.collection('vociSpesa').doc().id; },
+      [_stagione(daId).materialiStampeVoceSpesaId, _stagione(daId).materialiPezziVoceSpesaId]);
     var ops = dati.voci.map(function (x) { return { col: 'vociSpesa', id: x.id, data: x.data }; })
       .concat(dati.categorie.map(function (x) { return { col: 'categorieAtleti', id: x.id, data: x.data }; }));
     var p = Promise.resolve();
