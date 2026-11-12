@@ -55,8 +55,10 @@ module.exports = async function handler(req, res) {
   const password = body.password;
 
   if (!uid || typeof uid !== 'string') return fail(res, 400, 'UID mancante.');
-  if (!password || typeof password !== 'string' || password.length < 10) {
-    return fail(res, 400, 'La password deve avere almeno 10 caratteri.');
+  /* un id di Firestore/Firebase: solo lettere, cifre, trattino e sottolineato (con una barra il percorso sarebbe un altro) */
+  if (!/^[A-Za-z0-9_-]{1,128}$/.test(uid)) return fail(res, 400, 'UID non valido.');
+  if (!password || typeof password !== 'string' || password.length < 10 || password.length > 200) {
+    return fail(res, 400, 'La password deve avere tra 10 e 200 caratteri.');
   }
 
   try {
