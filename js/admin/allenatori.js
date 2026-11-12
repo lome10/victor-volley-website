@@ -115,7 +115,7 @@
 
   window.AdminActions.deleteAllenatore = function (uid) {
     var target = _cache.find(function (a) { return a.uid === uid; });
-    confirm('Revocare l\'accesso a questo allenatore? Non vedrà più nessun atleta. Le credenziali Firebase resteranno attive ma non servono a nulla.', function () {
+    confirm('Revocare l\'accesso a questo allenatore? Non vedrà più nessun atleta. Il suo accesso al sito resta, ma da qui non può più vedere nulla.', function () {
       db.collection('allenatori').doc(uid).delete()
         .then(function () {
           return _logWrite('allenatore', uid, 'Allenatore — ' + (target ? (target.cognome || '') + ' ' + (target.nome || '') : uid), 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]);

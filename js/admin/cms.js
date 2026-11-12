@@ -818,7 +818,8 @@
 
     if (!PhotoDB.isConfigured()) {
       progress.classList.add('is-hidden');
-      A.avviso('Cloudinary non è ancora configurato: imposta CLOUDINARY_CLOUD in js/config.js.');
+      console.warn('[upload immagini] CLOUDINARY_CLOUD non impostato in js/config.js');
+      A.avviso('Il caricamento delle immagini non è ancora attivo. Contatta l\x27assistenza.');
       this.value = '';
       return;
     }
