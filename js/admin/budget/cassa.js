@@ -150,20 +150,29 @@
       riga.incassato = _somma(rate, function (r) { return r.pagata ? (+r.importo || 0) : 0; });
     });
     var generali = { nome: 'Società e generali', entrate: 0, incassato: 0, spese: 0 };
+    /* Le spese SENZA categoria non sono «generali»: hanno una riga loro, così si vede quanto resta da classificare. */
+    var senzaCat = { nome: 'Senza categoria', entrate: 0, incassato: 0, spese: 0 };
     B._vociSpesa.forEach(function (v) {
       var c = v.categoriaSpesaId ? B._categoriaSpesaById(v.categoriaSpesaId) : null, n = c ? _norm(c.nome) : '';
       var importo = Math.max(+v.importoPreventivato || 0, +v.importoSostenuto || 0);
       var riga = righe.filter(function (x) { return _norm(x.nome) === n && n; })[0];
-      (riga || generali).spese += importo;
+      (riga || (c ? generali : senzaCat)).spese += importo;
     });
     var r = B._calcRiepilogo(), att = _incassiAttesi();
     var sponsorPrev = _somma(B._sponsorChiusi(), function (s) { return +s.importoConfermato || 0; });
     var tess = B._calcTessere();
-    var altre = B._calcAltreEntrate ? B._calcAltreEntrate() : { previsto: 0 };
     var superc = B._calcSupercoppa ? B._calcSupercoppa() : { previsto: 0 };
-    generali.entrate = sponsorPrev + tess.assegnate * tess.prezzo + superc.previsto + altre.previsto;
-    generali.incassato = r.sponsorChiusi + r.tessere + (r.supercoppa || 0) + (r.altre || 0);
+    /* Altre entrate: se indicano una squadra (campo «squadra», per nome) vanno sulla riga di quella squadra; le altre sono generali. */
+    var altreGen = 0, altreGenInc = 0;
+    (B._altreEntrate || []).forEach(function (v) {
+      var imp = +v.importo || 0, n = _norm(v.squadra);
+      var riga = n && n !== 'generali' ? righe.filter(function (x) { return _norm(x.nome) === n; })[0] : null;
+      if (riga) { riga.entrate += imp; if (v.pagata) riga.incassato += imp; } else { altreGen += imp; if (v.pagata) altreGenInc += imp; }
+    });
+    generali.entrate = sponsorPrev + tess.assegnate * tess.prezzo + superc.previsto + altreGen;
+    generali.incassato = r.sponsorChiusi + r.tessere + (r.supercoppa || 0) + altreGenInc;
     righe.push(generali);
+    righe.push(senzaCat);
     righe = righe.filter(function (x) { return x.entrate || x.spese || x.nome === generali.nome; });
     righe.forEach(function (x) { x.margine = x.entrate - x.spese; delete x.ids; });
     return righe;
