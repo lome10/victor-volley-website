@@ -475,6 +475,18 @@ t('Confronto stagioni: usa l importo di ogni pagamento, ripiego sul prezzo base'
   assert.deepStrictEqual([x.entrate['Tessere'], x.entrate['Evento Supercoppa Bari']], [45, 75]);
 });
 
+t('Totali con i centesimi, righe all euro', () => {
+  const B = carica(stato());
+  assert.strictEqual(B._eur(1234.5), '€' + Math.round(1234.5).toLocaleString('it-IT'));
+  assert.strictEqual(B._eurTot(100), B._eur(100));
+  assert.strictEqual(B._eurTot(1234), B._eur(1234));
+  assert.strictEqual(B._eurTot(10.5), '€10,50');
+  assert.strictEqual(B._eurTot(0.1 + 0.2), '€0,30');
+  assert.strictEqual(B._eurTot(99.999), '€100');
+  assert.strictEqual(B._eurTotSigned(-260.25), '-€260,25');
+  assert.strictEqual(B._eurTotSigned(-0.001), '€0');
+  assert.strictEqual(B._eurTotSigned(50), '€50');
+});
 t('Pipeline sponsor in elenco: stato, incassato/da incassare, responsabile, logo sul sito', () => {
   const { B } = statoCassa({
     STATI: ['prospect', 'contattato', 'in_trattativa', 'chiuso', 'rifiutato'], _dirigentiList: [{ id: 'd1', nome: 'Anna', cognome: 'Bianchi' }],

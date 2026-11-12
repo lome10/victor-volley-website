@@ -70,7 +70,7 @@
         '<td>' + B._eur(r.importo) + '</td>' +
         '</tr>';
     });
-    rows.push('<tr style="font-weight:700"><td>Totale</td><td></td><td>' + B._eur(d.totale) + '</td></tr>');
+    rows.push('<tr style="font-weight:700"><td>Totale</td><td></td><td>' + B._eurTot(d.totale) + '</td></tr>');
     body.innerHTML = rows.join('');
   }
 
@@ -84,7 +84,7 @@
     document.getElementById('obiettivoPct').textContent = r.pct + '%';
 
     var saldoEl = document.getElementById('heroSaldo');
-    saldoEl.textContent = (r.saldo < 0 ? '-' : '') + '€' + Math.abs(Math.round(r.saldo)).toLocaleString('it-IT');
+    saldoEl.textContent = B._eurTotSigned(r.saldo);
     saldoEl.className = 'dg-hero-saldo ' + (r.saldo >= 0 ? 'dg-hero-saldo--pos' : 'dg-hero-saldo--neg');
 
     var diffEl = document.getElementById('heroDifferenza');
@@ -146,7 +146,7 @@
 
     document.getElementById('dashBudgetSeasonName').textContent = season.nome ? '· ' + season.nome : '';
     var saldoEl = document.getElementById('dashBudgetSaldo');
-    saldoEl.textContent = (r.saldo < 0 ? '-' : '') + '€' + Math.abs(Math.round(r.saldo)).toLocaleString('it-IT');
+    saldoEl.textContent = B._eurTotSigned(r.saldo);
     saldoEl.className = 'dash-budget-saldo ' + (r.saldo >= 0 ? 'dash-budget-saldo--pos' : 'dash-budget-saldo--neg');
     document.getElementById('dashBudgetPct').textContent = r.pct + '%';
     document.getElementById('dashBudgetBarFill').style.width = pct + '%';

@@ -23,6 +23,15 @@
      esserlo, il segno va davanti al simbolo — stessa convenzione di B._budgetStatCard. */
   function _eurSigned(n) { return (n < 0 ? '-' : '') + '€' + Math.abs(Math.round(n)).toLocaleString('it-IT'); }
 
+  /* Per i TOTALI: all'euro nelle righe, ma il totale mostra i centesimi quando ci sono (altrimenti la somma
+     delle righe arrotondate puo' sembrare diversa dal totale). Senza centesimi resta identico a _eur(). */
+  function _centesimi(n) { return Math.abs(Math.round(n * 100) / 100 - Math.round(n)) > 0.004; }
+  function _eurTot(n) {
+    var r = Math.round(n * 100) / 100, c = _centesimi(r);
+    return '€' + r.toLocaleString('it-IT', { minimumFractionDigits: c ? 2 : 0, maximumFractionDigits: c ? 2 : 0 });
+  }
+  function _eurTotSigned(n) { return (n < 0 && Math.round(n * 100) !== 0 ? '-' : '') + _eurTot(Math.abs(n)); }
+
   /* Calcolo puro (nessun DOM), condiviso da _renderBilancio() e dall'export PDF.
      filtro (facoltativo): 'fonte:<Sponsor|Retta atleti|Tessere|Altre entrate>' tiene solo quelle entrate (e nessuna uscita);
      'cat:<id categoria spesa>' tiene solo le uscite di quella categoria ('cat:' = senza categoria). */
@@ -162,15 +171,15 @@
     };
     bodyE.innerHTML = c.entrate.map(function (r) {
       return riga(r, '<td>' + esc(r.fonte) + '</td><td>' + _eur(r.incassato) + '</td><td>' + _eur(r.daIncassare) + '</td><td>' + _pct(r.incassato, c.totEntrate) + '</td>');
-    }).join('') + '<tr style="font-weight:700"><td>Totale entrate</td><td>' + _eur(c.totEntrate) + '</td><td>' + _eur(c.totDaIncassare) + '</td><td>' + (c.totEntrate > 0 ? '100%' : '—') + '</td></tr>';
+    }).join('') + '<tr style="font-weight:700"><td>Totale entrate</td><td>' + _eurTot(c.totEntrate) + '</td><td>' + _eurTot(c.totDaIncassare) + '</td><td>' + (c.totEntrate > 0 ? '100%' : '—') + '</td></tr>';
     bodyU.innerHTML = (c.uscite.length ? c.uscite.map(function (r) {
       return riga(r, '<td>' + esc(r.nome) + '</td><td>' + _eur(r.sostenuto) + '</td><td>' + _pct(r.sostenuto, c.totUscite) + '</td>');
     }).join('') : '<tr><td colspan="3" class="dg-empty">Nessuna uscita registrata per questa stagione.</td></tr>') +
-      '<tr style="font-weight:700"><td>Totale uscite</td><td>' + _eur(c.totUscite) + '</td><td>' + (c.totUscite > 0 ? '100%' : '—') + '</td></tr>' +
+      '<tr style="font-weight:700"><td>Totale uscite</td><td>' + _eurTot(c.totUscite) + '</td><td>' + (c.totUscite > 0 ? '100%' : '—') + '</td></tr>' +
       '<tr><td colspan="3" class="dg-muted" style="font-size:12px">Solo spese sostenute; l\'IVA conta quando è versata, quindi il totale può essere più basso di «Speso finora» nella Panoramica.</td></tr>';
     var saldoEl = document.getElementById('bilancioCatSaldo');
     if (saldoEl) {
-      saldoEl.innerHTML = 'Saldo (entrate incassate − uscite): <strong style="color:' + (c.saldo < 0 ? 'var(--dg-red)' : 'var(--dg-green)') + '">' + _eurSigned(c.saldo) + '</strong>';
+      saldoEl.innerHTML = 'Saldo (entrate incassate − uscite): <strong style="color:' + (c.saldo < 0 ? 'var(--dg-red)' : 'var(--dg-green)') + '">' + _eurTotSigned(c.saldo) + '</strong>';
     }
   }
 
@@ -238,9 +247,9 @@
       });
       rows.push('<tr style="font-weight:700">' +
         '<td>Totale</td>' +
-        '<td>' + _eur(b.totEntrate) + '</td>' +
-        '<td>' + _eur(b.totUscite) + '</td>' +
-        '<td>' + _eur(b.totEntrate - b.totUscite) + '</td>' +
+        '<td>' + _eurTot(b.totEntrate) + '</td>' +
+        '<td>' + _eurTot(b.totUscite) + '</td>' +
+        '<td>' + _eurTotSigned(b.totEntrate - b.totUscite) + '</td>' +
         '<td>—</td>' +
         '</tr>');
       mesiBody.innerHTML = rows.join('');
@@ -266,7 +275,7 @@
         '<td>' + _eur(t.importo) + '</td>' +
         '<td>' + esc(t.note || '') + '</td>' +
         '</tr>';
-    }).join('') + (sceltaFonte ? '<tr style="font-weight:700"><td colspan="3">Totale ' + esc(sceltaFonte) + '</td><td>' + _eur(elenco.reduce(function (s, t) { return s + (+t.importo || 0); }, 0)) + '</td><td></td></tr>' : '') : '<tr><td colspan="5" class="dg-empty">Nessuna entrata incassata' + (sceltaFonte ? ' da questa fonte' : '') + ' per questa stagione.</td></tr>';
+    }).join('') + (sceltaFonte ? '<tr style="font-weight:700"><td colspan="3">Totale ' + esc(sceltaFonte) + '</td><td>' + _eurTot(elenco.reduce(function (s, t) { return s + (+t.importo || 0); }, 0)) + '</td><td></td></tr>' : '') : '<tr><td colspan="5" class="dg-empty">Nessuna entrata incassata' + (sceltaFonte ? ' da questa fonte' : '') + ' per questa stagione.</td></tr>';
     if (B._renderBilancioSezioni) B._renderBilancioSezioni();
   }
 
@@ -275,6 +284,8 @@
   B._calcBilancioPerCategoria = _calcBilancioPerCategoria;
   B._eur = _eur;
   B._eurSigned = _eurSigned;
+  B._eurTot = _eurTot;
+  B._eurTotSigned = _eurTotSigned;
   B._renderBilancio = _renderBilancio;
 
 })();
