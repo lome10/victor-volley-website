@@ -3261,7 +3261,7 @@
       var det = btn.closest('details');
       var val = function (f) { var i = det.querySelector('[data-f="' + f + '"]'); return i ? i.value.trim() : ''; };
       var data = val('data'), inizio = val('inizio'), fine = val('fine');
-      if (!/^d{4}-d{2}-d{2}$/.test(data) || !inizio) { _avviso('Data e ora di inizio sono obbligatorie.'); return; }
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(data) || !inizio) { _avviso('Data e ora di inizio sono obbligatorie.'); return; }
       if (fine && fine <= inizio) { _avviso('L\'ora di fine deve essere dopo quella di inizio.'); return; }
       dopo = { categoria: cat, orarioId: ev.eventoId, dataOriginale: ev.origDate, annullato: false, data: data, oraInizio: inizio, oraFine: fine, luogo: val('luogo') };
     } else { return; }
