@@ -900,15 +900,49 @@
   }
 
   /* ---- MODALI ---- */
+  /* Accessibilita' delle finestre (una volta sola, per tutte): role="dialog" + aria-modal, titolo collegato,
+     fuoco dentro la finestra (Tab non esce), Esc la chiude, alla chiusura il fuoco torna dove era. */
+  var _modalPrevFocus = null;
+  var _FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+  function _modalFocusables(m) {
+    return Array.prototype.filter.call(m.querySelectorAll(_FOCUSABLE), function (el) { return el.offsetParent !== null; });
+  }
+  function _modalKeydown(e) {
+    if (!_openModalId) return;
+    var m = document.getElementById(_openModalId);
+    if (!m) return;
+    if (e.key === 'Escape') { e.preventDefault(); _closeBudgetModal(_openModalId); return; }
+    if (e.key !== 'Tab') return;
+    var f = _modalFocusables(m);
+    if (!f.length) { e.preventDefault(); return; }
+    var first = f[0], last = f[f.length - 1], cur = document.activeElement;
+    if (!m.contains(cur)) { e.preventDefault(); first.focus(); }
+    else if (e.shiftKey && cur === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && cur === last) { e.preventDefault(); first.focus(); }
+  }
   function _openBudgetModal(id) {
+    var m = document.getElementById(id);
+    if (_openModalId && _openModalId !== id) { var altra = document.getElementById(_openModalId); if (altra) altra.classList.add('is-hidden'); }
+    else if (!_openModalId) { _modalPrevFocus = document.activeElement; document.addEventListener('keydown', _modalKeydown); }
     _openModalId = id;
+    m.setAttribute('role', 'dialog');
+    m.setAttribute('aria-modal', 'true');
+    var h = m.querySelector('.dg-modal-head h1, .dg-modal-head h2, .dg-modal-head h3, .dg-modal-head h4');
+    if (h) { if (!h.id) h.id = id + 'Titolo'; m.setAttribute('aria-labelledby', h.id); }
     document.getElementById('modalOverlay').classList.remove('is-hidden');
-    document.getElementById(id).classList.remove('is-hidden');
+    m.classList.remove('is-hidden');
+    var f = _modalFocusables(m);
+    var campo = m.querySelector('.dg-modal-body input:not([type="hidden"]):not([disabled]), .dg-modal-body select:not([disabled]), .dg-modal-body textarea:not([disabled])');
+    var dest = (campo && campo.offsetParent !== null) ? campo : f[0];
+    if (dest) dest.focus(); else { m.setAttribute('tabindex', '-1'); m.focus(); }
   }
   function _closeBudgetModal(id) {
     _openModalId = null;
+    document.removeEventListener('keydown', _modalKeydown);
     document.getElementById('modalOverlay').classList.add('is-hidden');
     document.getElementById(id).classList.add('is-hidden');
+    var p = _modalPrevFocus; _modalPrevFocus = null;
+    if (p && p.focus && document.contains(p)) p.focus();
   }
 
   function val(id) { return document.getElementById(id).value; }
