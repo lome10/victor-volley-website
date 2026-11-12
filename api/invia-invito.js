@@ -6,7 +6,7 @@
  *   { "atletaUid": "<id scheda atleta>", "uid": "<uid dell'account genitore>" }
  *
  * Controlli: stessa origine, ID token valido, chiamante dirigente, il bersaglio è un GENITORE collegato a quella
- * scheda (mai un dirigente) con email reale. Il codice del link è casuale (256 bit), monouso e senza scadenza;
+ * scheda (mai un dirigente) con email reale. Il codice del link è casuale (256 bit), monouso e valido 7 giorni dall'invio;
  * su Firestore (inviti/{impronta}) resta solo l'impronta. Un nuovo invito revoca i precedenti non ancora usati.
  * Se l'email non parte, l'invito appena creato viene cancellato. Usa le variabili di api/_email.js.
  */

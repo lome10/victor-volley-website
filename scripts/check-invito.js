@@ -222,5 +222,26 @@ async function t(nome, fn) { try { await fn(); n++; } catch (e) { console.error(
     assert.ok(/^Buongiorno,/.test(senza.text) && !/ di undefined| di $/m.test(senza.text));
   });
 
+  await t('scadenza: dopo 7 giorni il link non vale più (verifica e impostazione), prima sì', async () => {
+    assert.strictEqual(I.scaduto(new Date().toISOString()), false);
+    assert.strictEqual(I.scaduto(new Date(Date.now() - 6 * 86400000).toISOString()), false);
+    assert.strictEqual(I.scaduto(new Date(Date.now() - 8 * 86400000).toISOString()), true);
+    assert.strictEqual(I.scaduto(undefined), true, 'senza data per prudenza è scaduto');
+    assert.strictEqual((await invito({})).code, 200);
+    const c = codiceDa(), id = I.impronta(c);
+    assert.strictEqual((await post(imposta, { token: c, soloVerifica: true }, { 'x-forwarded-for': '1.1.1.1' })).code, 200);
+    col('inviti')[id].creatoIl = new Date(Date.now() - 8 * 86400000).toISOString();
+    assert.strictEqual((await post(imposta, { token: c, soloVerifica: true }, { 'x-forwarded-for': '1.1.1.1' })).code, 404);
+    assert.strictEqual((await post(imposta, { token: c, password: 'Abcdefghij1!' }, { 'x-forwarded-for': '1.1.1.1' })).code, 404);
+    assert.strictEqual(col('inviti')[id].stato, 'attivo', 'un invito scaduto non viene toccato');
+    assert.ok(/7 giorni/.test(testoEmail()) && !/non ha scadenza/.test(testoEmail()));
+  });
+  await t('limite ai tentativi sbagliati: dopo 20 per lo stesso indirizzo risponde 429, un altro indirizzo no', async () => {
+    const ip = { 'x-forwarded-for': '9.9.9.9' };
+    for (let i = 0; i < 20; i++) assert.strictEqual((await post(imposta, { token: I.nuovoCodice(), soloVerifica: true }, ip)).code, 404);
+    assert.strictEqual((await post(imposta, { token: I.nuovoCodice(), soloVerifica: true }, ip)).code, 429);
+    assert.strictEqual((await post(imposta, { token: I.nuovoCodice(), soloVerifica: true }, { 'x-forwarded-for': '8.8.8.8' })).code, 404);
+  });
+
   console.log(process.exitCode ? 'Collaudo fallito.' : 'OK: ' + n + ' verifiche sull’invito alla password.');
 })();

@@ -7,7 +7,7 @@
  *   { "token": "<codice del link>", "password": "<nuova>" }      → { success: true, email }
  *
  * Il codice è casuale di 256 bit, quindi non indovinabile; vale una sola volta (lo si «consuma» in una
- * transazione, così due richieste insieme non lo usano due volte) e non ha scadenza. L'account deve esistere e
+ * transazione, così due richieste insieme non lo usano due volte) e vale 7 giorni dall'invio (creatoIl). L'account deve esistere e
  * non essere di un dirigente. Se l'aggiornamento della password fallisce, il codice torna utilizzabile.
  * A password salvata parte una seconda email di conferma («puoi accedere da /atleta»): è un di più, se non parte
  * (servizio email non configurato o in errore) la password resta impostata e l'esito per il genitore non cambia.
@@ -19,6 +19,23 @@ const { configEmail, inviaEmail } = require('./_email');
 function fail(res, status, message) {
   res.setHeader('Cache-Control', 'no-store');
   return res.status(status).json({ error: message });
+}
+/* Limite ai tentativi sbagliati, per indirizzo IP, in una finestra di 15 minuti. Sta nella memoria dell'istanza della
+   funzione: su serverless non è garantito (altre istanze, riavvii), è un freno in più oltre ai 256 bit del codice. */
+const FINESTRA_MS = 15 * 60 * 1000, MAX_FALLITI = 20;
+const falliti = new Map();
+function ipDi(req) { return String((req.headers && (req.headers['x-forwarded-for'] || req.headers['x-real-ip'])) || 'sconosciuto').split(',')[0].trim(); }
+function troppiFalliti(ip) {
+  const adesso = Date.now(), v = falliti.get(ip);
+  if (!v || adesso - v.inizio > FINESTRA_MS) return false;
+  return v.n >= MAX_FALLITI;
+}
+function registraFallito(ip) {
+  const adesso = Date.now(), v = falliti.get(ip);
+  if (!v || adesso - v.inizio > FINESTRA_MS) {
+    if (falliti.size > 5000) falliti.clear();
+    falliti.set(ip, { inizio: adesso, n: 1 });
+  } else v.n++;
 }
 const NON_VALIDO = 'Questo link non è valido o è già stato usato. Chiedi alla società di inviartene uno nuovo.';
 
@@ -53,8 +70,10 @@ module.exports = async function handler(req, res) {
   }
   if (!stessaOrigine(req)) return fail(res, 403, 'Origine non consentita.');
 
+  const ip = ipDi(req);
+  if (troppiFalliti(ip)) return fail(res, 429, 'Troppi tentativi: riprova tra qualche minuto.');
   const body = typeof req.body === 'string' ? safeJson(req.body) : (req.body || {});
-  if (!I.codiceValido(body.token)) return fail(res, 404, NON_VALIDO);
+  if (!I.codiceValido(body.token)) { registraFallito(ip); return fail(res, 404, NON_VALIDO); }
   const soloVerifica = body.soloVerifica === true;
   const password = body.password;
   if (!soloVerifica && (typeof password !== 'string' || password.length < 10 || password.length > 200)) {
@@ -73,7 +92,7 @@ module.exports = async function handler(req, res) {
 
     if (soloVerifica) {
       const snap = await ref.get();
-      if (!snap.exists || snap.data().stato !== 'attivo') return fail(res, 404, NON_VALIDO);
+      if (!snap.exists || snap.data().stato !== 'attivo' || I.scaduto(snap.data().creatoIl)) { registraFallito(ip); return fail(res, 404, NON_VALIDO); }
       res.setHeader('Cache-Control', 'no-store');
       return res.status(200).json({ valido: true, email: snap.data().email });
     }
@@ -81,11 +100,11 @@ module.exports = async function handler(req, res) {
     // consuma il codice (monouso) prima di toccare l'account
     const inv = await db.runTransaction(async (tx) => {
       const snap = await tx.get(ref);
-      if (!snap.exists || snap.data().stato !== 'attivo') return null;
+      if (!snap.exists || snap.data().stato !== 'attivo' || I.scaduto(snap.data().creatoIl)) return null;
       tx.update(ref, { stato: 'usato', usatoIl: new Date().toISOString() });
       return snap.data();
     });
-    if (!inv) return fail(res, 404, NON_VALIDO);
+    if (!inv) { registraFallito(ip); return fail(res, 404, NON_VALIDO); }
 
     const rilascia = () => ref.update({ stato: 'attivo', usatoIl: null }).catch(() => {});
     try {

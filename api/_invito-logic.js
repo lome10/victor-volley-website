@@ -11,6 +11,15 @@ const impronta = (codice) => crypto.createHash('sha256').update(String(codice)).
 /** Un codice valido è base64url di 32 byte (43 caratteri): scarta subito il resto senza interrogare Firestore. */
 const codiceValido = (c) => typeof c === 'string' && /^[A-Za-z0-9_-]{43}$/.test(c);
 
+/** Giorni di validità di un invito dal momento dell'invio (creatoIl su inviti/{impronta}). */
+const SCADENZA_GIORNI = 7;
+/** Vero se l'invito è scaduto. Senza una data valida (documenti vecchi o rovinati) per prudenza è scaduto. */
+function scaduto(creatoIl, adesso) {
+  const t = Date.parse(creatoIl);
+  if (!isFinite(t)) return true;
+  return (adesso === undefined ? Date.now() : adesso) - t > SCADENZA_GIORNI * 24 * 3600 * 1000;
+}
+
 function linkInvito(siteUrl, codice) {
   return siteUrl.replace(/\/$/, '') + '/imposta-password#t=' + codice;
 }
@@ -25,7 +34,7 @@ function componiInvito(g, link, siteUrl) {
     'è stato creato il tuo account per l’area atleti della ASD Victor Volley, dove puoi vedere impegni, allenamenti, avvisi, quote e ricevute' + per + '.',
     '', 'Per iniziare scegli la tua password da questo link:', link, '',
     'Poi accederai da ' + area + ' con questa email (' + g.email + ') e la password scelta.',
-    '', 'Il link si usa una sola volta e non ha scadenza: non inoltrarlo a nessuno. Se non te lo aspettavi, ignora questo messaggio o scrivi a victorvolley@libero.it.',
+    '', 'Il link si usa una sola volta e vale ' + SCADENZA_GIORNI + ' giorni: non inoltrarlo a nessuno. Se scade, chiedi alla società di mandartene uno nuovo. Se non te lo aspettavi, ignora questo messaggio o scrivi a victorvolley@libero.it.',
     '', 'ASD Victor Volley'].join('\n');
   const h = E.h;
   const corpo =
@@ -35,7 +44,7 @@ function componiInvito(g, link, siteUrl) {
     E.pulsante('Scegli la password', link) +
     '<p style="margin:14px 0 0;font-size:13px;color:#64748b;text-align:center">Se il pulsante non funziona, copia questo indirizzo nel browser:<br><span style="word-break:break-all;color:' + E.AZZURRO + '">' + h(link) + '</span></p>' +
     E.riquadro('Poi accederai da <a href="' + h(area) + '" style="color:' + E.AZZURRO + ';font-weight:bold;text-decoration:none">' + h(area.replace(/^https?:\/\//, '')) + '</a> con questa email (<strong>' + h(g.email) + '</strong>) e la password che avrai scelto.') +
-    '<p style="margin:18px 0 0;font-size:12px;line-height:1.55;color:#64748b">Il link si usa una sola volta e non ha scadenza: non inoltrarlo a nessuno. Se non te lo aspettavi, ignora questo messaggio o scrivi a <a href="mailto:victorvolley@libero.it" style="color:' + E.AZZURRO + '">victorvolley@libero.it</a>.</p>';
+    '<p style="margin:18px 0 0;font-size:12px;line-height:1.55;color:#64748b">Il link si usa una sola volta e vale ' + SCADENZA_GIORNI + ' giorni: non inoltrarlo a nessuno. Se scade, chiedi alla società di mandartene uno nuovo. Se non te lo aspettavi, ignora questo messaggio o scrivi a <a href="mailto:victorvolley@libero.it" style="color:' + E.AZZURRO + '">victorvolley@libero.it</a>.</p>';
   const html = E.cornice({ anteprima: 'Scegli la tua password per entrare nell’area atleti.', titolo: 'Benvenuto in Victor Volley', corpo, site: siteUrl });
   return { subject, text, html };
 }
@@ -74,4 +83,4 @@ function componiConferma(g, siteUrl) {
   return { subject, text, html };
 }
 
-module.exports = { nuovoCodice, impronta, codiceValido, linkInvito, componiInvito, componiConferma };
+module.exports = { nuovoCodice, impronta, codiceValido, SCADENZA_GIORNI, scaduto, linkInvito, componiInvito, componiConferma };
