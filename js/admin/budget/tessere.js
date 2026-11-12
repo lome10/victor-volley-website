@@ -11,8 +11,10 @@
 
   var TESSERA_PREZZO = 20;
   var TESSERE_TOTALI = 100;
-  var CAMPI_LOG = ['nome', 'accessorio', 'pagata', 'dataPagamento'];
+  var CAMPI_LOG = ['nome', 'accessorio', 'pagata', 'dataPagamento', 'importo'];
 
+  /* Importo di un pagamento: quello salvato sul documento (come Abbigliamento); i pagamenti vecchi senza importo valgono il prezzo base. */
+  function _importoDi(t) { return +t.importo > 0 ? +t.importo : TESSERA_PREZZO; }
   function _oggi() { return A.oggiLocale(); }
   function _eur(n) { return '€' + Math.round(n).toLocaleString('it-IT'); }
   function _tesseraId(n) { return B._currentSeasonId + '_' + n; }
@@ -28,10 +30,10 @@
     return {
       prezzo: TESSERA_PREZZO, totali: TESSERE_TOTALI,
       assegnate: assegnate.length, pagate: pagate.length,
-      incassato: pagate.length * TESSERA_PREZZO,
+      incassato: pagate.reduce(function (s, t) { return s + _importoDi(t); }, 0),
       daIncassare: (assegnate.length - pagate.length) * TESSERA_PREZZO,
       righe: pagate.map(function (t) {
-        return { numero: +t.numero, nome: _nomeOf(t), dataPagamento: t.dataPagamento || '', importo: TESSERA_PREZZO };
+        return { numero: +t.numero, nome: _nomeOf(t), dataPagamento: t.dataPagamento || '', importo: _importoDi(t) };
       }).sort(function (a, b) { return a.numero - b.numero; })
     };
   }
@@ -65,12 +67,12 @@
         ' aria-label="Tessera ' + n + ' pagata" onchange="DG.tesseraTogglePagata(' + n + ', this.checked)"></td>' +
       '<td><input type="date" id="tesseraData' + n + '" class="dg-select-sm" value="' + esc(pagata ? (t.dataPagamento || '') : '') + '"' + (pagata ? '' : ' disabled') +
         ' aria-label="Data pagamento tessera ' + n + '" onchange="DG.tesseraSalvaData(' + n + ', this.value)"></td>' +
-      '<td id="tesseraImporto' + n + '">' + _importoHtml(nome, pagata) + '</td>' +
+      '<td id="tesseraImporto' + n + '">' + _importoHtml(nome, pagata, pagata ? _importoDi(t) : 0) + '</td>' +
       '</tr>';
   }
 
-  function _importoHtml(nome, pagata) {
-    if (pagata) return _eur(TESSERA_PREZZO);
+  function _importoHtml(nome, pagata, importo) {
+    if (pagata) return _eur(importo);
     if (nome) return '<span class="dg-muted">' + _eur(TESSERA_PREZZO) + ' da incassare</span>';
     return '<span class="dg-muted">—</span>';
   }
@@ -97,7 +99,7 @@
     chk.checked = pagata; chk.disabled = !nome;
     var dt = document.getElementById('tesseraData' + n);
     dt.value = pagata ? (t.dataPagamento || '') : ''; dt.disabled = !pagata;
-    document.getElementById('tesseraImporto' + n).innerHTML = _importoHtml(nome, pagata);
+    document.getElementById('tesseraImporto' + n).innerHTML = _importoHtml(nome, pagata, pagata ? _importoDi(t) : 0);
     _renderSommario();
   }
 
@@ -127,11 +129,13 @@
     }
 
     var data = { seasonId: B._currentSeasonId, numero: n, nome: nuovo.nome, accessorio: String(nuovo.accessorio || '').trim(), pagata: !!nuovo.pagata, dataPagamento: nuovo.pagata ? (nuovo.dataPagamento || _oggi()) : '' };
+    /* l'importo si salva quando la tessera risulta pagata; se era già pagata resta quello di allora */
+    if (data.pagata) data.importo = (old && old.pagata) ? _importoDi(old) : TESSERA_PREZZO;
     return db.collection('tessere').doc(id).set(data)
       .then(function () {
         var salvata = Object.assign({ id: id }, data);
         if (old) { Object.assign(old, salvata); } else { B._tessere.push(salvata); }
-        var prima = old ? { nome: old.nome, accessorio: old.accessorio || '', pagata: old.pagata, dataPagamento: old.dataPagamento } : {};
+        var prima = old ? { nome: old.nome, accessorio: old.accessorio || '', pagata: old.pagata, dataPagamento: old.dataPagamento, importo: old.importo } : {};
         return _logWrite('tessera', id, label, old ? 'update' : 'create', _diff(old ? prima : {}, data, old ? CAMPI_LOG : Object.keys(data)));
       });
   }
@@ -144,7 +148,7 @@
     var nome = String(value || '').trim();
     var old = _tessera(n);
     if (!nome && old && old.pagata) {
-      confirm('Svuotando il nome la tessera ' + n + ' risulta libera e non pagata: i ' + _eur(TESSERA_PREZZO) + ' incassati escono dal bilancio. Continuare?', function () {
+      confirm('Svuotando il nome la tessera ' + n + ' risulta libera e non pagata: i ' + _eur(_importoDi(old)) + ' incassati escono dal bilancio. Continuare?', function () {
         _dopoSalvataggio(n, _applica(n, { nome: '' }));
       });
       _syncRow(n);   /* finché non si conferma, la riga resta com'è */

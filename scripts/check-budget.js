@@ -435,6 +435,46 @@ t('Supercoppa: incassato e da incassare contano solo i posti con un nome (pagati
   assert.deepStrictEqual(c.righe.map((r) => r.numero), [1]);
 });
 
+function caricaQuote(file, B, db) {
+  const window = { Admin: { budgetShared: B, esc: (x) => x, confirm: noop, logWrite: () => Promise.resolve(), diff: () => [], oggiLocale: () => '2026-11-12' }, AdminActions: {} };
+  new Function('window', 'document', 'db', fs.readFileSync(path.join(__dirname, '..', 'js', 'admin', 'budget', file), 'utf8'))(window, document, db);
+  return window.AdminActions;
+}
+t('Tessere e Supercoppa: importo salvato sul pagamento, ripiego 20 e 35 se manca', () => {
+  const T = { _currentSeasonId: 's', _tessere: [{ numero: 1, nome: 'A', pagata: true }, { numero: 2, nome: 'B', pagata: true, importo: 25 }, { numero: 3, nome: 'C', pagata: false }] };
+  caricaQuote('tessere.js', T, {});
+  const ct = T._calcTessere();
+  assert.deepStrictEqual([ct.incassato, ct.daIncassare, ct.righe.map((r) => r.importo)], [45, 20, [20, 25]]);
+  const S = { _currentSeasonId: 's', _supercoppa: [{ numero: 1, nome: 'A', pagata: true }, { numero: 2, nome: 'B', pagata: true, importo: 40 }, { numero: 3, nome: 'C', pagata: false }] };
+  caricaQuote('supercoppa.js', S, {});
+  const cs = S._calcSupercoppa();
+  assert.deepStrictEqual([cs.incassato, cs.daIncassare, cs.previsto, cs.righe.map((r) => r.importo)], [75, 35, 110, [35, 40]]);
+});
+ta('Tessere e Supercoppa: al pagamento si salva l importo, se era gia pagata resta quello di allora', () => {
+  const scritti = [];
+  const db = { collection: () => ({ doc: (id) => ({ set: (d) => { scritti.push(Object.assign({ id }, d)); return Promise.resolve(); } }) }) };
+  const T = { _currentSeasonId: 's', _tessere: [{ id: 's_1', numero: 1, nome: 'A', pagata: false }, { id: 's_2', numero: 2, nome: 'B', pagata: true, importo: 25 }, { id: 's_3', numero: 3, nome: 'C', pagata: true }] };
+  const DG = caricaQuote('tessere.js', T, db);
+  document.getElementById = () => el();
+  DG.tesseraTogglePagata(1, true);
+  DG.tesseraSalvaAccessorio(2, 'cappellino');
+  DG.tesseraSalvaAccessorio(3, 'sciarpa');
+  const S = { _currentSeasonId: 's', _supercoppa: [{ id: 's_1', numero: 1, nome: 'A', pagata: false }, { id: 's_2', numero: 2, nome: 'B', pagata: true, importo: 40 }] };
+  const DS = caricaQuote('supercoppa.js', S, db);
+  DS.supercoppaTogglePagata(1, true);
+  DS.supercoppaToggleTesserato(2, true);
+  return Promise.resolve().then(() => new Promise((r) => setTimeout(r, 20))).then(() => {
+    assert.deepStrictEqual(scritti.map((x) => x.importo), [20, 25, 20, 35, 40]);
+  });
+});
+t('Confronto stagioni: usa l importo di ogni pagamento, ripiego sul prezzo base', () => {
+  const { B } = statoCassa();
+  const x = B._totaliStagione({ sponsorizzazioni: [], sponsorIncassato: () => 0, atletiRette: [], rate: [], altre: [], voci: [], nomeCategoria: () => '',
+    tessere: [{ nome: 'A', pagata: true, importo: 25 }, { nome: 'B', pagata: true }], prezzoTessera: 20,
+    supercoppa: [{ nome: 'C', pagata: true, importo: 40 }, { nome: 'D', pagata: true }], prezzoSupercoppa: 35 });
+  assert.deepStrictEqual([x.entrate['Tessere'], x.entrate['Evento Supercoppa Bari']], [45, 75]);
+});
+
 t('Pipeline sponsor in elenco: stato, incassato/da incassare, responsabile, logo sul sito', () => {
   const { B } = statoCassa({
     STATI: ['prospect', 'contattato', 'in_trattativa', 'chiuso', 'rifiutato'], _dirigentiList: [{ id: 'd1', nome: 'Anna', cognome: 'Bianchi' }],

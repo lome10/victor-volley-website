@@ -132,8 +132,8 @@
     var sponsor = chiusi.reduce(function (t, s) { return t + d.sponsorIncassato(s); }, 0);
     var idsAtleti = {}; d.atletiRette.forEach(function (a) { idsAtleti[a.id] = true; });
     var rette = d.rate.reduce(function (t, r) { return t + (r.pagata && idsAtleti[r.atletaRettaId] ? (+r.importo || 0) : 0); }, 0);
-    var tessere = d.tessere.filter(function (t) { return String(t.nome || '').trim() && t.pagata; }).length * d.prezzoTessera;
-    var supercoppa = (d.supercoppa || []).filter(function (t) { return String(t.nome || '').trim() && t.pagata; }).length * (d.prezzoSupercoppa || 0);
+    var tessere = d.tessere.filter(function (t) { return String(t.nome || '').trim() && t.pagata; }).reduce(function (s, t) { return s + (+t.importo > 0 ? +t.importo : d.prezzoTessera); }, 0);
+    var supercoppa = (d.supercoppa || []).filter(function (t) { return String(t.nome || '').trim() && t.pagata; }).reduce(function (s, t) { return s + (+t.importo > 0 ? +t.importo : (d.prezzoSupercoppa || 0)); }, 0);
     var altre = d.altre.reduce(function (t, x) { return t + (x.pagata ? (+x.importo || 0) : 0); }, 0);
     var perCat = {}, spese = 0;
     d.voci.forEach(function (v) {

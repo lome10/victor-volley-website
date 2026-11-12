@@ -12,8 +12,10 @@
 
   var QUOTA_PREZZO = 35;
   var POSTI_TOTALI = 54;
-  var CAMPI_LOG = ['nome', 'tesserato', 'note', 'pagata', 'dataPagamento'];
+  var CAMPI_LOG = ['nome', 'tesserato', 'note', 'pagata', 'dataPagamento', 'importo'];
 
+  /* Importo di un pagamento: quello salvato sul documento (come Abbigliamento); i pagamenti vecchi senza importo valgono il prezzo base. */
+  function _importoDi(t) { return +t.importo > 0 ? +t.importo : QUOTA_PREZZO; }
   function _oggi() { return A.oggiLocale(); }
   function _eur(n) { return '€' + Math.round(n).toLocaleString('it-IT'); }
   function _quotaId(n) { return B._currentSeasonId + '_' + n; }
@@ -30,13 +32,13 @@
       prezzo: QUOTA_PREZZO, totali: POSTI_TOTALI,
       assegnate: assegnate.length, pagate: pagate.length,
       tesserati: assegnate.filter(function (t) { return t.tesserato; }).length,
-      incassato: pagate.length * QUOTA_PREZZO,
+      incassato: pagate.reduce(function (s, t) { return s + _importoDi(t); }, 0),
       /* Contano solo i posti con un nome scritto: «da incassare» = assegnati e non ancora spuntati «Pagata»,
          «incassato» = assegnati e spuntati. I posti senza nome non entrano in nessuna cifra (regola 2026-11-02). */
       daIncassare: (assegnate.length - pagate.length) * QUOTA_PREZZO,
-      previsto: assegnate.length * QUOTA_PREZZO,
+      previsto: assegnate.reduce(function (s, t) { return s + (t.pagata ? _importoDi(t) : QUOTA_PREZZO); }, 0),
       righe: pagate.map(function (t) {
-        return { numero: +t.numero, nome: _nomeOf(t), dataPagamento: t.dataPagamento || '', importo: QUOTA_PREZZO, note: _noteOf(t) };
+        return { numero: +t.numero, nome: _nomeOf(t), dataPagamento: t.dataPagamento || '', importo: _importoDi(t), note: _noteOf(t) };
       }).sort(function (a, b) { return a.numero - b.numero; })
     };
   }
@@ -59,8 +61,8 @@
       _statCard('Da incassare', _eur(c.daIncassare), '--orange');
   }
 
-  function _importoHtml(nome, pagata) {
-    if (pagata) return _eur(QUOTA_PREZZO);
+  function _importoHtml(nome, pagata, importo) {
+    if (pagata) return _eur(importo);
     if (nome) return '<span class="dg-muted">' + _eur(QUOTA_PREZZO) + ' da incassare</span>';
     return '<span class="dg-muted">—</span>';
   }
@@ -79,7 +81,7 @@
         ' aria-label="Posto ' + n + ' pagato" onchange="DG.supercoppaTogglePagata(' + n + ', this.checked)"></td>' +
       '<td><input type="date" id="supercoppaData' + n + '" class="dg-select-sm" value="' + esc(pagata ? (t.dataPagamento || '') : '') + '"' + (pagata ? '' : ' disabled') +
         ' aria-label="Data pagamento posto ' + n + '" onchange="DG.supercoppaSalvaData(' + n + ', this.value)"></td>' +
-      '<td id="supercoppaImporto' + n + '">' + _importoHtml(nome, pagata) + '</td>' +
+      '<td id="supercoppaImporto' + n + '">' + _importoHtml(nome, pagata, pagata ? _importoDi(t) : 0) + '</td>' +
       '</tr>';
   }
 
@@ -107,7 +109,7 @@
     chk.checked = pagata; chk.disabled = !nome;
     var dt = document.getElementById('supercoppaData' + n);
     dt.value = pagata ? (t.dataPagamento || '') : ''; dt.disabled = !pagata;
-    document.getElementById('supercoppaImporto' + n).innerHTML = _importoHtml(nome, pagata);
+    document.getElementById('supercoppaImporto' + n).innerHTML = _importoHtml(nome, pagata, pagata ? _importoDi(t) : 0);
     _renderSommario();
   }
 
@@ -140,11 +142,13 @@
       seasonId: B._currentSeasonId, numero: n, nome: nuovo.nome, tesserato: !!nuovo.tesserato, note: String(nuovo.note || '').trim(),
       pagata: !!nuovo.pagata, dataPagamento: nuovo.pagata ? (nuovo.dataPagamento || _oggi()) : ''
     };
+    /* l'importo si salva quando il posto risulta pagato; se era già pagato resta quello di allora */
+    if (data.pagata) data.importo = (old && old.pagata) ? _importoDi(old) : QUOTA_PREZZO;
     return db.collection('supercoppaBari').doc(id).set(data)
       .then(function () {
         var salvata = Object.assign({ id: id }, data);
         if (old) { Object.assign(old, salvata); } else { B._supercoppa.push(salvata); }
-        var prima = old ? { nome: old.nome, tesserato: !!old.tesserato, note: old.note || '', pagata: old.pagata, dataPagamento: old.dataPagamento } : {};
+        var prima = old ? { nome: old.nome, tesserato: !!old.tesserato, note: old.note || '', pagata: old.pagata, dataPagamento: old.dataPagamento, importo: old.importo } : {};
         return _logWrite('supercoppa', id, label, old ? 'update' : 'create', _diff(old ? prima : {}, data, old ? CAMPI_LOG : Object.keys(data)));
       });
   }
@@ -163,7 +167,7 @@
     var nome = String(value || '').trim();
     var old = _quota(n);
     if (!nome && old && old.pagata) {
-      confirm('Svuotando il nome il posto ' + n + ' risulta libero e non pagato: i ' + _eur(QUOTA_PREZZO) + ' incassati escono dal bilancio. Continuare?', function () {
+      confirm('Svuotando il nome il posto ' + n + ' risulta libero e non pagato: i ' + _eur(_importoDi(old)) + ' incassati escono dal bilancio. Continuare?', function () {
         _dopoSalvataggio(n, _applica(n, { nome: '' }));
       });
       _syncRow(n);   /* finché non si conferma, la riga resta com'è */
