@@ -687,10 +687,14 @@
         .then(function () { Object.assign(figlia, patch); });
     }
 
-    /* Voce NUOVA: data di riferimento = ultimo incasso (o, se non c'è ancora, la scadenza dell'ultima tranche), e da lì il trimestre di
-       versamento. Senza data la voce restava fuori dalla previsione di cassa, da «IVA da versare» e finiva in «Spese senza data».
-       Le voci già esistenti non si toccano (le sistema chi le ha in carico). */
-    var dateRif = _trancheOf(s.id).map(function (t) { return t.pagato ? (t.dataIncasso || t.scadenza || '') : (t.scadenza || ''); }).filter(Boolean).sort();
+    /* Voce NUOVA: data di riferimento = ultima tra le rate incassate e le scadenze già maturate (oggi o prima); le rate future non
+       incassate NON contano (spostavano l'IVA all'anno dopo). Se non c'è nessuna data utile, ripiego sulla prima scadenza futura.
+       Da lì il trimestre di versamento. Senza data la voce restava fuori dalla previsione di cassa, da «IVA da versare» e finiva in
+       «Spese senza data». Le voci già esistenti non si toccano (le sistema chi le ha in carico). */
+    var oggiRif = B._todayISO();
+    var trRif = _trancheOf(s.id);
+    var dateRif = trRif.map(function (t) { return t.pagato ? (t.dataIncasso || t.scadenza || '') : ((t.scadenza || '') <= oggiRif ? (t.scadenza || '') : ''); }).filter(Boolean).sort();
+    if (!dateRif.length) dateRif = trRif.map(function (t) { return t.scadenza || ''; }).filter(Boolean).sort().slice(0, 1);
     var dataRif = dateRif.length ? dateRif[dateRif.length - 1] : '';
     var autoIva = dataRif && B._trimestreIvaDaData ? B._trimestreIvaDaData(dataRif) : null;
     var data = {
