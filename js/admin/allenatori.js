@@ -135,6 +135,8 @@
     if (_editingUid) {
       var uid = _editingUid;
       var before = _cache.find(function (a) { return a.uid === uid; }) || {};
+      /* come alla creazione: senza categorie l'allenatore non vede nessun atleta; per toglierli l'accesso c'è «Revoca accesso» */
+      if (!categorie.length) { A.avviso('Scegli almeno una categoria: senza, l’allenatore non vedrebbe nessun atleta. Per toglierli l’accesso usa «Revoca accesso» nell’elenco.'); return; }
       btn.textContent = 'Salvataggio…'; btn.disabled = true;
       db.collection('allenatori').doc(uid).update({ categorie: categorie })
         .then(function () { return _logWrite('allenatore', uid, 'Allenatore — ' + (before.cognome || '') + ' ' + (before.nome || ''), 'update', _diff(before, { categorie: categorie }, ['categorie'])); })
