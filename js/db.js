@@ -5,8 +5,9 @@
    Pattern: scrittura ottimistica.
    - VV.* aggiorna la cache in-memory subito (sincrono)
    - _upsert / _remove scrivono su Firestore in background (asincrono)
-   - Il callback UI viene chiamato dopo l'aggiornamento in-memory, non dopo Firestore
-   Questo rende l'interfaccia admin sempre reattiva.
+   - Il callback UI (cb) viene chiamato SOLO quando Firestore ha confermato la scrittura. Se la scrittura
+     fallisce: banner d'errore in italiano, cache rilletta dal server e cb NON chiamato (il modulo resta
+     aperto e si può riprovare). Le funzioni di salvataggio e di eliminazione restituiscono comunque subito il record.
 
    Audit log: ogni scrittura passa da _audit(), che inoltra a un hook impostato
    da chi ha fatto login (vedi DB.setAuditHook — usato da admin.js) invece di
@@ -87,6 +88,75 @@
 
   function _audit(entita, entitaId, entitaLabel, azione, changes) {
     if (_auditHook && changes && changes.length) _auditHook(entita, entitaId, entitaLabel, azione, changes);
+  }
+
+  /* ---- ERRORI IN ITALIANO — funzione unica (DB.errorMessage) ----
+     Firebase e il browser danno messaggi in inglese: qui li traduciamo. Gli errori che lanciamo noi
+     (senza .code) hanno già un testo italiano e restano come sono. */
+  var _ERR_CODICI = {
+    'permission-denied':          'Non hai il permesso di fare questa modifica.',
+    'unauthenticated':            'La sessione è scaduta: esci e rientra.',
+    'auth/requires-recent-login': 'La sessione è scaduta: esci e rientra.',
+    'auth/user-token-expired':    'La sessione è scaduta: esci e rientra.',
+    'unavailable':                'Connessione assente o instabile.',
+    'deadline-exceeded':          'Connessione assente o instabile.',
+    'auth/network-request-failed': 'Connessione assente o instabile.',
+    'resource-exhausted':         'Limite del servizio raggiunto: riprova più tardi.',
+    'not-found':                  'Il dato non esiste più.',
+    'already-exists':             'Esiste già un dato con questo nome.',
+    'aborted':                    'Un altro utente ha modificato lo stesso dato: riprova.',
+    'auth/email-already-in-use':  'Email già registrata.',
+    'auth/invalid-email':         'L’email non è valida.',
+    'auth/weak-password':         'La password è troppo debole: scegline una più lunga.',
+    'auth/too-many-requests':     'Troppi tentativi: riprova tra qualche minuto.',
+    'auth/user-not-found':        'Non esiste un account con questa email.',
+    'auth/wrong-password':        'Password non corretta.',
+    'auth/invalid-credential':    'Email o password non corrette.'
+  };
+  function _errIt(err) {
+    if (!err) return 'Errore imprevisto. Riprova.';
+    if (err.code && _ERR_CODICI[err.code]) return _ERR_CODICI[err.code];
+    var msg = String(err.message || '');
+    if (/failed to fetch|networkerror|load failed|network request failed|offline/i.test(msg)) return 'Connessione assente o instabile.';
+    if (err.code || err instanceof TypeError || err instanceof ReferenceError || err instanceof RangeError || !msg) return 'Errore imprevisto. Riprova.';
+    return msg;
+  }
+
+  /* Messaggio visibile: banner del pannello se c'è, altrimenti alert (le pagine pubbliche non scrivono). */
+  function _notifyError(testo) {
+    if (global.Admin && typeof global.Admin.avviso === 'function') global.Admin.avviso(testo, 'errore');
+    else global.alert(testo);
+  }
+
+  /* Rilegge da Firestore la parte appena scritta male: la cache in memoria era già stata aggiornata
+     (scrittura ottimistica) e non deve restare con un dato che sul server non c'è. */
+  function _resync(part) {
+    var st = _parts[part];
+    if (!st) return;
+    st.loaded = false; st.loading = false; st.error = false;
+    _ensurePart(part);
+  }
+
+  function _writeFailed(part, what, err) {
+    console.error('[DB] ' + what, err);
+    _notifyError('Operazione non riuscita: ' + what + '. ' + _errIt(err) + ' Riprova.');
+    _resync(part);
+  }
+
+  /* Attende la scrittura: solo se riesce registra il log e chiama cb (la schermata passa avanti);
+     se fallisce mostra l'errore, riallinea la cache e NON chiama cb (il modulo resta aperto). */
+  function _after(part, what, write, audit, cb, cbArg) {
+    /* Il pulsante appena toccato resta spento finché la scrittura non finisce: ora il cb arriva dopo la rete,
+       e un secondo tocco salverebbe due volte. (window.event esiste solo dentro un gestore di clic.) */
+    var ev = global.event, btn = ev && ev.target && ev.target.closest ? ev.target.closest('button') : null;
+    if (btn && btn.disabled) btn = null;
+    if (btn) btn.disabled = true;
+    function libera() { if (btn) btn.disabled = false; }
+    write.then(function () {
+      libera();
+      try { audit(); } catch (e) { console.error('[DB] log ' + what, e); }
+      if (cb) cb(cbArg);
+    }, function (e) { libera(); _writeFailed(part, what, e); });
   }
 
   /* ============================================================
@@ -255,19 +325,17 @@
     saveArticle: function (article, cb) {
       var before = article.id ? VV.getArticle(article.id) : null;
       var saved  = VV.saveArticle(article);
-      if (cb) cb();
-      _upsert('articles', saved).then(function () {
+      _after('articles', 'salvataggio dell’articolo', _upsert('articles', saved), function () {
         _audit('articolo', String(saved.id), 'Articolo — ' + saved.title, before ? 'update' : 'create', _diffRecord(before, saved, Object.keys(saved)));
-      }).catch(function (e) { console.error('[DB] saveArticle', e); });
+      }, cb);
       return saved;
     },
     deleteArticle: function (id, cb) {
       var before = VV.getArticle(id);
       VV.deleteArticle(id);
-      if (cb) cb();
-      _remove('articles', id).then(function () {
+      _after('articles', 'l’eliminazione dell’articolo', _remove('articles', id), function () {
         _audit('articolo', String(id), 'Articolo — ' + (before ? before.title : id), 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]);
-      }).catch(function (e) { console.error('[DB] deleteArticle', e); });
+      }, cb);
     },
 
     /* ---- PARTITE (calendario) ---------------------------------- */
@@ -276,50 +344,45 @@
     savePartita: function (partita, cb) {
       var before = partita.id ? VV.getPartita(partita.id) : null;
       var saved  = VV.savePartita(partita);
-      if (cb) cb(saved);
-      _col('partite').doc(String(saved.id)).set(saved).then(function () {
+      _after('partite', 'salvataggio della partita', _col('partite').doc(String(saved.id)).set(saved), function () {
         var label = (saved.squadra_casa || '?') + ' vs ' + (saved.squadra_ospite || '?');
         _audit('partita', String(saved.id), label, before ? 'update' : 'create', _diffRecord(before, saved, Object.keys(saved)));
-      }).catch(function (e) { console.error('[DB] savePartita', e); });
+      }, cb, saved);
       return saved;
     },
     deletePartita: function (id, cb) {
       var before = VV.getPartita(id);
       VV.deletePartita(id);
-      if (cb) cb();
-      _col('partite').doc(String(id)).delete().then(function () {
+      _after('partite', 'l’eliminazione della partita', _col('partite').doc(String(id)).delete(), function () {
         var label = before ? ((before.squadra_casa || '?') + ' vs ' + (before.squadra_ospite || '?')) : String(id);
         _audit('partita', String(id), label, 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]);
-      }).catch(function (e) { console.error('[DB] deletePartita', e); });
+      }, cb);
     },
 
     /* ---- ALBUMS ---------------------------------------------- */
     saveAlbum: function (album, cb) {
       var before = album.id ? VV.getAlbum(album.id) : null;
       var saved  = VV.saveAlbum(album);
-      if (cb) cb(saved);
-      _upsert('albums', saved).then(function () {
+      _after('albums', 'salvataggio dell’album', _upsert('albums', saved), function () {
         _audit('album', String(saved.id), 'Album — ' + saved.title, before ? 'update' : 'create', _diffRecord(before, saved, Object.keys(saved).filter(function (k) { return k !== 'photos'; })));
-      }).catch(function (e) { console.error('[DB] saveAlbum', e); });
+      }, cb, saved);
       return saved;
     },
     deleteAlbum: function (id, cb) {
       var before = VV.getAlbum(id);
       VV.deleteAlbum(id);
-      if (cb) cb();
-      _remove('albums', id).then(function () {
+      _after('albums', 'l’eliminazione dell’album', _remove('albums', id), function () {
         _audit('album', String(id), 'Album — ' + (before ? before.title : id), 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]);
-      }).catch(function (e) { console.error('[DB] deleteAlbum', e); });
+      }, cb);
     },
 
     /* ---- CATEGORIES ------------------------------------------ */
     saveCategory: function (cat, cb) {
       var before = cat.id ? VV.getCategory(cat.id) : null;
       var saved  = VV.saveCategory(cat);
-      if (cb) cb(saved);
-      _upsert('categories', saved).then(function () {
+      _after('categories', 'salvataggio della categoria', _upsert('categories', saved), function () {
         _audit('categoria', String(saved.id), 'Categoria — ' + saved.name, before ? 'update' : 'create', _diffRecord(before, saved, Object.keys(saved)));
-      }).catch(function (e) { console.error('[DB] saveCategory', e); });
+      }, cb, saved);
       return saved;
     },
     deleteCategory: function (id, cb) {
@@ -327,36 +390,35 @@
       var players = VV.getPlayers(id);
       var staff   = VV.getStaff(id);
       VV.deleteCategory(id);          /* aggiorna cache in-memory (cascade) */
-      if (cb) cb();
-      /* cascade Firestore in background */
+      /* cascade Firestore: la schermata passa avanti solo quando tutto è stato scritto */
       var ops = [_remove('categories', id)];
       players.forEach(function (p) {
         ops.push(_remove('players', p.id));
         ops.push(_col('giocatoriDati').doc(String(p.id)).delete());
       });
       staff.forEach(function (s)   { ops.push(_remove('staff',   s.id)); });
-      Promise.all(ops).then(function () {
+      var write = Promise.all(ops);
+      write.catch(function () { _resync('players'); _resync('staff'); });   /* il resto lo riallinea _after */
+      _after('categories', 'l’eliminazione della squadra', write, function () {
         _audit('categoria', String(id), 'Categoria — ' + (before ? before.name : id), 'delete', [{ campo: '(record, con giocatori/staff collegati)', prima: 'presente', dopo: null }]);
-      }).catch(function (e) { console.error('[DB] deleteCategory cascade', e); });
+      }, cb);
     },
 
     /* ---- PLAYERS --------------------------------------------- */
     savePlayer: function (player, cb) {
       var before = player.id ? _findById(VV.getPlayers(), player.id) : null;
       var saved  = VV.savePlayer(player);
-      if (cb) cb(saved);
-      _upsert('players', saved).then(function () {
+      _after('players', 'salvataggio del giocatore', _upsert('players', saved), function () {
         _audit('giocatore', String(saved.id), 'Giocatore — ' + saved.name, before ? 'update' : 'create', _diffRecord(before, saved, Object.keys(saved)));
-      }).catch(function (e) { console.error('[DB] savePlayer', e); });
+      }, cb, saved);
       return saved;
     },
     deletePlayer: function (id, cb) {
       var before = _findById(VV.getPlayers(), id);
       VV.deletePlayer(id);
-      if (cb) cb();
-      _remove('players', id).then(function () {
+      _after('players', 'l’eliminazione del giocatore', _remove('players', id), function () {
         _audit('giocatore', String(id), 'Giocatore — ' + (before ? before.name : id), 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]);
-      }).catch(function (e) { console.error('[DB] deletePlayer', e); });
+      }, cb);
       _col('giocatoriDati').doc(String(id)).delete().catch(function (e) { console.error('[DB] deletePlayer anno di nascita', e); });
     },
 
@@ -364,111 +426,88 @@
     saveStaffMember: function (person, cb) {
       var before = person.id ? _findById(VV.getStaff(), person.id) : null;
       var saved  = VV.saveStaffMember(person);
-      if (cb) cb(saved);
-      _upsert('staff', saved).then(function () {
+      _after('staff', 'salvataggio del membro dello staff', _upsert('staff', saved), function () {
         _audit('staff', String(saved.id), 'Staff — ' + saved.name, before ? 'update' : 'create', _diffRecord(before, saved, Object.keys(saved)));
-      }).catch(function (e) { console.error('[DB] saveStaff', e); });
+      }, cb, saved);
       return saved;
     },
     deleteStaffMember: function (id, cb) {
       var before = _findById(VV.getStaff(), id);
       VV.deleteStaffMember(id);
-      if (cb) cb();
-      _remove('staff', id).then(function () {
+      _after('staff', 'l’eliminazione del membro dello staff', _remove('staff', id), function () {
         _audit('staff', String(id), 'Staff — ' + (before ? before.name : id), 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]);
-      }).catch(function (e) { console.error('[DB] deleteStaff', e); });
+      }, cb);
     },
 
     /* ---- CATEGORIE ARTICOLI ----------------------------------- */
     saveCategorieArticoli: function (items, cb) {
       var before = VV.getCategorieArticoli();
       VV.setCategorieArticoli(items);
-      if (cb) cb();
-      global.db.collection('settings').doc('categorieArticoli').set({ items: items })
-        .then(function () {
-          _audit('categorieArticoli', 'categorieArticoli', 'Categorie articoli', 'update', [{ campo: '(elenco)', prima: before.length + ' categorie', dopo: items.length + ' categorie' }]);
-        })
-        .catch(function (e) { console.error('[DB] saveCategorieArticoli', e); });
+      _after('categorieArticoli', 'salvataggio delle categorie degli articoli', global.db.collection('settings').doc('categorieArticoli').set({ items: items }), function () {
+        _audit('categorieArticoli', 'categorieArticoli', 'Categorie articoli', 'update', [{ campo: '(elenco)', prima: before.length + ' categorie', dopo: items.length + ' categorie' }]);
+      }, cb);
     },
 
     /* ---- STATS ---------------------------------------------- */
     saveStats: function (items, cb) {
       var before = VV.getStats();
       VV.setStats(items);
-      if (cb) cb();
-      global.db.collection('settings').doc('stats').set({ items: items })
-        .then(function () {
-          _audit('statistiche', 'stats', 'Statistiche homepage', 'update', [{ campo: '(elenco)', prima: before.length + ' voci', dopo: items.length + ' voci' }]);
-        })
-        .catch(function (e) { console.error('[DB] saveStats', e); });
+      _after('stats', 'salvataggio delle statistiche', global.db.collection('settings').doc('stats').set({ items: items }), function () {
+        _audit('statistiche', 'stats', 'Statistiche homepage', 'update', [{ campo: '(elenco)', prima: before.length + ' voci', dopo: items.length + ' voci' }]);
+      }, cb);
     },
 
     /* ---- SPONSORS ------------------------------------------- */
     saveSponsors: function (items, cb) {
       var before = VV.getSponsors();
       VV.setSponsors(items);
-      if (cb) cb();
-      global.db.collection('settings').doc('sponsor').set({ items: items })
-        .then(function () {
-          _audit('sponsorSito', 'sponsor', 'Sponsor (vetrina sito)', 'update', [{ campo: '(elenco)', prima: before.length + ' sponsor', dopo: items.length + ' sponsor' }]);
-        })
-        .catch(function (e) { console.error('[DB] saveSponsors', e); });
+      _after('sponsors', 'salvataggio degli sponsor', global.db.collection('settings').doc('sponsor').set({ items: items }), function () {
+        _audit('sponsorSito', 'sponsor', 'Sponsor (vetrina sito)', 'update', [{ campo: '(elenco)', prima: before.length + ' sponsor', dopo: items.length + ' sponsor' }]);
+      }, cb);
     },
 
     /* ---- MAGLIA TEASER (homepage) ----------------------------- */
     saveMaglia: function (obj, cb) {
       var before = VV.getMaglia();
       VV.setMaglia(obj);
-      if (cb) cb();
-      global.db.collection('settings').doc('maglia').set(obj)
-        .then(function () {
-          _audit('magliaTeaser', 'maglia', 'Teaser nuova maglia (homepage)', 'update', _diffRecord(before, obj, Object.keys(obj)));
-        })
-        .catch(function (e) { console.error('[DB] saveMaglia', e); });
+      _after('maglia', 'salvataggio del teaser della maglia', global.db.collection('settings').doc('maglia').set(obj), function () {
+        _audit('magliaTeaser', 'maglia', 'Teaser nuova maglia (homepage)', 'update', _diffRecord(before, obj, Object.keys(obj)));
+      }, cb);
     },
 
     /* ---- LIVELLI SPONSOR: sottotitolo per livello (pagina Partner) --- */
     saveLivelliSponsorSub: function (obj, cb) {
       var before = VV.getLivelliSponsorSub();
       VV.setLivelliSponsorSub(obj);
-      if (cb) cb();
-      global.db.collection('settings').doc('livelliSponsorSub').set(obj)
-        .then(function () {
-          _audit('livelliSponsorSub', 'livelliSponsorSub', 'Testi livelli sponsor (pagina Partner)', 'update', _diffRecord(before, obj, Object.keys(obj)));
-        })
-        .catch(function (e) { console.error('[DB] saveLivelliSponsorSub', e); });
+      _after('livelliSponsorSub', 'salvataggio dei testi dei livelli sponsor', global.db.collection('settings').doc('livelliSponsorSub').set(obj), function () {
+        _audit('livelliSponsorSub', 'livelliSponsorSub', 'Testi livelli sponsor (pagina Partner)', 'update', _diffRecord(before, obj, Object.keys(obj)));
+      }, cb);
     },
 
     /* ---- SEASONS -------------------------------------------- */
     saveSeason: function (season, cb) {
       var before = _findById(VV.getSeasons(), season.id);
       VV.saveSeason(season);
-      if (cb) cb();
-      global.db.collection('settings').doc('seasons').set({ items: VV.getSeasons() })
-        .then(function () {
-          _audit('stagioneSito', String(season.id), 'Stagione sito — ' + (season.name || season.id), before ? 'update' : 'create', _diffRecord(before, season, Object.keys(season)));
-        })
-        .catch(function (e) { console.error('[DB] saveSeason', e); });
+      _after('seasons', 'salvataggio della stagione', global.db.collection('settings').doc('seasons').set({ items: VV.getSeasons() }), function () {
+        _audit('stagioneSito', String(season.id), 'Stagione sito — ' + (season.name || season.id), before ? 'update' : 'create', _diffRecord(before, season, Object.keys(season)));
+      }, cb);
     },
     deleteSeason: function (id, cb) {
       var before = _findById(VV.getSeasons(), id);
       VV.deleteSeason(id);
-      if (cb) cb();
-      global.db.collection('settings').doc('seasons').set({ items: VV.getSeasons() })
-        .then(function () {
-          _audit('stagioneSito', String(id), 'Stagione sito — ' + (before ? before.name : id), 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]);
-        })
-        .catch(function (e) { console.error('[DB] deleteSeason', e); });
+      _after('seasons', 'l’eliminazione della stagione', global.db.collection('settings').doc('seasons').set({ items: VV.getSeasons() }), function () {
+        _audit('stagioneSito', String(id), 'Stagione sito — ' + (before ? before.name : id), 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]);
+      }, cb);
     },
     setCurrentSeason: function (id, cb) {
       VV.setCurrentSeason(id);
-      if (cb) cb();
-      global.db.collection('settings').doc('seasons').set({ items: VV.getSeasons() })
-        .then(function () {
-          _audit('stagioneSito', String(id), 'Stagione sito attiva', 'update', [{ campo: 'current', prima: null, dopo: id }]);
-        })
-        .catch(function (e) { console.error('[DB] setCurrentSeason', e); });
-    }
+      _after('seasons', 'cambio della stagione attiva', global.db.collection('settings').doc('seasons').set({ items: VV.getSeasons() }), function () {
+        _audit('stagioneSito', String(id), 'Stagione sito attiva', 'update', [{ campo: 'current', prima: null, dopo: id }]);
+      }, cb);
+    },
+
+    /* Messaggio d'errore in italiano per qualsiasi errore (Firebase, rete, o nostro): usato da tutto il pannello. */
+    errorMessage: _errIt
 
   };
 

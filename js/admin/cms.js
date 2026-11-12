@@ -858,9 +858,11 @@
     /* In modifica si aggiornano solo questi campi: id, foto e conteggio restano quelli dell'album. */
     var existing = _albumEditingId !== null ? VV.getAlbum(_albumEditingId) : null;
     var album = existing ? Object.assign({}, existing, fields) : Object.assign({ photoCount: 0 }, fields);
-    var saved = DB.saveAlbum(album);
-    _albumEditingId = null;
-    openAlbum(saved.id);
+    /* si passa all'album solo quando il salvataggio è confermato; se fallisce resta il modulo aperto */
+    DB.saveAlbum(album, function (saved) {
+      _albumEditingId = null;
+      openAlbum(saved.id);
+    });
   });
 
   document.getElementById('albumCancel').addEventListener('click', function () {
