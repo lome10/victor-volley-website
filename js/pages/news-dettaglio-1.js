@@ -156,7 +156,11 @@
     DOMPurify.addHook('afterSanitizeAttributes', function (node) {
       if (node.tagName === 'A' && node.getAttribute('target') === '_blank') node.setAttribute('rel', 'noopener noreferrer');
     });
+    /* URI-AMMESSI:inizio — nei link restano solo http, https, mailto e tel (e gli indirizzi relativi): niente ftp:, sms:, callto:, xmpp:… */
+    var URI_AMMESSI = /^(?:(?:https?|mailto|tel):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i;
+    /* URI-AMMESSI:fine */
     bodyEl.innerHTML = DOMPurify.sanitize(article.content, {
+      ALLOWED_URI_REGEXP: URI_AMMESSI,
       ADD_ATTR: ['target'],
       /* niente moduli/campi (phishing), SVG/MathML né CSS incorporato: gli articoli non ne hanno bisogno */
       FORBID_TAGS: ['form', 'input', 'button', 'textarea', 'select', 'option', 'svg', 'math', 'style']

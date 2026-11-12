@@ -8,6 +8,19 @@
   var _openBudgetModal = A.openModal, _closeBudgetModal = A.closeModal, EDIT_ICON_SM = A.EDIT_ICON_SM;
   var DEL_ICON_SM = A.DEL_ICON_SM;
 
+  /* LINK-SICURO:inizio */
+  /* Link dell'editor degli articoli: ammessi solo http, https, mailto, tel. Senza protocollo si aggiunge https://
+     (anche per «sito.it:8080/x»); javascript:, data:, vbscript: e simili, anche travestiti con spazi o a capo, si scartano (risposta vuota). */
+  function _urlLinkSicuro(raw) {
+    var u = String(raw == null ? '' : raw).replace(/[\u0000-\u001f\u007f\u00a0\u2000-\u200f\u2028\u2029\ufeff]/g, '').trim();
+    if (!u || /\s/.test(u)) return '';
+    if (/^(https?|mailto|tel):/i.test(u)) return /^(https?):(?!\/\/)/i.test(u) ? '' : u;
+    if (/^\/\//.test(u)) return 'https:' + u;
+    if (/^[a-z][a-z0-9+.\-]*:/i.test(u) && !/^[^\/?#:]+\.[^\/?#:]+:\d+(?:[\/?#]|$)/.test(u) && !/^localhost:\d+/i.test(u)) return '';
+    return 'https://' + u;
+  }
+  /* LINK-SICURO:fine */
+
   /* ================================================
      ARTICOLI
   ================================================ */
@@ -999,8 +1012,10 @@
       });
     });
     document.getElementById('artContentLinkBtn').addEventListener('click', function () {
-      var url = prompt('URL del link:', 'https://');
-      if (!url) return;
+      var scritto = prompt('URL del link:', 'https://');
+      if (!scritto) return;
+      var url = _urlLinkSicuro(scritto);
+      if (!url) { A.avviso('Indirizzo non valido: sono ammessi solo link http, https, mailto e tel.'); return; }
       editor.focus();
       document.execCommand('createLink', false, url);
       textarea.value = editor.innerHTML;
