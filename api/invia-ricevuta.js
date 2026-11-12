@@ -22,6 +22,7 @@ const { configEmail, inviaEmail } = require('./_email');
 const { oggiRoma } = require('./_promemoria-logic');
 const { creaPdf } = require('./_ricevuta-pdf');
 const R = require('./_ricevuta-logic');
+const { puoGestireAtleti } = require('./_ruolo');
 
 function fail(res, status, message) {
   res.setHeader('Cache-Control', 'no-store');
@@ -61,7 +62,7 @@ module.exports = async function handler(req, res) {
   try {
     const db = app.firestore();
     const callerDoc = await db.collection('dirigenti').doc(caller.uid).get();
-    if (!callerDoc.exists) return fail(res, 403, 'Accesso negato.');
+    if (!callerDoc.exists || !puoGestireAtleti(callerDoc)) return fail(res, 403, 'Accesso negato.');
     const logo = fs.readFileSync(path.join(__dirname, '..', 'assets', 'logo.png'));
     const [gg, mm, aa] = oggiRoma().split('-').reverse();
 

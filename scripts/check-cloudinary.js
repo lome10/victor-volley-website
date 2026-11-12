@@ -12,10 +12,10 @@ const path = require('path');
 const C = require('../api/_cloudinary-logic');
 
 /* ---------- Firebase finto ---------- */
-const dirigenti = { dir1: { nome: 'Presidente' } };
-const utenti = { 'tok-dir': 'dir1', 'tok-altro': 'altro1' };
+const dirigenti = { dir1: { nome: 'Presidente' }, seg1: { ruolo: 'segreteria' }, prs1: { ruolo: 'presenze' }, boh1: { ruolo: 'boh' }, vuoto1: { ruolo: '' }, mai1: { ruolo: 'Presidente' } };
+const utenti = { 'tok-dir': 'dir1', 'tok-altro': 'altro1', 'tok-seg': 'seg1', 'tok-prs': 'prs1', 'tok-boh': 'boh1', 'tok-vuoto': 'vuoto1', 'tok-mai': 'mai1' };
 const app = {
-  firestore: () => ({ collection: () => ({ doc: (id) => ({ get: async () => ({ exists: id in dirigenti }) }) }) }),
+  firestore: () => ({ collection: () => ({ doc: (id) => ({ get: async () => ({ exists: id in dirigenti, data: () => dirigenti[id] }) }) }) }),
   auth: () => ({ verifyIdToken: async (t) => { if (!utenti[t]) throw new Error('token'); return { uid: utenti[t] }; } })
 };
 require.cache[require.resolve(path.join('..', 'api', '_firebase.js'))] = {
@@ -67,6 +67,12 @@ async function t(nome, fn) {
     process.env.CLOUDINARY_API_KEY = 'k'; process.env.CLOUDINARY_API_SECRET = SEGRETO_FINTO;
     const r = await chiama({ headers: { host: 'www.victorvolley.it', authorization: 'Bearer tok-altro' } });
     assert.strictEqual(r.code, 403); assert.ok(!JSON.stringify(r.body).includes(SEGRETO_FINTO));
+    delete process.env.CLOUDINARY_API_KEY; delete process.env.CLOUDINARY_API_SECRET;
+  });
+  await t('ruoli: presidente (anche senza campo, vuoto o maiuscolo) e segreteria caricano; «presenze» e un ruolo sconosciuto no (403)', async () => {
+    process.env.CLOUDINARY_API_KEY = 'k'; process.env.CLOUDINARY_API_SECRET = SEGRETO_FINTO;
+    for (const tok of ['tok-dir', 'tok-seg', 'tok-vuoto', 'tok-mai']) assert.strictEqual((await chiama({ headers: { host: 'www.victorvolley.it', authorization: 'Bearer ' + tok } })).code, 200, tok);
+    for (const tok of ['tok-prs', 'tok-boh']) assert.strictEqual((await chiama({ headers: { host: 'www.victorvolley.it', authorization: 'Bearer ' + tok } })).code, 403, tok);
     delete process.env.CLOUDINARY_API_KEY; delete process.env.CLOUDINARY_API_SECRET;
   });
   await t('dirigente senza chiavi sul server: 503 chiavi-mancanti (il pannello carica come prima)', async () => {

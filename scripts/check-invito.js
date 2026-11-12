@@ -65,8 +65,9 @@ let n = 0;
 async function t(nome, fn) { try { await fn(); n++; } catch (e) { console.error('FALLITO: ' + nome + '\n  ' + (e.stack || e.message).split('\n').slice(0, 4).join('\n  ')); process.exitCode = 1; } }
 
 (async () => {
-  utenti = { 'tok-dir': 'dir1', 'tok-gen': 'gen1' };
+  utenti = { 'tok-dir': 'dir1', 'tok-gen': 'gen1', 'tok-seg': 'seg1', 'tok-prs': 'prs1' };
   col('dirigenti').dir1 = { nome: 'Presidente' };
+  col('dirigenti').seg1 = { ruolo: 'segreteria' }; col('dirigenti').prs1 = { ruolo: 'presenze' };
   col('dirigenti').dir2 = {};
   col('atleti').a1 = { nome: 'Luca', cognome: 'Rossi', accessi: [
     { uid: 'gen1', email: 'Mamma@Example.com', ruolo: 'genitore', nome: 'Anna' },
@@ -81,6 +82,10 @@ async function t(nome, fn) { try { await fn(); n++; } catch (e) { console.error(
     assert.strictEqual((await invito({}, 'tok-gen')).code, 403);
     assert.strictEqual((await post(invia, { atletaUid: 'a1', uid: 'gen1' })).code, 401);
     assert.strictEqual((await post(invia, { atletaUid: 'a1', uid: 'gen1' }, { ...auth('tok-dir'), origin: 'https://evil.example' })).code, 403);
+  });
+  await t('ruoli: la segreteria può invitare, «presenze» no (nulla viene salvato né inviato)', async () => {
+    assert.strictEqual((await invito({}, 'tok-prs')).code, 403);
+    assert.strictEqual(Object.keys(col('inviti')).length, 0);
   });
   await t('rifiuta bersagli non ammessi', async () => {
     assert.strictEqual((await invito({ uid: 'dir2' })).code, 404, 'un dirigente non si invita');

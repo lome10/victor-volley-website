@@ -23,7 +23,7 @@ const docRef = (c, id) => ({
   id, get: async () => ({ exists: id in col(c), id, data: () => col(c)[id], ref: docRef(c, id) }),
   set: async (d) => { col(c)[id] = { ...d }; }, update: async (d) => { Object.assign(col(c)[id], d); }
 });
-const utenti = { 'tok-dir': 'dir1', 'tok-gen': 'gen1', 'tok-senzamail': 'dir2' };
+const utenti = { 'tok-dir': 'dir1', 'tok-gen': 'gen1', 'tok-senzamail': 'dir2', 'tok-seg': 'seg1', 'tok-prs': 'prs1', 'tok-boh': 'boh1' };
 const emailDi = { dir1: 'Dir@Example.com', gen1: 'gen@example.com' };
 const app = {
   firestore: () => ({ collection: (c) => ({ doc: (id) => docRef(c, id), add: async (d) => { const id = 'auto' + Object.keys(col(c)).length; col(c)[id] = { ...d }; return docRef(c, id); } }) }),
@@ -113,7 +113,7 @@ const paginePdf = async (bytes) => { const d = await PDFDocument.load(bytes); re
   /* ---------- 3. funzione invia-ricevuta ---------- */
   const res = () => { const r = { code: 200, body: null }; r.status = (c) => { r.code = c; return r; }; r.json = (b) => { r.body = b; return r; }; r.setHeader = () => {}; return r; };
   const chiama = async (body, tok, extra) => { const r = res(); await invia({ method: 'POST', headers: { host: 'www.victorvolley.it', ...(tok === null ? {} : { authorization: 'Bearer ' + (tok || 'tok-dir') }), ...(extra || {}) }, body }, r); return r; };
-  col('dirigenti').dir1 = { nome: 'Dina', cognome: 'Capo' }; col('dirigenti').dir2 = {};
+  col('dirigenti').dir1 = { nome: 'Dina', cognome: 'Capo' }; col('dirigenti').dir2 = {}; col('dirigenti').seg1 = { ruolo: 'segreteria' }; col('dirigenti').prs1 = { ruolo: 'presenze' }; col('dirigenti').boh1 = { ruolo: 'boh' };
   col('atleti').a1 = { accessi: [{ uid: 'g1', email: 'mamma@example.com', ruolo: 'genitore', nome: 'Anna' }, { uid: 'g2', email: 'papa@example.com', ruolo: 'genitore', nome: 'Paolo' }] };
   col('atleti').a2 = { accessi: [{ uid: 'g3', email: 'solo@victorvolley.it', ruolo: 'genitore', nome: 'X' }] };
   const nuova = (id, extra) => { col('ricevute')[id] = ric(extra); return id; };
@@ -126,6 +126,15 @@ const paginePdf = async (bytes) => { const d = await PDFDocument.load(bytes); re
     assert.strictEqual((await chiama({}, 'tok-dir')).code, 400); assert.strictEqual((await chiama({ ricevutaId: '../x' }, 'tok-dir')).code, 400);
     assert.strictEqual((await chiama({ ricevutaId: '2026_9999' }, 'tok-dir')).code, 404);
     assert.strictEqual(invii.length, 0);
+  });
+  await t('ruoli: la segreteria invia; «presenze» e un ruolo sconosciuto no (403, nulla parte)', async () => {
+    nuova('2026_0030'); invii = [];
+    assert.strictEqual((await chiama({ ricevutaId: '2026_0030' }, 'tok-prs')).code, 403);
+    assert.strictEqual((await chiama({ ricevutaId: '2026_0030' }, 'tok-boh')).code, 403);
+    assert.strictEqual((await chiama({ esempio: true }, 'tok-prs')).code, 403);
+    assert.strictEqual(invii.length, 0);
+    assert.strictEqual((await chiama({ ricevutaId: '2026_0030' }, 'tok-seg')).code, 200);
+    assert.strictEqual(invii.length, 2); invii = [];
   });
   await t('annullata: rifiutata. Senza atleta o senza indirizzi: non parte nulla e dice perché', async () => {
     nuova('2026_0002', { stato: 'annullata' }); nuova('2026_0003', { atletaId: null }); nuova('2026_0004', { atletaId: 'a2' }); nuova('2026_0005', { atletaId: 'inesistente' });

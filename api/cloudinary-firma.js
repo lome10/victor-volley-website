@@ -14,6 +14,7 @@
  */
 const { getApp, stessaOrigine } = require('./_firebase');
 const C = require('./_cloudinary-logic');
+const { puoGestireAtleti } = require('./_ruolo');
 
 function fail(res, status, message, codice) {
   res.setHeader('Cache-Control', 'no-store');
@@ -43,7 +44,7 @@ module.exports = async function handler(req, res) {
 
   try {
     const callerDoc = await app.firestore().collection('dirigenti').doc(caller.uid).get();
-    if (!callerDoc.exists) return fail(res, 403, 'Accesso negato.');
+    if (!callerDoc.exists || !puoGestireAtleti(callerDoc)) return fail(res, 403, 'Accesso negato.');
   } catch (e) {
     console.error('[cloudinary-firma]', e && e.code, e && e.message);
     return fail(res, 500, 'Errore del server, riprova più tardi.');

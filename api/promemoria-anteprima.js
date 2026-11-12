@@ -10,6 +10,7 @@
  */
 const { getApp, stessaOrigine } = require('./_firebase');
 const L = require('./_promemoria-logic');
+const { puoGestireAtleti } = require('./_ruolo');
 const { calcolaDaInviare } = require('./_promemoria-calcolo');
 
 function fail(res, status, message) {
@@ -39,7 +40,7 @@ module.exports = async function handler(req, res) {
   try {
     const db = app.firestore();
     const dirigente = await db.collection('dirigenti').doc(caller.uid).get();
-    if (!dirigente.exists) return fail(res, 403, 'Accesso negato.');
+    if (!dirigente.exists || !puoGestireAtleti(dirigente)) return fail(res, 403, 'Accesso negato.');
 
     const giorno = L.aggiungiGiorni(L.oggiRoma(), 1);
     const { gruppi } = await calcolaDaInviare(db, giorno);

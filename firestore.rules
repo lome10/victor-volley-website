@@ -16,6 +16,27 @@ service cloud.firestore {
         exists(/databases/$(database)/documents/dirigenti/$(request.auth.uid));
     }
 
+    // RUOLI dei dirigenti (campo facoltativo dirigenti/{uid}.ruolo: presidente | segreteria | presenze).
+    // Il campo MANCANTE (o vuoto) vale 'presidente': chi c'è oggi non cambia e non perde nulla.
+    // Un valore non riconosciuto non dà NESSUN permesso (minimo privilegio); i valori scrivibili sono solo i tre
+    // (vedi la regola su /dirigenti). Si confronta in minuscolo. Chiamare queste funzioni solo dopo isDirigente().
+    function ruoloDirigente() {
+      let d = get(/databases/$(database)/documents/dirigenti/$(request.auth.uid)).data;
+      return ('ruolo' in d && d.ruolo is string && d.ruolo != '') ? d.ruolo.lower() : 'presidente';
+    }
+    // Presidente: tutto (budget, sponsor, dirigenti, log).
+    function isPresidente() {
+      return isDirigente() && ruoloDirigente() == 'presidente';
+    }
+    // Segreteria (e presidente): atleti, ricevute, presenze. Niente budget, niente dirigenti.
+    function isSegreteria() {
+      return isDirigente() && ruoloDirigente() in ['presidente', 'segreteria'];
+    }
+    // Chiunque abbia un ruolo valido (anche «presenze»): presenze, lettura dell'elenco atleti, scrittura del Log.
+    function isPresenze() {
+      return isDirigente() && ruoloDirigente() in ['presidente', 'segreteria', 'presenze'];
+    }
+
     // Vero se l'account è l'atleta stesso (id = uid) o è elencato nei suoi accessUids
     // (genitori compresi). Serve a presenze e rate: non basta essere loggati.
     function possiedeAtleta(atletaId) {
@@ -30,26 +51,26 @@ service cloud.firestore {
     // vecchi, senza accessUids, restano leggibili dall'atleta con id = uid finché
     // il pannello admin non li migra. Tutto il resto è dei dirigenti.
     match /atleti/{atletaId} {
-      allow read: if isDirigente() || (signedIn() && (
+      allow read: if isPresenze() || (signedIn() && (
         request.auth.uid == atletaId ||
         ('accessUids' in resource.data && request.auth.uid in resource.data.accessUids)
       ));
-      allow write: if isDirigente();
+      allow write: if isSegreteria();
     }
 
     // Anagrafica completa degli atleti (codice fiscale, indirizzo, telefoni, tutori,
     // info mediche, note): dati personali di minori, SOLO dirigenti. Le famiglie
     // leggono unicamente la scheda /atleti, che ne contiene una parte minima.
     match /atletiDati/{atletaId} {
-      allow read, write: if isDirigente();
+      allow read, write: if isSegreteria();
     }
 
     // Accessi — un documento per account atleta/genitore, id = uid, con le
     // categorie dei suoi atleti. Lo mantiene il pannello admin (dirigenti); serve
     // alle regole degli avvisi per sapere cosa può leggere ogni famiglia.
     match /accessi/{uid} {
-      allow read: if isDirigente() || (signedIn() && request.auth.uid == uid);
-      allow write: if isDirigente();
+      allow read: if isSegreteria() || (signedIn() && request.auth.uid == uid);
+      allow write: if isSegreteria();
     }
 
     // Avvisi ai tesserati: categoria = nome della squadra oppure 'tutte'. Li
@@ -64,11 +85,11 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/accessi/$(request.auth.uid)).data.categorie;
     }
     match /comunicazioni/{id} {
-      allow read: if isDirigente() || (haAccessi() && (
+      allow read: if isSegreteria() || (haAccessi() && (
         resource.data.categoria == 'tutte' ||
         resource.data.categoria in categorieAccesso()
       ));
-      allow write: if isDirigente();
+      allow write: if isSegreteria();
     }
 
     // Presenze — la risposta "ci sarò / non ci sarò" di una famiglia a una partita
@@ -87,68 +108,82 @@ service cloud.firestore {
           possiedeAtleta(d.atletaId) &&
           d.categoria == get(/databases/$(database)/documents/atleti/$(d.atletaId)).data.categoria;
       }
-      allow read: if isDirigente() || possiedeAtleta(resource.data.atletaId);
-      allow create, update: if isDirigente() || rispostaValida();
-      allow delete: if isDirigente();
+      allow read: if isPresenze() || possiedeAtleta(resource.data.atletaId);
+      allow create, update: if isPresenze() || rispostaValida();
+      allow delete: if isPresenze();
     }
 
     // Collezioni pubbliche del sito: lettura libera, scrittura solo dirigenti.
-    match /articles/{document=**}   { allow read: if true; allow write: if isDirigente(); }
-    match /partite/{document=**}    { allow read: if true; allow write: if isDirigente(); }
-    match /allenamenti/{document=**} { allow read: if true; allow write: if isDirigente(); }
+    match /articles/{document=**}   { allow read: if true; allow write: if isPresidente(); }
+    match /partite/{document=**}    { allow read: if true; allow write: if isPresidente(); }
+    match /allenamenti/{document=**} { allow read: if true; allow write: if isPresidente(); }
     // Eccezioni di un solo giorno agli orari settimanali (allenamento spostato o annullato). Id = a-{orario}-{data originale}.
-    match /allenamentiEccezioni/{document=**} { allow read: if true; allow write: if isDirigente(); }
-    match /albums/{document=**}     { allow read: if true; allow write: if isDirigente(); }
-    match /categories/{document=**} { allow read: if true; allow write: if isDirigente(); }
-    match /players/{document=**}    { allow read: if true; allow write: if isDirigente(); }
+    match /allenamentiEccezioni/{document=**} { allow read: if true; allow write: if isPresenze(); }
+    match /albums/{document=**}     { allow read: if true; allow write: if isPresidente(); }
+    match /categories/{document=**} { allow read: if true; allow write: if isPresidente(); }
+    match /players/{document=**}    { allow read: if true; allow write: if isPresidente(); }
     // Dati dei giocatori NON pubblici (oggi: anno di nascita, anche di minorenni). Un documento per giocatore,
     // id = id del giocatore in `players`: solo dirigenti.
-    match /giocatoriDati/{playerId} { allow read, write: if isDirigente(); }
-    match /staff/{document=**}      { allow read: if true; allow write: if isDirigente(); }
+    match /giocatoriDati/{playerId} { allow read, write: if isPresidente(); }
+    match /staff/{document=**}      { allow read: if true; allow write: if isPresidente(); }
     // settings: pubbliche tranne «asd» (codice fiscale, affiliazione e presidente dell'ASD per le ricevute): le legge
     // solo il pannello dei dirigenti e le funzioni del server (che non passano dalle regole).
-    match /settings/{settingId}     { allow read: if settingId != 'asd' || isDirigente(); allow write: if isDirigente(); }
-    match /siteData/{document=**}   { allow read: if true; allow write: if isDirigente(); }
+    match /settings/{settingId}     { allow read: if settingId != 'asd' || isSegreteria(); allow write: if isPresidente(); }
+    match /siteData/{document=**}   { allow read: if true; allow write: if isPresidente(); }
 
     // Registro ruoli. Ognuno può leggere solo il proprio documento (serve al
     // controllo di accesso del pannello); i dirigenti vedono tutti. Scrivere qui
     // significa promuovere qualcuno a dirigente: solo un dirigente può farlo.
+    // Solo il presidente crea, modifica ed elimina dirigenti, e solo con un ruolo valido (o senza il campo).
+    // Eccezione: la segreteria può aggiornare il solo campo «taglie» (la taglia dei dirigenti si imposta dall'elenco atleti).
+    function ruoloScrivibile() {
+      return !('ruolo' in request.resource.data) ||
+        (request.resource.data.ruolo is string && request.resource.data.ruolo in ['presidente', 'segreteria', 'presenze']);
+    }
+    // Nessuno si toglie da solo il ruolo di presidente (sarebbe un blocco accidentale): il proprio ruolo non si declassa.
+    function nonDeclassaSeStesso(uid) {
+      return uid != request.auth.uid || !('ruolo' in request.resource.data) ||
+        (request.resource.data.ruolo is string && request.resource.data.ruolo.lower() == 'presidente');
+    }
     match /dirigenti/{uid} {
-      allow read: if signedIn() && (request.auth.uid == uid || isDirigente());
-      allow write: if isDirigente();
+      allow read: if signedIn() && (request.auth.uid == uid || isSegreteria());
+      allow create: if isPresidente() && ruoloScrivibile();
+      allow update: if (isPresidente() && ruoloScrivibile() && nonDeclassaSeStesso(uid)) ||
+        (isSegreteria() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['taglie']));
+      allow delete: if isPresidente();
     }
 
     // Allenatori — un documento per account (id = uid) con le categorie che allena. Ognuno legge solo il proprio;
     // i dirigenti li gestiscono. NON dà accesso alle schede degli atleti: l'elenco con nome, data di nascita e
     // telefono dei genitori lo serve api/allenatore-atleti.js, che controlla questo documento.
     match /allenatori/{uid} {
-      allow read: if signedIn() && (request.auth.uid == uid || isDirigente());
-      allow write: if isDirigente();
+      allow read: if signedIn() && (request.auth.uid == uid || isSegreteria());
+      allow write: if isSegreteria();
     }
 
     // Presenze agli allenamenti segnate dal mister: le scrive solo la funzione del server
     // (api/allenatore-presenze), i dirigenti le possono leggere.
     match /presenzeAllenamento/{docId} {
-      allow read: if isDirigente();
+      allow read: if isPresenze();
       allow write: if false;
     }
 
     // Area Dirigenti — dati di budget/CRM: solo dirigenti/admin, mai pubblico.
-    match /budgetSeasons/{document=**}    { allow read, write: if isDirigente(); }
-    match /aziende/{document=**}          { allow read, write: if isDirigente(); }
-    match /sponsorizzazioni/{document=**} { allow read, write: if isDirigente(); }
-    match /tranchePagamento/{document=**} { allow read, write: if isDirigente(); }
-    match /attivita/{document=**}         { allow read, write: if isDirigente(); }
-    match /promemoria/{document=**}       { allow read, write: if isDirigente(); }
-    match /pianoEditoriale/{document=**}  { allow read, write: if isDirigente(); }
-    match /bacheca/{document=**}          { allow read, write: if isDirigente(); }
-    match /categorieAtleti/{document=**}  { allow read, write: if isDirigente(); }
-    match /atletiRette/{document=**}      { allow read, write: if isDirigente(); }
+    match /budgetSeasons/{document=**}    { allow read, write: if isPresidente(); }
+    match /aziende/{document=**}          { allow read, write: if isPresidente(); }
+    match /sponsorizzazioni/{document=**} { allow read, write: if isPresidente(); }
+    match /tranchePagamento/{document=**} { allow read, write: if isPresidente(); }
+    match /attivita/{document=**}         { allow read, write: if isPresidente(); }
+    match /promemoria/{document=**}       { allow read, write: if isPresidente(); }
+    match /pianoEditoriale/{document=**}  { allow read, write: if isPresidente(); }
+    match /bacheca/{document=**}          { allow read, write: if isPresidente(); }
+    match /categorieAtleti/{document=**}  { allow read, write: if isSegreteria(); }
+    match /atletiRette/{document=**}      { allow read, write: if isSegreteria(); }
     // Rate degli atleti: le scrivono solo i dirigenti; la famiglia legge solo quelle
     // dei propri atleti (campo atletaId, scritto dal pannello admin).
     match /rateAtleti/{rataId} {
-      allow read: if isDirigente() || ('atletaId' in resource.data && possiedeAtleta(resource.data.atletaId));
-      allow write: if isDirigente();
+      allow read: if isSegreteria() || ('atletaId' in resource.data && possiedeAtleta(resource.data.atletaId));
+      allow write: if isSegreteria();
     }
     // Ricevute di pagamento: documenti contabili, mai cancellabili. Le crea un
     // dirigente (con una copia dei dati di pagatore e atleta al momento
@@ -156,46 +191,46 @@ service cloud.firestore {
     // annullata, con data e motivo). La famiglia legge solo quelle dei propri atleti
     // (campo atletaId): le query devono filtrare con atletaId == X.
     match /ricevute/{ricevutaId} {
-      allow read: if isDirigente() ||
+      allow read: if isSegreteria() ||
         ('atletaId' in resource.data && resource.data.atletaId is string && possiedeAtleta(resource.data.atletaId));
-      allow create: if isDirigente();
-      allow update: if isDirigente() &&
+      allow create: if isSegreteria();
+      allow update: if isSegreteria() &&
         resource.data.stato == 'valida' && request.resource.data.stato == 'annullata' &&
         request.resource.data.diff(resource.data).affectedKeys()
           .hasOnly(['stato', 'dataAnnullamento', 'motivoAnnullamento', 'annullataDa']);
       allow delete: if false;
     }
     // Contatore progressivo delle ricevute (un documento per anno: { ultimo: n }).
-    match /contatoriRicevute/{anno}       { allow read, write: if isDirigente(); }
+    match /contatoriRicevute/{anno}       { allow read, write: if isSegreteria(); }
     // Firma del presidente (immagine PNG): solo i dirigenti. Viene copiata dentro ogni ricevuta
     // all'emissione, così la famiglia la vede solo nella propria ricevuta.
-    match /firme/{firmaId}                { allow read, write: if isDirigente(); }
+    match /firme/{firmaId}                { allow read, write: if isSegreteria(); }
     // Preferenze di notifica: ognuno legge e scrive solo il proprio documento (id = uid), con il solo campo
     // email (true/false) e la data; i dirigenti possono leggerle. Le legge anche il job dei promemoria.
     match /notifiche/{uid} {
-      allow read: if isDirigente() || (signedIn() && request.auth.uid == uid);
+      allow read: if isSegreteria() || (signedIn() && request.auth.uid == uid);
       allow create, update: if signedIn() && request.auth.uid == uid &&
         request.resource.data.keys().hasOnly(['email', 'aggiornatoIl']) && request.resource.data.email is bool;
       allow delete: if false;
     }
     // Registro dei promemoria già spediti (lo scrive solo il server con l'account di servizio): i dirigenti lo leggono.
-    match /promemoriaInviati/{id}         { allow read: if isDirigente(); allow write: if false; }
+    match /promemoriaInviati/{id}         { allow read: if isPresidente(); allow write: if false; }
     // Inviti a scegliere la password (impronta del codice del link): li legge e scrive solo il server con l'account di
     // servizio. Nessun accesso dal browser, nemmeno ai dirigenti: chi leggesse l'impronta non può ricavarne il codice,
     // ma non c'è motivo di esporla.
     match /inviti/{id}                    { allow read, write: if false; }
-    match /tessere/{document=**}          { allow read, write: if isDirigente(); }
-    match /supercoppaBari/{document=**}   { allow read, write: if isDirigente(); }
-    match /altreEntrate/{document=**}     { allow read, write: if isDirigente(); }
-    match /vociSpesa/{document=**}        { allow read, write: if isDirigente(); }
-    match /sottospese/{document=**}       { allow read, write: if isDirigente(); }
-    match /categorieSpesa/{document=**}   { allow read, write: if isDirigente(); }
+    match /tessere/{document=**}          { allow read, write: if isPresidente(); }
+    match /supercoppaBari/{document=**}   { allow read, write: if isPresidente(); }
+    match /altreEntrate/{document=**}     { allow read, write: if isPresidente(); }
+    match /vociSpesa/{document=**}        { allow read, write: if isPresidente(); }
+    match /sottospese/{document=**}       { allow read, write: if isPresidente(); }
+    match /categorieSpesa/{document=**}   { allow read, write: if isPresidente(); }
 
     // Audit log — append-only: nessun update/delete concesso a nessuno, admin incluso.
     // Una voce si può creare solo a nome proprio: dirigenteId deve essere l'account che scrive.
     match /auditLog/{document=**} {
-      allow read: if isDirigente();
-      allow create: if isDirigente() && request.resource.data.dirigenteId == request.auth.uid;
+      allow read: if isPresidente();
+      allow create: if isPresenze() && request.resource.data.dirigenteId == request.auth.uid;
       allow update, delete: if false;
     }
   }

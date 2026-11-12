@@ -14,6 +14,7 @@ const { getApp, stessaOrigine, safeJson } = require('./_firebase');
 const { configEmail, inviaEmail } = require('./_email');
 const { emailValida } = require('./_promemoria-logic');
 const I = require('./_invito-logic');
+const { puoGestireAtleti } = require('./_ruolo');
 
 function fail(res, status, message) {
   res.setHeader('Cache-Control', 'no-store');
@@ -55,7 +56,7 @@ module.exports = async function handler(req, res) {
       db.collection('atleti').doc(atletaUid).get(),
       db.collection('dirigenti').doc(uid).get()
     ]);
-    if (!callerDoc.exists) return fail(res, 403, 'Accesso negato.');
+    if (!callerDoc.exists || !puoGestireAtleti(callerDoc)) return fail(res, 403, 'Accesso negato.');
     if (!atletaDoc.exists || targetIsDirigente.exists) return fail(res, 404, 'Atleta non trovato.');
 
     const atleta = atletaDoc.data();

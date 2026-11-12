@@ -242,7 +242,7 @@ async function t(nome, fn) { try { await fn(); n++; } catch (e) { console.error(
     const rules = fs.readFileSync(path.join(__dirname, '..', 'firestore.rules'), 'utf8');
     const m = /match \/presenzeAllenamento\/\{docId\}\s*\{([\s\S]*?)\n\s*\}/.exec(rules);
     assert.ok(m, 'manca la regola');
-    assert.ok(/allow read: if isDirigente\(\)/.test(m[1]) && /allow write: if false/.test(m[1]));
+    assert.ok(/allow read: if isPresenze\(\)/.test(m[1]) && /allow write: if false/.test(m[1]));
   });
   await t('presenze: un allenamento spostato o annullato per un solo giorno', () => {
     const orari = [{ id: 'x1', categoria: 'S3', giorno: 4, oraInizio: '17:00', oraFine: '18:30', luogo: 'Palestra A' }];
@@ -263,14 +263,14 @@ async function t(nome, fn) { try { await fn(); n++; } catch (e) { console.error(
     // senza eccezioni nulla cambia
     assert.deepStrictEqual(L.giorniAllenamento(orari, 'S3', '2026-10-29', {}).map((x) => x.data), base.map((x) => x.data));
     const rules = fs.readFileSync(path.join(__dirname, '..', 'firestore.rules'), 'utf8');
-    assert.ok(rules.includes('match /allenamentiEccezioni/{document=**} { allow read: if true; allow write: if isDirigente(); }'));
+    assert.ok(rules.includes('match /allenamentiEccezioni/{document=**} { allow read: if true; allow write: if isPresenze(); }'));
   });
   await t('le regole di Firestore: ognuno legge solo il proprio profilo, scrivono solo i dirigenti', () => {
     const rules = fs.readFileSync(path.join(__dirname, '..', 'firestore.rules'), 'utf8');
     const m = /match \/allenatori\/\{uid\}\s*\{([\s\S]*?)\n\s*\}/.exec(rules);
     assert.ok(m, 'manca la regola per allenatori');
-    assert.ok(/allow read: if signedIn\(\) && \(request\.auth\.uid == uid \|\| isDirigente\(\)\)/.test(m[1]), 'lettura: solo il proprio profilo o un dirigente');
-    assert.ok(/allow write: if isDirigente\(\)/.test(m[1]), 'scrittura: solo dirigenti');
+    assert.ok(/allow read: if signedIn\(\) && \(request\.auth\.uid == uid \|\| isSegreteria\(\)\)/.test(m[1]), 'lettura: solo il proprio profilo o la segreteria/presidente');
+    assert.ok(/allow write: if isSegreteria\(\)/.test(m[1]), 'scrittura: segreteria o presidente');
     assert.ok(!/allow (read|write)[^;]*if true/.test(m[1]), 'mai aperta a tutti');
     /* L'allenatore NON deve poter leggere le schede degli atleti dalle regole (i suoi dati passano dal server). */
     assert.ok(!/allenatori/.test(rules.replace(/match \/allenatori\/\{uid\}[\s\S]*?\n\s*\}/, '')), 'le altre regole non devono nominare gli allenatori');
