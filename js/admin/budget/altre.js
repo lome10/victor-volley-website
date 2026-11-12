@@ -9,7 +9,7 @@
   var esc = A.esc, confirm = A.confirm;
   var _logWrite = A.logWrite, _diff = A.diff;
 
-  var TIPI = ['Contributo', 'Evento', 'Donazione', 'Torneo', 'Altro'];
+  var TIPI = ['Contributo', 'Evento', 'Donazione', 'Torneo', 'Abbigliamento atleti', 'Altro'];
   var CAMPI_LOG = ['descrizione', 'tipo', 'importo', 'data', 'pagata', 'dataIncasso', 'note'];
   var _editId = null;
 

@@ -335,6 +335,8 @@
     renderDashSpeseWidget: B._renderDashSpeseWidget,
     /* dopo una modifica a rette/rate fatta dalla scheda atleta */
     refreshRette: function () { B._renderRette(); B._renderStatCards(); B._renderCharts(); B._renderBilancio(); },
+    /* dopo un incasso «Abbigliamento atleti» segnato dall'elenco atleti */
+    refreshEntrate: function () { B._renderAltreEntrate(); B._renderStatCards(); B._renderCharts(); B._renderBilancio(); },
     /* tesseramenti: aggiorna la voce «Tesseramenti atleti» nelle Spese dall'elenco atleti */
     ricalcolaTesseramenti: function (atleti) { return B._ricalcolaTesseramenti(atleti); },
     /* stato condiviso con la scheda atleta (iscrizione e rate) */
@@ -344,6 +346,8 @@
       get categorieAtleti() { return B._categorieAtleti; },
       get atletiRette() { return B._atletiRette; },
       set atletiRette(v) { B._atletiRette = v; },
+      get altreEntrate() { return B._altreEntrate; },
+      set altreEntrate(v) { B._altreEntrate = v; },
       get rateAtleti() { return B._rateAtleti; },
       set rateAtleti(v) { B._rateAtleti = v; }
     }

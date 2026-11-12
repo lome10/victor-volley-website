@@ -38,7 +38,7 @@
       return;
     }
     document.getElementById('atletiBody').innerHTML =
-      '<tr><td colspan="7" style="text-align:center;color:var(--a-muted);padding:20px">Caricamento…</td></tr>';
+      '<tr><td colspan="8" style="text-align:center;color:var(--a-muted);padding:20px">Caricamento…</td></tr>';
 
     Promise.all([db.collection('atleti').get(), db.collection('atletiDati').get()]).then(function (res) {
       var dati = {};
@@ -69,7 +69,7 @@
     }).catch(function (err) {
       console.error('[Atleti]', err);
       document.getElementById('atletiBody').innerHTML =
-        '<tr><td colspan="7" style="text-align:center;color:var(--a-red)">Errore nel caricamento.</td></tr>';
+        '<tr><td colspan="8" style="text-align:center;color:var(--a-red)">Errore nel caricamento.</td></tr>';
     });
   }
 
@@ -724,12 +724,95 @@
       '<td>' + (totale > 0
         ? '<span style="font-weight:600">€' + saldato.toFixed(0) + '</span><span style="color:var(--a-muted)"> / €' + totale.toFixed(0) + '</span>'
         : '—') + '</td>' +
+      '<td>' + _abbCella(a) + '</td>' +
       '<td><div class="table-actions">' +
         '<button class="btn-icon" onclick="AdminActions.editAtleta(\'' + esc(a.uid) + '\')" title="Apri scheda">' + EDIT_ICON_SM + '</button>' +
         '<button class="btn-icon btn-icon--danger" onclick="AdminActions.deleteAtleta(\'' + esc(a.uid) + '\')" title="Elimina">' + DEL_ICON_SM + '</button>' +
       '</div></td>' +
     '</tr>';
   }
+
+
+  /* ---- Quota abbigliamento: una cifra fissa per stagione (budgetSeasons.quotaAbbigliamento). Spuntando «Pagato» nasce una
+     «Altra entrata» (raccolta altreEntrate, tipo «Abbigliamento atleti», id fisso per stagione e atleta): conta a bilancio
+     con la data di incasso; togliendo la spunta la voce sparisce. L'importo resta quello del giorno dell'incasso. ---- */
+  var ABB_TIPO = 'Abbigliamento atleti';
+  function _abbId(uid) { return 'abb_' + _bs().currentSeasonId + '_' + uid; }
+  function _abbQuota() { var s = _stagioneBudget(); return s && +s.quotaAbbigliamento > 0 ? +s.quotaAbbigliamento : 0; }
+  function _abbVoce(uid) {
+    var id = _abbId(uid);
+    return (_bs().altreEntrate || []).filter(function (x) { return x.id === id; })[0] || null;
+  }
+  function _abbOggi() { return new Date().toISOString().slice(0, 10); }
+  function _abbCella(a) {
+    var v = _abbVoce(a.uid), pagata = !!(v && v.pagata);
+    return '<label class="abb-cella"><input type="checkbox" class="abb-chk" data-uid="' + esc(a.uid) + '"' + (pagata ? ' checked' : '') +
+      ' aria-label="Abbigliamento pagato: ' + esc(a.cognome + ' ' + a.nome) + '"> ' +
+      (pagata ? '<span>€' + Math.round(+v.importo || 0) + '</span><span class="table-sub"> ' + esc(v.dataIncasso ? _fmtDate(v.dataIncasso) : '') + '</span>'
+              : '<span class="table-sub">da pagare</span>') + '</label>';
+  }
+  function _abbRiepilogo() {
+    var l = (_bs().altreEntrate || []).filter(function (x) { return x.tipo === ABB_TIPO && x.pagata; });
+    return { n: l.length, tot: l.reduce(function (t, x) { return t + (+x.importo || 0); }, 0) };
+  }
+  function _renderAbbBar() {
+    var bar = document.getElementById('atletiAbbBar');
+    if (!bar) return;
+    if (_atletiVista !== 'elenco' || !_stagioneBudget()) { bar.classList.add('is-hidden'); return; }
+    var q = _abbQuota(), r = _abbRiepilogo();
+    bar.classList.remove('is-hidden');
+    bar.innerHTML = '<label>Quota abbigliamento ' + esc(_stagioneCorrenteNome() || '') + ' (€, uguale per tutti) ' +
+      '<input type="number" id="abbQuota" class="form-input" min="0" step="1" value="' + (q || '') + '" placeholder="es. 80" style="width:90px"></label>' +
+      '<span class="table-sub"> Incassato: <strong>€' + Math.round(r.tot) + '</strong> da ' + r.n + (r.n === 1 ? ' atleta' : ' atleti') + ' (conta in Bilancio → Altre entrate)</span>';
+  }
+  function _abbRicalcola() {
+    if (A.budget.refreshEntrate) A.budget.refreshEntrate();
+    _renderAtletiRows();
+  }
+  function _abbToggle(uid, checked, chk) {
+    var a = _atletiCache.filter(function (x) { return x.uid === uid; })[0];
+    if (!a) return;
+    var id = _abbId(uid), old = _abbVoce(uid), nome = (a.cognome + ' ' + a.nome).trim();
+    var label = 'Altra entrata — Abbigliamento atleti — ' + nome;
+    if (!checked) {
+      if (!old) return;
+      confirm('Togliere il pagamento dell\'abbigliamento di ' + nome + ' (€' + Math.round(+old.importo || 0) + ')? Esce dal bilancio.', function () {
+        db.collection('altreEntrate').doc(id).delete().then(function () {
+          _bs().altreEntrate = _bs().altreEntrate.filter(function (x) { return x.id !== id; });
+          _abbRicalcola();
+          return _logWrite('altraEntrata', id, label, 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]);
+        }).catch(function (e) { _avviso('Errore: ' + e.message); _abbRicalcola(); });
+      });
+      chk.checked = true;   /* finché non si conferma, resta com'è */
+      return;
+    }
+    var quota = _abbQuota();
+    if (!quota) { chk.checked = false; _avviso('Scrivi prima la quota abbigliamento della stagione (casella sopra la tabella).'); return; }
+    var data = {
+      seasonId: _bs().currentSeasonId, descrizione: 'Abbigliamento atleti — ' + nome, tipo: ABB_TIPO, importo: quota, data: _abbOggi(),
+      pagata: true, dataIncasso: _abbOggi(), note: '', atletaId: uid, createdAt: new Date().toISOString()
+    };
+    db.collection('altreEntrate').doc(id).set(data).then(function () {
+      _bs().altreEntrate.push(Object.assign({ id: id }, data));
+      _abbRicalcola();
+      return _logWrite('altraEntrata', id, label, 'create', _diff({}, data, Object.keys(data)));
+    }).catch(function (e) { chk.checked = false; _avviso('Errore: ' + e.message); });
+  }
+  document.getElementById('atletiBody').addEventListener('change', function (e) {
+    var chk = e.target.closest ? e.target.closest('.abb-chk') : null;
+    if (chk) _abbToggle(chk.dataset.uid, chk.checked, chk);
+  });
+  document.getElementById('atletiAbbBar').addEventListener('change', function (e) {
+    if (e.target.id !== 'abbQuota') return;
+    var st = _stagioneBudget(), n = parseFloat(e.target.value);
+    if (!st) return;
+    var nuovo = n > 0 ? n : 0, prima = _abbQuota();
+    if (nuovo === prima) return;
+    db.collection('budgetSeasons').doc(st.id).update({ quotaAbbigliamento: nuovo }).then(function () {
+      st.quotaAbbigliamento = nuovo;
+      return _logWrite('stagione', st.id, 'Stagione ' + (st.nome || st.id), 'update', _diff({ quotaAbbigliamento: prima }, { quotaAbbigliamento: nuovo }, ['quotaAbbigliamento']));
+    }).catch(function (err) { _avviso('Quota non salvata: ' + err.message); e.target.value = prima || ''; });
+  });
 
   /* Pulsante «Comprimi/Espandi tutte»: solo nella vista «Tutte», senza ricerca. */
   function _aggiornaToggleTutte(gruppiVisibili) {
@@ -1559,6 +1642,7 @@
 
   function _renderAtletiRows() {
     var body = document.getElementById('atletiBody');
+    _renderAbbBar();
     _renderAtletiCats();
     _aggiornaToggleTutte([]);
     if (_atletiVista === 'taglie') { _renderTaglie(); return; }
@@ -1568,13 +1652,13 @@
     if (_atletiVista === 'presenze') { _renderPresStat(); return; }
     if (!_atletiCache.length) {
       document.getElementById('atletiSummary').textContent = '';
-      body.innerHTML = '<tr><td colspan="7"><div class="empty-state"><p>Nessun atleta registrato.</p></div></td></tr>';
+      body.innerHTML = '<tr><td colspan="8"><div class="empty-state"><p>Nessun atleta registrato.</p></div></td></tr>';
       return;
     }
     var list = _atletiFiltrati();
     document.getElementById('atletiSummary').textContent = _atletiAvvisi(list);
     if (!list.length) {
-      body.innerHTML = '<tr><td colspan="7"><div class="empty-state"><p>Nessun atleta corrisponde ai filtri.</p></div></td></tr>';
+      body.innerHTML = '<tr><td colspan="8"><div class="empty-state"><p>Nessun atleta corrisponde ai filtri.</p></div></td></tr>';
       return;
     }
 
@@ -1594,7 +1678,7 @@
       /* Con una ricerca in corso i gruppi restano aperti, così i risultati si vedono. */
       var chiuso = !q && _atletiChiuse.indexOf(cat) !== -1;
       return '<tr class="atleti-group' + (chiuso ? ' is-closed' : '') + '" data-cat="' + esc(cat) + '" tabindex="0" role="button" aria-expanded="' + (chiuso ? 'false' : 'true') + '">' +
-        '<td colspan="7"><span class="atleti-group-chev" aria-hidden="true"></span><strong>' + esc(cat === '__none__' ? 'Senza categoria' : cat) + '</strong>' +
+        '<td colspan="8"><span class="atleti-group-chev" aria-hidden="true"></span><strong>' + esc(cat === '__none__' ? 'Senza categoria' : cat) + '</strong>' +
         '<span>' + esc(_atletiAvvisi(membri)) + '</span></td></tr>' + (chiuso ? '' : membri.map(_atletaRowHtml).join(''));
     }).join('');
   }
