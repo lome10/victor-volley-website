@@ -23,10 +23,11 @@ const docRef = (c, id) => ({
   id, get: async () => ({ exists: id in col(c), id, data: () => col(c)[id], ref: docRef(c, id) }),
   set: async (d) => { col(c)[id] = { ...d }; }, update: async (d) => { Object.assign(col(c)[id], d); }
 });
-const utenti = { 'tok-dir': 'dir1', 'tok-gen': 'gen1' };
+const utenti = { 'tok-dir': 'dir1', 'tok-gen': 'gen1', 'tok-senzamail': 'dir2' };
+const emailDi = { dir1: 'Dir@Example.com', gen1: 'gen@example.com' };
 const app = {
-  firestore: () => ({ collection: (c) => ({ doc: (id) => docRef(c, id) }) }),
-  auth: () => ({ verifyIdToken: async (tk) => { if (!utenti[tk]) throw new Error('token'); return { uid: utenti[tk] }; } })
+  firestore: () => ({ collection: (c) => ({ doc: (id) => docRef(c, id), add: async (d) => { const id = 'auto' + Object.keys(col(c)).length; col(c)[id] = { ...d }; return docRef(c, id); } }) }),
+  auth: () => ({ verifyIdToken: async (tk) => { if (!utenti[tk]) throw new Error('token'); return { uid: utenti[tk], email: emailDi[utenti[tk]] }; } })
 };
 require.cache[require.resolve(path.join('..', 'api', '_firebase.js'))] = {
   id: 'fb', filename: 'fb', loaded: true,
@@ -112,7 +113,7 @@ const paginePdf = async (bytes) => { const d = await PDFDocument.load(bytes); re
   /* ---------- 3. funzione invia-ricevuta ---------- */
   const res = () => { const r = { code: 200, body: null }; r.status = (c) => { r.code = c; return r; }; r.json = (b) => { r.body = b; return r; }; r.setHeader = () => {}; return r; };
   const chiama = async (body, tok, extra) => { const r = res(); await invia({ method: 'POST', headers: { host: 'www.victorvolley.it', ...(tok === null ? {} : { authorization: 'Bearer ' + (tok || 'tok-dir') }), ...(extra || {}) }, body }, r); return r; };
-  col('dirigenti').dir1 = {};
+  col('dirigenti').dir1 = { nome: 'Dina', cognome: 'Capo' }; col('dirigenti').dir2 = {};
   col('atleti').a1 = { accessi: [{ uid: 'g1', email: 'mamma@example.com', ruolo: 'genitore', nome: 'Anna' }, { uid: 'g2', email: 'papa@example.com', ruolo: 'genitore', nome: 'Paolo' }] };
   col('atleti').a2 = { accessi: [{ uid: 'g3', email: 'solo@victorvolley.it', ruolo: 'genitore', nome: 'X' }] };
   const nuova = (id, extra) => { col('ricevute')[id] = ric(extra); return id; };
@@ -170,27 +171,41 @@ const paginePdf = async (bytes) => { const d = await PDFDocument.load(bytes); re
     assert.strictEqual(r.code, 503); assert.strictEqual(invii.length, 0);
   });
 
-  await t('invio di prova: un solo indirizzo, PDF in allegato, nessuna scrittura nel registro', async () => {
+  await t('invio di prova: solo all\'email del chiamante (anche se il client ne manda un\'altra), PDF in allegato, nessuna scrittura sulle ricevute, voce nel Log', async () => {
     col('settings').asd = { denominazione: 'ASD Victor Volley', codiceFiscale: '00000000000', sede: 'Racale', rasd: true, luogo: 'Racale', presidente: 'Cuna Matteo' };
     col('firme').presidente = { img: FIRMA };
     const prima = JSON.stringify(store.ricevute); invii = [];
-    const r = await chiama({ esempio: true, a: ' Prova@Example.com ' });
-    assert.strictEqual(r.code, 200); assert.deepStrictEqual(r.body.a, ['prova@example.com']); assert.strictEqual(r.body.esempio, true);
-    assert.strictEqual(invii.length, 1); assert.strictEqual(invii[0].to[0].email, 'prova@example.com');
+    const r = await chiama({ esempio: true, a: 'altro@example.com' });
+    assert.strictEqual(r.code, 200); assert.deepStrictEqual(r.body.a, ['dir@example.com']); assert.strictEqual(r.body.esempio, true);
+    assert.strictEqual(invii.length, 1); assert.strictEqual(invii[0].to.length, 1); assert.strictEqual(invii[0].to[0].email, 'dir@example.com');
     assert.ok(invii[0].subject.startsWith('[ESEMPIO] ') && /ESEMPIO/.test(invii[0].textContent));
     assert.strictEqual(invii[0].attachment[0].name, 'Ricevuta-ESEMPIO.pdf');
     const pdf = Buffer.from(invii[0].attachment[0].content, 'base64');
     assert.strictEqual(pdf.slice(0, 5).toString(), '%PDF-'); assert.strictEqual(await paginePdf(pdf), 1);
     assert.strictEqual(JSON.stringify(store.ricevute), prima, 'il registro non deve cambiare');
+    const log = Object.values(store.auditLog || {}); assert.strictEqual(log.length, 1);
+    assert.strictEqual(log[0].dirigenteId, 'dir1'); assert.strictEqual(log[0].dirigenteNome, 'Dina Capo'); assert.strictEqual(log[0].entita, 'ricevuta');
+    assert.ok(/^inviata a d\*\*\*@e\*\*\*\.com$/.test(log[0].campi[0].dopo), log[0].campi[0].dopo); assert.ok(!JSON.stringify(log).includes('dir@example.com'));
   });
-  await t('invio di prova: permessi, indirizzo non valido e Brevo giù', async () => {
-    invii = [];
-    assert.strictEqual((await chiama({ esempio: true, a: 'x@example.com' }, 'tok-gen')).code, 403);
-    assert.strictEqual((await chiama({ esempio: true, a: 'x@example.com' }, null)).code, 401);
-    for (const a of ['', 'non-una-email', 'a@b', 'x@y.it, z@y.it', 5, null, 'a'.repeat(130) + '@example.com']) assert.strictEqual((await chiama({ esempio: true, a })).code, 400, String(a));
+  await t('invio di prova: permessi, account senza email e Brevo giù (nessuna voce nel Log se non parte)', async () => {
+    invii = []; const logPrima = Object.keys(store.auditLog || {}).length;
+    assert.strictEqual((await chiama({ esempio: true }, 'tok-gen')).code, 403);
+    assert.strictEqual((await chiama({ esempio: true }, null)).code, 401);
+    assert.strictEqual((await chiama({ esempio: true }, 'tok-senzamail')).code, 400);
     assert.strictEqual(invii.length, 0);
-    tuttoGiu = true; const r = await chiama({ esempio: true, a: 'x@example.com' }); tuttoGiu = false;
-    assert.strictEqual(r.code, 502);
+    tuttoGiu = true; const r = await chiama({ esempio: true }); tuttoGiu = false;
+    assert.strictEqual(r.code, 502); assert.strictEqual(Object.keys(store.auditLog || {}).length, logPrima);
+  });
+  await t('registro emailInvii: ogni invio e rimando si aggiunge (indirizzi mascherati, chi, quando); massimo 50', async () => {
+    nuova('2026_0020'); invii = [];
+    await chiama({ ricevutaId: '2026_0020' }); await chiama({ ricevutaId: '2026_0020', rimanda: true });
+    const reg = col('ricevute')['2026_0020'].emailInvii;
+    assert.strictEqual(reg.length, 2); assert.strictEqual(reg[0].rimando, false); assert.strictEqual(reg[1].rimando, true);
+    assert.strictEqual(reg[0].da, 'dir1'); assert.ok(reg[0].il && reg[0].a.length === 2 && reg[0].a.every((x) => x.includes('***')));
+    assert.ok(!JSON.stringify(reg).includes('mamma@example.com'));
+    col('ricevute')['2026_0020'].emailInvii = Array.from({ length: 60 }, (_, i) => ({ il: 'x' + i }));
+    await chiama({ ricevutaId: '2026_0020', rimanda: true });
+    const r50 = col('ricevute')['2026_0020'].emailInvii; assert.strictEqual(r50.length, 50); assert.strictEqual(r50[49].rimando, true);
   });
 
   console.log(process.exitCode ? 'Collaudo fallito.' : 'OK: ' + n + ' verifiche su PDF, destinatari e invio della ricevuta.');

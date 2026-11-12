@@ -5,13 +5,15 @@
  * POST /api/invia-ricevuta
  *   Authorization: Bearer <ID token Firebase del dirigente>
  *   { "ricevutaId": "2026_0001", "rimanda": false }
- *   { "esempio": true, "a": "indirizzo@example.com" }   invio di PROVA: ricevuta d'esempio (numero ESEMPIO, dati finti,
- *       Dati ASD e firma veri) a un solo indirizzo scelto dal dirigente; non scrive nulla e non consuma numeri.
+ *   { "esempio": true }   invio di PROVA: ricevuta d'esempio (numero ESEMPIO, dati finti, Dati ASD e firma veri) SOLO
+ *       all'email del dirigente che chiama (letta dal suo token: non si accetta nessun altro indirizzo, anche se
+ *       inviato). Non scrive sulle ricevute e non consuma numeri; lascia una voce nel Log (auditLog).
  *
  * Controlli: stessa origine, ID token valido, chiamante dirigente, ricevuta esistente e VALIDA (le annullate non si
  * mandano). Destinatari: genitori collegati all'atleta della ricevuta con email vera (altrimenti l'atleta stesso).
  * Senza atleta o senza indirizzi non parte nulla e lo dice (motivo). Idempotente: se la ricevuta risulta già inviata
- * e non si chiede «rimanda», non rispedisce. Su ricevute/{id} scrive il campo emailInviata (solo il server).
+ * e non si chiede «rimanda», non rispedisce. Su ricevute/{id} scrive il campo emailInviata (ultimo invio) e aggiunge
+ * una riga al registro emailInvii (data, chi, destinatari mascherati; ultime 50): solo il server.
  */
 const fs = require('fs');
 const path = require('path');
@@ -54,9 +56,7 @@ module.exports = async function handler(req, res) {
   const body = typeof req.body === 'string' ? safeJson(req.body) : (req.body || {});
   const esempio = body.esempio === true;
   const id = body.ricevutaId;
-  if (esempio) {
-    if (typeof body.a !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.a.trim()) || body.a.length > 120) return fail(res, 400, 'Indirizzo email non valido.');
-  } else if (!id || typeof id !== 'string' || !/^[A-Za-z0-9_-]{3,40}$/.test(id)) return fail(res, 400, 'Ricevuta mancante.');
+  if (!esempio && (!id || typeof id !== 'string' || !/^[A-Za-z0-9_-]{3,40}$/.test(id))) return fail(res, 400, 'Ricevuta mancante.');
 
   try {
     const db = app.firestore();
@@ -66,6 +66,9 @@ module.exports = async function handler(req, res) {
     const [gg, mm, aa] = oggiRoma().split('-').reverse();
 
     if (esempio) {
+      /* Destinatario = l'email del chiamante (token verificato): niente indirizzi scelti dal client. */
+      const a = String(caller.email || '').trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(a) || a.length > 120) return fail(res, 400, 'Il tuo account non ha un indirizzo email valido: non posso mandare la prova.');
       const [asdDoc, firmaDoc] = await Promise.all([db.collection('settings').doc('asd').get(), db.collection('firme').doc('presidente').get()]);
       const asd = asdDoc.exists ? asdDoc.data() : {};
       const ex = {
@@ -81,11 +84,19 @@ module.exports = async function handler(req, res) {
       const msg = R.componiEmailRicevuta(ex, { nome: '' }, cfg.site);
       msg.subject = '[ESEMPIO] ' + msg.subject;
       msg.attachment = [{ name: 'Ricevuta-ESEMPIO.pdf', content: Buffer.from(pdfEs).toString('base64') }];
-      const a = body.a.trim().toLowerCase();
       try { await inviaEmail(cfg, { email: a }, msg); } catch (e) {
         console.error('[invia-ricevuta] esempio fallito:', e.message);
         return fail(res, 502, 'L’email non è partita (servizio di invio): riprova tra poco.');
       }
+      /* Una traccia nel Log: chi ha mandato la prova e a quale indirizzo (mascherato). Se non si scrive, l'email è già partita. */
+      try {
+        const dd = callerDoc.data() || {};
+        await db.collection('auditLog').add({
+          timestamp: new Date(), dirigenteId: caller.uid, dirigenteNome: ((dd.nome || '') + ' ' + (dd.cognome || '')).trim() || a,
+          entita: 'ricevuta', entitaId: 'ESEMPIO', entitaLabel: 'Ricevuta di esempio (invio di prova)', azione: 'update',
+          campi: [{ campo: 'email di prova', prima: null, dopo: 'inviata a ' + mask(a) }]
+        });
+      } catch (e) { console.error('[invia-ricevuta] log della prova non scritto:', e.message); }
       res.setHeader('Cache-Control', 'no-store');
       return res.status(200).json({ inviata: true, a: [a], esempio: true });
     }
@@ -112,7 +123,11 @@ module.exports = async function handler(req, res) {
     const riusciti = esiti.filter((x) => x.ok);
     if (!riusciti.length) return fail(res, 502, 'L’email non è partita (servizio di invio): riprova tra poco.');
 
-    await ricDoc.ref.update({ emailInviata: { il: new Date().toISOString(), a: riusciti.map((x) => mask(x.d.email)), da: caller.uid } });
+    const voce = { il: new Date().toISOString(), a: riusciti.map((x) => mask(x.d.email)), da: caller.uid };
+    await ricDoc.ref.update({
+      emailInviata: voce,
+      emailInvii: (Array.isArray(r.emailInvii) ? r.emailInvii : []).concat([Object.assign({ rimando: body.rimanda === true, falliti: esiti.length - riusciti.length }, voce)]).slice(-50)
+    });
     return res.status(200).json({ inviata: true, a: riusciti.map((x) => x.d.email), falliti: esiti.length - riusciti.length });
   } catch (e) {
     console.error('[invia-ricevuta]', e && e.code, e && e.message);

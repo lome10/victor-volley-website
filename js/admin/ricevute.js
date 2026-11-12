@@ -102,7 +102,7 @@
     var bm = document.createElement('button');
     bm.className = 'btn-ghost';
     bm.textContent = 'Invia esempio via email';
-    bm.title = 'Manda la ricevuta di esempio (PDF in allegato) a un indirizzo a tua scelta, per vedere come arriva. Non scrive nulla nel registro';
+    bm.title = 'Manda la ricevuta di esempio (PDF in allegato) al TUO indirizzo email, per vedere come arriva. Non scrive nulla nel registro; resta una voce nel Log';
     bm.addEventListener('click', inviaEsempio);
     document.getElementById('topbarActions').appendChild(bm);
     document.getElementById('ricBody').innerHTML =
@@ -133,24 +133,25 @@
   }
 
   /* Prova dell'invio automatico senza emettere nulla: la funzione sul server crea il PDF d'esempio e lo manda
-     all'indirizzo scelto qui. Niente nel registro, nessun numero consumato. */
+     SOLO all'email con cui sei entrato (la legge dal tuo accesso, non da un campo). Niente nel registro delle
+     ricevute, nessun numero consumato; nel Log resta una voce. */
   function inviaEsempio() {
     var u = auth.currentUser;
-    var pre = u && u.email && !/@victorvolley\./i.test(u.email) ? u.email : '';
-    var a = window.prompt('A quale indirizzo mando la ricevuta di esempio? Non scrive nulla nel registro.', pre);
-    if (!a || !a.trim()) return;
-    u.getIdToken().then(function (token) {
-      return fetch('/api/invia-ricevuta', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body: JSON.stringify({ esempio: true, a: a.trim() })
-      });
-    }).then(function (res) {
-      return res.json().catch(function () { return {}; }).then(function (d) {
-        if (!res.ok) throw new Error(d.error || ('Errore ' + res.status));
-        A.avviso('Ricevuta di esempio inviata a ' + d.a[0] + '. Se non arriva, controlla lo spam.', 'ok');
-      });
-    }).catch(function (e) { A.avviso('Errore: ' + DB.errorMessage(e), 'errore'); });
+    if (!u || !u.email) { A.avviso('Il tuo account non ha un indirizzo email: non posso mandare la prova.', 'errore'); return; }
+    A.confirm('Mando la ricevuta di esempio (PDF in allegato) al tuo indirizzo ' + u.email + '? Non scrive nulla nel registro delle ricevute.', function () {
+      u.getIdToken().then(function (token) {
+        return fetch('/api/invia-ricevuta', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ esempio: true })
+        });
+      }).then(function (res) {
+        return res.json().catch(function () { return {}; }).then(function (d) {
+          if (!res.ok) throw new Error(d.error || ('Errore ' + res.status));
+          A.avviso('Ricevuta di esempio inviata a ' + d.a[0] + '. Se non arriva, controlla lo spam.', 'ok');
+        });
+      }).catch(function (e) { A.avviso('Errore: ' + DB.errorMessage(e), 'errore'); });
+    });
   }
 
   function _filtrate() {
