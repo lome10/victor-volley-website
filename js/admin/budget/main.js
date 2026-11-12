@@ -97,6 +97,8 @@
       });
     }).then(function () {
       B._budgetCaricato = true;
+      /* la colonna Abbigliamento dell'elenco atleti resta spenta finché il budget non è qui: ora la riaccende */
+      try { if (A.atleti && A.atleti.elenco().length) _renderAtletiRows(); } catch (e) { console.error('[budget] elenco atleti', e); }
       if (B._tesseramentiBudgetPronto) B._tesseramentiBudgetPronto();
       if (cb) cb();
     })
@@ -343,6 +345,7 @@
     state: {
       get seasons() { return B._seasons; },
       get currentSeasonId() { return B._currentSeasonId; },
+      get caricato() { return !!B._budgetCaricato; },
       get categorieAtleti() { return B._categorieAtleti; },
       get atletiRette() { return B._atletiRette; },
       set atletiRette(v) { B._atletiRette = v; },

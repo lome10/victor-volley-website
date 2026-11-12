@@ -745,8 +745,9 @@
   }
   function _abbOggi() { return A.oggiLocale(); }
   function _abbCella(a) {
-    var v = _abbVoce(a.uid), pagata = !!(v && v.pagata);
-    return '<label class="abb-cella"><input type="checkbox" class="abb-chk" data-uid="' + esc(a.uid) + '"' + (pagata ? ' checked' : '') +
+    var v = _abbVoce(a.uid), pagata = !!(v && v.pagata), pronto = !!_bs().caricato;
+    /* finché il budget non è caricato non si sa chi ha già pagato: la casella resta spenta, per non sovrascrivere un incasso esistente */
+    return '<label class="abb-cella"' + (pronto ? '' : ' title="Sto caricando il budget…"') + '><input type="checkbox" class="abb-chk" data-uid="' + esc(a.uid) + '"' + (pagata ? ' checked' : '') + (pronto ? '' : ' disabled') +
       ' aria-label="Abbigliamento pagato: ' + esc(a.cognome + ' ' + a.nome) + '"> ' +
       (pagata ? '<span>€' + Math.round(+v.importo || 0) + '</span><span class="table-sub"> ' + esc(v.dataIncasso ? _fmtDate(v.dataIncasso) : '') + '</span>'
               : '<span class="table-sub">da pagare</span>') + '</label>';
@@ -772,6 +773,7 @@
   function _abbToggle(uid, checked, chk) {
     var a = _atletiCache.filter(function (x) { return x.uid === uid; })[0];
     if (!a) return;
+    if (!_bs().caricato) { chk.checked = !checked; _avviso('Il budget si sta ancora caricando: riprova tra un attimo.'); return; }
     var id = _abbId(uid), old = _abbVoce(uid), nome = (a.cognome + ' ' + a.nome).trim();
     var label = 'Altra entrata — Abbigliamento atleti — ' + nome;
     if (!checked) {
