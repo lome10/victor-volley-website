@@ -444,7 +444,7 @@
   function _bollo(importo) {
     if (_asd.rasd) return BOLLO_ESENTE;
     return importo > SOGLIA_BOLLO
-      ? 'Imposta di bollo di € 2,00 da assolvere (importo superiore a € 77,47): verificare con il commercialista.'
+      ? 'Imposta di bollo di € 2,00 da assolvere (importo superiore a € 77,47).'
       : 'Imposta di bollo non dovuta (importo non superiore a € 77,47).';
   }
 

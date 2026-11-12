@@ -71,5 +71,19 @@ t('ricevuta annullata: timbro e motivo', () => {
   assert.ok(!D.html(ric(), 'x').includes('ANNULLATA'));
 });
 
+/* Il testo del bollo finisce sulla ricevuta stampata e nell'email alle famiglie: niente appunti interni. */
+t('testo del bollo sopra soglia: nessun appunto interno, frase attesa presente', () => {
+  const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'js', 'admin', 'ricevute.js'), 'utf8');
+  const i = src.indexOf('function _bollo');
+  assert.ok(i > 0, 'funzione _bollo non trovata');
+  assert.ok(!/commercialista/i.test(src.slice(i, i + 400)), 'appunto interno nel testo del bollo');
+  assert.ok(src.includes("'Imposta di bollo di € 2,00 da assolvere (importo superiore a € 77,47).'"), 'testo del bollo atteso non trovato');
+});
+t('il bollo scritto sul documento compare cosi\' com\'e\', senza aggiunte', () => {
+  const h = D.html(ric({ bollo: 'Imposta di bollo di € 2,00 da assolvere (importo superiore a € 77,47).' }), 'x');
+  assert.ok(h.includes('Imposta di bollo di € 2,00 da assolvere (importo superiore a € 77,47).'), 'bollo non presente nel documento');
+  assert.ok(!/commercialista/i.test(h));
+});
+
 if (process.exitCode) { console.error('\nCollaudo ricevuta: PROBLEMI (vedi sopra).'); }
 else { console.log('OK: ' + passed + ' verifiche sulla ricevuta (importo in lettere, documento, escape, firma).'); }
