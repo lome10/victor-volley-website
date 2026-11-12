@@ -139,7 +139,9 @@
 
   function _writeFailed(part, what, err) {
     console.error('[DB] ' + what, err);
-    _notifyError('Operazione non riuscita: ' + what + '. ' + _errIt(err) + ' Riprova.');
+    /* «Riprova» solo se il motivo non lo dice già (es. «Errore imprevisto. Riprova.») */
+    var motivo = _errIt(err);
+    _notifyError('Operazione non riuscita: ' + what + '. ' + motivo + (/riprova/i.test(motivo) ? '' : ' Riprova.'));
     _resync(part);
   }
 

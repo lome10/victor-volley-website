@@ -19,7 +19,9 @@ let loads = 0;
 const fakeDoc = () => ({
   set: () => hang
     ? new Promise(ok => { releaseHang = () => ok(); })
-    : new Promise((ok, ko) => setTimeout(() => (failNext ? ko({ code: 'permission-denied', message: 'Missing or insufficient permissions.' }) : ok()), 5)),
+    : new Promise((ok, ko) => setTimeout(() => (failNext
+      ? ko(failNext === 'sconosciuto' ? { code: 'qualcosa-di-nuovo', message: 'English text' } : { code: 'permission-denied', message: 'Missing or insufficient permissions.' })
+      : ok()), 5)),
   delete: () => Promise.resolve(),
   get: () => { loads++; return Promise.resolve({ exists: false, data: () => ({}) }); }
 });
@@ -65,6 +67,14 @@ const bottone = () => ({ disabled: false, closest(s) { return s === 'button' ? t
   ok('2a cb NON chiamato', cb === false);
   ok('2b banner in italiano', banners.length === 1 && banners[0][0] === 'errore' && /Non hai il permesso/.test(banners[0][1]));
   ok('2c cache riletta da Firestore', loads > l0);
+  ok('2d "Riprova" compare una volta sola (motivo senza Riprova)', (banners[0][1].match(/Riprova/g) || []).length === 1);
+  /* motivo che contiene già «Riprova.» (errore sconosciuto): una volta sola, non due */
+  banners.length = 0; DB.writeTimeoutMs = 15000;
+  failNext = 'sconosciuto';
+  DB.saveArticle({ title: 'y2' }, () => {});
+  await wait(30);
+  ok('2e "Riprova" una volta sola anche con "Errore imprevisto. Riprova."',
+    banners.length === 1 && /Errore imprevisto\./.test(banners[0][1]) && (banners[0][1].match(/Riprova/g) || []).length === 1);
   failNext = false; banners.length = 0;
 
   /* 3. traduzioni */
