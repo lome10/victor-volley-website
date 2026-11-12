@@ -461,6 +461,25 @@ t('IVA sponsor: 6.100 € con IVA 22% compresa → imponibile 5.000, IVA 1.100, 
   const c = ivaSponsor()(6100, { ivaInclusaPct: 22, ivaVersarePct: 11 });
   assert.deepStrictEqual([c.imponibile, c.ivaInclusa, c.daVersare, c.versarePct], [5000, 1100, 550, 11]);
 });
+ta('IVA sponsor: una voce NUOVA prende data e trimestre dall’ultimo incasso (o dall’ultima scadenza); una già esistente non si tocca', async () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', 'js', 'admin', 'budget', 'sponsor.js'), 'utf8').split(String.fromCharCode(13)).join('');
+  const i = src.indexOf('function _trancheOf'), j = src.indexOf('B._sponsorIvaCalc ='), k = src.indexOf('function _syncSponsorIva'), l = src.indexOf('/* Migrazione una tantum');
+  assert.ok(i > 0 && j > i && k > j && l > k, 'funzioni non trovate in sponsor.js');
+  const costruisci = (B) => {
+    const scritti = [];
+    const db = { collection: () => ({ doc: () => ({ id: 'nuova', set: (d) => { scritti.push(d); return Promise.resolve(); }, update: () => Promise.resolve(), delete: () => Promise.resolve() }) }) };
+    const f = new Function('B', 'db', '_logWrite', '_diff', src.slice(i, j) + src.slice(j, j + 'B._sponsorIvaCalc = _sponsorIvaCalc;'.length) + '\n' + src.slice(k, l) + '; return _syncSponsorIva;')(B, db, () => Promise.resolve(), () => []);
+    return { f, scritti };
+  };
+  const B = { _tranche: [{ sponsorizzazioneId: 'x', pagato: true, importo: 1000, dataIncasso: '2026-10-05', scadenza: '2026-09-30' }, { sponsorizzazioneId: 'x', pagato: false, importo: 1000, scadenza: '2026-12-31' }], _vociSpesa: [], _aziendaById: () => ({ ragioneSociale: 'Rossi' }), _trimestreIvaDaData: (d) => (d === '2026-12-31' ? { trimestre: 'T4', scadenza: '2027-03-16' } : null) };
+  const a = costruisci(B);
+  await a.f({ id: 'x', seasonId: 's1', aziendaId: 'az', stato: 'chiuso', importoConfermato: 2000 });
+  assert.strictEqual(a.scritti.length, 1); assert.strictEqual(a.scritti[0].dataSpesa, '2026-12-31', 'ultima data utile');
+  assert.deepStrictEqual([a.scritti[0].ivaTrimestre, a.scritti[0].ivaScadenza], ['T4', '2027-03-16']);
+  const b = costruisci(Object.assign({}, B, { _vociSpesa: [{ id: 'g', dataSpesa: '', ivaTrimestre: '', ivaScadenza: '' }] }));
+  await b.f({ id: 'x', seasonId: 's1', aziendaId: 'az', stato: 'chiuso', importoConfermato: 2000, ivaVoceSpesaId: 'g' });
+  assert.strictEqual(b.scritti.length, 0, 'la voce esistente non viene ricreata');
+});
 t('IVA sponsor: senza IVA compresa resta il comportamento storico (11% dell’importo)', () => {
   const f = ivaSponsor();
   assert.deepStrictEqual([f(1000, {}).ivaInclusa, f(1000, {}).daVersare], [0, 110]);

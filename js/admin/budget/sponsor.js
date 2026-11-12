@@ -687,11 +687,17 @@
         .then(function () { Object.assign(figlia, patch); });
     }
 
+    /* Voce NUOVA: data di riferimento = ultimo incasso (o, se non c'è ancora, la scadenza dell'ultima tranche), e da lì il trimestre di
+       versamento. Senza data la voce restava fuori dalla previsione di cassa, da «IVA da versare» e finiva in «Spese senza data».
+       Le voci già esistenti non si toccano (le sistema chi le ha in carico). */
+    var dateRif = _trancheOf(s.id).map(function (t) { return t.pagato ? (t.dataIncasso || t.scadenza || '') : (t.scadenza || ''); }).filter(Boolean).sort();
+    var dataRif = dateRif.length ? dateRif[dateRif.length - 1] : '';
+    var autoIva = dataRif && B._trimestreIvaDaData ? B._trimestreIvaDaData(dataRif) : null;
     var data = {
       seasonId: s.seasonId, categoria: nome, categoriaSpesaId: '',
-      importoPreventivato: preventivato, importoSostenuto: sostenuto, ivaAliquota: aliquotaVersata, dataSpesa: '',
+      importoPreventivato: preventivato, importoSostenuto: sostenuto, ivaAliquota: aliquotaVersata, dataSpesa: dataRif,
       note: 'IVA ' + aliquotaVersata + '% generata automaticamente sullo sponsor "' + nome.replace(/^IVA /, '') + '" (preventivo alla chiusura, saldo sulle tranche incassate)',
-      isIva: true, pagata: false, ivaEscluso: false, ivaTrimestre: '', ivaScadenza: '', ivaScadenzaManuale: false
+      isIva: true, pagata: false, ivaEscluso: false, ivaTrimestre: autoIva ? autoIva.trimestre : '', ivaScadenza: autoIva ? autoIva.scadenza : '', ivaScadenzaManuale: false
     };
     var ref = db.collection('vociSpesa').doc();
     return ref.set(data).then(function () {
