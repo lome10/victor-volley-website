@@ -2463,7 +2463,7 @@
     }
     var abbPagata = _abbVoce(uid);
     if (abbPagata && abbPagata.pagata) {
-      testo += ' Verrà eliminato anche l'incasso Abbigliamento (€' + Math.round(+abbPagata.importo || 0) + ': sparirà dal bilancio).';
+      testo += ' Verrà eliminato anche il pagamento Abbigliamento (€' + Math.round(+abbPagata.importo || 0) + ': sparirà dal bilancio).';
     }
     confirm(testo, function () {
       Promise.all([
