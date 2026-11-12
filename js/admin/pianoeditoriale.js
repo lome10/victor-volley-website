@@ -225,7 +225,7 @@
 
       var chipsHtml = dayItems.map(function (it) {
         var plat = _peItemPlatform(it);
-        return '<div class="pe-chip chip ' + plat.chipClass + '" draggable="true" data-pe-id="' + esc(it.id) + '" onclick="AdminActions.editPianoEditoriale(\'' + it.id + '\')" title="' + esc(it.titolo) + _peSponsorTitle(it) + '"><span class="pe-chip-main"><span class="pe-chip-t">' + esc(it.titolo) + '</span>' + _peSponsorNames(it) + '</span>' + _peSponsorLogos(it) + '</div>';
+        return '<div class="pe-chip chip ' + plat.chipClass + '" draggable="true" tabindex="0" role="button" onkeydown="if(event.target===this&&(event.key===\x27Enter\x27||event.key===\x27 \x27)){event.preventDefault();this.click();}" data-pe-id="' + esc(it.id) + '" onclick="AdminActions.editPianoEditoriale(\'' + it.id + '\')" title="' + esc(it.titolo) + _peSponsorTitle(it) + '"><span class="pe-chip-main"><span class="pe-chip-t">' + esc(it.titolo) + '</span>' + _peSponsorNames(it) + '</span>' + _peSponsorLogos(it) + '</div>';
       }).join('');
 
       html +=
@@ -258,7 +258,7 @@
 
       var itemsHtml = dayItems.map(function (it) {
         var plat = _peItemPlatform(it);
-        return '<div class="pe-agenda-item ' + plat.chipClass + '" onclick="AdminActions.editPianoEditoriale(\'' + it.id + '\')">' +
+        return '<div class="pe-agenda-item ' + plat.chipClass + '" tabindex="0" role="button" onkeydown="if(event.target===this&&(event.key===\x27Enter\x27||event.key===\x27 \x27)){event.preventDefault();this.click();}" onclick="AdminActions.editPianoEditoriale(\'' + it.id + '\')">' +
           '<div class="pe-agenda-item-top">' +
             '<span class="pe-agenda-item-title">' + esc(it.titolo) + '</span>' + _peSponsorLogos(it) +
             (it.ora ? '<span class="pe-agenda-item-time">' + esc(it.ora) + '</span>' : '') +

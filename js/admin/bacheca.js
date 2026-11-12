@@ -77,7 +77,8 @@
   }
 
   function _renderKbBoard() {
-    var todayYmd = new Date().toISOString().slice(0, 10);
+    /* data di oggi LOCALE (non UTC: dopo mezzanotte italiana toISOString darebbe ancora ieri) */
+    var todayYmd = A.oggiLocale();
     var html = KB_COLUMNS.map(function (col, colIdx) {
       var items = _kbItems.filter(function (it) { return (it.stato || 'daFare') === col.key; })
         .sort(function (a, b) {
@@ -93,7 +94,7 @@
       var cards = items.map(function (it) {
         var late = it.scadenza && it.scadenza < todayYmd && col.key !== 'fatta';
         var priorita = it.priorita || 'media';
-        return '<div class="kb-card kb-card--' + priorita + '" draggable="true" data-id="' + esc(it.id) + '">' +
+        return '<div class="kb-card kb-card--' + priorita + '" draggable="true" tabindex="0" role="button" aria-label="' + esc('Apri attività: ' + it.titolo) + '" data-id="' + esc(it.id) + '">' +
           '<div class="kb-card-title">' + esc(it.titolo) + '</div>' +
           (it.creatoDa ? '<div class="kb-card-creator">Creata da ' + esc(it.creatoDa) + '</div>' : '') +
           '<div class="kb-card-meta">' +
@@ -102,8 +103,8 @@
             (it.scadenza ? '<span class="kb-card-due' + (late ? ' kb-card-due--late' : '') + '">' + _kbFmtDate(it.scadenza) + '</span>' : '') +
           '</div>' +
           '<div class="kb-card-actions">' +
-            '<button type="button" class="kb-card-move" data-id="' + esc(it.id) + '" data-dir="-1"' + (colIdx === 0 ? ' disabled' : '') + ' title="Sposta indietro">&lsaquo;</button>' +
-            '<button type="button" class="kb-card-move" data-id="' + esc(it.id) + '" data-dir="1"' + (colIdx === KB_COLUMNS.length - 1 ? ' disabled' : '') + ' title="Sposta avanti">&rsaquo;</button>' +
+            '<button type="button" class="kb-card-move" data-id="' + esc(it.id) + '" data-dir="-1"' + (colIdx === 0 ? ' disabled' : '') + ' title="Sposta indietro" aria-label="Sposta indietro">&lsaquo;</button>' +
+            '<button type="button" class="kb-card-move" data-id="' + esc(it.id) + '" data-dir="1"' + (colIdx === KB_COLUMNS.length - 1 ? ' disabled' : '') + ' title="Sposta avanti" aria-label="Sposta avanti">&rsaquo;</button>' +
           '</div>' +
         '</div>';
       }).join('') || '<div class="kb-col-empty">Nessuna attività</div>';
@@ -142,6 +143,11 @@
       card.addEventListener('click', function () {
         var item = _kbItems.find(function (x) { return x.id === card.dataset.id; });
         if (item) _openKbModal(item, null);
+      });
+      /* da tastiera: Invio o Spazio sulla scheda (non sui suoi pulsanti interni) la aprono come il clic */
+      card.addEventListener('keydown', function (e) {
+        if (e.target !== card || (e.key !== 'Enter' && e.key !== ' ')) return;
+        e.preventDefault(); card.click();
       });
       card.addEventListener('dragstart', function (e) {
         _kbDragId = card.dataset.id;
