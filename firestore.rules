@@ -16,7 +16,9 @@ service cloud.firestore {
         exists(/databases/$(database)/documents/dirigenti/$(request.auth.uid));
     }
 
-    // RUOLI dei dirigenti (campo facoltativo dirigenti/{uid}.ruolo: presidente | segreteria | presenze).
+    // RUOLI dei dirigenti (campo facoltativo dirigenti/{uid}.ruolo: master | presidente | segreteria | presenze).
+    // «master» sta sopra il presidente: stessi permessi + assegna i ruoli agli altri. Si imposta SOLO dalla console di
+    // Firebase (nessuna regola lo lascia scrivere dal browser) e il suo documento non si declassa né si elimina da altri.
     // Il campo MANCANTE (o vuoto) vale 'presidente': chi c'è oggi non cambia e non perde nulla.
     // Un valore non riconosciuto non dà NESSUN permesso (minimo privilegio); i valori scrivibili sono solo i tre
     // (vedi la regola su /dirigenti). Si confronta in minuscolo. Chiamare queste funzioni solo dopo isDirigente().
@@ -24,17 +26,21 @@ service cloud.firestore {
       let d = get(/databases/$(database)/documents/dirigenti/$(request.auth.uid)).data;
       return ('ruolo' in d && d.ruolo is string && d.ruolo != '') ? d.ruolo.lower() : 'presidente';
     }
-    // Presidente: tutto (budget, sponsor, dirigenti, log).
-    function isPresidente() {
-      return isDirigente() && ruoloDirigente() == 'presidente';
+    // Master: assegna i ruoli (e può tutto ciò che può il presidente).
+    function isMaster() {
+      return isDirigente() && ruoloDirigente() == 'master';
     }
-    // Segreteria (e presidente): atleti, ricevute, presenze. Niente budget, niente dirigenti.
+    // Presidente (e master): tutto (budget, sponsor, dirigenti, log).
+    function isPresidente() {
+      return isDirigente() && ruoloDirigente() in ['master', 'presidente'];
+    }
+    // Segreteria (e presidente, master): atleti, ricevute, presenze. Niente budget, niente dirigenti.
     function isSegreteria() {
-      return isDirigente() && ruoloDirigente() in ['presidente', 'segreteria'];
+      return isDirigente() && ruoloDirigente() in ['master', 'presidente', 'segreteria'];
     }
     // Chiunque abbia un ruolo valido (anche «presenze»): presenze, lettura dell'elenco atleti, scrittura del Log.
     function isPresenze() {
-      return isDirigente() && ruoloDirigente() in ['presidente', 'segreteria', 'presenze'];
+      return isDirigente() && ruoloDirigente() in ['master', 'presidente', 'segreteria', 'presenze'];
     }
 
     // Vero se l'account è l'atleta stesso (id = uid) o è elencato nei suoi accessUids
@@ -134,23 +140,32 @@ service cloud.firestore {
     // Registro ruoli. Ognuno può leggere solo il proprio documento (serve al
     // controllo di accesso del pannello); i dirigenti vedono tutti. Scrivere qui
     // significa promuovere qualcuno a dirigente: solo un dirigente può farlo.
-    // Solo il presidente crea, modifica ed elimina dirigenti, e solo con un ruolo valido (o senza il campo).
-    // Eccezione: la segreteria può aggiornare il solo campo «taglie» (la taglia dei dirigenti si imposta dall'elenco atleti).
-    function ruoloScrivibile() {
-      return !('ruolo' in request.resource.data) ||
-        (request.resource.data.ruolo is string && request.resource.data.ruolo in ['presidente', 'segreteria', 'presenze']);
+    // Dirigenti. Il presidente (e il master) crea, modifica ed elimina dirigenti, MA il campo «ruolo» lo assegna solo il
+    // master, e solo con i valori presidente | segreteria | presenze (o togliendo il campo = presidente). «master» non si
+    // scrive dal browser. Il documento di un master si modifica solo da lui stesso, senza toccare il ruolo, e non si
+    // elimina. La segreteria può aggiornare il solo campo «taglie» (la taglia dei dirigenti si imposta dall'elenco atleti).
+    function ruoloAssegnabile(r) {
+      return r is string && r in ['presidente', 'segreteria', 'presenze'];
     }
-    // Nessuno si toglie da solo il ruolo di presidente (sarebbe un blocco accidentale): il proprio ruolo non si declassa.
-    function nonDeclassaSeStesso(uid) {
-      return uid != request.auth.uid || !('ruolo' in request.resource.data) ||
-        (request.resource.data.ruolo is string && request.resource.data.ruolo.lower() == 'presidente');
+    function docMaster() {
+      return 'ruolo' in resource.data && resource.data.ruolo is string && resource.data.ruolo.lower() == 'master';
+    }
+    function soloTaglie() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['taglie']);
+    }
+    function ruoloCambia() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasAny(['ruolo']);
     }
     match /dirigenti/{uid} {
       allow read: if signedIn() && (request.auth.uid == uid || isSegreteria());
-      allow create: if isPresidente() && ruoloScrivibile();
-      allow update: if (isPresidente() && ruoloScrivibile() && nonDeclassaSeStesso(uid)) ||
-        (isSegreteria() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['taglie']));
-      allow delete: if isPresidente();
+      allow create: if isPresidente() &&
+        (!('ruolo' in request.resource.data) || (isMaster() && ruoloAssegnabile(request.resource.data.ruolo)));
+      allow update: if docMaster()
+        ? ((request.auth.uid == uid && !ruoloCambia()) || (isSegreteria() && soloTaglie()))
+        : ((isPresidente() && !ruoloCambia()) ||
+           (isMaster() && ruoloCambia() && (!('ruolo' in request.resource.data) || ruoloAssegnabile(request.resource.data.ruolo))) ||
+           (isSegreteria() && soloTaglie()));
+      allow delete: if isPresidente() && !docMaster();
     }
 
     // Allenatori — un documento per account (id = uid) con le categorie che allena. Ognuno legge solo il proprio;

@@ -5,7 +5,8 @@
  * si scarica la prima volta). Non tocca il database vero: progetto finto «demo-vv». Se il CLI non c'è, salta con un avviso.
  *
  * Verifica soprattutto che NESSUNO perda un permesso per errore:
- *   - dirigente SENZA campo ruolo (tutti quelli di oggi) e dirigente «presidente»: stessi permessi di prima, collezione per collezione;
+ *   - dirigente SENZA campo ruolo (tutti quelli di oggi), «presidente» e «master»: stessi permessi di prima, collezione per collezione;
+ *   - master: assegna i ruoli; non è declassabile né eliminabile da altri; «master» non si scrive dal browser;
  *   - segreteria: atleti, ricevute, presenze; niente budget, niente dirigenti, niente contenuti del sito;
  *   - presenze: solo presenze (e leggere l'elenco atleti);
  *   - ruolo non riconosciuto / vuoto / maiuscolo: nessun permesso o, se vuoto, come presidente;
@@ -65,6 +66,8 @@ async function atteso(uid, op, path, data, ok, nota) {
   /* ---- dati di partenza ---- */
   await semina('dirigenti/pres', { nome: 'Senza campo' });                 // come tutti i dirigenti di oggi
   await semina('dirigenti/pres2', { nome: 'Pres', ruolo: 'presidente' });
+  await semina('dirigenti/mas', { nome: 'Master', ruolo: 'master' });
+  await semina('dirigenti/mas2', { nome: 'Master2', ruolo: 'MASTER' });
   await semina('dirigenti/seg', { nome: 'Seg', ruolo: 'segreteria' });
   await semina('dirigenti/prs', { nome: 'Prs', ruolo: 'presenze' });
   await semina('dirigenti/boh', { nome: 'Boh', ruolo: 'boh' });
@@ -88,7 +91,7 @@ async function atteso(uid, op, path, data, ok, nota) {
   const tuttiRW = ['articles', 'partite', 'allenamenti', 'allenamentiEccezioni', 'albums', 'categories', 'players', 'staff', 'siteData', 'giocatoriDati', 'atletiDati',
     'budgetSeasons', 'aziende', 'sponsorizzazioni', 'tranchePagamento', 'attivita', 'promemoria', 'pianoEditoriale', 'bacheca', 'categorieAtleti', 'atletiRette',
     'rateAtleti', 'contatoriRicevute', 'firme', 'tessere', 'supercoppaBari', 'altreEntrate', 'vociSpesa', 'sottospese', 'categorieSpesa', 'atleti', 'accessi', 'comunicazioni', 'allenatori'];
-  for (const u of ['pres', 'pres2', 'vuoto']) {
+  for (const u of ['pres', 'pres2', 'vuoto', 'mas', 'mas2']) {
     for (const c of tuttiRW) {
       const id = c === 'accessi' ? 'fam' : c === 'allenatori' ? 'mister' : c === 'atleti' ? 'a1' : c === 'comunicazioni' ? 'c1' : 'x';
       await atteso(u, 'get', c + '/' + id, null, true);
@@ -99,7 +102,7 @@ async function atteso(uid, op, path, data, ok, nota) {
     await atteso(u, 'set', 'settings/asd', { denominazione: 'ASD2' }, true);
     await atteso(u, 'get', 'dirigenti/pres', null, true); await atteso(u, 'get', 'dirigenti/seg', null, true);
     await atteso(u, 'set', 'dirigenti/nuovo_' + u, { nome: 'Nuovo' }, true, 'creare un dirigente senza ruolo (come oggi)');
-    await atteso(u, 'set', 'dirigenti/nuovo2_' + u, { nome: 'Nuovo', ruolo: 'segreteria' }, true);
+    await atteso(u, 'set', 'dirigenti/nuovo2_' + u, { nome: 'Nuovo', ruolo: 'segreteria' }, u === 'mas' || u === 'mas2', 'creare un dirigente CON ruolo: solo il master');
     await atteso(u, 'merge', 'dirigenti/seg', { taglie: { polo: 'M' } }, true);
     await atteso(u, 'del', 'dirigenti/nuovo_' + u, null, true);
     await atteso(u, 'get', 'presenzeAllenamento/x', null, true); await atteso(u, 'set', 'presenzeAllenamento/x', { v: 3 }, false, 'solo il server');
@@ -172,16 +175,49 @@ async function atteso(uid, op, path, data, ok, nota) {
     await atteso(u, 'get', 'dirigenti/' + u, null, true, 'il proprio profilo si legge sempre: il pannello non si blocca in modo strano');
   }
 
-  /* ================= 5. valori del ruolo scrivibili solo se validi ================= */
-  await atteso('pres', 'set', 'dirigenti/t1', { nome: 'T', ruolo: 'qualcosa' }, false, 'ruolo inventato non si scrive');
-  await atteso('pres', 'set', 'dirigenti/t1', { nome: 'T', ruolo: 5 }, false);
-  await atteso('pres', 'set', 'dirigenti/t1', { nome: 'T', ruolo: 'presenze' }, true);
-  await atteso('pres', 'merge', 'dirigenti/t1', { ruolo: 'segreteria' }, true);
-  await atteso('pres', 'merge', 'dirigenti/t1', { ruolo: 'Admin' }, false);
-  await atteso('pres2', 'merge', 'dirigenti/pres2', { ruolo: 'presenze' }, false, 'il presidente non si declassa da solo');
-  await atteso('pres2', 'merge', 'dirigenti/pres2', { ruolo: 'presidente' }, true);
-  await atteso('pres', 'merge', 'dirigenti/pres', { taglie: { polo: 'XL' } }, true, 'il proprio profilo senza toccare il ruolo');
-  await atteso('pres', 'merge', 'dirigenti/pres', { ruolo: 'segreteria' }, false);
+  /* ================= 5. master: assegna i ruoli; presidente e gli altri no ================= */
+  await semina('dirigenti/t1', { nome: 'T' }); await semina('dirigenti/t2', { nome: 'T2', ruolo: 'presenze' });
+  await atteso('pres', 'set', 'dirigenti/t1x', { nome: 'T', ruolo: 'presenze' }, false, 'il presidente non assegna ruoli');
+  await atteso('pres', 'merge', 'dirigenti/t1', { ruolo: 'segreteria' }, false);
+  await atteso('pres', 'merge', 'dirigenti/t2', { ruolo: 'presidente' }, false);
+  await atteso('pres', 'set', 'dirigenti/t2', { nome: 'T2' }, false, 'nemmeno togliendo il campo');
+  await atteso('pres', 'merge', 'dirigenti/t1', { taglie: { polo: 'M' } }, true, 'il resto del documento sì, come prima');
+  await atteso('pres', 'set', 'dirigenti/n6', { nome: 'N6' }, true, 'creare senza ruolo: come prima');
+  await atteso('pres', 'set', 'dirigenti/n5', { nome: 'N5', ruolo: 'segreteria' }, false);
+  for (const m of ['mas', 'mas2']) {
+    await atteso(m, 'merge', 'dirigenti/t1', { ruolo: 'segreteria' }, true, 'il master assegna');
+    await atteso(m, 'merge', 'dirigenti/t1', { ruolo: 'presenze' }, true);
+    await atteso(m, 'merge', 'dirigenti/t1', { ruolo: 'presidente' }, true);
+    await atteso(m, 'set', 'dirigenti/t2', { nome: 'T2' }, true, 'togliere il ruolo = presidente');
+    await semina('dirigenti/t2', { nome: 'T2', ruolo: 'presenze' });
+    for (const v of ['qualcosa', 'Admin', 'master', 'MASTER', '']) await atteso(m, 'merge', 'dirigenti/t1', { ruolo: v }, false, 'valore non assegnabile: ' + v);
+    await atteso(m, 'merge', 'dirigenti/t1', { ruolo: 5 }, false);
+    await atteso(m, 'set', 'dirigenti/n4_' + m, { nome: 'N4', ruolo: 'presenze' }, true);
+    await atteso(m, 'set', 'dirigenti/n3_' + m, { nome: 'N3', ruolo: 'master' }, false, '«master» non si scrive dal browser');
+    await atteso(m, 'del', 'dirigenti/n4_' + m, null, true);
+  }
+  /* il documento del master: solo lui, senza toccare il ruolo; non si elimina; gli altri non lo declassano */
+  await atteso('mas', 'merge', 'dirigenti/mas', { ruolo: 'presidente' }, false, 'il master non si declassa da solo');
+  await atteso('mas', 'set', 'dirigenti/mas', { nome: 'Master' }, false, 'né togliendo il campo');
+  await atteso('mas', 'merge', 'dirigenti/mas', { nome: 'Master M' }, true);
+  await atteso('mas', 'merge', 'dirigenti/mas', { taglie: { polo: 'L' } }, true);
+  await atteso('mas', 'del', 'dirigenti/mas', null, false, 'nessuno elimina un master dal browser, nemmeno lui');
+  await atteso('mas', 'merge', 'dirigenti/mas2', { ruolo: 'presidente' }, false, 'un master non declassa un altro master');
+  await atteso('mas', 'merge', 'dirigenti/mas2', { nome: 'x' }, false);
+  await atteso('mas', 'del', 'dirigenti/mas2', null, false);
+  for (const u of ['pres', 'pres2', 'vuoto', 'seg', 'prs', 'boh']) {
+    await atteso(u, 'merge', 'dirigenti/mas', { ruolo: 'presidente' }, false, u + ' non declassa il master');
+    await atteso(u, 'merge', 'dirigenti/mas', { nome: 'Hack' }, false);
+    await atteso(u, 'set', 'dirigenti/mas', { nome: 'Hack' }, false);
+    await atteso(u, 'del', 'dirigenti/mas', null, false, u + ' non elimina il master');
+    await atteso(u, 'merge', u === 'vuoto' ? 'dirigenti/vuoto' : 'dirigenti/' + u, { ruolo: 'master' }, false, u + ' non si promuove master');
+  }
+  await atteso('pres', 'merge', 'dirigenti/mas', { taglie: { polo: 'XL' } }, true, 'la taglia dei dirigenti, master compreso, si imposta dall\'elenco atleti');
+  await atteso('seg', 'merge', 'dirigenti/mas', { taglie: { polo: 'S' } }, true);
+  await atteso('prs', 'merge', 'dirigenti/mas', { taglie: { polo: 'S' } }, false);
+  await atteso('pres', 'del', 'dirigenti/n6', null, true, 'il presidente elimina dirigenti come prima');
+  await atteso('pres', 'del', 'dirigenti/t1', null, true);
+  await atteso('seg', 'del', 'dirigenti/t2', null, false);
 
   /* ================= 6. chi non è dirigente: invariato ================= */
   /* i punti 1-5 hanno riscritto alcuni documenti di prova: si rimettono come all'inizio */

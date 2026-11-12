@@ -5,7 +5,7 @@
   /* ================================================
      BOOTSTRAP — Firebase Auth + ruolo dirigente
   ================================================ */
-  var _uid = null, _dirigenteNome = '';
+  var _uid = null, _dirigenteNome = '', _ruolo = 'presidente';
 
   document.addEventListener('DOMContentLoaded', function () {
     /* Ripristina sessione se l'utente è già autenticato */
@@ -44,6 +44,9 @@
       var data = doc.data();
       _uid = user.uid;
       _dirigenteNome = ((data.nome || '') + ' ' + (data.cognome || '')).trim() || data.email || user.email;
+      /* Ruolo (campo facoltativo): mancante = presidente. Il pannello lo usa solo per mostrare ai «master» il menu dei ruoli:
+         i permessi veri li decidono le regole di Firestore e il server. */
+      _ruolo = (typeof data.ruolo === 'string' && data.ruolo) ? data.ruolo.toLowerCase() : 'presidente';
       DB.setAuditHook(_logWrite);
       showApp();
     }).catch(function (err) {
@@ -470,8 +473,10 @@
   }
 
   function _loadDirigenti() {
+    var _th = document.getElementById('dirigentiThRuolo');
+    if (_th) _th.classList.toggle('is-hidden', _ruolo !== 'master');
     document.getElementById('dirigentiBody').innerHTML =
-      '<tr><td colspan="3" style="text-align:center;color:var(--a-muted);padding:20px">Caricamento…</td></tr>';
+      '<tr><td colspan="' + (_ruolo === 'master' ? 4 : 3) + '" style="text-align:center;color:var(--a-muted);padding:20px">Caricamento…</td></tr>';
 
     db.collection('dirigenti').get().then(function (snap) {
       _dirigentiCache = [];
@@ -497,17 +502,52 @@
     }
     var EDIT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
     var DEL_ICON  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>';
+    var isMaster = _ruolo === 'master';
     document.getElementById('dirigentiBody').innerHTML = _dirigentiCache.map(function (d) {
+      var rd = (typeof d.ruolo === 'string' && d.ruolo) ? d.ruolo.toLowerCase() : 'presidente';
+      var cellaRuolo = '';
+      if (isMaster) {
+        cellaRuolo = '<td>' + (d.senzaAccesso ? '<span style="color:var(--a-muted)">—</span>'
+          : rd === 'master' ? '<strong>Master</strong>'
+          : '<select class="form-input dir-ruolo" data-uid="' + esc(d.uid) + '" data-prima="' + esc(rd) + '" aria-label="Ruolo di ' + esc((d.nome || '') + ' ' + (d.cognome || '')) + '" style="width:auto">' +
+            RUOLI_ASSEGNABILI.map(function (r) { return '<option value="' + r[0] + '"' + (r[0] === rd ? ' selected' : '') + '>' + r[1] + '</option>'; }).join('') + '</select>') + '</td>';
+      }
       return '<tr>' +
         '<td>' + esc((d.nome || '') + ' ' + (d.cognome || '')) + '</td>' +
         '<td>' + (d.senzaAccesso ? '<span style="color:var(--a-muted)">Solo taglie (senza accesso)</span>' : esc(d.email || '')) + '</td>' +
+        cellaRuolo +
         '<td style="text-align:right;white-space:nowrap">' +
           (d.senzaAccesso ? '' : '<button class="btn-ghost btn-sm" onclick="AdminActions.rendiAllenatore(\'' + d.uid + '\')" title="Dagli la pagina dell\'allenatore con le sue categorie">Rendi allenatore</button> ') +
-          '<button class="btn-icon btn-icon--danger" onclick="AdminActions.deleteDirigente(\'' + d.uid + '\')" title="' + (d.senzaAccesso ? 'Elimina' : 'Revoca accesso') + '">' + DEL_ICON + '</button>' +
+          (rd === 'master' ? '' : '<button class="btn-icon btn-icon--danger" onclick="AdminActions.deleteDirigente(\'' + d.uid + '\')" title="' + (d.senzaAccesso ? 'Elimina' : 'Revoca accesso') + '">' + DEL_ICON + '</button>') +
         '</td>' +
       '</tr>';
     }).join('');
   }
+
+  /* Ruoli assegnabili dal master (il «master» non si assegna da qui: si imposta solo nella console di Firebase). */
+  var RUOLI_ASSEGNABILI = [['presidente', 'Presidente'], ['segreteria', 'Segreteria'], ['presenze', 'Solo presenze']];
+
+  /* Menu dei ruoli (solo per il master): conferma, poi scrive dirigenti/{uid}.ruolo e lo annota nel Log. */
+  document.getElementById('dirigentiBody').addEventListener('change', function (e) {
+    var sel = e.target.closest ? e.target.closest('.dir-ruolo') : null;
+    if (!sel || _ruolo !== 'master') return;
+    var uid = sel.dataset.uid, prima = sel.dataset.prima, nuovo = sel.value;
+    if (nuovo === prima) return;
+    var target = _dirigentiCache.find(function (d) { return d.uid === uid; });
+    var nome = target ? ((target.cognome || '') + ' ' + (target.nome || '')).trim() : uid;
+    var etichetta = function (v) { return (RUOLI_ASSEGNABILI.filter(function (r) { return r[0] === v; })[0] || [v, v])[1]; };
+    sel.value = prima;   /* finché non si conferma, resta com'è */
+    confirm('Cambiare il ruolo di ' + nome + ' da «' + etichetta(prima) + '» a «' + etichetta(nuovo) + '»?', function () {
+      db.collection('dirigenti').doc(uid).update({ ruolo: nuovo })
+        .then(function () {
+          if (target) target.ruolo = nuovo;
+          sel.dataset.prima = nuovo; sel.value = nuovo;
+          return _logWrite('dirigente', uid, 'Dirigente — ' + nome, 'update', _diff({ ruolo: prima }, { ruolo: nuovo }, ['ruolo']));
+        })
+        .then(function () { avviso('Ruolo di ' + nome + ': ' + etichetta(nuovo) + '.', 'ok'); })
+        .catch(function (err) { sel.value = prima; avviso('Ruolo non cambiato: ' + (window.DB && DB.errorMessage ? DB.errorMessage(err) : err.message), 'errore'); });
+    });
+  });
 
   function _openDirigenteForm() {
     _showDirigentiView('form');
@@ -925,6 +965,8 @@
   window.Admin = {
     uid: function () { return _uid; },
     dirigenteNome: function () { return _dirigenteNome; },
+    ruolo: function () { return _ruolo; },
+    isMaster: function () { return _ruolo === 'master'; },
     esc: esc, cap: cap, confirm: confirm, goTo: goTo, val: val, avviso: avviso,
     mapDoc: _mapDoc, diff: _diff, logWrite: _logWrite,
     openModal: _openBudgetModal, closeModal: _closeBudgetModal,

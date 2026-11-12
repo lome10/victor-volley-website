@@ -20,6 +20,11 @@ t('senza campo, vuoto, null o non testo: presidente (nessun dirigente di oggi pe
     assert.ok(R.ePresidente(doc(d)) && R.puoGestireAtleti(doc(d)));
   }
 });
+t('master: sopra il presidente (stessi permessi, anche in maiuscolo); il presidente non è master', () => {
+  assert.strictEqual(R.ruoloDa(doc({ ruolo: 'MASTER' })), 'master');
+  assert.ok(R.eMaster(doc({ ruolo: 'master' })) && R.ePresidente(doc({ ruolo: 'master' })) && R.puoGestireAtleti(doc({ ruolo: 'master' })));
+  assert.ok(!R.eMaster(doc({ ruolo: 'presidente' })) && !R.eMaster(doc({})) && !R.eMaster(doc({ ruolo: 'segreteria' })) && !R.eMaster(doc(undefined)));
+});
 t('presidente, segreteria e presenze (anche in maiuscolo)', () => {
   assert.strictEqual(R.ruoloDa(doc({ ruolo: 'Presidente' })), 'presidente');
   assert.ok(R.puoGestireAtleti(doc({ ruolo: 'segreteria' })) && !R.ePresidente(doc({ ruolo: 'segreteria' })));
