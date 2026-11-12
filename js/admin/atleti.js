@@ -739,6 +739,9 @@
   var ABB_TIPO = 'Abbigliamento atleti';
   function _abbId(uid) { return 'abb_' + _bs().currentSeasonId + '_' + uid; }
   function _abbQuota() { var s = _stagioneBudget(); return s && +s.quotaAbbigliamento > 0 ? +s.quotaAbbigliamento : 0; }
+  /* Categorie per cui l'abbigliamento si paga: budgetSeasons.categorieAbbigliamento (elenco di nomi). Campo assente = tutte. */
+  function _abbCategorie() { var s = _stagioneBudget(); return s && Array.isArray(s.categorieAbbigliamento) ? s.categorieAbbigliamento : null; }
+  function _abbDovuta(a) { var c = _abbCategorie(); return !c || (a.categoria && c.indexOf(a.categoria) !== -1); }
   function _abbVoce(uid) {
     var id = _abbId(uid);
     return (_bs().altreEntrate || []).filter(function (x) { return x.id === id; })[0] || null;
@@ -746,6 +749,7 @@
   function _abbOggi() { return A.oggiLocale(); }
   function _abbCella(a) {
     var v = _abbVoce(a.uid), pagata = !!(v && v.pagata), pronto = !!_bs().caricato;
+    if (!pagata && !_abbDovuta(a)) return '<span class="table-sub" title="Abbigliamento non previsto per questa categoria">non dovuto</span>';
     /* finché il budget non è caricato non si sa chi ha già pagato: la casella resta spenta, per non sovrascrivere un incasso esistente */
     return '<label class="abb-cella"' + (pronto ? '' : ' title="Sto caricando il budget…"') + '><input type="checkbox" class="abb-chk" data-uid="' + esc(a.uid) + '"' + (pagata ? ' checked' : '') + (pronto ? '' : ' disabled') +
       ' aria-label="Abbigliamento pagato: ' + esc(a.cognome + ' ' + a.nome) + '"> ' +
@@ -761,8 +765,14 @@
     if (!bar) return;
     if (_atletiVista !== 'elenco' || !_stagioneBudget()) { bar.classList.add('is-hidden'); return; }
     var q = _abbQuota(), r = _abbRiepilogo();
+    var aperto = !!bar.querySelector('details[open]'), sel = _abbCategorie(), cats = _categorieElenco();
+    var nSel = sel ? cats.filter(function (c) { return sel.indexOf(c) !== -1; }).length : cats.length;
+    var catHtml = '<details class="abb-cat"' + (aperto ? ' open' : '') + '><summary>Categorie che pagano: <strong>' + (nSel === cats.length ? 'tutte' : nSel + ' di ' + cats.length) + '</strong></summary>' +
+      cats.map(function (c) {
+        return '<label style="display:block"><input type="checkbox" class="abb-cat-chk" value="' + esc(c) + '"' + (!sel || sel.indexOf(c) !== -1 ? ' checked' : '') + '> ' + esc(c) + '</label>';
+      }).join('') + '</details>';
     bar.classList.remove('is-hidden');
-    bar.innerHTML = '<label>Quota abbigliamento ' + esc(_stagioneCorrenteNome() || '') + ' (€, uguale per tutti) ' +
+    bar.innerHTML = catHtml + '<label>Quota abbigliamento ' + esc(_stagioneCorrenteNome() || '') + ' (€) ' +
       '<input type="number" id="abbQuota" class="form-input" min="0" step="1" value="' + (q || '') + '" placeholder="es. 80" style="width:90px"></label>' +
       '<span class="table-sub"> Incassato: <strong>€' + Math.round(r.tot) + '</strong> da ' + r.n + (r.n === 1 ? ' atleta' : ' atleti') + ' (conta in Bilancio → Altre entrate)</span>';
   }
@@ -805,6 +815,18 @@
     if (chk) _abbToggle(chk.dataset.uid, chk.checked, chk);
   });
   document.getElementById('atletiAbbBar').addEventListener('change', function (e) {
+    if (e.target.classList && e.target.classList.contains('abb-cat-chk')) {
+      var st0 = _stagioneBudget();
+      if (!st0) return;
+      var nuove = Array.prototype.map.call(document.querySelectorAll('#atletiAbbBar .abb-cat-chk:checked'), function (i) { return i.value; });
+      var prime = _abbCategorie();
+      db.collection('budgetSeasons').doc(st0.id).update({ categorieAbbigliamento: nuove }).then(function () {
+        st0.categorieAbbigliamento = nuove;
+        _renderAbbBar(); _renderAtletiRows();
+        return _logWrite('stagione', st0.id, 'Stagione ' + (st0.nome || st0.id), 'update', _diff({ categorieAbbigliamento: prime ? prime.join(', ') : 'tutte' }, { categorieAbbigliamento: nuove.join(', ') }, ['categorieAbbigliamento']));
+      }).catch(function (err) { _avviso('Categorie non salvate: ' + err.message); _renderAbbBar(); });
+      return;
+    }
     if (e.target.id !== 'abbQuota') return;
     var st = _stagioneBudget(), n = parseFloat(e.target.value);
     if (!st) return;
