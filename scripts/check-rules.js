@@ -90,7 +90,7 @@ async function atteso(uid, op, path, data, ok, nota) {
   /* ================= 1. NESSUNA PERDITA per chi c'è oggi: dirigente senza campo e «presidente» ================= */
   const tuttiRW = ['articles', 'partite', 'allenamenti', 'allenamentiEccezioni', 'albums', 'categories', 'players', 'staff', 'siteData', 'giocatoriDati', 'atletiDati',
     'budgetSeasons', 'aziende', 'sponsorizzazioni', 'tranchePagamento', 'attivita', 'promemoria', 'pianoEditoriale', 'bacheca', 'categorieAtleti', 'atletiRette',
-    'rateAtleti', 'contatoriRicevute', 'firme', 'tessere', 'supercoppaBari', 'altreEntrate', 'vociSpesa', 'sottospese', 'categorieSpesa', 'atleti', 'accessi', 'comunicazioni', 'allenatori'];
+    'rateAtleti', 'firme', 'tessere', 'supercoppaBari', 'altreEntrate', 'vociSpesa', 'sottospese', 'categorieSpesa', 'atleti', 'accessi', 'comunicazioni', 'allenatori'];
   for (const u of ['pres', 'pres2', 'vuoto', 'mas', 'mas2']) {
     for (const c of tuttiRW) {
       const id = c === 'accessi' ? 'fam' : c === 'allenatori' ? 'mister' : c === 'atleti' ? 'a1' : c === 'comunicazioni' ? 'c1' : 'x';
@@ -110,7 +110,9 @@ async function atteso(uid, op, path, data, ok, nota) {
     await atteso(u, 'set', 'presenze/p1', { atletaId: 'a1', eventKey: 'e', risposta: 'no' }, true); await atteso(u, 'del', 'presenze/p1', null, true);
     await atteso(u, 'set', 'presenze/p1', { atletaId: 'a1', eventKey: 'e', risposta: 'si' }, true);
     await atteso(u, 'get', 'ricevute/r1', null, true);
-    await atteso(u, 'set', 'ricevute/nuova_' + u, { stato: 'valida', atletaId: 'a1', numero: '2026/0002' }, true);
+    await atteso(u, 'set', 'ricevute/nuova_' + u, { stato: 'valida', atletaId: 'a1', numero: '2026/0002' }, false, 'il browser non crea più ricevute: le emette il server');
+    await atteso(u, 'get', 'contatoriRicevute/x', null, true); await atteso(u, 'set', 'contatoriRicevute/x', { ultimo: 1 }, false, 'il contatore lo scrive solo il server');
+    await atteso(u, 'set', 'ricevuteRichieste/x', { id: 'x' }, false); await atteso(u, 'get', 'ricevuteRichieste/x', null, false);
     await atteso(u, 'merge', 'ricevute/r1', { stato: 'annullata', dataAnnullamento: '2026-11-12', motivoAnnullamento: 'x', annullataDa: u }, true);
     await atteso(u, 'del', 'ricevute/r1', null, false, 'le ricevute non si cancellano');
     await semina('ricevute/r1', { stato: 'valida', atletaId: 'a1', numero: '2026/0001' });
@@ -124,11 +126,12 @@ async function atteso(uid, op, path, data, ok, nota) {
 
   /* ================= 2. segreteria ================= */
   const S = 'seg';
-  for (const c of ['atleti', 'atletiDati', 'accessi', 'comunicazioni', 'categorieAtleti', 'atletiRette', 'rateAtleti', 'contatoriRicevute', 'firme']) {
+  await atteso(S, 'get', 'contatoriRicevute/x', null, true); await atteso(S, 'set', 'contatoriRicevute/x', { ultimo: 1 }, false);
+  for (const c of ['atleti', 'atletiDati', 'accessi', 'comunicazioni', 'categorieAtleti', 'atletiRette', 'rateAtleti', 'firme']) {
     const id = c === 'accessi' ? 'fam' : c === 'atleti' ? 'a1' : c === 'comunicazioni' ? 'c1' : 'x';
     await atteso(S, 'get', c + '/' + id, null, true); await atteso(S, 'set', c + '/' + id, { atletaId: 'a1', v: 5, categoria: 'S3', accessUids: ['fam'] }, true);
   }
-  await atteso(S, 'set', 'ricevute/nuova_seg', { stato: 'valida', atletaId: 'a1', numero: '2026/0003' }, true);
+  await atteso(S, 'set', 'ricevute/nuova_seg', { stato: 'valida', atletaId: 'a1', numero: '2026/0003' }, false, 'le ricevute le emette il server');
   await atteso(S, 'get', 'ricevute/r1', null, true); await atteso(S, 'get', 'settings/asd', null, true); await atteso(S, 'get', 'settings/seasons', null, true);
   await atteso(S, 'set', 'presenze/p1', { atletaId: 'a1', eventKey: 'e', risposta: 'no' }, true);
   await atteso(S, 'set', 'allenamentiEccezioni/x', { v: 6 }, true); await atteso(S, 'get', 'presenzeAllenamento/x', null, true);

@@ -208,7 +208,8 @@ service cloud.firestore {
     match /ricevute/{ricevutaId} {
       allow read: if isSegreteria() ||
         ('atletaId' in resource.data && resource.data.atletaId is string && possiedeAtleta(resource.data.atletaId));
-      allow create: if isSegreteria();
+      // Il browser NON crea più ricevute: le emette api/emetti-ricevuta (Admin SDK) che assegna il numero. (Le regole del server non passano di qui.)
+      allow create: if false;
       allow update: if isSegreteria() &&
         resource.data.stato == 'valida' && request.resource.data.stato == 'annullata' &&
         request.resource.data.diff(resource.data).affectedKeys()
@@ -216,7 +217,8 @@ service cloud.firestore {
       allow delete: if false;
     }
     // Contatore progressivo delle ricevute (un documento per anno: { ultimo: n }).
-    match /contatoriRicevute/{anno}       { allow read, write: if isSegreteria(); }
+    // Solo il server lo incrementa (api/emetti-ricevuta): il browser lo può soltanto leggere.
+    match /contatoriRicevute/{anno}       { allow read: if isSegreteria(); allow write: if false; }
     // Firma del presidente (immagine PNG): solo i dirigenti. Viene copiata dentro ogni ricevuta
     // all'emissione, così la famiglia la vede solo nella propria ricevuta.
     match /firme/{firmaId}                { allow read, write: if isSegreteria(); }

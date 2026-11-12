@@ -3,8 +3,8 @@
  * Emissione ricevute con TRANSAZIONI VERE (emulatore Firestore):  node scripts/check-emissione-emulatore.js
  * Esegue api/emetti-ricevuta.js con il vero Admin SDK collegato all'emulatore (progetto finto «demo-vv»; non tocca il
  * database vero) e lancia 25 emissioni insieme: i numeri devono essere tutti diversi e consecutivi a partire dal contatore
- * che c'è (non da 1), il contatore deve chiudersi allineato. Poi controlla che le regole nuove (contatori e creazione
- * ricevute chiusi al browser) non blocchino il server, che passa dall'Admin SDK. Parte da solo con «firebase emulators:exec».
+ * che c'è (non da 1), il contatore deve chiudersi allineato. Le regole che chiudono contatori e creazione ricevute al browser
+ * sono collaudate in scripts/check-rules.js (il server passa dall'Admin SDK, che non le attraversa). Parte da solo con «firebase emulators:exec».
  */
 const assert = require('assert');
 const path = require('path');
