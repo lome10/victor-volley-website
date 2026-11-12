@@ -145,18 +145,39 @@
 
   /* Attende la scrittura: solo se riesce registra il log e chiama cb (la schermata passa avanti);
      se fallisce mostra l'errore, riallinea la cache e NON chiama cb (il modulo resta aperto). */
+  /* Blocco «in salvataggio» per chiave (es. «saveArticle:7», «saveArticle:new», «saveSponsors»): vale per ogni
+     strada (clic, Invio, codice), non solo per il pulsante. La chiave la imposta il wrapper in fondo al file. */
+  var _inflight = {}, _currentKey = null;
+
+  /* Senza rete Firestore NON dà errore: mette la scrittura in coda e la promessa resta in sospeso. Dopo questo
+     tempo si avvisa e si sblocca il pulsante; la scrittura resta in coda e può completarsi più tardi. */
+  var DEFAULT_WRITE_TIMEOUT_MS = 15000;
+
   function _after(part, what, write, audit, cb, cbArg) {
+    var key = _currentKey; _currentKey = null;
     /* Il pulsante appena toccato resta spento finché la scrittura non finisce: ora il cb arriva dopo la rete,
        e un secondo tocco salverebbe due volte. (window.event esiste solo dentro un gestore di clic.) */
     var ev = global.event, btn = ev && ev.target && ev.target.closest ? ev.target.closest('button') : null;
     if (btn && btn.disabled) btn = null;
     if (btn) btn.disabled = true;
-    function libera() { if (btn) btn.disabled = false; }
-    write.then(function () {
+    var scaduta = false, chiusa = false;
+    function libera() { if (btn) btn.disabled = false; if (key) delete _inflight[key]; }
+    var timer = setTimeout(function () {
+      if (chiusa) return;
+      scaduta = true;
       libera();
+      _notifyError('Connessione assente: il salvataggio non è confermato (' + what + '). Resta in coda e potrebbe completarsi da solo appena torna la rete: prima di rifarlo controlla l’elenco.');
+    }, typeof DB.writeTimeoutMs === 'number' ? DB.writeTimeoutMs : DEFAULT_WRITE_TIMEOUT_MS);
+    write.then(function () {
+      chiusa = true; clearTimeout(timer); libera();
       try { audit(); } catch (e) { console.error('[DB] log ' + what, e); }
+      if (scaduta) {
+        /* già avvisato che non era confermato: ora lo è. La schermata non si sposta da sola (cb non chiamato). */
+        if (global.Admin && typeof global.Admin.avviso === 'function') global.Admin.avviso('Il salvataggio è andato a buon fine (' + what + '): la connessione è tornata. Ricarica l’elenco per vederlo.', 'ok');
+        return;
+      }
       if (cb) cb(cbArg);
-    }, function (e) { libera(); _writeFailed(part, what, e); });
+    }, function (e) { chiusa = true; clearTimeout(timer); libera(); _writeFailed(part, what, e); });
   }
 
   /* ============================================================
@@ -510,6 +531,29 @@
     errorMessage: _errIt
 
   };
+
+  /* Tempo massimo di attesa della conferma di una scrittura (ms); modificabile per i test. */
+  DB.writeTimeoutMs = DEFAULT_WRITE_TIMEOUT_MS;
+
+  /* Blocco del doppio salvataggio: se la stessa operazione sullo stesso record è già in corso (secondo tocco,
+     Invio, codice) la seconda chiamata viene ignorata e restituisce null. Tutti i salvataggi/eliminazioni passano di qui. */
+  ['saveArticle', 'deleteArticle', 'savePartita', 'deletePartita', 'saveAlbum', 'deleteAlbum', 'saveCategory', 'deleteCategory',
+   'savePlayer', 'deletePlayer', 'saveStaffMember', 'deleteStaffMember', 'saveCategorieArticoli', 'saveStats', 'saveSponsors',
+   'saveMaglia', 'saveLivelliSponsorSub', 'saveSeason', 'deleteSeason', 'setCurrentSeason'].forEach(function (name) {
+    var orig = DB[name];
+    DB[name] = function (arg) {
+      var id = (arg && typeof arg === 'object' && !Array.isArray(arg)) ? arg.id : (typeof arg === 'number' || typeof arg === 'string' ? arg : undefined);
+      var key = name + (id !== undefined && id !== null && id !== '' ? ':' + id : (/^(save(Article|Partita|Album|Category|Player|StaffMember|Season))$/.test(name) ? ':new' : ''));
+      if (_inflight[key]) return null;
+      _inflight[key] = true;
+      _currentKey = key;
+      try {
+        return orig.apply(DB, arguments);
+      } finally {
+        if (_currentKey !== null) { delete _inflight[key]; _currentKey = null; }   /* nessuna scrittura partita: niente blocco */
+      }
+    };
+  });
 
   global.DB = DB;
 })(window);
