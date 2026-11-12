@@ -192,9 +192,10 @@ service cloud.firestore {
     match /categorieSpesa/{document=**}   { allow read, write: if isDirigente(); }
 
     // Audit log — append-only: nessun update/delete concesso a nessuno, admin incluso.
+    // Una voce si può creare solo a nome proprio: dirigenteId deve essere l'account che scrive.
     match /auditLog/{document=**} {
       allow read: if isDirigente();
-      allow create: if isDirigente();
+      allow create: if isDirigente() && request.resource.data.dirigenteId == request.auth.uid;
       allow update, delete: if false;
     }
   }
