@@ -65,14 +65,24 @@
     if (!v) return Promise.resolve();
     if (!_sottospeseSpesaOf(voceId).length) return Promise.resolve();
     var patch = {}, old = {}, fields = [];
-    var sostenuto = _sommaSottospese(voceId);
+    /* Voce «lordo» (IVA inclusa): i pagamenti sono scritti IVA compresa; la voce conta il netto e conserva il lordo inserito. */
+    var lordo = v.ivaModo === 'lordo' && (+v.ivaAliquota || 0) > 0, al = +v.ivaAliquota || 0;
+    var sostenuto = _sommaSottospese(voceId), sostLordo = sostenuto;
+    if (lordo) sostenuto = _dividiIva(sostLordo, al, 'lordo').netto;
     if (+v.importoSostenuto !== sostenuto) {
       old.importoSostenuto = v.importoSostenuto || 0; patch.importoSostenuto = sostenuto; fields.push('importoSostenuto');
     }
+    if (lordo && (+v.importoSostenutoLordo || 0) !== sostLordo) {
+      old.importoSostenutoLordo = v.importoSostenutoLordo || 0; patch.importoSostenutoLordo = sostLordo; fields.push('importoSostenutoLordo');
+    }
     if (_voceHaPreventivatoDaSottospese(voceId)) {
-      var preventivato = _sommaSottospesePreventivate(voceId);
+      var preventivato = _sommaSottospesePreventivate(voceId), prevLordo = preventivato;
+      if (lordo) preventivato = _dividiIva(prevLordo, al, 'lordo').netto;
       if (+v.importoPreventivato !== preventivato) {
         old.importoPreventivato = v.importoPreventivato || 0; patch.importoPreventivato = preventivato; fields.push('importoPreventivato');
+      }
+      if (lordo && (+v.importoPreventivatoLordo || 0) !== prevLordo) {
+        old.importoPreventivatoLordo = v.importoPreventivatoLordo || 0; patch.importoPreventivatoLordo = prevLordo; fields.push('importoPreventivatoLordo');
       }
     }
     if (!fields.length) return Promise.resolve();
@@ -337,9 +347,9 @@
   function _rigaVoceHtml(v, oggi) {
     var e = _etichettaVoce(v, oggi), p = +v.importoPreventivato || 0, s = +v.importoSostenuto || 0, pcv = p ? Math.round(s / p * 100) : 0;
     var figlia = v.ivaVoceSpesaId ? B._vociSpesa.find(function (x) { return x.id === v.ivaVoceSpesaId; }) : null;
-    var iva = figlia ? (+figlia.importoPreventivato || 0) : (+v.ivaAliquota > 0 ? p * (+v.ivaAliquota) / 100 : 0);
+    var iva = figlia ? (+figlia.importoPreventivato || 0) : (+v.ivaAliquota > 0 ? _dividiIva(v.ivaModo === 'lordo' ? _lordoDi(v, 'Preventivato') : p, v.ivaAliquota, v.ivaModo).iva : 0);
     var nSub = _sottospeseOf(v.id).length, gestitaDaSub = _sottospeseSpesaOf(v.id).length > 0;
-    var badge = (iva ? '<span class="sp-b">+ IVA ' + (+v.ivaAliquota || '') + (+v.ivaAliquota ? '% ' : ' ') + B._eur(iva) + '</span>' : '') + (_linkValido(v.documentoUrl) ? '<a class="sp-tag" href="' + esc(v.documentoUrl) + '" target="_blank" rel="noopener noreferrer" title="Apri la cartella o il documento su Drive">Documenti ↗</a>' : '') + (nSub ? '<span class="sp-tag">' + nSub + (nSub === 1 ? ' pagamento' : ' pagamenti') + '</span>' : '');
+    var badge = (iva ? '<span class="sp-b">' + (v.ivaModo === 'lordo' ? 'IVA incl. ' : '+ IVA ') + ((+v.ivaAliquota || 0).toLocaleString('it-IT') || '') + (+v.ivaAliquota ? '% ' : ' ') + B._eur(iva) + '</span>' : '') + (_linkValido(v.documentoUrl) ? '<a class="sp-tag" href="' + esc(v.documentoUrl) + '" target="_blank" rel="noopener noreferrer" title="Apri la cartella o il documento su Drive">Documenti ↗</a>' : '') + (nSub ? '<span class="sp-tag">' + nSub + (nSub === 1 ? ' pagamento' : ' pagamenti') + '</span>' : '');
     return '<div class="sp-row" tabindex="0" role="button" data-id="' + v.id + '" aria-label="Apri ' + esc(v.categoria) + '">' +
       '<div class="sp-name"><div class="sp-t">' + esc(v.categoria) + '</div>' + (badge ? '<div class="sp-m">' + badge + '</div>' : '') +
         '<div class="sp-m sp-m-mobile"><span>' + B._eur(s) + ' / ' + B._eur(p) + '</span><span>' + (v.dataSpesa ? esc(_fmtDate(v.dataSpesa)) : 'senza data') + '</span></div></div>' +
@@ -406,7 +416,7 @@
   function _drawerRoot() { return document.getElementById('speseDrawerRoot'); }
   function _chiudiDrawer() { B._speseDrawerId = null; var r = _drawerRoot(); if (r) r.innerHTML = ''; }
   function _linkValido(u) { return /^https?:\/\/[^\s]+$/i.test(String(u || '').trim()); }
-  var CAMPI_BOZZA = { speDNome: 'categoria', speDCat: 'categoriaSpesaId', speDData: 'dataSpesa', speDPrev: 'importoPreventivato', speDSost: 'importoSostenuto', speDIva: 'ivaAliquota', speDDoc: 'documentoUrl', speDNote: 'note' };
+  var CAMPI_BOZZA = { speDNome: 'categoria', speDCat: 'categoriaSpesaId', speDData: 'dataSpesa', speDPrev: 'importoPreventivato', speDSost: 'importoSostenuto', speDIva: 'ivaAliquota', speDIvaModo: 'ivaModo', speDDoc: 'documentoUrl', speDNote: 'note' };
 
   /* Valori già scritti nel pannello, per non perderli quando si aggiunge o cambia un pagamento (il pannello si ridisegna). */
   function _leggiBozza() {
@@ -423,6 +433,10 @@
     var corpoPrima = root.querySelector('.sp-dr-body'), scroll = corpoPrima ? corpoPrima.scrollTop : 0;
     var bozza = _leggiBozza(), giaAperto = !!corpoPrima;
     var val0 = function (id, campo, def) { return bozza && bozza[id] != null ? bozza[id] : (v[campo] == null ? def : v[campo]); };
+    /* Voce «lordo»: nel pannello si vede (e si scrive) l'importo IVA compresa, come inserito; la voce conta il netto. */
+    var modoIva = bozza && bozza.speDIvaModo != null ? bozza.speDIvaModo : (v.ivaModo === 'lordo' ? 'lordo' : 'netto');
+    var prevMostrato = v.ivaModo === 'lordo' ? _lordoDi(v, 'Preventivato') : v.importoPreventivato;
+    var sostMostrato = v.ivaModo === 'lordo' ? _lordoDi(v, 'Sostenuto') : v.importoSostenuto;
     var haSub = _sottospeseSpesaOf(v.id).length > 0, prevDaSub = haSub && _voceHaPreventivatoDaSottospese(v.id);
     var e = _etichettaVoce(v, _oggiIso());
     root.innerHTML = '<div class="sp-dr-bg" onclick="DG.speseDrawerChiudi()"></div>' +
@@ -432,9 +446,10 @@
       '<div class="sp-f sp-full"><label for="speDNome">Voce di spesa</label><input type="text" id="speDNome" class="dg-form-input" value="' + esc(val0('speDNome', 'categoria', '')) + '"></div>' +
       '<div class="sp-f"><label for="speDCat">Categoria</label><select id="speDCat" class="dg-form-input">' + _categorieSpesaOptionsHtml(val0('speDCat', 'categoriaSpesaId', '')) + '</select></div>' +
       '<div class="sp-f"><label for="speDData">Data o scadenza</label><input type="date" id="speDData" class="dg-form-input" value="' + esc(val0('speDData', 'dataSpesa', '')) + '"><span class="sp-h">Conta nel Saldo mensile; senza data finisce in «Spese senza data».</span></div>' +
-      '<div class="sp-f"><label for="speDPrev">Preventivato (€)</label><input type="number" id="speDPrev" class="dg-form-input" min="0" step="any" value="' + esc(val0('speDPrev', 'importoPreventivato', 0)) + '"' + (prevDaSub ? ' readonly' : '') + '>' + (prevDaSub ? '<span class="sp-h">Somma dei preventivati dei pagamenti qui sotto.</span>' : '') + '</div>' +
-      '<div class="sp-f"><label for="speDSost">Già speso (€)</label><input type="number" id="speDSost" class="dg-form-input" min="0" step="any" value="' + esc(val0('speDSost', 'importoSostenuto', 0)) + '"' + (haSub ? ' readonly' : '') + '>' + (haSub ? '<span class="sp-h">Somma dei pagati dei pagamenti qui sotto.</span>' : '') + '</div>' +
-      '<div class="sp-f"><label for="speDIva">IVA %</label><input type="number" id="speDIva" class="dg-form-input" min="0" step="1" placeholder="0" value="' + esc(val0('speDIva', 'ivaAliquota', '') || '') + '"><span class="sp-h" id="speDIvaH"></span></div>' +
+      '<div class="sp-f"><label for="speDPrev">Preventivato (€)</label><input type="number" id="speDPrev" class="dg-form-input" min="0" step="any" value="' + esc(bozza && bozza.speDPrev != null ? bozza.speDPrev : (prevMostrato || 0)) + '"' + (prevDaSub ? ' readonly' : '') + '>' + (prevDaSub ? '<span class="sp-h">Somma dei preventivati dei pagamenti qui sotto.</span>' : '') + '</div>' +
+      '<div class="sp-f"><label for="speDSost">Già speso (€)</label><input type="number" id="speDSost" class="dg-form-input" min="0" step="any" value="' + esc(bozza && bozza.speDSost != null ? bozza.speDSost : (sostMostrato || 0)) + '"' + (haSub ? ' readonly' : '') + '>' + (haSub ? '<span class="sp-h">Somma dei pagati dei pagamenti qui sotto.</span>' : '') + '</div>' +
+      '<div class="sp-f"><label for="speDIva">IVA %</label><input type="number" id="speDIva" class="dg-form-input" min="0" step="any" placeholder="0" value="' + esc(val0('speDIva', 'ivaAliquota', '') || '') + '"><span class="sp-h" id="speDIvaH"></span></div>' +
+      '<div class="sp-f"><label for="speDIvaModo">L’importo inserito è</label><select id="speDIvaModo" class="dg-form-input"><option value="netto"' + (modoIva === 'lordo' ? '' : ' selected') + '>Netto (IVA da aggiungere)</option><option value="lordo"' + (modoIva === 'lordo' ? ' selected' : '') + '>Lordo (IVA inclusa)</option></select></div>' +
       '<div class="sp-f sp-full"><label for="speDDoc">Documenti (link Drive alla cartella di questa voce)</label><input type="url" id="speDDoc" class="dg-form-input" placeholder="https://drive.google.com/…" value="' + esc(val0('speDDoc', 'documentoUrl', '')) + '">' +
         (_linkValido(v.documentoUrl) ? '<a class="sp-h" href="' + esc(v.documentoUrl) + '" target="_blank" rel="noopener noreferrer">Apri su Drive ↗</a>' : '<span class="sp-h">Crea su Drive una cartella per questa voce (fatture, ricevute, contratti), condividila solo con i dirigenti e incolla qui il link. Il file resta su Drive, qui si tiene solo l\'indirizzo.</span>') + '</div>' +
       '<div class="sp-f sp-full"><label for="speDNote">Note</label><textarea id="speDNote" class="dg-form-input" rows="3">' + esc(val0('speDNote', 'note', '')) + '</textarea></div></div>' +
@@ -444,9 +459,10 @@
     var body = root.querySelector('.sp-dr-body'); if (body) body.scrollTop = scroll;
     var ivaH = function () {
       var al = +document.getElementById('speDIva').value || 0, pv = +document.getElementById('speDPrev').value || 0;
-      document.getElementById('speDIvaH').textContent = al > 0 && pv > 0 ? 'IVA stimata ' + B._eur(pv * al / 100) : '';
+      var d = _dividiIva(pv, al, document.getElementById('speDIvaModo').value);
+      document.getElementById('speDIvaH').textContent = al > 0 && pv > 0 ? 'IVA stimata ' + B._eur(d.iva) + (document.getElementById('speDIvaModo').value === 'lordo' ? ' · netto ' + B._eur(d.netto) : '') : '';
     };
-    ['speDIva', 'speDPrev'].forEach(function (id) { document.getElementById(id).addEventListener('input', ivaH); });
+    ['speDIva', 'speDPrev', 'speDIvaModo'].forEach(function (id) { document.getElementById(id).addEventListener('input', ivaH); });
     ivaH();
     if (!giaAperto) document.getElementById('speDClose').focus();
   }
@@ -459,15 +475,19 @@
     if (!v) return;
     var nome = document.getElementById('speDNome').value.trim();
     if (!nome) { A.avviso('Scrivi il nome della voce di spesa.'); document.getElementById('speDNome').focus(); return; }
+    /* Netto (default): gli importi sono quelli scritti. Lordo (IVA inclusa, solo con aliquota): la voce conta il netto e conserva il lordo scritto. */
+    var inPrev = +document.getElementById('speDPrev').value || 0, inSost = +document.getElementById('speDSost').value || 0, aliq = +document.getElementById('speDIva').value || 0;
+    var lordo = document.getElementById('speDIvaModo').value === 'lordo' && aliq > 0;
     var nuovo = {
       categoria: nome, categoriaSpesaId: document.getElementById('speDCat').value, dataSpesa: document.getElementById('speDData').value,
-      importoPreventivato: +document.getElementById('speDPrev').value || 0, importoSostenuto: +document.getElementById('speDSost').value || 0,
-      ivaAliquota: +document.getElementById('speDIva').value || 0, documentoUrl: document.getElementById('speDDoc').value.trim(), note: document.getElementById('speDNote').value.trim()
+      importoPreventivato: lordo ? _dividiIva(inPrev, aliq, 'lordo').netto : inPrev, importoSostenuto: lordo ? _dividiIva(inSost, aliq, 'lordo').netto : inSost,
+      importoPreventivatoLordo: lordo ? inPrev : 0, importoSostenutoLordo: lordo ? inSost : 0, ivaModo: lordo ? 'lordo' : 'netto',
+      ivaAliquota: aliq, documentoUrl: document.getElementById('speDDoc').value.trim(), note: document.getElementById('speDNote').value.trim()
     };
     if (nuovo.documentoUrl && !_linkValido(nuovo.documentoUrl)) { A.avviso('Il link al documento deve iniziare con https://', 'avviso'); document.getElementById('speDDoc').focus(); return; }
     var patch = {};
     Object.keys(nuovo).forEach(function (k) {
-      var vecchio = k === 'categoria' || k === 'categoriaSpesaId' || k === 'dataSpesa' || k === 'note' || k === 'documentoUrl' ? (v[k] || '') : (+v[k] || 0);
+      var vecchio = k === 'ivaModo' ? (v.ivaModo === 'lordo' ? 'lordo' : 'netto') : k === 'categoria' || k === 'categoriaSpesaId' || k === 'dataSpesa' || k === 'note' || k === 'documentoUrl' ? (v[k] || '') : (+v[k] || 0);
       if (nuovo[k] !== vecchio) patch[k] = nuovo[k];
     });
     if (!Object.keys(patch).length) { _chiudiDrawer(); A.avviso('Nessuna modifica da salvare.'); return; }
@@ -482,6 +502,7 @@
     var v = B._vociSpesa.find(function (x) { return x.id === id; });
     if (!v) return;
     var senzaData = !v.dataSpesa, patch = { importoSostenuto: +v.importoPreventivato || 0 };
+    if (v.ivaModo === 'lordo') patch.importoSostenutoLordo = _lordoDi(v, 'Preventivato');
     if (senzaData) patch.dataSpesa = _oggiIso();
     _salvaCampi(v, patch).then(function () { A.avviso('«' + v.categoria + '» segnata come pagata' + (senzaData ? ' (data: oggi)' : '') + '.', 'ok'); })
       .catch(function (e) { A.avviso('Errore: ' + e.message, 'errore'); });
@@ -612,7 +633,7 @@
       v.ivaScadenza = patch.ivaScadenza = auto ? auto.scadenza : '';
       fields.push('ivaTrimestre', 'ivaScadenza');
     }
-    var serveIva = ['importoSostenuto', 'importoPreventivato', 'ivaAliquota', 'categoria', 'dataSpesa'].some(function (f) { return f in patch; });
+    var serveIva = ['importoSostenuto', 'importoPreventivato', 'importoSostenutoLordo', 'importoPreventivatoLordo', 'ivaModo', 'ivaAliquota', 'categoria', 'dataSpesa'].some(function (f) { return f in patch; });
     return db.collection('vociSpesa').doc(v.id).update(patch)
       .then(function () { return _logWrite('voceSpesa', v.id, 'Spesa — ' + v.categoria, 'update', _diff(old, patch, fields)); })
       .then(function () { return serveIva ? _syncSpesaIva(v) : null; })
@@ -654,6 +675,22 @@
   /* Genera/aggiorna/rimuove la voce di spesa "IVA <nome>" figlia di una voce con IVA % impostata.
      Stesso meccanismo usato per l'IVA sulle tranche sponsor: ivaVoceSpesaId sulla voce genitrice
      punta alla voce IVA generata, per aggiornarla invece di duplicarla ad ogni modifica. */
+  /* Importo inserito → netto e IVA. 'netto' (default, come è sempre stato): l'IVA si aggiunge, iva = importo × aliquota / 100.
+     'lordo': l'importo è IVA compresa, iva = importo × aliquota / (100 + aliquota) e il netto è il resto (netto + iva = importo).
+     L'aliquota è libera (anche con decimali, per esempio 7,5); 0 = nessuna IVA. */
+  function _dividiIva(importo, aliquota, modo) {
+    var x = +importo || 0, al = +aliquota || 0;
+    if (al <= 0) return { netto: x, iva: 0 };
+    if (modo === 'lordo') { var iva = Math.round(x * al / (100 + al) * 100) / 100; return { netto: Math.round((x - iva) * 100) / 100, iva: iva }; }
+    return { netto: x, iva: Math.round(x * al) / 100 };
+  }
+  /* L'importo «come inserito» di una voce lordo (se manca il campo, lo ricava dal netto). */
+  function _lordoDi(v, quale) {
+    var l = v['importo' + quale + 'Lordo'];
+    if (l != null && l !== '') return +l || 0;
+    var n = +v['importo' + quale] || 0, al = +v.ivaAliquota || 0;
+    return Math.round(n * (100 + al)) / 100;
+  }
   function _syncSpesaIva(v) {
     if (v.isIva) return Promise.resolve();
     var aliquota = +v.ivaAliquota || 0;
@@ -674,8 +711,9 @@
        permette anche una previsione (non solo il consuntivo) — e porta con sé l'aliquota
        applicata, per distinguere a colpo d'occhio le voci all'11% (sponsor) da quelle
        al 22% (es. abbigliamento/materiali) nel Riepilogo IVA. */
-    var importoIva = Math.round((+v.importoSostenuto || 0) * aliquota) / 100;
-    var importoIvaPreventivato = Math.round((+v.importoPreventivato || 0) * aliquota) / 100;
+    var lordoModo = v.ivaModo === 'lordo';
+    var importoIva = lordoModo ? _dividiIva(_lordoDi(v, 'Sostenuto'), aliquota, 'lordo').iva : _dividiIva(v.importoSostenuto, aliquota).iva;
+    var importoIvaPreventivato = lordoModo ? _dividiIva(_lordoDi(v, 'Preventivato'), aliquota, 'lordo').iva : _dividiIva(v.importoPreventivato, aliquota).iva;
     var nome = 'IVA ' + v.categoria;
     var auto = B._trimestreIvaDaData(v.dataSpesa);
 
@@ -762,6 +800,7 @@
 
   /* ---- Esportato per gli altri file del Budget ---- */
   B._calcSpeseKpi = _calcSpeseKpi;
+  B._dividiIva = _dividiIva;
   B._statoVoceSpesa = _statoVoce;
   B._urgenzaVoceSpesa = _urgenzaVoce;
   B._calcSpeseForecast = _calcSpeseForecast;
