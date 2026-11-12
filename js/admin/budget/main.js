@@ -178,7 +178,7 @@
   function _aziendaById(id) { return B._aziende.find(function (a) { return a.id === id; }); }
   function _isStorico(aziendaId) { return B._sponsorizzazioni.some(function (s) { return s.aziendaId === aziendaId && s.seasonId !== B._currentSeasonId; }); }
   /* _daysDiff e _fmtDate: già definite più sopra (sezione Atleti), riusate qui */
-  function _todayISO() { return new Date().toISOString().slice(0, 10); }
+  function _todayISO() { return A.oggiLocale(); }
   function _initials(nome, cognome) { return ((nome || '?').charAt(0) + (cognome || '').charAt(0)).toUpperCase(); }
   function _nextPromemoria(sponsorId) {
     var items = B._promemoria.filter(function (p) { return p.sponsorizzazioneId === sponsorId && !p.completato; })

@@ -576,7 +576,7 @@
   }
 
   function _validaAtleta(v) {
-    var oggi = new Date().toISOString().slice(0, 10);
+    var oggi = A.oggiLocale();
     var cf = /^[A-Z0-9]{16}$/;
     var email = /^\S+@\S+\.\S+$/;
     if (!v.nome || !v.cognome) return 'Nome e cognome sono obbligatori.';
@@ -743,7 +743,7 @@
     var id = _abbId(uid);
     return (_bs().altreEntrate || []).filter(function (x) { return x.id === id; })[0] || null;
   }
-  function _abbOggi() { return new Date().toISOString().slice(0, 10); }
+  function _abbOggi() { return A.oggiLocale(); }
   function _abbCella(a) {
     var v = _abbVoce(a.uid), pagata = !!(v && v.pagata);
     return '<label class="abb-cella"><input type="checkbox" class="abb-chk" data-uid="' + esc(a.uid) + '"' + (pagata ? ' checked' : '') +

@@ -14,7 +14,7 @@
   var POSTI_TOTALI = 54;
   var CAMPI_LOG = ['nome', 'tesserato', 'note', 'pagata', 'dataPagamento'];
 
-  function _oggi() { return new Date().toISOString().slice(0, 10); }
+  function _oggi() { return A.oggiLocale(); }
   function _eur(n) { return '€' + Math.round(n).toLocaleString('it-IT'); }
   function _quotaId(n) { return B._currentSeasonId + '_' + n; }
   function _quota(n) { return B._supercoppa.find(function (t) { return +t.numero === n; }) || null; }

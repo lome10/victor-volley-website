@@ -312,7 +312,7 @@
     var r = B._rateAtleti.find(function (x) { return x.id === id; });
     if (!r) return;
     var old = { pagata: !!r.pagata };
-    var patch = { pagata: checked, dataPagamento: checked ? new Date().toISOString().slice(0, 10) : null };
+    var patch = { pagata: checked, dataPagamento: checked ? A.oggiLocale() : null };
     r.pagata = checked;
     r.dataPagamento = patch.dataPagamento;
     var a = B._atletiRette.find(function (x) { return x.id === r.atletaRettaId; });

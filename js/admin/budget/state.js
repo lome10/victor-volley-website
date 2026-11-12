@@ -20,6 +20,13 @@
 
   window.DG = DG;
 
+  /* Data di oggi nel fuso del browser (YYYY-MM-DD). toISOString() darebbe quella UTC: tra mezzanotte e le 1-2 di notte
+     un incasso prendeva il giorno prima e, a cavallo di mese, finiva nel mese sbagliato del Bilancio. */
+  A.oggiLocale = function () {
+    var d = new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+  };
+
   B._seasons = [];
   B._currentSeasonId = null;
   B._aziende = [];

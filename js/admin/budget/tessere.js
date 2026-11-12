@@ -13,7 +13,7 @@
   var TESSERE_TOTALI = 100;
   var CAMPI_LOG = ['nome', 'accessorio', 'pagata', 'dataPagamento'];
 
-  function _oggi() { return new Date().toISOString().slice(0, 10); }
+  function _oggi() { return A.oggiLocale(); }
   function _eur(n) { return '€' + Math.round(n).toLocaleString('it-IT'); }
   function _tesseraId(n) { return B._currentSeasonId + '_' + n; }
   function _tessera(n) { return B._tessere.find(function (t) { return +t.numero === n; }) || null; }
