@@ -19,7 +19,7 @@ const path = require('path');
 const root = path.join(__dirname, '..');
 const read = (rel) => fs.readFileSync(path.join(root, rel), 'utf8');
 const problems = [];
-const SOLO_SERVER = new Set(['inviti']);
+const SOLO_SERVER = new Set(['inviti', 'ricevuteRichieste']);
 
 function walk(dir, out) {
   fs.readdirSync(path.join(root, dir), { withFileTypes: true }).forEach((e) => {

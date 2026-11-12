@@ -448,24 +448,30 @@
       : 'Imposta di bollo non dovuta (importo non superiore a € 77,47).';
   }
 
-  /* Crea la ricevuta e incrementa il contatore nella stessa transazione. */
+  /* Crea la ricevuta: il NUMERO lo assegna il server (/api/emetti-ricevuta, in una transazione sul contatore), non il browser.
+     Se la richiesta si ripete identica (rete lenta, secondo tentativo) porta lo stesso codice e il server restituisce la ricevuta
+     già emessa invece di farne un'altra. */
+  var _ultimaEmissione = null;
+  function _nuovaChiave() {
+    var a = new Uint8Array(12);
+    (window.crypto || window.msCrypto).getRandomValues(a);
+    return Array.prototype.map.call(a, function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
+  }
   function _crea(data) {
-    var anno = +data.data.slice(0, 4);
-    var cref = db.collection('contatoriRicevute').doc(String(anno));
-    return db.runTransaction(function (tx) {
-      return tx.get(cref).then(function (c) {
-        var n = (c.exists ? (+c.data().ultimo || 0) : 0) + 1;
-        var id = anno + '_' + _pad4(n);
-        var rref = db.collection('ricevute').doc(id);
-        return tx.get(rref).then(function (ex) {
-          if (ex.exists) throw new Error('Il numero ' + anno + '/' + _pad4(n) + ' esiste già: il contatore non è allineato. Contatta chi gestisce il sito.');
-          var doc = Object.assign({}, data, {
-            anno: anno, progressivo: n, numero: anno + '/' + _pad4(n), stato: 'valida', createdAt: new Date().toISOString()
-          });
-          tx.set(cref, { ultimo: n });
-          tx.set(rref, doc);
-          return Object.assign({ id: id }, doc);
-        });
+    var json = JSON.stringify(data);
+    if (!_ultimaEmissione || _ultimaEmissione.json !== json) _ultimaEmissione = { json: json, chiave: _nuovaChiave() };
+    var chiave = _ultimaEmissione.chiave;
+    return auth.currentUser.getIdToken().then(function (token) {
+      return fetch('/api/emetti-ricevuta', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify(Object.assign({ chiave: chiave }, data))
+      });
+    }).then(function (res) {
+      return res.json().catch(function () { return {}; }).then(function (d) {
+        if (!res.ok) throw new Error(d.error || ('Errore ' + res.status));
+        _ultimaEmissione = null;
+        return Object.assign({ id: d.id }, d.ricevuta);
       });
     });
   }
@@ -487,14 +493,10 @@
     var doc = {
       data: data, importo: importo, tipoIncasso: document.getElementById('ricTipo').value, causale: causale,
       modalita: document.getElementById('ricModalita').value, riferimento: _v('ricRif'), note: _v('ricNote'),
-      bollo: _bollo(importo),
       atletaId: a ? a.uid : null, rateIds: _ratesChecked(),
       pagatore: { nome: nome, cf: cf, indirizzo: _v('ricPagInd'), ruolo: po.ruolo || 'Pagatore' },
-      atleta: a ? { nome: ((a.cognome || '') + ' ' + (a.nome || '')).trim(), cf: a.codiceFiscale || '', dataNascita: a.dataNascita || '' } : null,
-      asd: { denominazione: _asd.denominazione, codiceFiscale: _asd.codiceFiscale, sede: _asd.sede || '',
-        affiliazione: _asd.affiliazione || '', codiceAffiliazione: _asd.codiceAffiliazione || '', rasd: !!_asd.rasd,
-        luogo: _asd.luogo || '', presidente: _asd.presidente || '', firma: _firma || '' },
-      emessaDa: A.dirigenteNome() || ''
+      atleta: a ? { nome: ((a.cognome || '') + ' ' + (a.nome || '')).trim(), cf: a.codiceFiscale || '', dataNascita: a.dataNascita || '' } : null
+      /* Dati ASD, firma, dicitura del bollo, numero e «emessa da» li aggiunge il server. */
     };
     var btn = this, creata = null;
     /* la finestra del PDF si apre ora, nel gestore del clic: dopo l'attesa della transazione il browser la bloccherebbe */

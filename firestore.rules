@@ -234,6 +234,8 @@ service cloud.firestore {
     // servizio. Nessun accesso dal browser, nemmeno ai dirigenti: chi leggesse l'impronta non può ricavarne il codice,
     // ma non c'è motivo di esporla.
     match /inviti/{id}                    { allow read, write: if false; }
+    // Codici anti-doppione delle emissioni di ricevute (id = codice inviato dal pannello): li scrive e legge solo il server.
+    match /ricevuteRichieste/{id}         { allow read, write: if false; }
     match /tessere/{document=**}          { allow read, write: if isPresidente(); }
     match /supercoppaBari/{document=**}   { allow read, write: if isPresidente(); }
     match /altreEntrate/{document=**}     { allow read, write: if isPresidente(); }
