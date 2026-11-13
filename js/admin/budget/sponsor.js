@@ -333,20 +333,20 @@
   }
 
   function _field(id, label, value) {
-    return '<div class="dg-form-group"><label class="dg-form-label">' + label + '</label>' +
+    return '<div class="dg-form-group"><label class="dg-form-label" for="' + id + '">' + label + '</label>' +
       '<input class="dg-form-input" id="' + id + '" value="' + esc(value) + '"></div>';
   }
 
   function _tabAnagrafica() {
     var a = B._aziendaById(B._curAziendaId) || {};
-    return '<div class="dg-form-group"><label class="dg-form-label">Ragione sociale</label><input class="dg-form-input" id="dgAzNome" value="' + esc(a.ragioneSociale) + '"></div>' +
+    return '<div class="dg-form-group"><label class="dg-form-label" for="dgAzNome">Ragione sociale</label><input class="dg-form-input" id="dgAzNome" value="' + esc(a.ragioneSociale) + '"></div>' +
       '<div class="dg-form-grid">' +
       _field('dgAzSettore', 'Settore', a.settore) +
       _field('dgAzReferente', 'Referente', a.referente) +
       _field('dgAzTelefono', 'Telefono', a.telefono) +
       _field('dgAzEmail', 'Email', a.email) +
       '</div>' +
-      '<div class="dg-form-group"><label class="dg-form-label">Sito web</label><input class="dg-form-input" id="dgAzSito" value="' + esc(a.sitoWeb) + '"></div>' +
+      '<div class="dg-form-group"><label class="dg-form-label" for="dgAzSito">Sito web</label><input class="dg-form-input" id="dgAzSito" value="' + esc(a.sitoWeb) + '"></div>' +
       '<div class="dg-form-actions" style="justify-content:space-between">' +
         '<button class="dg-btn-ghost dg-btn-ghost--danger dg-btn-sm" onclick="DG.deleteAzienda()">Elimina azienda</button>' +
         '<button class="dg-btn-primary dg-btn-sm" onclick="DG.saveAzienda()">Salva anagrafica</button>' +
@@ -404,22 +404,22 @@
     var tipoOptions = ['denaro', 'servizi', 'materiale'].map(function (t) {
       return '<option value="' + t + '"' + (t === s.tipologia ? ' selected' : '') + '>' + t + '</option>';
     }).join('');
-    return '<div class="dg-form-group"><label class="dg-form-label">Stato</label><select id="dgDealStato" class="dg-form-input">' + statoOptions + '</select></div>' +
+    return '<div class="dg-form-group"><label class="dg-form-label" for="dgDealStato">Stato</label><select id="dgDealStato" class="dg-form-input">' + statoOptions + '</select></div>' +
       '<div class="dg-form-grid">' +
-      '<div class="dg-form-group"><label class="dg-form-label">Importo stimato (€)</label><input type="number" id="dgDealStimato" class="dg-form-input" value="' + (s.importoStimato || 0) + '"></div>' +
-      '<div class="dg-form-group"><label class="dg-form-label">Probabilità chiusura</label><input type="number" id="dgDealProb" class="dg-form-input" min="0" max="1" step="0.05" value="' + (s.probabilitaChiusura || 0) + '"></div>' +
-      '<div class="dg-form-group"><label class="dg-form-label">Importo confermato (€)</label><input type="number" id="dgDealConfermato" class="dg-form-input" min="0" step="0.01" value="' + (piuIva ? _sponsorIvaCalc(s.importoConfermato, s).imponibile : (s.importoConfermato || 0)) + '" oninput="DG.dealIvaHint()"></div>' +
+      '<div class="dg-form-group"><label class="dg-form-label" for="dgDealStimato">Importo stimato (€)</label><input type="number" id="dgDealStimato" class="dg-form-input" value="' + (s.importoStimato || 0) + '"></div>' +
+      '<div class="dg-form-group"><label class="dg-form-label" for="dgDealProb">Probabilità chiusura</label><input type="number" id="dgDealProb" class="dg-form-input" min="0" max="1" step="0.05" value="' + (s.probabilitaChiusura || 0) + '"></div>' +
+      '<div class="dg-form-group"><label class="dg-form-label" for="dgDealConfermato">Importo confermato (€)</label><input type="number" id="dgDealConfermato" class="dg-form-input" min="0" step="0.01" value="' + (piuIva ? _sponsorIvaCalc(s.importoConfermato, s).imponibile : (s.importoConfermato || 0)) + '" oninput="DG.dealIvaHint()"></div>' +
       '<div class="dg-form-group"><label class="dg-form-label">IVA</label><div style="display:flex;align-items:center;gap:10px;min-height:40px"><label style="display:flex;align-items:center;gap:6px;font-weight:600;white-space:nowrap"><input type="checkbox" id="dgDealPiuIva"' + (piuIva ? ' checked' : '') + ' onchange="DG.dealIvaHint()"> + IVA</label><input type="number" id="dgDealIvaIncl" class="dg-form-input" min="0" max="100" step="0.5" style="max-width:90px" value="' + (piuIva ? (+s.ivaInclusaPct || 22) : '') + '"' + (piuIva ? '' : ' disabled') + ' oninput="DG.dealIvaHint()"><span class="dg-muted">%</span></div><span class="dg-muted" style="font-size:12px">Spunta se l\'importo è senza IVA: il totale si calcola da solo.</span></div>' +
-      '<div class="dg-form-group"><label class="dg-form-label">IVA da versare (% sull\'imponibile)</label><input type="number" id="dgDealIvaVers" class="dg-form-input" min="0" max="100" step="0.5" placeholder="11" value="' + (s.ivaVersarePct === '' || s.ivaVersarePct == null ? '' : s.ivaVersarePct) + '" oninput="DG.dealIvaHint()"></div>' +
-      '<div class="dg-form-group"><label class="dg-form-label">IVA da versare: importo fisso (€)</label><input type="number" id="dgDealIvaFisso" class="dg-form-input" min="0" step="0.01" placeholder="vuoto = usa la %" value="' + (+s.ivaVersareFisso || '') + '" oninput="DG.dealIvaHint()"></div>' +
+      '<div class="dg-form-group"><label class="dg-form-label" for="dgDealIvaVers">IVA da versare (% sull\'imponibile)</label><input type="number" id="dgDealIvaVers" class="dg-form-input" min="0" max="100" step="0.5" placeholder="11" value="' + (s.ivaVersarePct === '' || s.ivaVersarePct == null ? '' : s.ivaVersarePct) + '" oninput="DG.dealIvaHint()"></div>' +
+      '<div class="dg-form-group"><label class="dg-form-label" for="dgDealIvaFisso">IVA da versare: importo fisso (€)</label><input type="number" id="dgDealIvaFisso" class="dg-form-input" min="0" step="0.01" placeholder="vuoto = usa la %" value="' + (+s.ivaVersareFisso || '') + '" oninput="DG.dealIvaHint()"></div>' +
       '<div class="dg-form-group" style="grid-column:1/-1"><span class="dg-muted" id="dgDealIvaHint" style="font-size:12.5px">' + esc(_ivaHintTesto(+s.importoConfermato || 0, s)) + '</span></div>' +
-      '<div class="dg-form-group"><label class="dg-form-label">Tipologia</label><select id="dgDealTipologia" class="dg-form-input">' + tipoOptions + '</select></div>' +
-      '<div class="dg-form-group"><label class="dg-form-label">Data firma</label><input type="date" id="dgDealFirma" class="dg-form-input" value="' + (s.dataFirma || '') + '"></div>' +
-      '<div class="dg-form-group"><label class="dg-form-label">Scadenza</label><input type="date" id="dgDealScadenza" class="dg-form-input" value="' + (s.scadenza || '') + '"></div>' +
-      '<div class="dg-form-group"><label class="dg-form-label">Modalità pagamento</label><input type="text" id="dgDealPagamento" class="dg-form-input" value="' + esc(s.modalitaPagamento) + '"></div>' +
-      '<div class="dg-form-group"><label class="dg-form-label">Responsabile</label><select id="dgDealResponsabile" class="dg-form-input">' + respOptions + '</select></div>' +
+      '<div class="dg-form-group"><label class="dg-form-label" for="dgDealTipologia">Tipologia</label><select id="dgDealTipologia" class="dg-form-input">' + tipoOptions + '</select></div>' +
+      '<div class="dg-form-group"><label class="dg-form-label" for="dgDealFirma">Data firma</label><input type="date" id="dgDealFirma" class="dg-form-input" value="' + (s.dataFirma || '') + '"></div>' +
+      '<div class="dg-form-group"><label class="dg-form-label" for="dgDealScadenza">Scadenza</label><input type="date" id="dgDealScadenza" class="dg-form-input" value="' + (s.scadenza || '') + '"></div>' +
+      '<div class="dg-form-group"><label class="dg-form-label" for="dgDealPagamento">Modalità pagamento</label><input type="text" id="dgDealPagamento" class="dg-form-input" value="' + esc(s.modalitaPagamento) + '"></div>' +
+      '<div class="dg-form-group"><label class="dg-form-label" for="dgDealResponsabile">Responsabile</label><select id="dgDealResponsabile" class="dg-form-input">' + respOptions + '</select></div>' +
       '</div>' +
-      '<div class="dg-form-group"><label class="dg-form-label">Contropartite</label><textarea id="dgDealContropartite" class="dg-form-input dg-form-textarea" rows="2">' + esc(s.contropartite || '') + '</textarea></div>' +
+      '<div class="dg-form-group"><label class="dg-form-label" for="dgDealContropartite">Contropartite</label><textarea id="dgDealContropartite" class="dg-form-input dg-form-textarea" rows="2">' + esc(s.contropartite || '') + '</textarea></div>' +
       '<div class="dg-form-actions" style="justify-content:space-between">' +
         '<button class="dg-btn-ghost dg-btn-ghost--danger dg-btn-sm" onclick="DG.deleteDeal()">Elimina sponsorizzazione</button>' +
         '<button class="dg-btn-primary dg-btn-sm" onclick="DG.saveDeal()">Salva</button>' +
@@ -560,12 +560,12 @@
       if (t.id === B._trancheEditingId) {
         return '<div class="dg-reminder-item" style="cursor:default;flex-direction:column;align-items:stretch;gap:8px">' +
           '<div class="dg-form-grid">' +
-          '<div class="dg-form-group"><label class="dg-form-label">Importo (€)</label><input type="number" id="dgTrancheEditImporto" class="dg-form-input" min="0" step="50" value="' + Number(t.importo || 0) + '"></div>' +
-          '<div class="dg-form-group"><label class="dg-form-label">Scadenza</label><input type="date" id="dgTrancheEditScadenza" class="dg-form-input" value="' + esc(t.scadenza || '') + '"></div>' +
-          (t.pagato ? '<div class="dg-form-group"><label class="dg-form-label">Data incasso</label><input type="date" id="dgTrancheEditDataIncasso" class="dg-form-input" value="' + esc(t.dataIncasso || '') + '"></div>' : '') +
+          '<div class="dg-form-group"><label class="dg-form-label" for="dgTrancheEditImporto">Importo (€)</label><input type="number" id="dgTrancheEditImporto" class="dg-form-input" min="0" step="50" value="' + Number(t.importo || 0) + '"></div>' +
+          '<div class="dg-form-group"><label class="dg-form-label" for="dgTrancheEditScadenza">Scadenza</label><input type="date" id="dgTrancheEditScadenza" class="dg-form-input" value="' + esc(t.scadenza || '') + '"></div>' +
+          (t.pagato ? '<div class="dg-form-group"><label class="dg-form-label" for="dgTrancheEditDataIncasso">Data incasso</label><input type="date" id="dgTrancheEditDataIncasso" class="dg-form-input" value="' + esc(t.dataIncasso || '') + '"></div>' : '') +
           '</div>' +
-          '<div class="dg-form-group"><label class="dg-form-label">Note</label><input type="text" id="dgTrancheEditNote" class="dg-form-input" value="' + esc(t.note || '') + '"></div>' +
-          '<div class="dg-form-group"><label class="dg-form-label">Fattura (link Drive)</label><input type="url" id="dgTrancheEditDoc" class="dg-form-input" placeholder="https://drive.google.com/…" value="' + esc(t.documentoUrl || '') + '"></div>' +
+          '<div class="dg-form-group"><label class="dg-form-label" for="dgTrancheEditNote">Note</label><input type="text" id="dgTrancheEditNote" class="dg-form-input" value="' + esc(t.note || '') + '"></div>' +
+          '<div class="dg-form-group"><label class="dg-form-label" for="dgTrancheEditDoc">Fattura (link Drive)</label><input type="url" id="dgTrancheEditDoc" class="dg-form-input" placeholder="https://drive.google.com/…" value="' + esc(t.documentoUrl || '') + '"></div>' +
           '<div class="dg-form-actions" style="margin-top:0">' +
           '<button class="dg-btn-ghost dg-btn-sm" onclick="DG.editTrancheCancel()">Annulla</button>' +
           '<button class="dg-btn-primary dg-btn-sm" onclick="DG.saveTranche(\'' + t.id + '\')">Salva</button>' +
@@ -585,11 +585,11 @@
     return intro + summary +
       '<div style="display:flex;flex-direction:column;gap:8px">' + list + '</div>' +
       '<div class="dg-form-grid" style="margin-top:18px">' +
-      '<div class="dg-form-group"><label class="dg-form-label">Importo (€)</label><input type="number" id="dgTrancheImporto" class="dg-form-input" min="0" step="50"></div>' +
-      '<div class="dg-form-group"><label class="dg-form-label">Scadenza</label><input type="date" id="dgTrancheScadenza" class="dg-form-input" value="' + B._todayISO() + '"></div>' +
+      '<div class="dg-form-group"><label class="dg-form-label" for="dgTrancheImporto">Importo (€)</label><input type="number" id="dgTrancheImporto" class="dg-form-input" min="0" step="50"></div>' +
+      '<div class="dg-form-group"><label class="dg-form-label" for="dgTrancheScadenza">Scadenza</label><input type="date" id="dgTrancheScadenza" class="dg-form-input" value="' + B._todayISO() + '"></div>' +
       '</div>' +
-      '<div class="dg-form-group"><label class="dg-form-label">Note</label><input type="text" id="dgTrancheNote" class="dg-form-input" placeholder="es. Acconto alla firma"></div>' +
-      '<div class="dg-form-group"><label class="dg-form-label">Fattura (link Drive)</label><input type="url" id="dgTrancheDoc" class="dg-form-input" placeholder="https://drive.google.com/…"></div>' +
+      '<div class="dg-form-group"><label class="dg-form-label" for="dgTrancheNote">Note</label><input type="text" id="dgTrancheNote" class="dg-form-input" placeholder="es. Acconto alla firma"></div>' +
+      '<div class="dg-form-group"><label class="dg-form-label" for="dgTrancheDoc">Fattura (link Drive)</label><input type="url" id="dgTrancheDoc" class="dg-form-input" placeholder="https://drive.google.com/…"></div>' +
       '<div class="dg-form-actions"><button class="dg-btn-primary dg-btn-sm" onclick="DG.addTranche()">Aggiungi tranche</button></div>';
   }
 
@@ -812,9 +812,9 @@
     var tipoOptions = ['chiamata', 'email', 'incontro', 'nota'].map(function (t) { return '<option value="' + t + '">' + B._tipoLabel(t) + '</option>'; }).join('');
 
     return list +
-      '<div class="dg-form-group" style="margin-top:18px"><label class="dg-form-label">Tipo</label><select id="dgAttTipo" class="dg-form-input">' + tipoOptions + '</select></div>' +
-      '<div class="dg-form-group"><label class="dg-form-label">Data</label><input type="date" id="dgAttData" class="dg-form-input" value="' + B._todayISO() + '"></div>' +
-      '<div class="dg-form-group"><label class="dg-form-label">Descrizione</label><textarea id="dgAttDesc" class="dg-form-input dg-form-textarea" rows="2" placeholder="Cosa è stato detto/fatto..."></textarea></div>' +
+      '<div class="dg-form-group" style="margin-top:18px"><label class="dg-form-label" for="dgAttTipo">Tipo</label><select id="dgAttTipo" class="dg-form-input">' + tipoOptions + '</select></div>' +
+      '<div class="dg-form-group"><label class="dg-form-label" for="dgAttData">Data</label><input type="date" id="dgAttData" class="dg-form-input" value="' + B._todayISO() + '"></div>' +
+      '<div class="dg-form-group"><label class="dg-form-label" for="dgAttDesc">Descrizione</label><textarea id="dgAttDesc" class="dg-form-input dg-form-textarea" rows="2" placeholder="Cosa è stato detto/fatto..."></textarea></div>' +
       '<div class="dg-form-actions"><button class="dg-btn-primary dg-btn-sm" onclick="DG.addAttivita()">Aggiungi</button></div>';
   }
 
@@ -852,10 +852,10 @@
     }).join('');
 
     return '<div style="display:flex;flex-direction:column;gap:8px">' + list + '</div>' +
-      '<div class="dg-form-group" style="margin-top:18px"><label class="dg-form-label">Descrizione</label><input type="text" id="dgPromDesc" class="dg-form-input" placeholder="es. Richiamare dopo invio preventivo"></div>' +
+      '<div class="dg-form-group" style="margin-top:18px"><label class="dg-form-label" for="dgPromDesc">Descrizione</label><input type="text" id="dgPromDesc" class="dg-form-input" placeholder="es. Richiamare dopo invio preventivo"></div>' +
       '<div class="dg-form-grid">' +
-      '<div class="dg-form-group"><label class="dg-form-label">Scadenza</label><input type="date" id="dgPromData" class="dg-form-input"></div>' +
-      '<div class="dg-form-group"><label class="dg-form-label">Assegnato a</label><select id="dgPromAssegnato" class="dg-form-input">' + respOptions + '</select></div>' +
+      '<div class="dg-form-group"><label class="dg-form-label" for="dgPromData">Scadenza</label><input type="date" id="dgPromData" class="dg-form-input"></div>' +
+      '<div class="dg-form-group"><label class="dg-form-label" for="dgPromAssegnato">Assegnato a</label><select id="dgPromAssegnato" class="dg-form-input">' + respOptions + '</select></div>' +
       '</div>' +
       '<div class="dg-form-actions"><button class="dg-btn-primary dg-btn-sm" onclick="DG.addPromemoria()">Aggiungi</button></div>';
   }

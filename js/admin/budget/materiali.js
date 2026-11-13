@@ -478,9 +478,9 @@
     if (cur) {
       var q = curCell.quantita ? (+curCell.quantita || 1) : 1;
       qtyHtml = '<div class="dg-pezzi-popover-qty">' +
-        '<label>Quantità (pezzi da realizzare)</label>' +
+        '<label for="dgPezziQtyInput">Quantità (pezzi da realizzare)</label>' +
         '<div class="dg-pezzi-popover-qty-row">' +
-        '<input type="number" min="1" step="1" value="' + q + '" class="dg-pezzi-qty-input">' +
+        '<input type="number" id="dgPezziQtyInput" min="1" step="1" value="' + q + '" class="dg-pezzi-qty-input">' +
         '<button type="button" class="dg-pezzi-qty-apply">Applica</button>' +
         '</div></div>';
     }
