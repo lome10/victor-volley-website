@@ -21,8 +21,8 @@
       <h1 class="login-title">Admin Panel</h1>
       <p class="login-sub">Victor Volley</p>
       <form id="loginForm" autocomplete="off">
-        <input type="email" id="emailInput" class="login-input" placeholder="Email" required autocomplete="username">
-        <input type="password" id="passwordInput" class="login-input" placeholder="Password" required autocomplete="current-password">
+        <input type="email" id="emailInput" aria-label="Email" class="login-input" placeholder="Email" required autocomplete="username">
+        <input type="password" id="passwordInput" aria-label="Password" class="login-input" placeholder="Password" required autocomplete="current-password">
         <button type="submit" class="btn-primary btn-block">Accedi</button>
         <p id="loginError" class="login-error"></p>
       </form>
@@ -351,8 +351,8 @@
               <input aria-required="true" type="text" id="artTitle" class="form-input" placeholder="Titolo dell'articolo">
             </div>
             <div class="form-group form-full">
-              <label class="form-label">Categorie (massimo 2) *</label>
-              <div id="artCategoriesBox" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+              <label id="artCategorieLbl" class="form-label">Categorie (massimo 2) *</label>
+              <div id="artCategoriesBox" role="group" aria-labelledby="artCategorieLbl" style="display:flex;flex-wrap:wrap;gap:8px"></div>
             </div>
             <div class="form-group">
               <label for="artDate" class="form-label">Data</label>
@@ -393,8 +393,8 @@
               </div>
             </div>
             <div class="form-group form-full">
-              <label class="form-label">Formato copertina nella pagina articolo</label>
-              <div style="display:flex;gap:8px">
+              <label id="artFormatoLbl" class="form-label">Formato copertina nella pagina articolo</label>
+              <div role="radiogroup" aria-labelledby="artFormatoLbl" style="display:flex;gap:8px">
                 <label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:6px 14px;border:1px solid #e2e8f0;border-radius:20px;cursor:pointer;user-select:none">
                   <input type="radio" name="artCoverRatio" value="4:5" checked> Verticale classico (4:5)
                 </label>
@@ -407,8 +407,8 @@
               <label for="artSponsor1" class="form-label">Sponsor sopra l'articolo (massimo 3)</label>
               <div style="display:flex;gap:8px;flex-wrap:wrap">
                 <select id="artSponsor1" class="form-input" style="flex:1;min-width:160px"></select>
-                <select id="artSponsor2" class="form-input" style="flex:1;min-width:160px"></select>
-                <select id="artSponsor3" class="form-input" style="flex:1;min-width:160px"></select>
+                <select id="artSponsor2" aria-label="Secondo sponsor" class="form-input" style="flex:1;min-width:160px"></select>
+                <select id="artSponsor3" aria-label="Terzo sponsor" class="form-input" style="flex:1;min-width:160px"></select>
               </div>
             </div>
             <div class="form-group form-full">
@@ -416,7 +416,7 @@
               <textarea id="artExcerpt" class="form-input form-textarea" rows="2" placeholder="Breve descrizione (max 200 caratteri)"></textarea>
             </div>
             <div class="form-group form-full">
-              <label class="form-label">Contenuto</label>
+              <label id="artContentLbl" class="form-label">Contenuto</label>
               <div id="artContentToolbar" class="rte-toolbar">
                 <button type="button" class="rte-btn" data-cmd="bold" title="Grassetto"><b>B</b></button>
                 <button type="button" class="rte-btn" data-cmd="italic" title="Corsivo"><i>I</i></button>
@@ -435,8 +435,8 @@
                 <button type="button" class="rte-btn" data-cmd="removeFormat" title="Rimuovi formattazione">Tx</button>
                 <button type="button" class="rte-btn" id="artContentSourceToggle" style="margin-left:auto" title="Modifica HTML grezzo">&lt;/&gt;</button>
               </div>
-              <div id="artContentEditor" class="form-input form-textarea form-textarea--lg rte-editor" contenteditable="true"></div>
-              <textarea id="artContent" class="form-input form-textarea form-textarea--lg" style="display:none" placeholder="Testo dell'articolo (HTML supportato)"></textarea>
+              <div id="artContentEditor" role="textbox" aria-multiline="true" aria-labelledby="artContentLbl" class="form-input form-textarea form-textarea--lg rte-editor" contenteditable="true"></div>
+              <textarea id="artContent" aria-label="Testo dell'articolo (HTML)" class="form-input form-textarea form-textarea--lg" style="display:none" placeholder="Testo dell'articolo (HTML supportato)"></textarea>
             </div>
             <div class="form-group form-full">
               <label class="toggle-label">
@@ -515,7 +515,7 @@
               <label for="matchHomeTeam" class="form-label">Squadra di casa</label>
               <input type="text" id="matchHomeTeam" class="form-input" placeholder="Squadra di casa" list="gironeTeamNames" autocomplete="off">
               <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
-                <input type="text" id="matchHomeLogo" class="form-input form-input--sm" placeholder="Logo (solo se la squadra non è nell'elenco del girone)" style="flex:1;min-width:0">
+                <input type="text" id="matchHomeLogo" aria-label="Logo squadra di casa" class="form-input form-input--sm" placeholder="Logo (solo se la squadra non è nell'elenco del girone)" style="flex:1;min-width:0">
                 <label class="btn-ghost" style="cursor:pointer;padding:6px 10px;white-space:nowrap;flex-shrink:0" title="Carica immagine — viene convertita in PNG 128 px">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                   Carica
@@ -528,7 +528,7 @@
               <label for="matchAwayTeam" class="form-label">Squadra ospite</label>
               <input type="text" id="matchAwayTeam" class="form-input" placeholder="Avversario" list="gironeTeamNames" autocomplete="off">
               <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
-                <input type="text" id="matchAwayLogo" class="form-input form-input--sm" placeholder="Logo (solo se la squadra non è nell'elenco del girone)" style="flex:1;min-width:0">
+                <input type="text" id="matchAwayLogo" aria-label="Logo squadra ospite" class="form-input form-input--sm" placeholder="Logo (solo se la squadra non è nell'elenco del girone)" style="flex:1;min-width:0">
                 <label class="btn-ghost" style="cursor:pointer;padding:6px 10px;white-space:nowrap;flex-shrink:0" title="Carica immagine — viene convertita in PNG 128 px">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                   Carica
@@ -551,9 +551,9 @@
             <div class="form-group" id="matchResultGroup" style="display:none">
               <label for="matchSetCasa" class="form-label">Set (casa – ospite)</label>
               <div style="display:flex;gap:10px;align-items:center">
-                <input type="number" id="matchSetCasa" class="form-input" min="0" max="3" placeholder="0" style="width:72px;text-align:center">
+                <input type="number" id="matchSetCasa" aria-label="Set vinti dalla squadra di casa" class="form-input" min="0" max="3" placeholder="0" style="width:72px;text-align:center">
                 <span style="color:var(--a-muted);font-size:18px;font-weight:700;flex-shrink:0">–</span>
-                <input type="number" id="matchSetOspite" class="form-input" min="0" max="3" placeholder="0" style="width:72px;text-align:center">
+                <input type="number" id="matchSetOspite" aria-label="Set vinti dalla squadra ospite" class="form-input" min="0" max="3" placeholder="0" style="width:72px;text-align:center">
               </div>
             </div>
             <div class="form-group form-full">
@@ -605,8 +605,8 @@
               <input type="time" id="peOra" class="form-input">
             </div>
             <div class="form-group form-full">
-              <label class="form-label">Piattaforme *</label>
-              <div id="pePiattaformeBox" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+              <label id="pePiattaformeLbl" class="form-label">Piattaforme *</label>
+              <div id="pePiattaformeBox" role="group" aria-labelledby="pePiattaformeLbl" style="display:flex;flex-wrap:wrap;gap:8px"></div>
             </div>
             <div class="form-group">
               <label for="peArticolo" class="form-label">Collega articolo</label>
@@ -625,8 +625,8 @@
               <select id="peResponsabile" class="form-input"></select>
             </div>
             <div class="form-group form-full">
-              <label class="form-label">Sponsor collegati</label>
-              <div id="peSponsorBox" class="pe-sp-box"></div>
+              <label id="peSponsorLbl" class="form-label">Sponsor collegati</label>
+              <div id="peSponsorBox" role="group" aria-labelledby="peSponsorLbl" class="pe-sp-box"></div>
               <p style="font-size:12px;color:var(--a-muted);margin-top:4px">Spunta gli sponsor che compaiono o vengono citati in questo contenuto. Il numero accanto al nome è quanti contenuti ha lo sponsor, compreso questo se lo spunti.</p>
             </div>
             <div class="form-group form-full">
@@ -1425,21 +1425,21 @@
           <div class="form-grid">
             <div class="form-group">
               <label class="form-label" for="allenatoreNome">Nome *</label>
-              <input type="text" id="allenatoreNome" class="form-input" placeholder="Nome">
+              <input type="text" id="allenatoreNome" aria-required="true" class="form-input" placeholder="Nome">
             </div>
             <div class="form-group">
               <label class="form-label" for="allenatoreCognome">Cognome *</label>
-              <input type="text" id="allenatoreCognome" class="form-input" placeholder="Cognome">
+              <input type="text" id="allenatoreCognome" aria-required="true" class="form-input" placeholder="Cognome">
             </div>
           </div>
           <div id="allenatoreAccount" class="form-grid">
             <div class="form-group">
               <label class="form-label" for="allenatoreEmail">Email per il login *</label>
-              <input type="email" id="allenatoreEmail" class="form-input" placeholder="Email per il login">
+              <input type="email" id="allenatoreEmail" aria-required="true" class="form-input" placeholder="Email per il login">
             </div>
             <div class="form-group">
               <label class="form-label" for="allenatorePassword">Password iniziale *</label>
-              <input type="text" id="allenatorePassword" class="form-input" placeholder="Minimo 10 caratteri">
+              <input type="text" id="allenatorePassword" aria-required="true" class="form-input" placeholder="Minimo 10 caratteri">
               <button type="button" class="btn-ghost btn-sm" data-genpwd="allenatorePassword" style="margin-top:6px">Genera password</button>
             </div>
           </div>
@@ -1949,9 +1949,9 @@
             <div id="altreForm" class="is-hidden" style="margin-top:14px;padding:14px;border:1px solid var(--dg-border);border-radius:10px">
               <div class="dg-card-title" id="altreFormTitolo">Nuova entrata</div>
               <div class="dg-form-grid" style="margin-top:10px">
-                <div class="dg-form-group"><label class="dg-form-label" for="altreDescr">Descrizione *</label><input type="text" id="altreDescr" class="dg-form-input" maxlength="120" placeholder="es. Contributo del Comune"></div>
+                <div class="dg-form-group"><label class="dg-form-label" for="altreDescr">Descrizione *</label><input type="text" id="altreDescr" aria-required="true" class="dg-form-input" maxlength="120" placeholder="es. Contributo del Comune"></div>
                 <div class="dg-form-group"><label class="dg-form-label" for="altreTipo">Tipo</label><select id="altreTipo" class="dg-form-input"></select></div>
-                <div class="dg-form-group"><label class="dg-form-label" for="altreImporto">Importo (€) *</label><input type="number" id="altreImporto" class="dg-form-input" min="0" step="0.01"></div>
+                <div class="dg-form-group"><label class="dg-form-label" for="altreImporto">Importo (€) *</label><input type="number" id="altreImporto" aria-required="true" class="dg-form-input" min="0" step="0.01"></div>
                 <div class="dg-form-group"><label class="dg-form-label" for="altreData">Data prevista</label><input type="date" id="altreData" class="dg-form-input"></div>
                 <div class="dg-form-group"><label class="dg-form-label" for="altreSquadra">Squadra</label><select id="altreSquadra" class="dg-form-input"></select></div>
               </div>
@@ -2650,7 +2650,7 @@
       </div>
       <div class="dg-form-group">
         <label class="dg-form-label" for="ricPagNome">Pagatore (cognome e nome) *</label>
-        <input type="text" id="ricPagNome" class="dg-form-input">
+        <input type="text" id="ricPagNome" aria-required="true" class="dg-form-input">
       </div>
       <div class="dg-form-group">
         <label class="dg-form-label" for="ricPagCf">Codice fiscale del pagatore</label>
@@ -2662,11 +2662,11 @@
       </div>
       <div class="dg-form-group">
         <label class="dg-form-label" for="ricData">Data *</label>
-        <input type="date" id="ricData" class="dg-form-input">
+        <input type="date" id="ricData" aria-required="true" class="dg-form-input">
       </div>
       <div class="dg-form-group">
         <label class="dg-form-label" for="ricImporto">Importo (€) *</label>
-        <input type="number" id="ricImporto" class="dg-form-input" min="0" step="0.01" inputmode="decimal">
+        <input type="number" id="ricImporto" aria-required="true" class="dg-form-input" min="0" step="0.01" inputmode="decimal">
       </div>
       <div class="dg-form-group">
         <label class="dg-form-label" for="ricTipo">Tipo di incasso</label>
@@ -2674,7 +2674,7 @@
       </div>
       <div class="dg-form-group">
         <label class="dg-form-label" for="ricCausale">Causale / periodo *</label>
-        <input type="text" id="ricCausale" class="dg-form-input" placeholder="es. Quota corso 2026/2027 — 1ª rata">
+        <input type="text" id="ricCausale" aria-required="true" class="dg-form-input" placeholder="es. Quota corso 2026/2027 — 1ª rata">
       </div>
       <div class="dg-form-group">
         <label class="dg-form-label" for="ricModalita">Modalità di pagamento</label>
@@ -2708,7 +2708,7 @@
       <p id="ricAnnullaTesto" class="dg-card-sub" style="margin-bottom:14px"></p>
       <div class="dg-form-group">
         <label class="dg-form-label" for="ricAnnullaMotivo">Motivo *</label>
-        <textarea id="ricAnnullaMotivo" class="dg-form-input" rows="3"></textarea>
+        <textarea id="ricAnnullaMotivo" aria-required="true" class="dg-form-input" rows="3"></textarea>
       </div>
       <p id="ricAnnullaErr" class="dg-card-sub" role="alert" style="color:var(--a-red)"></p>
     </div>
@@ -2730,11 +2730,11 @@
       <p class="dg-card-sub" style="margin-bottom:14px">Questi dati vengono copiati su ogni nuova ricevuta: le ricevute già emesse non cambiano.</p>
       <div class="dg-form-group">
         <label class="dg-form-label" for="ricAsdDenom">Denominazione *</label>
-        <input type="text" id="ricAsdDenom" class="dg-form-input">
+        <input type="text" id="ricAsdDenom" aria-required="true" class="dg-form-input">
       </div>
       <div class="dg-form-group">
         <label class="dg-form-label" for="ricAsdCf">Codice fiscale dell'associazione *</label>
-        <input type="text" id="ricAsdCf" class="dg-form-input" maxlength="16" style="text-transform:uppercase">
+        <input type="text" id="ricAsdCf" aria-required="true" class="dg-form-input" maxlength="16" style="text-transform:uppercase">
       </div>
       <div class="dg-form-group">
         <label class="dg-form-label" for="ricAsdSede">Sede legale</label>
