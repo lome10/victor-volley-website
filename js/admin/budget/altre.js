@@ -10,7 +10,7 @@
   var _logWrite = A.logWrite, _diff = A.diff;
 
   var TIPI = ['Contributo', 'Evento', 'Donazione', 'Torneo', 'Abbigliamento atleti', 'Altro'];
-  var CAMPI_LOG = ['descrizione', 'tipo', 'importo', 'data', 'pagata', 'dataIncasso', 'note'];
+  var CAMPI_LOG = ['descrizione', 'tipo', 'importo', 'data', 'pagata', 'dataIncasso', 'note', 'squadra'];
   var _editId = null;
 
   function _oggi() { var d = new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; }; return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); }
@@ -50,7 +50,7 @@
     body.innerHTML = righe.map(function (v) {
       return '<tr>' +
         '<td>' + esc(v.descrizione || '—') + (v.note ? '<div class="dg-muted" style="font-size:12px">' + esc(v.note) + '</div>' : '') + '</td>' +
-        '<td>' + esc(v.tipo || '—') + '</td>' +
+        '<td>' + esc(v.tipo || '—') + (v.squadra ? '<div class="dg-muted" style="font-size:12px">' + esc(v.squadra) + '</div>' : '') + '</td>' +
         '<td>' + _eur(+v.importo || 0) + '</td>' +
         '<td>' + (v.pagata ? _dataTxt(v.dataIncasso) + ' <span class="dg-muted">(incasso)</span>' : _dataTxt(v.data)) + '</td>' +
         '<td>' + _stato(v, oggi) + '</td>' +
@@ -64,12 +64,28 @@
 
   /* ---- Modulo di inserimento / modifica ---- */
   function _el(id) { return document.getElementById(id); }
+  /* Squadre assegnabili: stesse fonti di «Cassa per squadra» (categorie delle rette + squadre del sito), senza «Società».
+     Vuoto = «Generali». Se la voce ha una squadra che non è più in elenco, la tengo come opzione per non perderla. */
+  function _nomiSquadre() {
+    var nomi = [], visti = { 'società': true };
+    function add(n) { var k = String(n || '').trim().toLowerCase(); if (k && !visti[k]) { visti[k] = true; nomi.push(String(n).trim()); } }
+    (B._categorieAtleti || []).forEach(function (c) { add(c.nome); });
+    try { var vv = window.VV; if (vv && vv.getCategories) vv.getCategories().forEach(function (c) { add(c.name); }); } catch (e) { /* sito non caricato */ }
+    return nomi;
+  }
+  function _riempiSquadre(corrente) {
+    var nomi = _nomiSquadre(), cur = String(corrente || '').trim();
+    if (cur && cur.toLowerCase() !== 'generali' && nomi.map(function (n) { return n.toLowerCase(); }).indexOf(cur.toLowerCase()) === -1) nomi.push(cur);
+    _el('altreSquadra').innerHTML = '<option value="">Generali (nessuna squadra)</option>' + nomi.map(function (n) { return '<option value="' + esc(n) + '">' + esc(n) + '</option>'; }).join('');
+    _el('altreSquadra').value = cur.toLowerCase() === 'generali' ? '' : cur;
+  }
   function _apriForm(v) {
     _editId = v ? v.id : null;
     _el('altreTipo').innerHTML = TIPI.map(function (t) { return '<option>' + t + '</option>'; }).join('');
     _el('altreFormTitolo').textContent = v ? 'Modifica entrata' : 'Nuova entrata';
     _el('altreDescr').value = v ? (v.descrizione || '') : '';
     _el('altreTipo').value = v && TIPI.indexOf(v.tipo) !== -1 ? v.tipo : 'Altro';
+    _riempiSquadre(v ? v.squadra : '');
     _el('altreImporto').value = v ? (+v.importo || 0) : '';
     _el('altreData').value = v ? (v.data || '') : '';
     _el('altrePagata').checked = !!(v && v.pagata);
@@ -94,7 +110,7 @@
     var data = {
       seasonId: B._currentSeasonId, descrizione: descr, tipo: _el('altreTipo').value, importo: importo,
       data: _el('altreData').value || '', pagata: pagata, dataIncasso: pagata ? (_el('altreDataIncasso').value || _oggi()) : '',
-      note: _el('altreNote').value.trim()
+      note: _el('altreNote').value.trim(), squadra: _el('altreSquadra').value || ''
     };
     var old = _editId ? _voce(_editId) : null;
     var ref = old ? db.collection('altreEntrate').doc(old.id) : db.collection('altreEntrate').doc();
