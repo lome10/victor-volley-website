@@ -1,0 +1,866 @@
+{
+  "versione": 1,
+  "nome": "Assistente Victor",
+  "email": "victorvolley@libero.it",
+  "saluto": "Ciao! Sono l'assistente di Victor Volley. Rispondo alle domande più comuni su iscrizioni, squadre, allenamenti, partite e contatti. Scegli un argomento o scrivimi la tua domanda.",
+  "fallback": "Su questo non ho una risposta sicura. Scrivici a victorvolley@libero.it oppure usa il modulo dei contatti: ti risponde una persona della società.",
+  "fallback_link": {
+    "testo": "Vai ai contatti",
+    "url": "/contatti"
+  },
+  "avviso": "Le risposte sono generali. Per dati personali, pagamenti o salute scrivi sempre alla società.",
+  "saluti": [
+    "ciao",
+    "buongiorno",
+    "buonasera",
+    "salve",
+    "hey",
+    "ehi"
+  ],
+  "grazie": [
+    "grazie",
+    "grazie mille",
+    "ti ringrazio",
+    "perfetto grazie"
+  ],
+  "categorie": [
+    {
+      "id": "iscrizioni",
+      "titolo": "Iscrizioni e prova",
+      "domande": [
+        {
+          "id": "prova-gratuita",
+          "q": "Posso fare una prova gratuita?",
+          "parole": [
+            "prova",
+            "prova gratuita",
+            "provare",
+            "allenamento di prova",
+            "senza impegno",
+            "provare un allenamento",
+            "gratis"
+          ],
+          "risposta": "Sì: puoi venire a provare un allenamento senza impegno. Compila il modulo «Vieni a giocare con noi» e ti ricontattiamo per fissare la prova.",
+          "link": {
+            "testo": "Vieni a giocare con noi",
+            "url": "/unisciti-a-noi"
+          }
+        },
+        {
+          "id": "come-iscriversi",
+          "q": "Come mi iscrivo?",
+          "parole": [
+            "iscrizione",
+            "iscrivere",
+            "iscrivermi",
+            "iscrivo",
+            "come si fa a iscriversi",
+            "tesseramento",
+            "entrare nella squadra",
+            "unirmi"
+          ],
+          "risposta": "Il primo passo è inviarci il messaggio dal modulo «Vieni a giocare con noi»: non è l'iscrizione ufficiale, serve a conoscerci. Ti ricontattiamo per la prova e ti spieghiamo tutti i passi per il tesseramento.",
+          "link": {
+            "testo": "Vieni a giocare con noi",
+            "url": "/unisciti-a-noi"
+          }
+        },
+        {
+          "id": "iscrizioni-aperte",
+          "q": "Le iscrizioni sono ancora aperte?",
+          "parole": [
+            "iscrizioni aperte",
+            "ancora aperte",
+            "posso ancora iscrivermi",
+            "fino a quando",
+            "scadenza iscrizioni",
+            "in ritardo",
+            "a stagione iniziata",
+            "inizio stagione",
+            "tutto l anno",
+            "sempre aperte",
+            "posso iscrivermi adesso",
+            "a stagione in corso"
+          ],
+          "risposta": "Per Under 12, Under 13 e Minivolley S3 le iscrizioni sono sempre aperte, tutto l'anno: puoi iniziare in qualsiasi momento. Per Prima Divisione e Under 19 quest'anno non abbiamo iscrizioni aperte: scrivici o seguici sui social per le novità. Per cominciare compila il modulo «Vieni a giocare con noi».",
+          "link": {
+            "testo": "Vieni a giocare con noi",
+            "url": "/unisciti-a-noi"
+          }
+        },
+        {
+          "id": "senior-u19",
+          "q": "Posso iscrivermi in Prima Divisione o Under 19?",
+          "parole": [
+            "prima divisione",
+            "under 19",
+            "u19",
+            "senior",
+            "prima divisione iscrizione",
+            "under 19 iscrizione",
+            "squadra senior",
+            "adulti",
+            "maggiorenni",
+            "prima squadra"
+          ],
+          "risposta": "Per la Prima Divisione e per l'Under 19 quest'anno non abbiamo iscrizioni aperte, ma scrivici sui social o via email per sapere se qualcosa cambia o per le prossime stagioni. Intanto sono aperte le iscrizioni per Under 12, Under 13 e Minivolley S3.",
+          "link": {
+            "testo": "Instagram @asdvictorvolley",
+            "url": "https://www.instagram.com/asdvictorvolley"
+          }
+        },
+        {
+          "id": "documenti-iscrizione",
+          "q": "Quali documenti servono per iscriversi?",
+          "parole": [
+            "documenti",
+            "cosa serve",
+            "certificato",
+            "certificato medico",
+            "visita medica",
+            "idoneita",
+            "carta identita",
+            "tessera sanitaria",
+            "modulo tesseramento",
+            "documenti da portare",
+            "cosa serve per iscriversi",
+            "certificato agonistico",
+            "medico agonistico"
+          ],
+          "risposta": "Servono il modulo di tesseramento e il certificato medico agonistico.",
+          "link": {
+            "testo": "Vieni a giocare con noi",
+            "url": "/unisciti-a-noi"
+          }
+        },
+        {
+          "id": "quote",
+          "q": "Quanto costa?",
+          "parole": [
+            "costo",
+            "costa",
+            "quota",
+            "quote",
+            "prezzo",
+            "prezzi",
+            "quanto si paga",
+            "retta",
+            "rette",
+            "pagamento",
+            "pagare",
+            "mensile",
+            "annuale",
+            "rate",
+            "quanto costa",
+            "quanto costa iscriversi",
+            "quanto devo pagare"
+          ],
+          "risposta": "Per l'importo delle quote scrivici a victorvolley@libero.it oppure sul nostro profilo Instagram: ti rispondiamo con le informazioni precise.",
+          "link": {
+            "testo": "Instagram @asdvictorvolley",
+            "url": "https://www.instagram.com/asdvictorvolley"
+          }
+        },
+        {
+          "id": "sconti",
+          "q": "Ci sono sconti per fratelli o più figli?",
+          "parole": [
+            "sconto",
+            "sconti",
+            "fratelli",
+            "sorelle",
+            "due figli",
+            "piu figli",
+            "agevolazioni",
+            "famiglie numerose"
+          ],
+          "risposta": "Sì, sulla quota mensile sono previsti sconti per i fratelli. Per l'importo scrivici a victorvolley@libero.it o su Instagram.",
+          "link": {
+            "testo": "Instagram @asdvictorvolley",
+            "url": "https://www.instagram.com/asdvictorvolley"
+          }
+        }
+      ]
+    },
+    {
+      "id": "squadre",
+      "titolo": "Squadre e categorie",
+      "domande": [
+        {
+          "id": "categorie",
+          "q": "Quali categorie avete?",
+          "parole": [
+            "categorie",
+            "squadre",
+            "quali squadre",
+            "quante squadre",
+            "che squadre avete",
+            "settore giovanile"
+          ],
+          "risposta": "Le nostre categorie sono Under 12 e Under 13, maschili e femminili, e il Minivolley S3, per bambini e bambine dai 5 ai 10 anni. Per Prima Divisione e Under 19 quest'anno non abbiamo iscrizioni aperte: scrivici o seguici sui social per le novità.",
+          "link": {
+            "testo": "Le squadre",
+            "url": "/squadre"
+          }
+        },
+        {
+          "id": "eta-minima",
+          "q": "Da che età si può iniziare?",
+          "parole": [
+            "eta",
+            "da che eta",
+            "quanti anni",
+            "minimo",
+            "bambini",
+            "piccoli",
+            "minivolley",
+            "6 anni",
+            "5 anni",
+            "troppo piccolo",
+            "nato nel",
+            "5 anni",
+            "10 anni"
+          ],
+          "risposta": "Si comincia dal Minivolley, per bambini e bambine dai 5 ai 10 anni. Per età diverse scrivici e ti consigliamo la categoria giusta.",
+          "link": {
+            "testo": "Le squadre",
+            "url": "/squadre"
+          }
+        },
+        {
+          "id": "maschile-femminile",
+          "q": "Ci sono squadre maschili?",
+          "parole": [
+            "maschile",
+            "maschi",
+            "ragazzi",
+            "femminile",
+            "ragazze",
+            "femmine",
+            "squadra maschile",
+            "squadra femminile",
+            "misto"
+          ],
+          "risposta": "Sì: Under 12 e Under 13 hanno squadre sia maschili sia femminili, e il Minivolley S3 è aperto a bambini e bambine.",
+          "link": {
+            "testo": "Le squadre",
+            "url": "/squadre"
+          }
+        },
+        {
+          "id": "livello",
+          "q": "Devo avere esperienza per giocare?",
+          "parole": [
+            "esperienza",
+            "principiante",
+            "non ho mai giocato",
+            "livello",
+            "sono scarso",
+            "alle prime armi",
+            "neofita",
+            "da zero"
+          ],
+          "risposta": "No, non serve esperienza. Accogliamo anche chi non ha mai giocato: la prova gratuita serve proprio a capire insieme da dove iniziare.",
+          "link": {
+            "testo": "Vieni a giocare con noi",
+            "url": "/unisciti-a-noi"
+          }
+        },
+        {
+          "id": "allenatori",
+          "q": "Chi sono gli allenatori?",
+          "parole": [
+            "allenatore",
+            "allenatori",
+            "mister",
+            "coach",
+            "staff",
+            "istruttore",
+            "istruttori"
+          ],
+          "risposta": "Lo staff di ogni squadra si trova nella pagina «Le squadre». Per parlare con un allenatore scrivici e ti mettiamo in contatto.",
+          "link": {
+            "testo": "Le squadre",
+            "url": "/squadre"
+          }
+        },
+        {
+          "id": "chi-siamo",
+          "q": "Chi siete?",
+          "parole": [
+            "chi siete",
+            "chi e victor volley",
+            "storia",
+            "associazione",
+            "quando e nata",
+            "fondata",
+            "2019",
+            "chi e la victor",
+            "di cosa vi occupate"
+          ],
+          "risposta": "Victor Volley è una società sportiva dilettantistica nata nel 2019 a Melissano (LE). Offriamo a bambini, ragazzi e adulti la possibilità di praticare la pallavolo in un ambiente sereno e inclusivo."
+        }
+      ]
+    },
+    {
+      "id": "allenamenti",
+      "titolo": "Allenamenti e palestra",
+      "domande": [
+        {
+          "id": "dove",
+          "q": "Dove vi allenate?",
+          "parole": [
+            "dove",
+            "dove vi allenate",
+            "palestra",
+            "palazzetto",
+            "indirizzo",
+            "come arrivare",
+            "sede",
+            "campo",
+            "ark",
+            "arke",
+            "melissano",
+            "via don marino manco"
+          ],
+          "risposta": "Giochiamo al Palazzetto ARKÉ, in Via Don Marino Manco a Melissano (LE). Alcune partite fuori casa si giocano nei palazzetti delle squadre avversarie.",
+          "link": {
+            "testo": "Contatti e mappa",
+            "url": "/contatti"
+          }
+        },
+        {
+          "id": "orari-allenamenti",
+          "q": "Quando sono gli allenamenti?",
+          "parole": [
+            "orari",
+            "orario",
+            "orari allenamenti",
+            "quando ci si allena",
+            "giorni",
+            "che giorni",
+            "a che ora",
+            "allenamento",
+            "allenamenti",
+            "settimana",
+            "minivolley orari",
+            "orario under 13",
+            "orario under 12",
+            "minivolley s3",
+            "s3"
+          ],
+          "risposta": "Under 12 e Under 13 maschile: lunedì e mercoledì, dalle 18:30 alle 20:00. Under 12 e Under 13 femminile: martedì e giovedì, dalle 18:30 alle 20:00. Minivolley S3: martedì e giovedì, dalle 17:15 alle 18:30."
+        },
+        {
+          "id": "cosa-portare",
+          "q": "Cosa devo portare agli allenamenti?",
+          "parole": [
+            "cosa portare",
+            "abbigliamento",
+            "scarpe",
+            "ginocchiere",
+            "borraccia",
+            "tuta",
+            "equipaggiamento",
+            "attrezzatura",
+            "scarpe da ginnastica",
+            "vestiti"
+          ],
+          "risposta": "Abbigliamento sportivo, come di solito. Si raccomanda sempre la borraccia; tutto il resto dell'equipaggiamento è consigliato."
+        },
+        {
+          "id": "assenze",
+          "q": "Cosa faccio se non posso venire?",
+          "parole": [
+            "assenza",
+            "assente",
+            "non posso venire",
+            "malato",
+            "malattia",
+            "avvisare",
+            "recupero",
+            "salto allenamento",
+            "ritardo"
+          ],
+          "risposta": "Avvisa l'allenatore della squadra il prima possibile. Se non hai il suo contatto, scrivici e lo giriamo noi."
+        },
+        {
+          "id": "presenze",
+          "q": "Come funzionano le presenze?",
+          "parole": [
+            "presenze",
+            "registro presenze",
+            "area atleti",
+            "area allenatori",
+            "presente assente"
+          ],
+          "risposta": "Le presenze agli allenamenti sono segnate dagli allenatori. Se hai bisogno di un riepilogo, chiedilo alla società."
+        }
+      ]
+    },
+    {
+      "id": "partite",
+      "titolo": "Partite e risultati",
+      "domande": [
+        {
+          "id": "calendario",
+          "q": "Dove vedo il calendario delle partite?",
+          "parole": [
+            "calendario",
+            "partite",
+            "prossima partita",
+            "quando si gioca",
+            "quando gioca",
+            "prossime partite",
+            "giornata",
+            "orari partite",
+            "programma"
+          ],
+          "risposta": "Nella pagina Calendario trovi le prossime partite di ogni categoria con data, ora e palazzetto, e lo puoi anche aggiungere al tuo calendario del telefono.",
+          "link": {
+            "testo": "Calendario",
+            "url": "/calendario"
+          }
+        },
+        {
+          "id": "risultati",
+          "q": "Dove vedo i risultati e la classifica?",
+          "parole": [
+            "risultati",
+            "risultato",
+            "classifica",
+            "come e finita",
+            "punteggio",
+            "posizione in classifica",
+            "chi ha vinto la partita",
+            "com e andata la partita",
+            "esito della partita"
+          ],
+          "risposta": "Risultati e classifica del girone sono nella pagina Calendario, aggiornati dopo ogni partita.",
+          "link": {
+            "testo": "Calendario e classifica",
+            "url": "/calendario"
+          }
+        },
+        {
+          "id": "diretta",
+          "q": "Posso seguire le partite in diretta?",
+          "parole": [
+            "diretta",
+            "live",
+            "in diretta",
+            "streaming",
+            "video",
+            "vedere la partita",
+            "punteggio live",
+            "segui la partita"
+          ],
+          "risposta": "Sì: quando c'è una partita in corso trovi un avviso «In diretta» sul sito con il punteggio che si aggiorna punto per punto.",
+          "link": {
+            "testo": "Pagina diretta",
+            "url": "/diretta"
+          }
+        },
+        {
+          "id": "trasferte",
+          "q": "Come funzionano le trasferte?",
+          "parole": [
+            "trasferta",
+            "trasferte",
+            "fuori casa",
+            "come ci arrivo",
+            "trasporto",
+            "pullman",
+            "passaggio",
+            "accompagnare",
+            "genitori accompagnano"
+          ],
+          "risposta": "Per le trasferte scrivici in privato a victorvolley@libero.it oppure parla con un dirigente: ti diciamo come si organizzano.",
+          "link": {
+            "testo": "Contattaci",
+            "url": "/contatti"
+          }
+        },
+        {
+          "id": "rinvio",
+          "q": "Una partita è stata rinviata?",
+          "parole": [
+            "rinviata",
+            "rinvio",
+            "rinviato",
+            "spostata",
+            "spostamento",
+            "annullata",
+            "cambio orario",
+            "cambiata",
+            "recupero partita"
+          ],
+          "risposta": "Date e orari aggiornati sono sempre nel Calendario del sito: se una partita viene spostata la trovi lì. Per un dubbio dell'ultimo minuto contatta l'allenatore.",
+          "link": {
+            "testo": "Calendario",
+            "url": "/calendario"
+          }
+        },
+        {
+          "id": "tifare",
+          "q": "Posso venire a vedere le partite?",
+          "parole": [
+            "vedere",
+            "venire a vedere",
+            "pubblico",
+            "tifare",
+            "ingresso",
+            "biglietto",
+            "tifosi",
+            "spettatori",
+            "entrare"
+          ],
+          "risposta": "Sì, le partite in casa sono aperte al pubblico: vieni a tifare! Per gli ingressi del palazzetto vale quanto indicato di volta in volta dalla società."
+        }
+      ]
+    },
+    {
+      "id": "famiglie",
+      "titolo": "Famiglie e atleti",
+      "domande": [
+        {
+          "id": "area-atleti",
+          "q": "Come accedo all'area atleti?",
+          "parole": [
+            "area atleti",
+            "accesso",
+            "accedere",
+            "login",
+            "entrare",
+            "account",
+            "profilo atleta",
+            "area riservata"
+          ],
+          "risposta": "Se sei un atleta tesserato, la società ti invia un invito via email per impostare la password. Usa il link dell'invito e poi accedi dalla pagina «Area atleti».",
+          "link": {
+            "testo": "Area atleti",
+            "url": "/atleta"
+          }
+        },
+        {
+          "id": "password",
+          "q": "Ho dimenticato la password",
+          "parole": [
+            "password",
+            "dimenticato",
+            "dimenticata",
+            "reset",
+            "recupero password",
+            "non riesco ad accedere",
+            "non riesco a entrare",
+            "cambiare password",
+            "imposta password"
+          ],
+          "risposta": "Dall'area atleti puoi cambiare la password. Se non riesci ad accedere o non hai ricevuto l'invito, scrivici a victorvolley@libero.it con nome e cognome dell'atleta.",
+          "link": {
+            "testo": "Area atleti",
+            "url": "/atleta"
+          }
+        },
+        {
+          "id": "ricevute",
+          "q": "Come ottengo la ricevuta di pagamento?",
+          "parole": [
+            "ricevuta",
+            "ricevute",
+            "detrazione",
+            "detraibile",
+            "730",
+            "fattura",
+            "attestazione",
+            "pagato",
+            "quietanza"
+          ],
+          "risposta": "Per la ricevuta scrivi a victorvolley@libero.it oppure chiedila a un dirigente.",
+          "link": {
+            "testo": "Contattaci",
+            "url": "/contatti"
+          }
+        },
+        {
+          "id": "divisa",
+          "q": "Come funziona la divisa e le taglie?",
+          "parole": [
+            "divisa",
+            "maglia",
+            "taglia",
+            "taglie",
+            "kit",
+            "tuta di rappresentanza",
+            "felpa",
+            "pantaloncini",
+            "numero maglia"
+          ],
+          "risposta": "Per divisa e taglie scrivici in privato a victorvolley@libero.it oppure parla con un dirigente.",
+          "link": {
+            "testo": "Contattaci",
+            "url": "/contatti"
+          }
+        },
+        {
+          "id": "minori",
+          "q": "Chi è responsabile dei minorenni?",
+          "parole": [
+            "minorenni",
+            "minore",
+            "responsabilita",
+            "assicurazione",
+            "infortunio",
+            "infortuni",
+            "si fa male",
+            "sicurezza",
+            "genitore",
+            "tutore"
+          ],
+          "risposta": "Per assicurazione, infortuni e responsabilità sui minori scrivici in privato a victorvolley@libero.it oppure parla con un dirigente: ti rispondiamo per iscritto.",
+          "link": {
+            "testo": "Contattaci",
+            "url": "/contatti"
+          }
+        },
+        {
+          "id": "salute",
+          "q": "Mio figlio ha un problema di salute",
+          "parole": [
+            "salute",
+            "problema di salute",
+            "allergia",
+            "allergie",
+            "asma",
+            "diabete",
+            "infortunato",
+            "ginocchio",
+            "medico",
+            "dottore",
+            "farmaci",
+            "disabilita"
+          ],
+          "risposta": "Per qualsiasi questione di salute (allergie, patologie, infortuni) parla direttamente con l'allenatore e con la società, e porta il certificato medico. Io non posso dare consigli medici.",
+          "link": {
+            "testo": "Contattaci",
+            "url": "/contatti"
+          }
+        },
+        {
+          "id": "comportamento",
+          "q": "Ho un problema con un allenatore o un compagno",
+          "parole": [
+            "problema",
+            "lamentela",
+            "reclamo",
+            "segnalazione",
+            "bullismo",
+            "litigio",
+            "non va bene",
+            "non sono contento",
+            "scontento",
+            "comportamento"
+          ],
+          "risposta": "Ci dispiace. Scrivici a victorvolley@libero.it spiegando cosa è successo: la società prende in carico la segnalazione con riservatezza.",
+          "link": {
+            "testo": "Contattaci",
+            "url": "/contatti"
+          }
+        }
+      ]
+    },
+    {
+      "id": "sito",
+      "titolo": "Sito e novità",
+      "domande": [
+        {
+          "id": "news",
+          "q": "Dove trovo le ultime notizie?",
+          "parole": [
+            "news",
+            "notizie",
+            "novita",
+            "articoli",
+            "ultime notizie",
+            "comunicati",
+            "blog",
+            "annunci"
+          ],
+          "risposta": "Tutte le novità della società sono nella sezione News.",
+          "link": {
+            "testo": "News",
+            "url": "/news"
+          }
+        },
+        {
+          "id": "galleria",
+          "q": "Dove vedo le foto?",
+          "parole": [
+            "foto",
+            "fotografie",
+            "galleria",
+            "immagini",
+            "album",
+            "scatti",
+            "video partita"
+          ],
+          "risposta": "Le foto delle partite e degli eventi sono nella Galleria.",
+          "link": {
+            "testo": "Galleria",
+            "url": "/galleria"
+          }
+        },
+        {
+          "id": "social",
+          "q": "Siete sui social?",
+          "parole": [
+            "social",
+            "instagram",
+            "facebook",
+            "tiktok",
+            "youtube",
+            "seguirvi",
+            "profilo social",
+            "pagina facebook"
+          ],
+          "risposta": "Sì, trovi i collegamenti ai nostri social nella pagina Contatti e in fondo a ogni pagina del sito.",
+          "link": {
+            "testo": "Contatti",
+            "url": "/contatti"
+          }
+        },
+        {
+          "id": "privacy",
+          "q": "Come trattate i miei dati?",
+          "parole": [
+            "privacy",
+            "dati personali",
+            "trattamento dati",
+            "cookie",
+            "gdpr",
+            "informativa",
+            "cancellare i miei dati",
+            "i miei dati"
+          ],
+          "risposta": "Nella pagina Privacy trovi l'informativa completa e le informazioni sui cookie. Per chiedere accesso, modifica o cancellazione dei tuoi dati scrivici a victorvolley@libero.it.",
+          "link": {
+            "testo": "Privacy e cookie",
+            "url": "/privacy"
+          }
+        }
+      ]
+    },
+    {
+      "id": "societa",
+      "titolo": "Sponsor e contatti",
+      "domande": [
+        {
+          "id": "sponsor",
+          "q": "Voglio diventare sponsor",
+          "parole": [
+            "sponsor",
+            "sponsorizzare",
+            "sponsorizzazione",
+            "partnership",
+            "pubblicita",
+            "partner",
+            "collaborare",
+            "la mia azienda",
+            "azienda",
+            "negozio",
+            "diventare sponsor"
+          ],
+          "risposta": "Grazie per l'interesse! Scrivici dal modulo contatti o a victorvolley@libero.it con il nome della tua attività: ti rispondiamo con le proposte di partnership.",
+          "link": {
+            "testo": "Contattaci",
+            "url": "/contatti"
+          }
+        },
+        {
+          "id": "chi-sono-sponsor",
+          "q": "Chi sono i vostri sponsor?",
+          "parole": [
+            "nostri sponsor",
+            "chi sponsorizza",
+            "sponsor attuali",
+            "partner attuali",
+            "elenco sponsor"
+          ],
+          "risposta": "I nostri partner sono presentati nella pagina Sponsor.",
+          "link": {
+            "testo": "Sponsor",
+            "url": "/sponsor"
+          }
+        },
+        {
+          "id": "contatti",
+          "q": "Come vi contatto?",
+          "parole": [
+            "contatto",
+            "contattare",
+            "contatti",
+            "email",
+            "mail",
+            "telefono",
+            "numero",
+            "scrivere",
+            "scrivervi",
+            "parlare con qualcuno",
+            "segreteria",
+            "whatsapp",
+            "chiamare"
+          ],
+          "risposta": "Puoi scriverci a victorvolley@libero.it oppure usare il modulo nella pagina Contatti. Rispondiamo il prima possibile.",
+          "link": {
+            "testo": "Contatti",
+            "url": "/contatti"
+          }
+        },
+        {
+          "id": "volontari",
+          "q": "Posso dare una mano come volontario o dirigente?",
+          "parole": [
+            "volontario",
+            "volontaria",
+            "dare una mano",
+            "aiutare",
+            "dirigente",
+            "collaboratore",
+            "arbitro",
+            "segnapunti",
+            "fare l'allenatore",
+            "diventare allenatore",
+            "lavorare con voi"
+          ],
+          "risposta": "Siamo sempre felici di accogliere nuove persone nello staff e tra i collaboratori. Scrivici raccontandoci chi sei e cosa ti piacerebbe fare.",
+          "link": {
+            "testo": "Contattaci",
+            "url": "/contatti"
+          }
+        },
+        {
+          "id": "lavora-con-noi",
+          "q": "Organizzate eventi o centri estivi?",
+          "parole": [
+            "evento",
+            "eventi",
+            "centro estivo",
+            "campus",
+            "torneo",
+            "tornei",
+            "festa",
+            "estate",
+            "summer camp",
+            "open day",
+            "saggio"
+          ],
+          "risposta": "Sì, ne organizziamo tanti! Seguici sui social per tutti gli aggiornamenti.",
+          "link": {
+            "testo": "Instagram @asdvictorvolley",
+            "url": "https://www.instagram.com/asdvictorvolley"
+          }
+        }
+      ]
+    }
+  ]
+}
