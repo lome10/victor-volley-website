@@ -182,8 +182,20 @@
   }
 
   /* ---------- apertura ---------- */
+  function hideTip(remember) {
+    if (el.tip) el.tip.hidden = true;
+    if (remember) { try { sessionStorage.setItem('vvbot_tip', '1'); } catch (e) { /* senza storage: l'invito riappare, nessun danno */ } }
+  }
+  function showTipLater() {
+    var seen = false;
+    try { seen = sessionStorage.getItem('vvbot_tip') === '1'; } catch (e) { /* ignora */ }
+    if (seen || !state.data.invito) return;
+    setTimeout(function () { if (!state.open) { el.tip.hidden = false; } }, 3500);
+  }
+
   function setOpen(open) {
     state.open = open;
+    if (open) hideTip(true);
     el.panel.hidden = !open;
     el.btn.setAttribute('aria-expanded', open ? 'true' : 'false');
     el.btn.classList.toggle('is-open', open);
@@ -209,8 +221,8 @@
     el.btn.setAttribute('aria-label', 'Apri l\'assistente Victor');
     el.btn.setAttribute('aria-expanded', 'false');
     el.btn.setAttribute('aria-controls', 'vvbot-panel');
-    el.btn.appendChild(h('span', 'vvbot-fab-ico', '💬'));
-    el.btn.appendChild(h('span', 'vvbot-fab-txt', 'Serve aiuto?'));
+    el.btn.appendChild(h('span', 'vvbot-fab-ico', '🏐'));
+    el.btn.appendChild(h('span', 'vvbot-fab-txt', state.data.etichetta || 'Chiedi a Victor'));
     el.btn.addEventListener('click', function () { setOpen(!state.open); });
 
     el.panel = h('section', 'vvbot-panel');
@@ -256,6 +268,18 @@
     el.panel.appendChild(el.log);
     el.panel.appendChild(form);
     root.appendChild(el.panel);
+    el.tip = h('div', 'vvbot-tip');
+    el.tip.hidden = true;
+    var tipTxt = h('button', 'vvbot-tip-txt', state.data.invito || '');
+    tipTxt.type = 'button';
+    tipTxt.addEventListener('click', function () { hideTip(true); setOpen(true); });
+    var tipX = h('button', 'vvbot-tip-x', '×');
+    tipX.type = 'button';
+    tipX.setAttribute('aria-label', 'Chiudi il suggerimento');
+    tipX.addEventListener('click', function () { hideTip(true); });
+    el.tip.appendChild(tipTxt);
+    el.tip.appendChild(tipX);
+    root.appendChild(el.tip);
     root.appendChild(el.btn);
     document.body.appendChild(root);
 
@@ -270,6 +294,7 @@
     data.categorie.forEach(function (c) { c.domande.forEach(function (d) { state.flat.push(d); }); });
     build();
     if (/[?&]chatbot=1\b/.test(location.search)) setOpen(true);
+    else showTipLater();
   }
 
   /* per i test in Node: nessun DOM */

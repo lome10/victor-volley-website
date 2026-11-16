@@ -2,15 +2,28 @@
 .vvbot { position: fixed; right: 16px; bottom: 16px; z-index: 9000; font-family: var(--font-body, 'Manrope', sans-serif); color: var(--c-text, #1A1A1E); }
 .vvbot [hidden] { display: none !important; }
 
-.vvbot-fab { display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 18px 0 14px; border: 0; border-radius: 24px; cursor: pointer;
-  background: var(--c-azzurro, #008CFD); color: #fff; font: 700 14px/1 var(--font-body, 'Manrope', sans-serif); box-shadow: 0 6px 20px rgba(5, 48, 99, .35); }
-.vvbot-fab:hover { background: var(--c-azzurro-dark, #0070D6); }
+.vvbot-fab { position: relative; display: flex; align-items: center; gap: 10px; height: 58px; padding: 0 24px 0 18px; border: 2px solid #fff; border-radius: 29px; cursor: pointer;
+  background: var(--c-magenta, #CB2168); color: #fff; font: 800 17px/1 var(--font-heading, 'Barlow', sans-serif); letter-spacing: .02em; box-shadow: 0 8px 26px rgba(203, 33, 104, .55); }
+.vvbot-fab:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.vvbot-fab.is-open { animation: none; }
+.vvbot-fab:focus-visible { outline: 3px solid var(--c-navy, #053063); outline-offset: 3px; }
+.vvbot-tip { position: absolute; right: 0; bottom: 72px; width: min(260px, calc(100vw - 32px)); display: flex; align-items: flex-start; gap: 4px; padding: 12px 8px 12px 14px;
+  background: #fff; color: var(--c-navy, #053063); border-radius: var(--card-radius, 12px); box-shadow: 0 10px 30px rgba(5, 48, 99, .35); }
+.vvbot-tip::after { content: ''; position: absolute; right: 36px; bottom: -7px; width: 14px; height: 14px; background: #fff; transform: rotate(45deg); }
+.vvbot-tip-txt { flex: 1; padding: 0; border: 0; background: none; color: inherit; font: 700 14px/1.4 var(--font-body, 'Manrope', sans-serif); text-align: left; cursor: pointer; }
+.vvbot-tip-x { width: 24px; height: 24px; border: 0; border-radius: 50%; background: transparent; color: #5b5b66; font-size: 18px; line-height: 1; cursor: pointer; }
+.vvbot-tip-x:hover { background: #eee; }
+.vvbot-tip-txt:focus-visible, .vvbot-tip-x:focus-visible { outline: 3px solid var(--c-magenta, #CB2168); outline-offset: 2px; }
+@media (prefers-reduced-motion: no-preference) {
+  .vvbot-fab:not(.is-open) { animation: vvbot-pulse 2.4s ease-out infinite; }
+  @keyframes vvbot-pulse { 0% { box-shadow: 0 8px 26px rgba(203, 33, 104, .55), 0 0 0 0 rgba(203, 33, 104, .55); } 70% { box-shadow: 0 8px 26px rgba(203, 33, 104, .55), 0 0 0 16px rgba(203, 33, 104, 0); } 100% { box-shadow: 0 8px 26px rgba(203, 33, 104, .55), 0 0 0 0 rgba(203, 33, 104, 0); } }
+}
 .vvbot-fab:focus-visible, .vvbot-chip:focus-visible, .vvbot-close:focus-visible, .vvbot-send:focus-visible, .vvbot-input:focus-visible, .vvbot-link:focus-visible { outline: 3px solid var(--c-magenta, #CB2168); outline-offset: 2px; }
-.vvbot-fab-ico { font-size: 20px; }
+.vvbot-fab-ico { font-size: 24px; }
 .vvbot-fab.is-open .vvbot-fab-txt { display: none; }
-.vvbot-fab.is-open { width: 48px; padding: 0; justify-content: center; }
+.vvbot-fab.is-open { width: 58px; padding: 0; justify-content: center; }
 
-.vvbot-panel { position: absolute; right: 0; bottom: 60px; width: min(380px, calc(100vw - 32px)); height: min(560px, calc(100vh - 110px)); display: flex; flex-direction: column;
+.vvbot-panel { position: absolute; right: 0; bottom: 72px; width: min(380px, calc(100vw - 32px)); height: min(560px, calc(100vh - 110px)); display: flex; flex-direction: column;
   background: #fff; border-radius: var(--card-radius, 12px); overflow: hidden; box-shadow: 0 14px 44px rgba(5, 48, 99, .35); }
 
 .vvbot-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 14px 16px; background: var(--c-navy, #053063); color: #fff; }
