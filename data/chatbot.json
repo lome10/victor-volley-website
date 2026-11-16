@@ -1,8 +1,8 @@
 {
   "versione": 1,
-  "nome": "Assistente Victor",
+  "nome": "Victor",
   "email": "victorvolley@libero.it",
-  "saluto": "Ciao! Sono l'assistente di Victor Volley. Rispondo alle domande più comuni su iscrizioni, squadre, allenamenti, partite e contatti. Scegli un argomento o scrivimi la tua domanda.",
+  "saluto": "Ciao! Sono Victor, il tuo aiuto per tutto quello che riguarda Victor Volley. Rispondo alle domande più comuni su iscrizioni, squadre, allenamenti, partite e contatti. Scegli un argomento o scrivimi la tua domanda.",
   "fallback": "Su questo non ho una risposta sicura. Scrivici a victorvolley@libero.it oppure usa il modulo dei contatti: ti risponde una persona della società.",
   "fallback_link": {
     "testo": "Vai ai contatti",
@@ -864,5 +864,5 @@
     }
   ],
   "etichetta": "Chiedi a Victor",
-  "invito": "Ciao! Hai domande su iscrizioni, orari o partite? Chiedi a me!"
+  "invito": "Ciao, sono Victor! Hai domande su iscrizioni, orari o partite? Chiedi a me!"
 }
