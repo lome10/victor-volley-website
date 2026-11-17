@@ -707,18 +707,30 @@
     return '<span style="font-weight:600">' + String(c.importo).replace('.', ',') + ' €</span><div class="table-sub">' + esc(c.etichetta) + '</div>';
   }
 
+  /* Ruolo e numero di maglia modificabili dalla lista (VVW-21): stessi documenti (atletiDati) e stesso registro della scheda. */
+  function _ruoloMagliaCella(a) {
+    var lab = esc(_atletaLabel(a)), ruolo = a.ruolo || '';
+    var opzioni = RUOLI_ATLETA.slice();
+    if (ruolo && !opzioni.some(function (o) { return o[0] === ruolo; })) opzioni.push([ruolo, ruolo]);   /* un ruolo fuori elenco non si perde */
+    var sel = opzioni.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (o[0] === ruolo ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('');
+    var num = a.numeroMaglia != null && a.numeroMaglia !== '' ? String(a.numeroMaglia) : '';
+    return '<div class="rm-cella" style="display:flex;gap:6px;align-items:center">' +
+      '<select class="form-input rm-in" data-uid="' + esc(a.uid) + '" data-k="ruolo" aria-label="Ruolo di ' + lab + '" style="padding:4px 6px;min-width:130px">' + sel + '</select>' +
+      '<input type="number" class="form-input rm-in" data-uid="' + esc(a.uid) + '" data-k="numeroMaglia" min="0" max="99" step="1" inputmode="numeric" placeholder="#" value="' + esc(num) +
+        '" aria-label="Numero di maglia di ' + lab + '" style="padding:4px 6px;width:64px"></div>';
+  }
+
   function _atletaRowHtml(a) {
     var tt      = _totaliRateAdmin(a.uid);
     var totale  = tt.totale;
     var saldato = tt.saldato;
     var eta     = _atletaEta(a);
-    var ruoloNum = [a.ruolo, a.numeroMaglia !== '' && a.numeroMaglia != null ? '#' + a.numeroMaglia : ''].filter(Boolean).join(' · ');
     return '<tr>' +
       '<td><div class="table-title">' + esc(a.cognome) + ' ' + esc(a.nome) + '</div>' +
         '<div class="table-sub">' + esc(_accessiSummary(a)) +
           (a.privacyFirmataIl ? '' : ' &nbsp;·&nbsp; <span style="color:#B45309">privacy da ritirare</span>') + '</div></td>' +
       '<td>' + (a.dataNascita ? esc(_fmtDate(a.dataNascita)) + '<div class="table-sub">' + eta + ' anni</div>' : '<span class="chip chip--gray">—</span>') + '</td>' +
-      '<td>' + (ruoloNum ? esc(ruoloNum) : '—') + '</td>' +
+      '<td>' + _ruoloMagliaCella(a) + '</td>' +
       '<td>' + _certChip(a.certMedicoScadenza) + '</td>' +
       '<td>' + _tesseramentoCella(a) + '</td>' +
       '<td>' + (totale > 0
@@ -813,6 +825,35 @@
   document.getElementById('atletiBody').addEventListener('change', function (e) {
     var chk = e.target.closest ? e.target.closest('.abb-chk') : null;
     if (chk) _abbToggle(chk.dataset.uid, chk.checked, chk);
+  });
+  /* Ruolo e maglia dalla lista: salva subito, sullo stesso documento della scheda (atletiDati) e con lo stesso registro modifiche. */
+  document.getElementById('atletiBody').addEventListener('change', function (e) {
+    var el = e.target.closest ? e.target.closest('.rm-in') : null;
+    if (!el) return;
+    var a = _atletiCache.find(function (x) { return x.uid === el.dataset.uid; });
+    if (!a) return;
+    var k = el.dataset.k, prima = a[k] == null ? '' : String(a[k]);
+    var dopo = el.value.trim();
+    if (dopo === prima) return;
+    if (k === 'numeroMaglia' && dopo !== '' && !/^\d{1,2}$/.test(dopo)) { el.value = prima; _avviso('Il numero di maglia va da 0 a 99.'); return; }
+    var patch = {}; patch[k] = k === 'numeroMaglia' ? (dopo === '' ? '' : Number(dopo)) : dopo;
+    var doppio = k === 'numeroMaglia' && dopo !== '' ? _atletiCache.filter(function (x) {
+      return x.uid !== a.uid && a.categoria && x.categoria === a.categoria && String(x.numeroMaglia == null ? '' : x.numeroMaglia) === dopo;
+    })[0] : null;
+    el.disabled = true;
+    db.collection('atletiDati').doc(a.uid).set(patch, { merge: true }).then(function () {
+      var before = Object.assign({}, a);
+      a[k] = patch[k];
+      el.value = k === 'numeroMaglia' ? String(patch[k]) : dopo;
+      /* se la scheda di questo atleta è aperta, la casella corrispondente si aggiorna */
+      var f = document.getElementById('af_' + k);
+      if (f && _editingAtleta && _editingAtleta.uid === a.uid) f.value = patch[k];
+      if (doppio) _avviso('Salvato. Attenzione: ' + doppio.cognome + ' ' + doppio.nome + ' ha già la maglia ' + dopo + ' in ' + a.categoria + '.');
+      return _logWrite('atleta', a.uid, _atletaLabel(a), 'update', _diff(before, patch, [k]));
+    }).catch(function (er) {
+      el.value = prima;
+      _avviso('Non salvato: ' + er.message);
+    }).then(function () { el.disabled = false; });
   });
   document.getElementById('atletiAbbBar').addEventListener('change', function (e) {
     if (e.target.classList && e.target.classList.contains('abb-cat-chk')) {
