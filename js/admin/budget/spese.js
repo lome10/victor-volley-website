@@ -604,7 +604,11 @@
     db.collection('sottospese').doc(id).update(patch)
       .then(function () { return _logWrite('sottospesa', id, (_isSottospesaCredito(s) ? 'Credito' : 'Sottospesa') + ' — ' + (v ? v.categoria : '') + ' / ' + s.descrizione, 'update', _diff(old, patch, [field])); })
       .then(function () { return (field === 'importo' || field === 'importoPreventivato') ? _syncVoceDaSottospese(s.voceSpesaId) : null; })
-      .then(function () { _renderSpese(); B._renderStatCards(); B._renderCharts(); B._renderBilancio(); })
+      .then(function () {
+        /* VVW-23: data e nota di una rata non cambiano nessun totale e non compaiono altrove: niente ridisegno, cosi' il pannello non rimbalza. */
+        if (field === 'data' || field === 'nota') return;
+        _renderSpese(); B._renderStatCards(); B._renderCharts(); B._renderBilancio();
+      })
       .catch(function (e) { alert('Errore: ' + e.message); });
   };
 
