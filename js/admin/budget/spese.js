@@ -371,6 +371,12 @@
      previsto/Incassato" per i crediti. Il tipo è deciso da QUALE tabella si aggiunge
      la riga (nessun campo "tipo" da cambiare dopo: per correggere un errore si elimina
      e si reinserisce nella tabella giusta). */
+  /* Ordine delle sottovoci: data di pagamento crescente, quelle senza data in fondo, poi per descrizione. */
+  function _cmpSottospese(a, b) {
+    var da = a.data || '', db_ = b.data || '';
+    if (da !== db_) { if (!da) return 1; if (!db_) return -1; return da < db_ ? -1 : 1; }
+    return (a.descrizione || '').localeCompare(b.descrizione || '', 'it', { sensitivity: 'base', numeric: true });
+  }
   function _sottospesaTableHtml(v, rows, tipo) {
     var isCredito = tipo === 'credito';
     var labelPrev = isCredito ? 'Incasso previsto' : 'Preventivato';
@@ -404,7 +410,7 @@
      I crediti sono solo un dettaglio informativo: non toccano Sostenuto/Preventivato della voce né i totali di Bilancio
      (un incasso già tracciato altrove, per esempio sponsor o rette, non va contato due volte). */
   function _sottospeseInnerHtml(v) {
-    var elenco = _sottospeseOf(v.id).slice().sort(function (a, b) { return (a.descrizione || '').localeCompare(b.descrizione || '', 'it', { sensitivity: 'base', numeric: true }); });   /* ordine alfabetico */
+    var elenco = _sottospeseOf(v.id).slice().sort(_cmpSottospese);   /* per data di pagamento (VVW-24); senza data in fondo; a parità, alfabetico */
     var spese = elenco.filter(function (s) { return !_isSottospesaCredito(s); });
     var crediti = elenco.filter(_isSottospesaCredito);
     var somma = _sommaSottospese(v.id), sommaPrev = _sommaSottospesePreventivate(v.id);
@@ -606,7 +612,18 @@
       .then(function () { return (field === 'importo' || field === 'importoPreventivato') ? _syncVoceDaSottospese(s.voceSpesaId) : null; })
       .then(function () {
         /* VVW-23: data e nota di una rata non cambiano nessun totale e non compaiono altrove: niente ridisegno, cosi' il pannello non rimbalza. */
-        if (field === 'data' || field === 'nota') return;
+        if (field === 'data' || field === 'nota') {
+          /* a cambiare data le righe si riordinano sul posto, senza ridisegnare il pannello */
+          if (field === 'data') {
+            var tb = el.closest('tbody');
+            if (tb) {
+              var rows = Array.prototype.slice.call(tb.querySelectorAll('tr'));
+              var key = function (tr) { var d = tr.querySelector('input[data-field="data"]'), n = tr.querySelector('input[data-field="descrizione"]'); return { data: d ? d.value : '', descrizione: n ? n.value : '' }; };
+              rows.sort(function (x, y) { return _cmpSottospese(key(x), key(y)); }).forEach(function (tr) { tb.appendChild(tr); });
+            }
+          }
+          return;
+        }
         _renderSpese(); B._renderStatCards(); B._renderCharts(); B._renderBilancio();
       })
       .catch(function (e) { alert('Errore: ' + e.message); });
