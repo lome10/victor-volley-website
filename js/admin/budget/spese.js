@@ -46,6 +46,12 @@
   function _voceHaPreventivatoDaSottospese(voceId) {
     return _sottospeseSpesaOf(voceId).some(function (x) { return (+x.importoPreventivato || 0) > 0; });
   }
+  /* VVW-22 (Lorenzo, 17/11): il Preventivato della voce è il TOTALE scritto a mano e NON segue più le rate: cambiare la
+     previsione di una rata non lo tocca (le rate sono solo il dettaglio). Eccezione: la voce Tesseramenti, il cui totale è
+     calcolato dalle squadre (sottospese con tesseramentiSquadra) e deve continuare a seguirle. */
+  function _preventivatoSegueRate(voceId) {
+    return _sottospeseSpesaOf(voceId).some(function (x) { return !!x.tesseramentiSquadra; }) && _voceHaPreventivatoDaSottospese(voceId);
+  }
   /* Stato di una sottospesa, ricavato dai due importi — vocabolario diverso per i crediti. */
   function _statoSottospesa(s) {
     var prev = +s.importoPreventivato || 0, pagato = +s.importo || 0;
@@ -75,7 +81,7 @@
     if (lordo && (+v.importoSostenutoLordo || 0) !== sostLordo) {
       old.importoSostenutoLordo = v.importoSostenutoLordo || 0; patch.importoSostenutoLordo = sostLordo; fields.push('importoSostenutoLordo');
     }
-    if (_voceHaPreventivatoDaSottospese(voceId)) {
+    if (_preventivatoSegueRate(voceId)) {
       var preventivato = _sommaSottospesePreventivate(voceId), prevLordo = preventivato;
       if (lordo) preventivato = _dividiIva(prevLordo, al, 'lordo').netto;
       if (+v.importoPreventivato !== preventivato) {
@@ -437,7 +443,8 @@
     var modoIva = bozza && bozza.speDIvaModo != null ? bozza.speDIvaModo : (v.ivaModo === 'lordo' ? 'lordo' : 'netto');
     var prevMostrato = v.ivaModo === 'lordo' ? _lordoDi(v, 'Preventivato') : v.importoPreventivato;
     var sostMostrato = v.ivaModo === 'lordo' ? _lordoDi(v, 'Sostenuto') : v.importoSostenuto;
-    var haSub = _sottospeseSpesaOf(v.id).length > 0, prevDaSub = haSub && _voceHaPreventivatoDaSottospese(v.id);
+    var haSub = _sottospeseSpesaOf(v.id).length > 0, prevDaSub = haSub && _preventivatoSegueRate(v.id);
+    var prevRateDiverso = haSub && !prevDaSub && _voceHaPreventivatoDaSottospese(v.id);
     var e = _etichettaVoce(v, _oggiIso());
     root.innerHTML = '<div class="sp-dr-bg" onclick="DG.speseDrawerChiudi()"></div>' +
       '<aside class="sp-dr" role="dialog" aria-modal="true" aria-label="Voce di spesa ' + esc(v.categoria) + '">' +
@@ -446,7 +453,7 @@
       '<div class="sp-f sp-full"><label for="speDNome">Voce di spesa</label><input type="text" id="speDNome" class="dg-form-input" value="' + esc(val0('speDNome', 'categoria', '')) + '"></div>' +
       '<div class="sp-f"><label for="speDCat">Categoria</label><select id="speDCat" class="dg-form-input">' + _categorieSpesaOptionsHtml(val0('speDCat', 'categoriaSpesaId', '')) + '</select></div>' +
       '<div class="sp-f"><label for="speDData">Data o scadenza</label><input type="date" id="speDData" class="dg-form-input" value="' + esc(val0('speDData', 'dataSpesa', '')) + '"><span class="sp-h">Conta nel Saldo mensile; senza data finisce in «Spese senza data».</span></div>' +
-      '<div class="sp-f"><label for="speDPrev">Preventivato (€)</label><input type="number" id="speDPrev" class="dg-form-input" min="0" step="any" value="' + esc(bozza && bozza.speDPrev != null ? bozza.speDPrev : (prevMostrato || 0)) + '"' + (prevDaSub ? ' readonly' : '') + '>' + (prevDaSub ? '<span class="sp-h">Somma dei preventivati dei pagamenti qui sotto.</span>' : '') + '</div>' +
+      '<div class="sp-f"><label for="speDPrev">Preventivato (€)</label><input type="number" id="speDPrev" class="dg-form-input" min="0" step="any" value="' + esc(bozza && bozza.speDPrev != null ? bozza.speDPrev : (prevMostrato || 0)) + '"' + (prevDaSub ? ' readonly' : '') + '>' + (prevDaSub ? '<span class="sp-h">Somma dei preventivati dei pagamenti qui sotto.</span>' : (prevRateDiverso ? '<span class="sp-h">Totale scritto a mano: le rate qui sotto non lo cambiano.</span>' : '')) + '</div>' +
       '<div class="sp-f"><label for="speDSost">Già speso (€)</label><input type="number" id="speDSost" class="dg-form-input" min="0" step="any" value="' + esc(bozza && bozza.speDSost != null ? bozza.speDSost : (sostMostrato || 0)) + '"' + (haSub ? ' readonly' : '') + '>' + (haSub ? '<span class="sp-h">Somma dei pagati dei pagamenti qui sotto.</span>' : '') + '</div>' +
       '<div class="sp-f"><label for="speDIva">IVA %</label><input type="number" id="speDIva" class="dg-form-input" min="0" step="any" placeholder="0" value="' + esc(val0('speDIva', 'ivaAliquota', '') || '') + '"><span class="sp-h" id="speDIvaH"></span></div>' +
       '<div class="sp-f"><label for="speDIvaModo">L’importo inserito è</label><select id="speDIvaModo" class="dg-form-input"><option value="netto"' + (modoIva === 'lordo' ? '' : ' selected') + '>Netto (IVA da aggiungere)</option><option value="lordo"' + (modoIva === 'lordo' ? ' selected' : '') + '>Lordo (IVA inclusa)</option></select></div>' +

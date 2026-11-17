@@ -202,14 +202,18 @@ t('Spese: filtri per stato, ricerca e categoria; i testi con HTML vengono escapa
   assert.ok(!els.speseList.innerHTML.includes('<b>X</b>') && els.speseList.innerHTML.includes('&lt;b&gt;X&lt;/b&gt;'));
   B._speseFilterCategoriaId = '__none__'; B._renderSpese(); assert.strictEqual(righe(), 0); assert.ok(/Nessuna voce con questi filtri/.test(els.speseList.innerHTML));
 });
-t('Spese: pannello laterale, campi bloccati quando speso e preventivato vengono dai pagamenti', () => {
+t('Spese: pannello laterale, «Già speso» bloccato dai pagamenti; Preventivato resta a mano (VVW-22) tranne Tesseramenti', () => {
   const v = voce({ id: 'v9', categoria: 'Evento', importoPreventivato: 2217, importoSostenuto: 1457 });
   const sub = [{ id: 'p1', voceSpesaId: 'v9', tipo: 'spesa', descrizione: 'Catering', importoPreventivato: 900, importo: 900 }];
   const { DG, B, els } = statoSpese([v, voce({ id: 'v8', categoria: 'Semplice', importoPreventivato: 50 })], { _sottospese: sub });
   DG.speseDrawerApri('v9');
   const h = els.speseDrawerRoot.innerHTML;
   assert.ok(h.includes('role="dialog"') && h.includes('Evento') && h.includes('Pagamenti e dettaglio') && h.includes('Catering'));
-  assert.ok(/id="speDPrev"[^>]*readonly/.test(h) && /id="speDSost"[^>]*readonly/.test(h), 'importi bloccati');
+  assert.ok(!/id="speDPrev"[^>]*readonly/.test(h) && /id="speDSost"[^>]*readonly/.test(h), 'speso bloccato, preventivato libero (totale a mano)');
+  const vT = voce({ id: 'vT', categoria: 'Tesseramenti', importoPreventivato: 300, importoSostenuto: 0 });
+  const stT = statoSpese([vT], { _sottospese: [{ id: 'pT', voceSpesaId: 'vT', tipo: 'spesa', descrizione: 'Squadra A', importoPreventivato: 300, importo: 0, tesseramentiSquadra: 'Squadra A' }] });
+  stT.DG.speseDrawerApri('vT');
+  assert.ok(/id="speDPrev"[^>]*readonly/.test(stT.els.speseDrawerRoot.innerHTML), 'Tesseramenti: preventivato calcolato dalle squadre');
   DG.speseDrawerApri('v8');
   const h2 = els.speseDrawerRoot.innerHTML;
   assert.ok(!/id="speDPrev"[^>]*readonly/.test(h2) && !/id="speDSost"[^>]*readonly/.test(h2), 'importi liberi senza pagamenti');
