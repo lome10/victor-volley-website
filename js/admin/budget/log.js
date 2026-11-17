@@ -52,6 +52,39 @@
     return l.campi.map(_fmtCampoDettaglio).join(', ');
   }
 
+  /* VVW-25: il registro parte con le ultime 300 voci; «Carica altre» ne aggiunge 300 alla volta, andando indietro nel tempo. */
+  var _logFinito = false, _logInCaricamento = false;
+  function _bottoneAltri(body) {
+    var tab = body && body.closest ? body.closest('table') : null;
+    if (!tab || !tab.parentNode) return;
+    var box = document.getElementById('logAltriBox');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'logAltriBox'; box.style.cssText = 'margin:10px 0;display:flex;gap:10px;align-items:center';
+      box.innerHTML = '<button type="button" class="dg-btn-ghost dg-btn-sm" id="logAltriBtn">Carica altre</button><span id="logAltriInfo" class="sp-h"></span>';
+      tab.parentNode.insertBefore(box, tab.nextSibling);
+      document.getElementById('logAltriBtn').addEventListener('click', _caricaAltri);
+    }
+    var n = A.getAuditLog().length, btn = document.getElementById('logAltriBtn');
+    btn.hidden = _logFinito;
+    document.getElementById('logAltriInfo').textContent = _logFinito ? 'Registro caricato per intero (' + n + ' voci).' : n + ' voci caricate, dalla più recente.';
+  }
+  function _caricaAltri() {
+    var lista = A.getAuditLog();
+    if (_logInCaricamento || !lista.length) return;
+    var ultima = lista[lista.length - 1], ts = ultima && ultima.timestamp;
+    if (!ts) return;
+    _logInCaricamento = true;
+    var btn = document.getElementById('logAltriBtn'); btn.disabled = true; btn.textContent = 'Carico…';
+    db.collection('auditLog').orderBy('timestamp', 'desc').startAfter(ts).limit(300).get().then(function (snap) {
+      var gia = {}; lista.forEach(function (x) { gia[x.id] = true; });
+      var nuove = snap.docs.map(_mapDoc).filter(function (x) { return !gia[x.id]; });
+      A.setAuditLog(lista.concat(nuove));
+      if (snap.size < 300) _logFinito = true;
+    }).catch(function (e) { alert('Errore: ' + e.message); })
+      .then(function () { _logInCaricamento = false; btn.disabled = false; btn.textContent = 'Carica altre'; _renderLog(); });
+  }
+
   function _renderLog() {
     var entita    = document.getElementById('logFilterEntita').value;
     var dirigente = document.getElementById('logFilterDirigente').value;
@@ -68,6 +101,7 @@
     });
 
     var body = document.getElementById('logBody');
+    _bottoneAltri(body);
     if (!rows.length) { body.innerHTML = '<tr><td colspan="5" class="dg-empty">Nessuna voce di log.</td></tr>'; return; }
     body.innerHTML = rows.map(function (l) {
       return '<tr>' +
