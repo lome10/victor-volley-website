@@ -503,6 +503,10 @@
       var vecchio = k === 'ivaModo' ? (v.ivaModo === 'lordo' ? 'lordo' : 'netto') : k === 'categoria' || k === 'categoriaSpesaId' || k === 'dataSpesa' || k === 'note' || k === 'documentoUrl' ? (v[k] || '') : (+v[k] || 0);
       if (nuovo[k] !== vecchio) patch[k] = nuovo[k];
     });
+    /* VVW-26: i campi bloccati (somma delle rate) non si salvano dal pannello: dopo aver aggiunto una rata la bozza porta ancora il vecchio 0 e,
+       al Salva, azzerava il Già speso appena calcolato. Li aggiorna solo _syncVoceDaSottospese. */
+    if (_sottospeseSpesaOf(v.id).length > 0) { delete patch.importoSostenuto; delete patch.importoSostenutoLordo; }
+    if (_preventivatoSegueRate(v.id)) { delete patch.importoPreventivato; delete patch.importoPreventivatoLordo; }
     if (!Object.keys(patch).length) { _chiudiDrawer(); A.avviso('Nessuna modifica da salvare.'); return; }
     _salvaCampi(v, patch).then(function () { _chiudiDrawer(); A.avviso('Voce «' + v.categoria + '» salvata.', 'ok'); })
       .catch(function (e) { A.avviso('Errore: ' + e.message, 'errore'); });

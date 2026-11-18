@@ -220,6 +220,23 @@ t('Spese: pannello laterale, «Già speso» bloccato dai pagamenti; Preventivato
   DG.speseDrawerChiudi(); assert.strictEqual(els.speseDrawerRoot.innerHTML, ''); assert.strictEqual(B._speseDrawerId, null);
 });
 
+ta('Spese (VVW-26): Salva nel pannello non azzera il «Già speso» calcolato dalle rate, nemmeno con la bozza vecchia a 0', async () => {
+  const v = voce({ id: 'vV', categoria: 'Vincolo', importoPreventivato: 80, importoSostenuto: 80 });
+  const sub = [{ id: 'a', voceSpesaId: 'vV', tipo: 'spesa', descrizione: 'R1', importoPreventivato: 40, importo: 40 }, { id: 'b', voceSpesaId: 'vV', tipo: 'spesa', descrizione: 'R2', importoPreventivato: 40, importo: 40 }];
+  const scritture = [];
+  const dbx = { collection: () => ({ doc: () => ({ update: (p) => { scritture.push(p); return Promise.resolve(); } }) }) };
+  const B = { _currentSeasonId: 's1', _seasons: [{ id: 's1', nome: '2026/2027' }], _vociSpesa: [v], _sottospese: sub, _categorieSpesa: [{ id: 'c1', nome: 'Federazione' }], _renderIvaRiepilogo: noop, _renderStatCards: noop, _renderCharts: noop, _renderBilancio: noop, _delIconSm: () => '', _speseFilterCategoriaId: '', _speseExpanded: {}, _trimestreIvaDaData: () => null };
+  const { DG, els } = caricaSpese(B, dbx);
+  DG.speseDrawerApri('vV');
+  Object.assign(els.speDNome, { value: 'Vincolo allenatori' }); els.speDCat.value = 'c1'; els.speDPrev.value = '80'; els.speDSost.value = '';   // bozza vecchia: vuoto = 0
+  els.speDIva.value = ''; els.speDIvaModo.value = 'netto'; els.speDData.value = ''; els.speDDoc.value = ''; els.speDNote.value = '';
+  DG.speseDrawerSalva();
+  await new Promise((r) => setTimeout(r, 20));
+  assert.ok(scritture.length === 1 && scritture[0].categoria === 'Vincolo allenatori', 'il nome cambia');
+  assert.ok(!('importoSostenuto' in scritture[0]), 'il Già speso non viene riscritto: ' + JSON.stringify(scritture[0]));
+  assert.strictEqual(v.importoSostenuto, 80);
+});
+
 /* ---------- sponsor senza piano di pagamento: entrate senza data ---------- */
 t('Bilancio: uno sponsor chiuso senza tranche va in «Entrate senza data» e i totali tornano', () => {
   const B = stato({
