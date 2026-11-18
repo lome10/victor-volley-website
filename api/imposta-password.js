@@ -11,10 +11,19 @@
  * non essere di un dirigente. Se l'aggiornamento della password fallisce, il codice torna utilizzabile.
  * A password salvata parte una seconda email di conferma («puoi accedere da /atleta»): è un di più, se non parte
  * (servizio email non configurato o in errore) la password resta impostata e l'esito per il genitore non cambia.
+ *
+ * Recupero password («Password dimenticata?», VVW-28):
+ *   { "richiediReset": "<email>" }                               → { ok: true }  (sempre, esista o no l'account)
+ * Se l'email è di un account di Firebase Auth (non dirigente, non @victorvolley) crea un invito di tipo 'reset'
+ * (stessa tabella inviti/{impronta}, codice monouso nel frammento #t=, valido RESET_ORE ore) e manda la email in
+ * italiano con la veste del sito; poi il link passa dalla stessa pagina /imposta-password e dallo stesso ramo
+ * «token + password» di qui sopra. Una richiesta ogni 2 minuti per account, 10 ogni 15 minuti per IP; i link di
+ * reset precedenti non ancora usati vengono revocati, gli inviti no. Se Brevo non risponde non resta nessun link.
  */
 const { getApp, stessaOrigine, safeJson } = require('./_firebase');
 const I = require('./_invito-logic');
 const { configEmail, inviaEmail } = require('./_email');
+const { emailValida } = require('./_promemoria-logic');
 
 function fail(res, status, message) {
   res.setHeader('Cache-Control', 'no-store');
@@ -38,6 +47,64 @@ function registraFallito(ip) {
   } else v.n++;
 }
 const NON_VALIDO = 'Questo link non è valido o è già stato usato. Chiedi alla società di inviartene uno nuovo.';
+
+/* Richieste di reset per IP (stessa nota di sopra: memoria dell'istanza, freno in più oltre al limite per account). */
+const MAX_RICHIESTE = 10, INTERVALLO_RESET_MS = 2 * 60 * 1000;
+const richieste = new Map();
+function troppeRichieste(ip) {
+  const adesso = Date.now(), v = richieste.get(ip);
+  if (!v || adesso - v.inizio > FINESTRA_MS) {
+    if (richieste.size > 5000) richieste.clear();
+    richieste.set(ip, { inizio: adesso, n: 1 });
+    return false;
+  }
+  v.n++;
+  return v.n > MAX_RICHIESTE;
+}
+const durataDi = (inv) => (inv && inv.tipo === 'reset' ? I.RESET_ORE : undefined);
+
+/** «Password dimenticata?»: risponde sempre allo stesso modo, così non si scopre chi è registrato. */
+async function richiediReset(req, res, body) {
+  if (troppeRichieste(ipDi(req))) return fail(res, 429, 'Troppe richieste: riprova tra qualche minuto.');
+  const email = String(body.richiediReset || '').trim().toLowerCase();
+  if (email.length > 254 || !/^\S+@\S+\.\S+$/.test(email)) return fail(res, 400, 'Scrivi un indirizzo email valido.');
+  const cfg = configEmail();
+  if (!cfg.apiKey || !cfg.from) return fail(res, 503, 'Servizio email non configurato sul server.');
+  let app;
+  try { app = getApp(); } catch (e) {
+    console.error('[imposta-password] configurazione:', e.message);
+    return fail(res, 500, 'Funzione non configurata sul server.');
+  }
+  try {
+    if (emailValida(email)) {
+      let uid = null;
+      try { uid = (await app.auth().getUserByEmail(email)).uid; } catch (e) { if (!e || e.code !== 'auth/user-not-found') throw e; }
+      const db = app.firestore();
+      if (uid && !(await db.collection('dirigenti').doc(uid).get()).exists) {
+        const mie = (await db.collection('inviti').where('uid', '==', uid).where('tipo', '==', 'reset').get()).docs;
+        const recente = mie.some((d) => d.data().stato === 'attivo' && Date.now() - Date.parse(d.data().creatoIl) < INTERVALLO_RESET_MS);
+        if (!recente) {
+          const codice = I.nuovoCodice(), id = I.impronta(codice);
+          const ref = db.collection('inviti').doc(id);
+          await ref.set({ uid, email, tipo: 'reset', stato: 'attivo', creatoIl: new Date().toISOString() });
+          try {
+            await inviaEmail(cfg, { email }, I.componiReset({ email }, I.linkInvito(cfg.site, codice), cfg.site));
+          } catch (e) {
+            await ref.delete().catch(() => {});
+            throw e;
+          }
+          const batch = db.batch();
+          mie.filter((d) => d.data().stato === 'attivo').forEach((d) => batch.update(d.ref, { stato: 'revocato', revocatoIl: new Date().toISOString() }));
+          await batch.commit();
+        }
+      }
+    }
+  } catch (e) {
+    console.error('[imposta-password] reset non inviato:', e && e.code, e && e.message);
+  }
+  res.setHeader('Cache-Control', 'no-store');
+  return res.status(200).json({ ok: true });
+}
 
 /** Email di conferma al genitore: mai bloccante, non fa fallire l'impostazione della password. */
 async function inviaConferma(db, inv) {
@@ -70,9 +137,11 @@ module.exports = async function handler(req, res) {
   }
   if (!stessaOrigine(req)) return fail(res, 403, 'Origine non consentita.');
 
+  const body = typeof req.body === 'string' ? safeJson(req.body) : (req.body || {});
+  if (typeof body.richiediReset === 'string') return richiediReset(req, res, body);
+
   const ip = ipDi(req);
   if (troppiFalliti(ip)) return fail(res, 429, 'Troppi tentativi: riprova tra qualche minuto.');
-  const body = typeof req.body === 'string' ? safeJson(req.body) : (req.body || {});
   if (!I.codiceValido(body.token)) { registraFallito(ip); return fail(res, 404, NON_VALIDO); }
   const soloVerifica = body.soloVerifica === true;
   const password = body.password;
@@ -92,7 +161,7 @@ module.exports = async function handler(req, res) {
 
     if (soloVerifica) {
       const snap = await ref.get();
-      if (!snap.exists || snap.data().stato !== 'attivo' || I.scaduto(snap.data().creatoIl)) { registraFallito(ip); return fail(res, 404, NON_VALIDO); }
+      if (!snap.exists || snap.data().stato !== 'attivo' || I.scaduto(snap.data().creatoIl, undefined, durataDi(snap.data()))) { registraFallito(ip); return fail(res, 404, NON_VALIDO); }
       res.setHeader('Cache-Control', 'no-store');
       return res.status(200).json({ valido: true, email: snap.data().email });
     }
@@ -100,7 +169,7 @@ module.exports = async function handler(req, res) {
     // consuma il codice (monouso) prima di toccare l'account
     const inv = await db.runTransaction(async (tx) => {
       const snap = await tx.get(ref);
-      if (!snap.exists || snap.data().stato !== 'attivo' || I.scaduto(snap.data().creatoIl)) return null;
+      if (!snap.exists || snap.data().stato !== 'attivo' || I.scaduto(snap.data().creatoIl, undefined, durataDi(snap.data()))) return null;
       tx.update(ref, { stato: 'usato', usatoIl: new Date().toISOString() });
       return snap.data();
     });

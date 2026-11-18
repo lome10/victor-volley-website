@@ -2824,10 +2824,15 @@
     return (e && e.message) || 'riprova più tardi.';
   }
 
-  /* Invia l'email di reset a un account; restituisce una Promise. */
+  /* Invia l'email di reset a un account (la stessa di «Password dimenticata?»: italiano, veste Victor, link che vale
+     2 ore); restituisce una Promise. Il server risponde allo stesso modo anche se l'account non esiste. */
   function _sendResetEmail(email, entitaId, entitaLabel) {
-    return auth.sendPasswordResetEmail(email).then(function () {
-      return _logWrite('atleta', entitaId, entitaLabel, 'update', [{ campo: 'password', prima: null, dopo: 'email di reset inviata' }]);
+    return fetch('/api/imposta-password', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ richiediReset: email })
+    }).then(function (r) {
+      if (r.status === 429) { var e = new Error('Troppe richieste: riprova tra qualche minuto.'); throw e; }
+      if (!r.ok) throw new Error('il servizio email non risponde, riprova più tardi.');
+      return _logWrite('atleta', entitaId, entitaLabel, 'update', [{ campo: 'password', prima: null, dopo: 'email di reset richiesta' }]);
     });
   }
 
@@ -2840,7 +2845,7 @@
     btn.disabled = true;
     btn.textContent = 'Invio…';
     _sendResetEmail(email, _editingAtleta.uid, _atletaLabel(_editingAtleta))
-      .then(function () { _sicurezzaMsg('Email di reset inviata a ' + email + '. Se non arriva, controlla lo spam.', true); })
+      .then(function () { _sicurezzaMsg('Richiesta inviata per ' + email + ': se è un account registrato, arriva l\x27email col link (vale 2 ore). Un nuovo invio è possibile dopo 2 minuti. Controlla anche lo spam.', true); })
       .catch(function (e) { _sicurezzaMsg('Errore: ' + _resetErrorText(e), false); })
       .then(function () { btn.disabled = false; btn.textContent = 'Invia email di reset'; });
   });

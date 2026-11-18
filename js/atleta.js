@@ -45,18 +45,22 @@
       });
     });
 
-    /* Recupero password: Firebase manda un'email con il link per sceglierne una nuova. La risposta è la stessa
-       sia che l'indirizzo esista o no, così nessuno può scoprire chi è registrato. */
+    /* Recupero password: il server (/api/imposta-password, richiediReset) manda un'email in italiano con il link per
+       sceglierne una nuova. La risposta è la stessa sia che l'indirizzo esista o no, così nessuno può scoprire chi è
+       registrato. */
     document.getElementById('forgotBtn').addEventListener('click', function () {
       var email = document.getElementById('emailInput').value.trim();
       var errEl = document.getElementById('loginError'), okEl = document.getElementById('loginOk');
       errEl.textContent = ''; okEl.textContent = '';
       if (!/^\S+@\S+\.\S+$/.test(email)) { errEl.textContent = 'Scrivi qui sopra la tua email, poi tocca «Password dimenticata?».'; return; }
-      auth.sendPasswordResetEmail(email).then(function () { return null; }, function (e) {
-        return e && e.code === 'auth/user-not-found' ? null : e;
-      }).then(function (e) {
-        if (e) { errEl.textContent = 'Non riesco a inviare l\'email in questo momento. Riprova più tardi.'; return; }
-        okEl.textContent = 'Se l\'indirizzo è registrato, riceverai un\'email con il link per scegliere una nuova password. Controlla anche lo spam.';
+      fetch('/api/imposta-password', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ richiediReset: email })
+      }).then(function (r) {
+        if (r.status === 429) return 'Troppe richieste: riprova tra qualche minuto.';
+        return r.ok ? null : 'Non riesco a inviare l\'email in questo momento. Riprova più tardi.';
+      }, function () { return 'Non riesco a inviare l\'email in questo momento. Riprova più tardi.'; }).then(function (e) {
+        if (e) { errEl.textContent = e; return; }
+        okEl.textContent = 'Se l\'indirizzo è registrato, riceverai un\'email con il link per scegliere una nuova password (vale 2 ore). Controlla anche lo spam.';
       });
     });
 

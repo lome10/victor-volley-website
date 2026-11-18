@@ -32,9 +32,11 @@ const firestore = {
   runTransaction: async (fn) => fn({ get: (ref) => ref.get(), update: (ref, d) => ref.update(d) })
 };
 let utenti = {};
+const authEmail = {};          // email → uid (account di Firebase Auth)
 const app = {
   firestore: () => firestore,
   auth: () => ({
+    getUserByEmail: async (e) => { if (!authEmail[e]) { const er = new Error('x'); er.code = 'auth/user-not-found'; throw er; } return { uid: authEmail[e] }; },
     verifyIdToken: async (t) => { if (!utenti[t]) throw new Error('token'); return { uid: utenti[t] }; },
     updateUser: async (uid, d) => { if (uid === 'sparito') { const e = new Error('x'); e.code = 'auth/user-not-found'; throw e; } passwords[uid] = d.password; }
   })
@@ -246,6 +248,107 @@ async function t(nome, fn) { try { await fn(); n++; } catch (e) { console.error(
     for (let i = 0; i < 20; i++) assert.strictEqual((await post(imposta, { token: I.nuovoCodice(), soloVerifica: true }, ip)).code, 404);
     assert.strictEqual((await post(imposta, { token: I.nuovoCodice(), soloVerifica: true }, ip)).code, 429);
     assert.strictEqual((await post(imposta, { token: I.nuovoCodice(), soloVerifica: true }, { 'x-forwarded-for': '8.8.8.8' })).code, 404);
+  });
+
+  /* ---------- Recupero password («Password dimenticata?»): richiediReset ---------- */
+  const resetOf = (mail, ip) => post(imposta, { richiediReset: mail }, { 'x-forwarded-for': ip || '5.5.5.5' });
+  const inviti = () => Object.entries(col('inviti'));
+  const mailInviate = [];
+  const fetchPrima = global.fetch;
+  global.fetch = async (url, opt) => { const r = await fetchPrima(url, opt); if (brevoOk) mailInviate.push(JSON.parse(opt.body)); return r; };
+  authEmail['mamma@example.com'] = 'gen1'; authEmail['luca@example.com'] = 'a1'; authEmail['dir@example.com'] = 'dir2';
+  authEmail['segreteria@victorvolley.it'] = 'seg9';
+  const dopo = (n) => mailInviate.slice(n);
+
+  await t('reset: un indirizzo sconosciuto riceve la stessa risposta ma non parte nulla (nessun modo di scoprire chi è registrato)', async () => {
+    const prima = Object.keys(col('inviti')).length, mail0 = mailInviate.length;
+    const ignoto = await resetOf('nessuno@example.com');
+    const noto = await resetOf('mamma@example.com', '5.5.5.6');
+    assert.strictEqual(ignoto.code, 200); assert.strictEqual(noto.code, 200);
+    assert.deepStrictEqual(ignoto.body, noto.body, 'stessa risposta per chi esiste e chi no');
+    assert.strictEqual(mailInviate.length - mail0, 1, 'una sola email, solo per l’account che esiste');
+    assert.strictEqual(Object.keys(col('inviti')).length, prima + 1);
+  });
+  await t('reset: l’email è in italiano, ha il link /imposta-password#t=… e il codice non sta in chiaro su Firestore', async () => {
+    const m = mailInviate[mailInviate.length - 1];
+    assert.strictEqual(m.to[0].email, 'mamma@example.com');
+    assert.ok(/nuova password/i.test(m.subject), m.subject);
+    const codice = /#t=([A-Za-z0-9_-]+)/.exec(m.textContent)[1];
+    assert.ok(I.codiceValido(codice));
+    const doc = col('inviti')[I.impronta(codice)];
+    assert.ok(doc && doc.stato === 'attivo' && doc.tipo === 'reset' && doc.uid === 'gen1');
+    assert.ok(!JSON.stringify(store.inviti).includes(codice));
+    assert.ok(/lang="it"/.test(m.htmlContent) && !/Firebase/i.test(m.htmlContent + m.textContent));
+  });
+  await t('reset: vale per l’account dell’atleta (non solo per i genitori)', async () => {
+    const n0 = mailInviate.length;
+    assert.strictEqual((await resetOf('luca@example.com', '5.5.5.7')).code, 200);
+    assert.strictEqual(dopo(n0).length, 1); assert.strictEqual(dopo(n0)[0].to[0].email, 'luca@example.com');
+  });
+  await t('reset: dirigenti e caselle interne @victorvolley non ricevono nulla', async () => {
+    const n0 = mailInviate.length;
+    assert.strictEqual((await resetOf('dir@example.com', '5.5.5.8')).code, 200);
+    assert.strictEqual((await resetOf('segreteria@victorvolley.it', '5.5.5.9')).code, 200);
+    assert.strictEqual(dopo(n0).length, 0);
+  });
+  await t('reset: indirizzo non valido = 400', async () => {
+    assert.strictEqual((await resetOf('non-una-email')).code, 400);
+    assert.strictEqual((await resetOf('')).code, 400);
+  });
+  await t('reset: seconda richiesta entro 2 minuti per lo stesso account = nessuna seconda email', async () => {
+    const n0 = mailInviate.length;
+    assert.strictEqual((await resetOf('mamma@example.com', '5.5.6.1')).code, 200);
+    assert.strictEqual(dopo(n0).length, 0);
+  });
+  let codiceReset;
+  await t('reset: dopo 2 minuti la nuova richiesta parte e il link precedente di reset smette di valere (l’invito no)', async () => {
+    const vecchi = inviti().filter(([, d]) => d.uid === 'gen1' && d.tipo === 'reset');
+    vecchi.forEach(([, d]) => { d.creatoIl = new Date(Date.now() - 3 * 60 * 1000).toISOString(); });
+    const invitoVero = inviti().filter(([, d]) => d.uid === 'gen1' && d.tipo !== 'reset' && d.stato === 'attivo');
+    const n0 = mailInviate.length;
+    assert.strictEqual((await resetOf('mamma@example.com', '5.5.6.2')).code, 200);
+    assert.strictEqual(dopo(n0).length, 1);
+    codiceReset = /#t=([A-Za-z0-9_-]+)/.exec(dopo(n0)[0].textContent)[1];
+    vecchi.forEach(([id]) => assert.strictEqual(col('inviti')[id].stato, 'revocato'));
+    assert.strictEqual(col('inviti')[I.impronta(codiceReset)].stato, 'attivo');
+    invitoVero.forEach(([id]) => assert.strictEqual(col('inviti')[id].stato, 'attivo', 'un invito non si revoca con un reset'));
+  });
+  await t('reset: il link funziona con la pagina esistente e imposta la password (poi è usato)', async () => {
+    assert.strictEqual((await post(imposta, { token: codiceReset, soloVerifica: true })).code, 200);
+    const r = await post(imposta, { token: codiceReset, password: 'NuovaPassword1!' });
+    assert.strictEqual(r.code, 200); assert.strictEqual(passwords.gen1, 'NuovaPassword1!');
+    assert.strictEqual((await post(imposta, { token: codiceReset, password: 'Altra-Password2!' })).code, 404);
+  });
+  await t('reset: il link di reset scade dopo 2 ore (un invito dura 7 giorni)', async () => {
+    assert.strictEqual(I.scaduto(new Date(Date.now() - 3 * 3600 * 1000).toISOString(), undefined, I.RESET_ORE), true);
+    assert.strictEqual(I.scaduto(new Date(Date.now() - 1 * 3600 * 1000).toISOString(), undefined, I.RESET_ORE), false);
+    assert.strictEqual(I.scaduto(new Date(Date.now() - 3 * 3600 * 1000).toISOString()), false, 'senza ore vale ancora 7 giorni');
+    Object.values(col('inviti')).forEach((d) => { if (d.tipo === 'reset') d.creatoIl = new Date(Date.now() - 5 * 60 * 1000).toISOString(); });
+    const n0 = mailInviate.length;
+    await resetOf('luca@example.com', '5.5.6.3');
+    const c = /#t=([A-Za-z0-9_-]+)/.exec(dopo(n0).pop().textContent)[1];
+    col('inviti')[I.impronta(c)].creatoIl = new Date(Date.now() - 3 * 3600 * 1000).toISOString();
+    assert.strictEqual((await post(imposta, { token: c, soloVerifica: true }, { 'x-forwarded-for': '5.5.6.4' })).code, 404);
+    assert.strictEqual((await post(imposta, { token: c, password: 'Abcdefghij1!' }, { 'x-forwarded-for': '5.5.6.4' })).code, 404);
+  });
+  await t('reset: se Brevo fallisce nessun link resta in archivio e la risposta non rivela nulla', async () => {
+    const prima = Object.keys(col('inviti')).length;
+    Object.values(col('inviti')).forEach((d) => { if (d.tipo === 'reset') d.creatoIl = new Date(Date.now() - 5 * 60 * 1000).toISOString(); });
+    brevoOk = false;
+    const r = await resetOf('mamma@example.com', '5.5.6.5'); brevoOk = true;
+    assert.strictEqual(r.code, 200);
+    assert.strictEqual(Object.keys(col('inviti')).length, prima);
+  });
+  await t('reset: troppe richieste dallo stesso indirizzo IP = 429', async () => {
+    for (let i = 0; i < 10; i++) assert.strictEqual((await resetOf('nessuno' + i + '@example.com', '7.7.7.7')).code, 200);
+    assert.strictEqual((await resetOf('nessuno@example.com', '7.7.7.7')).code, 429);
+    assert.strictEqual((await resetOf('nessuno@example.com', '7.7.7.8')).code, 200);
+  });
+  await t('reset: altra origine = 403; l’email di reset non lascia passare HTML da fuori', async () => {
+    assert.strictEqual((await post(imposta, { richiediReset: 'mamma@example.com' }, { origin: 'https://evil.example' })).code, 403);
+    const m = I.componiReset({ nome: '<b>x</b>', email: 'a@example.com' }, 'https://www.victorvolley.it/imposta-password#t=abc', 'https://www.victorvolley.it');
+    assert.ok(!/<b>x/.test(m.html));
+    assert.ok(/imposta-password#t=abc/.test(m.text) && /imposta-password#t=abc/.test(m.html));
   });
 
   console.log(process.exitCode ? 'Collaudo fallito.' : 'OK: ' + n + ' verifiche sull’invito alla password.');

@@ -13,11 +13,15 @@ const codiceValido = (c) => typeof c === 'string' && /^[A-Za-z0-9_-]{43}$/.test(
 
 /** Giorni di validità di un invito dal momento dell'invio (creatoIl su inviti/{impronta}). */
 const SCADENZA_GIORNI = 7;
-/** Vero se l'invito è scaduto. Senza una data valida (documenti vecchi o rovinati) per prudenza è scaduto. */
-function scaduto(creatoIl, adesso) {
+/** Ore di validità del link di «Password dimenticata?» (tipo 'reset' su inviti/{impronta}): molto meno di un invito. */
+const RESET_ORE = 2;
+/** Vero se l'invito è scaduto. Senza una data valida (documenti vecchi o rovinati) per prudenza è scaduto.
+ *  `ore` (facoltativo) sostituisce i 7 giorni: i link di reset passano RESET_ORE. */
+function scaduto(creatoIl, adesso, ore) {
   const t = Date.parse(creatoIl);
   if (!isFinite(t)) return true;
-  return (adesso === undefined ? Date.now() : adesso) - t > SCADENZA_GIORNI * 24 * 3600 * 1000;
+  const durata = ore ? ore * 3600 * 1000 : SCADENZA_GIORNI * 24 * 3600 * 1000;
+  return (adesso === undefined ? Date.now() : adesso) - t > durata;
 }
 
 function linkInvito(siteUrl, codice) {
@@ -83,4 +87,26 @@ function componiConferma(g, siteUrl) {
   return { subject, text, html };
 }
 
-module.exports = { nuovoCodice, impronta, codiceValido, SCADENZA_GIORNI, scaduto, linkInvito, componiInvito, componiConferma };
+/** Email di «Password dimenticata?»: stessa veste dell'invito, in italiano. Il saluto è sempre «Ciao,» (nessun nome:
+ *  la richiesta è pubblica e la mail va solo a chi ha un account). link = indirizzo completo. */
+function componiReset(g, link, siteUrl) {
+  const h = E.h;
+  const subject = 'Victor Volley — scegli la nuova password';
+  const text = ['Ciao,', '',
+    'abbiamo ricevuto la richiesta di scegliere una nuova password per l’Area Atleti di Victor Volley.',
+    '', 'Apri questo link e scrivi la password nuova (ci vuole mezzo minuto):', link, '',
+    'Il link si usa una sola volta e vale ' + RESET_ORE + ' ore: non inoltrarlo a nessuno. Se non si apre, rifai la richiesta da «Password dimenticata?» nella pagina di accesso, oppure scrivici a victorvolley@libero.it.',
+    '', 'Non hai chiesto tu il cambio? Ignora questa email: la tua password attuale resta valida.',
+    '', 'ASD Victor Volley'].join('\n');
+  const corpo =
+    '<p style="margin:0 0 14px">Ciao,</p>' +
+    '<p style="margin:0 0 14px">abbiamo ricevuto la richiesta di scegliere una nuova password per l’Area Atleti di Victor Volley.</p>' +
+    '<p style="margin:0 0 4px">Tocca il pulsante qui sotto e scrivi la password nuova. Ci vuole mezzo minuto.</p>' +
+    E.pulsante('Scegli la nuova password', link) +
+    '<p style="margin:14px 0 0;font-size:13px;color:#64748b;text-align:center">Se il pulsante non funziona, copia questo indirizzo nel browser:<br><span style="word-break:break-all;color:' + E.AZZURRO + '">' + h(link) + '</span></p>' +
+    E.riquadro('<strong>Non hai chiesto tu il cambio?</strong><br>Puoi ignorare questa email: la tua password attuale resta valida e nessuno può entrare senza il link.<br><br>Il link si usa una sola volta e vale ' + RESET_ORE + ' ore. Se non si apre, rifai la richiesta da <em>Password dimenticata?</em> nella pagina di accesso, oppure scrivi a <a href="mailto:victorvolley@libero.it" style="color:' + E.AZZURRO + '">victorvolley@libero.it</a>.');
+  const html = E.cornice({ anteprima: 'Scegli la nuova password per l’Area Atleti.', titolo: 'Scegli la nuova password', corpo, site: siteUrl });
+  return { subject, text, html };
+}
+
+module.exports = { nuovoCodice, impronta, codiceValido, SCADENZA_GIORNI, RESET_ORE, scaduto, linkInvito, componiInvito, componiConferma, componiReset };
