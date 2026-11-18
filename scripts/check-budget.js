@@ -202,14 +202,18 @@ t('Spese: filtri per stato, ricerca e categoria; i testi con HTML vengono escapa
   assert.ok(!els.speseList.innerHTML.includes('<b>X</b>') && els.speseList.innerHTML.includes('&lt;b&gt;X&lt;/b&gt;'));
   B._speseFilterCategoriaId = '__none__'; B._renderSpese(); assert.strictEqual(righe(), 0); assert.ok(/Nessuna voce con questi filtri/.test(els.speseList.innerHTML));
 });
-t('Spese: pannello laterale, «Già speso» bloccato dai pagamenti; Preventivato resta a mano (VVW-22) tranne Tesseramenti', () => {
+t('Spese: pannello laterale, «Già speso» e Preventivato bloccati dai pagamenti (VVW-27: dinamico se una rata ha un preventivato)', () => {
   const v = voce({ id: 'v9', categoria: 'Evento', importoPreventivato: 2217, importoSostenuto: 1457 });
   const sub = [{ id: 'p1', voceSpesaId: 'v9', tipo: 'spesa', descrizione: 'Catering', importoPreventivato: 900, importo: 900 }];
   const { DG, B, els } = statoSpese([v, voce({ id: 'v8', categoria: 'Semplice', importoPreventivato: 50 })], { _sottospese: sub });
   DG.speseDrawerApri('v9');
   const h = els.speseDrawerRoot.innerHTML;
   assert.ok(h.includes('role="dialog"') && h.includes('Evento') && h.includes('Pagamenti e dettaglio') && h.includes('Catering'));
-  assert.ok(!/id="speDPrev"[^>]*readonly/.test(h) && /id="speDSost"[^>]*readonly/.test(h), 'speso bloccato, preventivato libero (totale a mano)');
+  assert.ok(/id="speDPrev"[^>]*readonly/.test(h) && /id="speDSost"[^>]*readonly/.test(h), 'speso e preventivato bloccati (somma delle rate)');
+  const vN = voce({ id: 'vN', categoria: 'Rate senza preventivo', importoPreventivato: 500, importoSostenuto: 100 });
+  const stN = statoSpese([vN], { _sottospese: [{ id: 'pN', voceSpesaId: 'vN', tipo: 'spesa', descrizione: 'Acconto', importoPreventivato: 0, importo: 100 }] });
+  stN.DG.speseDrawerApri('vN');
+  assert.ok(!/id="speDPrev"[^>]*readonly/.test(stN.els.speseDrawerRoot.innerHTML), 'rate senza preventivato: il totale resta a mano');
   const vT = voce({ id: 'vT', categoria: 'Tesseramenti', importoPreventivato: 300, importoSostenuto: 0 });
   const stT = statoSpese([vT], { _sottospese: [{ id: 'pT', voceSpesaId: 'vT', tipo: 'spesa', descrizione: 'Squadra A', importoPreventivato: 300, importo: 0, tesseramentiSquadra: 'Squadra A' }] });
   stT.DG.speseDrawerApri('vT');

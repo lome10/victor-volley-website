@@ -46,11 +46,11 @@
   function _voceHaPreventivatoDaSottospese(voceId) {
     return _sottospeseSpesaOf(voceId).some(function (x) { return (+x.importoPreventivato || 0) > 0; });
   }
-  /* VVW-22 (Lorenzo, 17/11): il Preventivato della voce è il TOTALE scritto a mano e NON segue più le rate: cambiare la
-     previsione di una rata non lo tocca (le rate sono solo il dettaglio). Eccezione: la voce Tesseramenti, il cui totale è
-     calcolato dalle squadre (sottospese con tesseramentiSquadra) e deve continuare a seguirle. */
+  /* VVW-27 (Lorenzo, 18/11): torna dinamico. Se almeno una rata di spesa ha un preventivato, il Preventivato della voce è la somma
+     dei preventivati delle rate (come prima di VVW-22, che lo aveva reso un totale a mano); senza rate con preventivato resta a mano.
+     Tesseramenti segue sempre le squadre. */
   function _preventivatoSegueRate(voceId) {
-    return _sottospeseSpesaOf(voceId).some(function (x) { return !!x.tesseramentiSquadra; }) && _voceHaPreventivatoDaSottospese(voceId);
+    return _voceHaPreventivatoDaSottospese(voceId);
   }
   /* Stato di una sottospesa, ricavato dai due importi — vocabolario diverso per i crediti. */
   function _statoSottospesa(s) {
