@@ -351,7 +351,7 @@
     if (a) {
       var ind = _indirizzo(a), nome = ((a.cognome || '') + ' ' + (a.nome || '')).trim();
       if (a.tutore1Nome) _payOpts.push({ label: 'Genitore/tutore: ' + a.tutore1Nome, nome: a.tutore1Nome, cf: a.tutore1CodiceFiscale || '', ind: ind, ruolo: 'Genitore / tutore' });
-      if (a.tutore2Nome) _payOpts.push({ label: 'Genitore/tutore: ' + a.tutore2Nome, nome: a.tutore2Nome, cf: '', ind: ind, ruolo: 'Genitore / tutore' });
+      if (a.tutore2Nome) _payOpts.push({ label: 'Genitore/tutore: ' + a.tutore2Nome, nome: a.tutore2Nome, cf: a.tutore2CodiceFiscale || '', ind: ind, ruolo: 'Genitore / tutore' });
       var eta = _eta(a.dataNascita);
       _payOpts.push({ label: 'L\'atleta stesso (' + nome + ')', nome: nome, cf: a.codiceFiscale || '', ind: ind,
         ruolo: eta !== null && eta >= 18 ? 'Pagatore (atleta maggiorenne)' : 'Pagatore' });

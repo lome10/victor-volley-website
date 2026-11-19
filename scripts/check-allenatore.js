@@ -66,7 +66,7 @@ async function t(nome, fn) { try { await fn(); n++; } catch (e) { console.error(
   col('atletiDati').a1 = {
     dataNascita: '2012-03-04', codiceFiscale: 'VRDGLI12C44F205X', indirizzo: 'Via Roma 1', telefono: '3331112222', emailContatto: 'giulia@example.com',
     tutore1Prenome: 'Marco', tutore1Cognome: 'Verdi', tutore1Parentela: 'Padre', tutore1Telefono: '3401234567', tutore1Email: 'marco@example.com',
-    tutore1CodiceFiscale: 'VRDMRC70A01F205Z', tutore2Prenome: 'Laura', tutore2Cognome: 'Rossi', tutore2Telefono: ' 3489876543 ',
+    tutore1CodiceFiscale: 'VRDMRC70A01F205Z', tutore2Prenome: 'Laura', tutore2Cognome: 'Rossi', tutore2Telefono: ' 3489876543 ', tutore2CodiceFiscale: 'RSSLRA72B41F205K',
     infoMediche: 'allergia al lattice', note: 'segnalazione riservata', noteAllenatore: 'Palleggiatrice, torna dall\'infortunio', emergenzaTelefono: '0805550000'
   };
   col('atletiDati').a2 = { dataNascita: '2010-11-20', tutore1Prenome: 'Piero', tutore1Cognome: 'Bruni' };   /* nessun telefono */
@@ -91,7 +91,7 @@ async function t(nome, fn) { try { await fn(); n++; } catch (e) { console.error(
   });
   await t('nessun dato riservato esce dalla risposta, qualunque sia il campo', async () => {
     const testo = JSON.stringify((await chiama('tok-ren')).body);
-    ['VRDGLI12C44F205X', 'VRDMRC70A01F205Z', 'Via Roma', '3331112222', 'giulia@example.com', 'marco@example.com', 'lattice', 'riservata', '0805550000', '3999999999'].forEach((segreto) =>
+    ['VRDGLI12C44F205X', 'VRDMRC70A01F205Z', 'RSSLRA72B41F205K', 'Via Roma', '3331112222', 'giulia@example.com', 'marco@example.com', 'lattice', 'riservata', '0805550000', '3999999999'].forEach((segreto) =>
       assert.ok(!testo.includes(segreto), 'non deve comparire: ' + segreto));
   });
   await t('un atleta senza telefono o senza anagrafica compare lo stesso, con la lista dei genitori vuota', async () => {

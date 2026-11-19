@@ -322,7 +322,8 @@
       { k: 'tutore2Prenome',  l: 'Nome',            t: 'text', sens: true, csv: 'Genitore 2 — nome' },
       { k: 'tutore2Parentela', l: 'Parentela',      t: 'select', o: PARENTELE },
       { k: 'tutore2Telefono', l: 'Telefono',        t: 'tel', sens: true },
-      { k: 'tutore2Email',    l: 'Email',           t: 'email', sens: true }
+      { k: 'tutore2Email',    l: 'Email',           t: 'email', sens: true },
+      { k: 'tutore2CodiceFiscale', l: 'Codice fiscale', t: 'text', upper: true, max: 16, sens: true }
     ] },
     { titolo: 'Contatto di emergenza', campi: [
       { k: 'emergenzaNome',     l: 'Nome e parentela', t: 'text', sens: true },
@@ -583,6 +584,7 @@
     if (v.dataNascita && (v.dataNascita > oggi || v.dataNascita < '1920-01-01')) return 'La data di nascita non è valida.';
     if (v.codiceFiscale && !cf.test(v.codiceFiscale)) return 'Il codice fiscale dell\'atleta deve avere 16 caratteri.';
     if (v.tutore1CodiceFiscale && !cf.test(v.tutore1CodiceFiscale)) return 'Il codice fiscale del tutore 1 deve avere 16 caratteri.';
+    if (v.tutore2CodiceFiscale && !cf.test(v.tutore2CodiceFiscale)) return 'Il codice fiscale del tutore 2 deve avere 16 caratteri.';
     if (v.cap && !/^\d{5}$/.test(v.cap)) return 'Il CAP deve avere 5 cifre.';
     if (v.provincia && !/^[A-Z]{2}$/.test(v.provincia)) return 'La provincia va indicata con la sigla (2 lettere).';
     if (v.provinciaNascita && !/^[A-Z]{2}$/.test(v.provinciaNascita)) return 'La provincia di nascita va indicata con la sigla (2 lettere).';
