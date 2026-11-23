@@ -1,6 +1,6 @@
 /**
  * Victor Volley — Pagina Diretta
- * Video streaming YouTube + tabellone live con grafica propria (dati da Set Point Pulse, polling ogni 5 s).
+ * Video streaming YouTube + tabellone live con grafica propria (dati da Set Point Pulse: ogni 5 s in partita, ogni 60 s senza).
  */
 (function () {
   'use strict';
@@ -271,6 +271,18 @@
   var ultimoRender = '';
   var pollTimer = null;
 
+  /* Ogni richiesta conta nel tetto di Vercel: ogni 5 s solo con una partita in corso, altrimenti
+     (nessuna partita, partita finita) ogni 60 s, che basta a vedere l'inizio entro un minuto.
+     Un errore di rete tiene il ritmo di prima. Collaudo: scripts/check-diretta-poll.js */
+  var POLL_LIVE_MS = 5000;
+  var POLL_IDLE_MS = 60000;
+  var pollMs = POLL_IDLE_MS;
+
+  function programmaPoll() {
+    clearTimeout(pollTimer);
+    pollTimer = setTimeout(poll, pollMs);
+  }
+
   function paint(html, chiave) {
     var el = document.getElementById('direttaTabellone');
     if (!el || chiave === ultimoRender) return;
@@ -280,11 +292,13 @@
 
   /* Legge lo stato dal tabellone; senza partita (o in caso di errore) mostra il riquadro di ripiego. */
   function poll() {
-    if (document.hidden) return;
+    if (document.hidden) { programmaPoll(); return; }
     fetch(SPP_URL, { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .catch(function () { return null; })
       .then(function (j) {
+        if (j) pollMs = j.status === 'live' ? POLL_LIVE_MS : POLL_IDLE_MS;
+        programmaPoll();
         var inCorso = !!(j && j.status === 'live' && j.home && j.away);
         if (inCorso !== partitaInCorso) { partitaInCorso = inCorso; aggiornaVideo(); }
         /* In partita il punteggio è già nel video (overlay di Set Point Pulse): solo la classe cambia, l'iframe non si rimonta */
@@ -342,8 +356,7 @@
       console.warn('[diretta] errore caricamento partite:', e);
       fallbackHtml = '<p class="dt-loading">Nessuna diretta disponibile al momento.</p>';
     }).then(function () {
-      poll();
-      if (!pollTimer) pollTimer = setInterval(poll, 5000);
+      if (!pollTimer) poll();
     });
   }
 
