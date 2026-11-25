@@ -49,6 +49,8 @@ const prove = [
   ['quando gioca la prossima partita', 'calendario'],
   ['come è finita la partita', 'risultati'],
   ['classifica del girone', 'risultati'],
+  ["com'è finita l'ultima partita?", 'risultati'],
+  ["qual è l'ultimo risultato", 'risultati'],
   ['posso vedere la partita in diretta', 'diretta'],
   ['la partita è stata rinviata?', 'rinvio'],
   ['ho dimenticato la password', 'password'],

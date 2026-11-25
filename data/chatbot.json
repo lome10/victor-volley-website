@@ -436,7 +436,11 @@
             "posizione in classifica",
             "chi ha vinto la partita",
             "com e andata la partita",
-            "esito della partita"
+            "esito della partita",
+            "com e finita",
+            "ultima partita",
+            "ultimo risultato",
+            "ultima gara"
           ],
           "risposta": "Risultati e classifica del girone sono nella pagina Calendario, aggiornati dopo ogni partita.",
           "link": {
