@@ -67,6 +67,91 @@
       .sort(function (a, b) { return b.s - a.s; });
   }
 
+  /* ---------- partite vere (risposte "dinamico") ----------
+     Le domande con "dinamico" nel JSON rispondono con i dati della collection pubblica "partite"
+     (la stessa del Calendario): prima la frase con la partita vera, poi la risposta fissa col link.
+     Se i dati non arrivano resta solo la risposta fissa. */
+  var GIORNI = ['domenica', 'lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato'];
+  var MESI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
+  var FIRESTORE_PARTITE = 'https://firestore.googleapis.com/v1/projects/victor-volley/databases/(default)/documents/partite?pageSize=300';
+
+  function oggiIso(d) {
+    d = d || new Date();
+    return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+  }
+  function nomeSquadra(s) {
+    return String(s || '').toLowerCase().replace(/(^|[\s'(.-])([a-zà-ù])/g, function (m, a, b) { return a + b.toUpperCase(); });
+  }
+  function quando(p) {
+    var d = new Date(p.data + 'T00:00:00');
+    if (isNaN(d)) return p.data || '';
+    return GIORNI[d.getDay()] + ' ' + d.getDate() + ' ' + MESI[d.getMonth()] + (p.ora ? ' alle ' + p.ora : '');
+  }
+  /* Categorie nominate nella domanda ("under 19", "u19", "prima divisione"): se nessuna, tutte. */
+  function categorieChieste(partite, text) {
+    var n = ' ' + norm(text) + ' ';
+    var tutte = [];
+    partite.forEach(function (p) { if (p.categoria && tutte.indexOf(p.categoria) === -1) tutte.push(p.categoria); });
+    return tutte.filter(function (c) {
+      var cn = norm(c), num = (cn.match(/\d+/) || [''])[0];
+      return n.indexOf(' ' + cn + ' ') !== -1 || (num && (n.indexOf(' u' + num + ' ') !== -1 || n.indexOf(' under' + num + ' ') !== -1))
+        || (/prima divisione/.test(cn) && /\b(1|prima) ?(a )?div/.test(n));
+    });
+  }
+  function rispostaDinamica(tipo, partite, text, oggi) {
+    var cats = categorieChieste(partite, text);
+    var lista = cats.length ? partite.filter(function (p) { return cats.indexOf(p.categoria) !== -1; }) : partite;
+    var ord = function (a, b) { return ((a.data || '') + (a.ora || '')) < ((b.data || '') + (b.ora || '')) ? -1 : 1; };
+    var perCategoria = function (arr) {
+      var visti = {}, out = [];
+      arr.forEach(function (p) { if (!visti[p.categoria]) { visti[p.categoria] = true; out.push(p); } });
+      return out;
+    };
+    if (tipo === 'prossima_partita') {
+      var future = lista.filter(function (p) { return p.stato !== 'conclusa' && (p.data || '') >= oggi; }).sort(ord);
+      if (!future.length) return cats.length ? 'Per ' + cats.join(' e ') + ' non ci sono partite in programma nel calendario.' : 'Al momento non ci sono partite in programma nel calendario.';
+      var righe = perCategoria(future).map(function (p) {
+        return p.categoria + ': ' + nomeSquadra(p.squadra_casa) + ' - ' + nomeSquadra(p.squadra_ospite) + ', ' + quando(p) + (p.palazzetto ? ', ' + p.palazzetto : '') + '.';
+      });
+      return (righe.length > 1 ? 'Le prossime partite:\n' : 'La prossima partita è ') + righe.join('\n');
+    }
+    if (tipo === 'ultimo_risultato') {
+      var finite = lista.filter(function (p) { return p.stato === 'conclusa' && p.set_casa != null && p.set_ospite != null; }).sort(ord).reverse();
+      if (!finite.length) return null;
+      var r = perCategoria(finite).map(function (p) {
+        var d = new Date(p.data + 'T00:00:00');
+        return p.categoria + ': ' + nomeSquadra(p.squadra_casa) + ' ' + p.set_casa + '-' + p.set_ospite + ' ' + nomeSquadra(p.squadra_ospite) + (isNaN(d) ? '' : ' (' + d.getDate() + ' ' + MESI[d.getMonth()] + ')') + '.';
+      });
+      return (r.length > 1 ? 'Gli ultimi risultati:\n' : 'L\'ultimo risultato: ') + r.join('\n');
+    }
+    return null;
+  }
+  function valoreFirestore(v) {
+    if (!v) return null;
+    if ('stringValue' in v) return v.stringValue;
+    if ('integerValue' in v) return +v.integerValue;
+    if ('doubleValue' in v) return v.doubleValue;
+    if ('nullValue' in v) return null;
+    if ('booleanValue' in v) return v.booleanValue;
+    return null;
+  }
+  var partiteCache = null;
+  function caricaPartite() {
+    if (window.VV && typeof VV.getPartite === 'function' && VV.getPartite().length) return Promise.resolve(VV.getPartite());
+    if (partiteCache) return partiteCache;
+    partiteCache = fetch(FIRESTORE_PARTITE)
+      .then(function (r) { if (!r.ok) throw new Error('partite ' + r.status); return r.json(); })
+      .then(function (j) {
+        return (j.documents || []).map(function (doc) {
+          var o = {};
+          Object.keys(doc.fields || {}).forEach(function (k) { o[k] = valoreFirestore(doc.fields[k]); });
+          return o;
+        });
+      })
+      .catch(function (e) { partiteCache = null; throw e; });
+    return partiteCache;
+  }
+
   /* ---------- DOM ---------- */
   function h(tag, cls, text) {
     var n = document.createElement(tag);
@@ -131,10 +216,22 @@
     }, 'vvbot-chips-col');
   }
 
-  function answer(entry) {
+  function answer(entry, text) {
     clearChips();
+    if (entry.dinamico) {
+      var attesa = bubble('bot', 'Controllo il calendario…');
+      caricaPartite()
+        .then(function (partite) { return rispostaDinamica(entry.dinamico, partite, text || '', oggiIso()); })
+        .catch(function (e) { if (window.console) console.warn('[chatbot] partite', e); return null; })
+        .then(function (frase) {
+          attesa.parentNode.parentNode.removeChild(attesa.parentNode);
+          if (frase) bubble('bot', frase);
+          bubble('bot', entry.risposta, entry.link);
+          after();
+        });
+      return;
+    }
     bubble('bot', entry.risposta, entry.link);
-    if (entry.da_compilare) { /* risposta generica: non e' ancora stata scritta dalla societa' */ }
     after();
   }
 
@@ -162,7 +259,7 @@
     if (state.data.grazie.indexOf(n) !== -1) { bubble('bot', 'Di niente! Se hai altre domande sono qui.'); after(); return; }
     var res = search(text);
     if (res.length && res[0].s >= MIN_SCORE && (res.length === 1 || res[0].s > res[1].s)) {
-      answer(res[0].e);
+      answer(res[0].e, text);
       return;
     }
     var near = res.filter(function (x) { return x.s >= MIN_SCORE - 1; }).slice(0, MAX_SUGGEST);
@@ -302,7 +399,8 @@
     module.exports = {
       _prepare: function (data) { state.data = data; state.flat = []; data.categorie.forEach(function (c) { c.domande.forEach(function (d) { state.flat.push(d); }); }); },
       _search: search,
-      _norm: norm
+      _norm: norm,
+      _dinamica: rispostaDinamica
     };
     return;
   }

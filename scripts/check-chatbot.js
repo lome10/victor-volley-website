@@ -82,6 +82,25 @@ prove.forEach(([q, atteso]) => {
   if (r[0] && r[0].s >= 2 && (!r[1] || r[0].s > r[1].s)) fail('fuori argomento ma risponde: "' + q + '" → ' + r[0].e.id);
 });
 
+// 4. Risposte con le partite vere (prossima partita, ultimo risultato)
+const P = [
+  { categoria: 'Under 19', squadra_casa: 'VICTOR VOLLEY PUGLIA IN FOOD', squadra_ospite: 'FLYARMIDA VOLLEY', data: '2026-11-24', ora: '18:00', stato: 'programmata', palazzetto: 'Palazzetto ARKÈ - Melissano' },
+  { categoria: 'Prima Divisione', squadra_casa: 'ASD OLIMPIUS PARABITA', squadra_ospite: 'VICTOR VOLLEY VITA', data: '2026-11-29', ora: '19:00', stato: 'programmata', palazzetto: 'Pallone Tensostatico - Parabita' },
+  { categoria: 'Under 19', squadra_casa: 'CUORE DI MAMMA ASTRA VOLLEY', squadra_ospite: 'VICTOR VOLLEY PUGLIA IN FOOD', data: '2026-12-02', ora: '18:00', stato: 'programmata', palazzetto: 'Palazzetto - Acquarica' },
+  { categoria: 'Under 19', squadra_casa: 'VICTOR VOLLEY PUGLIA IN FOOD', squadra_ospite: 'GALLIPOLI', data: '2026-11-17', ora: '18:00', stato: 'conclusa', set_casa: 3, set_ospite: 1, palazzetto: 'x' },
+];
+const dyn = (tipo, testo) => bot._dinamica(tipo, P, testo, '2026-11-25');
+const attese = [
+  ['prossima_partita', 'quando gioca la prossima partita', (s) => s.includes('Under 19: Cuore Di Mamma Astra Volley - Victor Volley Puglia In Food, mercoledì 2 dicembre alle 18:00') && s.includes('Prima Divisione: Asd Olimpius Parabita') && !s.includes('Flyarmida')],
+  ['prossima_partita', 'prossima partita under 19', (s) => s.startsWith('La prossima partita è Under 19') && !s.includes('Prima Divisione')],
+  ['prossima_partita', 'quando gioca la prima divisione', (s) => s.startsWith('La prossima partita è Prima Divisione') && s.includes('domenica 29 novembre alle 19:00')],
+  ['ultimo_risultato', 'come è finita', (s) => s.includes('Victor Volley Puglia In Food 3-1 Gallipoli (17 novembre)')],
+];
+attese.forEach(([tipo, testo, ok]) => { const s = dyn(tipo, testo) || ''; if (!ok(s)) fail('dinamica "' + testo + '" → ' + JSON.stringify(s)); });
+if (bot._dinamica('prossima_partita', [], 'prossima partita', '2026-11-25') !== 'Al momento non ci sono partite in programma nel calendario.') fail('dinamica senza partite');
+const dinamiche = data.categorie.flatMap((c) => c.domande).filter((d) => d.dinamico).map((d) => d.id + ':' + d.dinamico).sort().join(',');
+if (dinamiche !== 'calendario:prossima_partita,risultati:ultimo_risultato') fail('domande dinamiche inattese: ' + dinamiche);
+
 const totale = ids.size;
 console.log('check-chatbot: ' + totale + ' risposte, ' + prove.length + ' domande tipo, ' + (errors ? errors + ' errori' : 'tutto ok'));
 process.exit(errors ? 1 : 0);

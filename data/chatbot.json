@@ -404,6 +404,7 @@
       "domande": [
         {
           "id": "calendario",
+          "dinamico": "prossima_partita",
           "q": "Dove vedo il calendario delle partite?",
           "parole": [
             "calendario",
@@ -424,6 +425,7 @@
         },
         {
           "id": "risultati",
+          "dinamico": "ultimo_risultato",
           "q": "Dove vedo i risultati e la classifica?",
           "parole": [
             "risultati",
