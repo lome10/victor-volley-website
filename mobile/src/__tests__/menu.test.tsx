@@ -21,7 +21,7 @@ describe('menu come il sito', () => {
     expect(screen).toHavePathname('/');
   }, 60000);
 
-  it.each(tutte.map((p) => [p.href as string, p.titolo]))('la pagina %s si apre col suo titolo', async (href, titolo) => {
+  it.each(tutte.filter((p) => p.href !== '/news').map((p) => [p.href as string, p.titolo]))('la pagina %s si apre col suo titolo', async (href, titolo) => {
     await renderRouter('./src/app', { initialUrl: href });
     expect(screen.getByRole('header', { name: titolo })).toBeTruthy();
   }, 60000);

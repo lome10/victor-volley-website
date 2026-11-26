@@ -15,4 +15,5 @@ export const fonts = {
   titolo: 'Barlow_700Bold',
   titoloMedio: 'Barlow_600SemiBold',
   corpo: 'Manrope_400Regular',
+  corpoForte: 'Manrope_700Bold',
 } as const;
