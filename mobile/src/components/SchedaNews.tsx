@@ -40,10 +40,11 @@ export function SchedaNews({ articolo, indice, apri, larghezza }: Props) {
 
 const styles = StyleSheet.create({
   scheda: { borderRadius: 16, overflow: 'hidden', backgroundColor: colors.menu },
-  contenuto: { flex: 1, justifyContent: 'flex-end', padding: 14 },
+  // In fondo resta lo spazio del "Leggi" che sul sito c'e' ma si vede solo col mouse.
+  contenuto: { flex: 1, justifyContent: 'flex-end', paddingHorizontal: 20, paddingTop: 24, paddingBottom: 56 },
   categorie: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
   categoria: { color: colors.bianco, fontFamily: fonts.titolo, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, overflow: 'hidden' },
   azzurro: { backgroundColor: 'rgba(0,140,253,0.85)' },
   magenta: { backgroundColor: 'rgba(203,33,104,0.85)' },
-  titolo: { color: colors.bianco, fontFamily: fonts.titolo, fontSize: 16, lineHeight: 21 },
+  titolo: { color: colors.bianco, fontFamily: fonts.titolo, fontSize: 17, lineHeight: 22 },
 });

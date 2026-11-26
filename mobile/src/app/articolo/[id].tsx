@@ -1,6 +1,6 @@
 // La pagina articolo del sito (news-dettaglio): sponsor, "Torna alle news", copertina, testo, correlati.
 import { Image } from 'expo-image';
-import { router, useLocalSearchParams } from 'expo-router';
+import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
 import { Piede } from '~/components/Piede';
@@ -11,8 +11,14 @@ import { NonTrovato, useArticolo, usePubblico, type Sponsor } from '~/lib/dati';
 import { dataEstesa, fuoco, immagineLarga } from '~/lib/news';
 import { colors, fonts } from '~/lib/theme';
 
-export default function PaginaArticolo() {
+export default function Rotta() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  // Come il sito: un indirizzo senza un numero valido torna alle news.
+  if (!/^[1-9]\d{0,8}$/.test(id ?? '')) return <Redirect href="/news" />;
+  return <PaginaArticolo id={id} />;
+}
+
+function PaginaArticolo({ id }: { id: string }) {
   const numero = Number(id);
   const { width } = useWindowDimensions();
   const { data: articolo, isPending, error, refetch } = useArticolo(numero);
@@ -96,7 +102,7 @@ const styles = StyleSheet.create({
   indietroTesto: { color: colors.azzurroScuro, fontFamily: fonts.titoloMedio, fontSize: 14 },
   copertina: { alignSelf: 'center', borderRadius: 12, marginBottom: 28 },
   meta: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: 12, marginBottom: 20 },
-  categoria: { fontFamily: fonts.titolo, fontSize: 12, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 999, overflow: 'hidden' },
+  categoria: { fontFamily: fonts.titolo, fontSize: 12, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 999, overflow: 'hidden', textTransform: 'uppercase' },
   azzurro: { backgroundColor: 'rgba(0,140,253,0.12)', color: colors.azzurroScuro },
   magenta: { backgroundColor: 'rgba(203,33,104,0.12)', color: colors.magenta },
   data: { color: '#888888', fontFamily: fonts.corpo, fontSize: 13 },

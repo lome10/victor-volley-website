@@ -28,6 +28,15 @@ describe('testo dell\'articolo', () => {
     expect(JSON.stringify(b)).toContain('https://x.it');
   });
 
+  it('grassetto in linea, div senza spazio, riga vuota solo col br', () => {
+    const b = blocchi('<div>uno</div><div><br></div><div><span style="font-weight: bold; font-family: Times">due</span></div>');
+    expect(b).toEqual([
+      { tipo: 'paragrafo', pezzi: [{ testo: 'uno' }], stretto: true },
+      { tipo: 'spazio' },
+      { tipo: 'paragrafo', pezzi: [{ testo: 'due', grassetto: true }], stretto: true },
+    ]);
+  });
+
   it('butta script, moduli, link e immagini pericolosi', () => {
     const b = JSON.stringify(blocchi('<script>rubа()</script><style>p{}</style><form>password</form><iframe src="https://male.it"></iframe><p onclick="x()"><a href="javascript:alert(1)">clic</a></p><img src="data:image/png;base64,AA">'));
     expect(b).not.toMatch(/rub|password|male\.it|javascript|onclick|data:|p\{\}/);
@@ -62,6 +71,11 @@ describe('schermate', () => {
     await waitFor(() => expect(screen.getByText('forte')).toBeTruthy());
     await fireEvent.press(screen.getByText('← Torna alle news'));
     expect(screen).toHavePathname('/news');
+  }, 60000);
+
+  it('indirizzo senza numero: torna alle news', async () => {
+    await renderRouter('./src/app', { initialUrl: '/articolo/abc' });
+    await waitFor(() => expect(screen).toHavePathname('/news'));
   }, 60000);
 
   it('articolo che non esiste', async () => {

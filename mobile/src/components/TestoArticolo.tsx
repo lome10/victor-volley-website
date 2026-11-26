@@ -21,6 +21,7 @@ export function TestoArticolo({ html }: { html: string }) {
   return (
     <View>
       {lista.map((b, i) => {
+        if (b.tipo === 'spazio') return <View key={i} style={styles.spazio} />;
         if (b.tipo === 'immagine') return <Image key={i} source={b.url} style={styles.immagine} contentFit="contain" />;
         if (b.tipo === 'voce')
           return (
@@ -32,7 +33,7 @@ export function TestoArticolo({ html }: { html: string }) {
         return (
           <Text
             key={i}
-            style={[styles.testo, b.tipo === 'titolo2' && styles.titolo2, b.tipo === 'titolo3' && styles.titolo3, b.tipo === 'citazione' && styles.citazione]}>
+            style={[styles.testo, b.tipo === 'titolo2' && styles.titolo2, b.tipo === 'titolo3' && styles.titolo3, b.tipo === 'citazione' && styles.citazione, b.stretto && styles.stretto]}>
             {pezzi(b.pezzi)}
           </Text>
         );
@@ -45,6 +46,8 @@ const styles = StyleSheet.create({
   testo: { color: colors.testo, fontFamily: fonts.corpo, fontSize: 16, lineHeight: 27, marginBottom: 20 },
   grassetto: { fontFamily: fonts.corpoForte },
   corsivo: { fontStyle: 'italic' },
+  stretto: { marginBottom: 0 },
+  spazio: { height: 27 },
   link: { color: colors.azzurroScuro, textDecorationLine: 'underline' },
   titolo2: { color: colors.navy, fontFamily: fonts.titolo, fontSize: 24, lineHeight: 30, marginTop: 12 },
   titolo3: { color: colors.navy, fontFamily: fonts.titolo, fontSize: 19, lineHeight: 25, marginTop: 4 },
