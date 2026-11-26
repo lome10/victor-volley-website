@@ -60,6 +60,9 @@ function entry(path, lastmod) {
 }
 
 module.exports = async (req, res) => {
+  /* /api/app-pubblico (dati per l'app del telefono) arriva qui con ?app=1: vedi vercel.json. */
+  if (req && req.query && req.query.app !== undefined) return require('./_app-pubblico-logic').gestisci(req, res);
+
   /* Nessun parametro previsto: una query diversa a ogni richiesta aggirerebbe la cache e rileggerebbe Firestore. */
   if (req && req.query && Object.keys(req.query).length) {
     res.setHeader('Cache-Control', 'no-store');

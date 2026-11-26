@@ -17,6 +17,10 @@
   ],
   "rewrites": [
     {
+      "source": "/api/app-pubblico",
+      "destination": "/api/sitemap?app=1"
+    },
+    {
       "source": "/api/emetti-ricevuta",
       "destination": "/api/invia-ricevuta?azione=emetti"
     },
