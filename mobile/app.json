@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "Victor Volley",
+    "slug": "victor-volley",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "victorvolley",
+    "userInterfaceStyle": "light",
+    "icon": "./assets/images/icon.png",
+    "ios": {
+      "bundleIdentifier": "it.victorvolley.app",
+      "supportsTablet": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "it.victorvolley.app"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/icon.png",
+          "imageWidth": 200,
+          "backgroundColor": "#020D1A"
+        }
+      ]
+    ],
+    "owner": "lome-labs"
+  }
+}

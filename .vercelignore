@@ -10,3 +10,6 @@ backups
 .github
 firebase.json
 firestore.rules
+
+# App per telefono (VVW-37): non fa parte del sito
+mobile

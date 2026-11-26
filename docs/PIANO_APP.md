@@ -79,3 +79,9 @@ Stima totale: **9–12 sessioni di lavoro**, più l'attesa della revisione degli
 
 ## Primo passo dopo l'ok
 Fase 0 + endpoint `/api/app-pubblico` della fase 1 (utile subito anche al sito per le letture).
+
+## Aggiornamenti del 26/11 (sera)
+- Lorenzo: l'app "dev'essere uguale al sito" (aspetto e contenuti). Per questo la fase 0 NON ha la barra in basso: barra in alto, menu laterale e piede come sul sito. Da fare anche "Chiedi a Victor".
+- Lorenzo: l'app va pubblicata da **Lome Labs**. Da risolvere prima degli store: il nome sviluppatore Google Play vale per tutto l'account (oggi "Set Point Pulse"); su Apple l'account è individuale.
+- Ancora da confermare: identificativo `it.victorvolley.app` (messo in `mobile/app.json`), pannello dirigenti sul sito dentro l'app, ordine delle notifiche.
+- Fase 0 in `mobile/`: scheletro con le pagine vuote. `eas init` non lanciato.
