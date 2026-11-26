@@ -251,7 +251,8 @@ function persona(p) {
 function componi(d, adesso) {
   const g = girone(d.girone);
 
-  const categorie = oggetti(d.categories).filter((c) => c.active).sort((a, b) => a.id - b.id).map((c) => ({
+  /* Nell'ordine in cui Firestore le restituisce: è quello che mostra il sito (nessun riordino). */
+  const categorie = oggetti(d.categories).filter((c) => c.active).map((c) => ({
     id: numero(c.id), name: testo(c.name), abbr: testo(c.abbr), color: testo(c.color),
     description: testo(c.description), schedule: testo(c.schedule), showInSquadre: c.showInSquadre !== false
   }));
@@ -266,7 +267,7 @@ function componi(d, adesso) {
       id: numero(a.id), slug: slugAlbum(a, albumGrezzi), title: testo(a.title), date: testo(a.date),
       category: testo(a.category), photoCount: photos.length, photos
     };
-  }).filter((a) => a.photos.length).sort((a, b) => (b.date < a.date ? -1 : b.date > a.date ? 1 : 0));
+  }).filter((a) => a.photos.length).sort((a, b) => (b.date < a.date ? -1 : b.date > a.date ? 1 : b.id - a.id));   /* come galleria-1.js */
 
   const stagioni = oggetti(d.seasons && d.seasons.items);
   const catArticoli = d.categorieArticoli && Array.isArray(d.categorieArticoli.items) ? testi(d.categorieArticoli.items) : null;

@@ -39,7 +39,7 @@ const raccolte = {
     { id: 1, title: 'Festa d’estate', date: '2026-07-01', category: 'Società', photos: [{ id: 'foto/1', name: 'SEGRETO-nomefile', w: 10, h: 20 }] },
     { id: 2, title: 'Vuoto SEGRETO-album', date: '2026-08-01', photos: [] }
   ],
-  categories: [cat(1, 'Prima Divisione'), cat(2, 'Spenta SEGRETO', { active: false }), cat(3, 'Società', { showInSquadre: false })],
+  categories: [cat(3, 'Società', { showInSquadre: false }), cat(1, 'Prima Divisione'), cat(2, 'Spenta SEGRETO', { active: false })],
   players: [
     { id: 1, categoryId: 1, name: 'Giocatrice Finta', number: 7, role: 'Schiacciatore', gender: 'F', photo: CLOUD + 'g.jpg', stagione: '2026/2027', year: 'SEGRETO-anno', highlight: 'SEGRETO-hl' },
     { id: 2, categoryId: 2, name: 'SEGRETO-categoria-spenta' },
@@ -119,7 +119,7 @@ const silenzia = console.error;
     assert.strictEqual(b.articoli[0].image, '');
     assert.strictEqual(b.articoli[1].riassunto, 'Testo del primo articolo.');
     assert.deepStrictEqual(b.articoli[1].categories, ['Società']);
-    assert.deepStrictEqual(b.categorie.map((c) => c.id), [1, 3]);
+    assert.deepStrictEqual(b.categorie.map((c) => c.id), [3, 1]);   /* ordine di Firestore, come il sito */
     assert.deepStrictEqual(b.giocatori.map((p) => [p.name, p.role]), [['Giocatrice Finta', 'Laterale']]);
     assert.deepStrictEqual(b.staff.map((p) => p.id), [1]);
     assert.deepStrictEqual(b.album.map((a) => [a.slug, a.photoCount]), [['festa-d-estate', 1]]);
@@ -218,7 +218,10 @@ const silenzia = console.error;
   await t('sitemap invariata e vercel.json: rewrite giusta, funzioni ancora al massimo 12', async () => {
     const r = await chiedi({});
     assert.strictEqual(r.headers['Content-Type'], 'application/xml; charset=utf-8');
-    assert.ok(r.body.includes('<loc>https://www.victorvolley.it/news</loc>'));
+    const indirizzi = r.body.split('<loc>').slice(1).map((x) => x.split('</loc>')[0].replace('https://www.victorvolley.it', ''));
+    assert.deepStrictEqual(indirizzi, ['/', '/news', '/squadre', '/calendario', '/galleria', '/sponsor', '/contatti', '/unisciti-a-noi', '/diretta', '/privacy',
+      '/news-dettaglio?id=2', '/news-dettaglio?id=1', '/galleria/festa-d-estate']);
+    assert.strictEqual(r.headers['Cache-Control'], 'public, s-maxage=3600, stale-while-revalidate=86400');
     assert.strictEqual((await chiedi({ x: '1' })).code, 400);
     const v = JSON.parse(fs.readFileSync(path.join(radice, 'vercel.json'), 'utf8'));
     assert.ok(v.rewrites.some((x) => x.source === '/api/app-pubblico' && x.destination === '/api/sitemap?app=1'));
