@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
   tasto: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 40, paddingHorizontal: 14, borderRadius: 11, borderWidth: 1, maxWidth: 260, alignSelf: 'flex-start' },
   tastoScuro: { backgroundColor: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.12)' },
   tastoChiaro: { backgroundColor: colors.bianco, borderColor: '#E2E8F0', borderRadius: 8 },
-  tastoTesto: { flexShrink: 1, color: colors.bianco, fontFamily: fonts.corpoForte, fontSize: 13 },
+  tastoTesto: { flexShrink: 1, color: colors.bianco, fontFamily: fonts.corpoMedio, fontSize: 13 },
   testoChiaro: { color: colors.navy },
   freccia: { color: colors.bianco, fontSize: 14, lineHeight: 16, marginTop: -6 },
   velo: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)' },

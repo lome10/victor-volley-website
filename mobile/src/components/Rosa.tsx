@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   },
   numeroTesto: { color: colors.bianco, fontFamily: fonts.titoloForte, fontSize: 12, lineHeight: 14 },
   velo: { position: 'absolute', left: 0, right: 0, bottom: 0, height: '56%', justifyContent: 'flex-end', paddingHorizontal: 14, paddingTop: 14, paddingBottom: 12 },
-  nome: { color: colors.bianco, fontFamily: fonts.corpoForte, fontSize: 14.5, lineHeight: 17 },
+  nome: { color: colors.bianco, fontFamily: fonts.corpoExtra, fontSize: 14.5, lineHeight: 17 },
   ruolo: { fontFamily: fonts.corpoForte, fontSize: 11, letterSpacing: 0.55, textTransform: 'uppercase', marginTop: 3 },
   zonaStaff: { paddingTop: 34, paddingBottom: 40, paddingHorizontal: 24, borderTopWidth: 1, borderBottomWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
   occhiello: { color: sport.azzurroDim, fontFamily: fonts.titolo, fontSize: 12.5, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 4 },

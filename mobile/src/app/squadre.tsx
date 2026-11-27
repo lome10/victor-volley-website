@@ -238,13 +238,13 @@ const styles = StyleSheet.create({
   stagioni: { flexDirection: 'row', gap: 2, padding: 3, borderRadius: 11, borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', backgroundColor: 'rgba(255,255,255,0.06)' },
   stagione: { minHeight: 34, justifyContent: 'center', paddingHorizontal: 14, borderRadius: 8 },
   stagioneAttiva: { backgroundColor: colors.azzurroScuro },
-  stagioneTesto: { color: 'rgba(255,255,255,0.6)', fontFamily: fonts.corpoForte, fontSize: 13 },
+  stagioneTesto: { color: 'rgba(255,255,255,0.6)', fontFamily: fonts.corpoMedio, fontSize: 13 },
   stagioneTestoAttiva: { color: colors.bianco },
   filtri: { backgroundColor: 'rgba(5,14,31,0.96)', borderBottomWidth: 1, borderColor: 'rgba(255,255,255,0.08)', paddingVertical: 14 },
   filtriRiga: { gap: 10, paddingHorizontal: 24 },
   chip: { minHeight: 38, justifyContent: 'center', paddingHorizontal: 16, borderRadius: 99, borderWidth: 1, borderColor: 'rgba(255,255,255,0.14)', backgroundColor: 'rgba(255,255,255,0.04)' },
   chipAttivo: { backgroundColor: colors.magenta, borderColor: colors.magenta },
-  chipTesto: { color: 'rgba(255,255,255,0.7)', fontFamily: fonts.corpoForte, fontSize: 13 },
+  chipTesto: { color: 'rgba(255,255,255,0.7)', fontFamily: fonts.corpoMedio, fontSize: 13 },
   chipTestoAttivo: { color: colors.bianco },
   scaffali: { paddingHorizontal: 24, paddingTop: 40, paddingBottom: 20 },
   vuoto: { color: 'rgba(255,255,255,0.5)', fontFamily: fonts.corpo, fontSize: 14, textAlign: 'center', paddingVertical: 24 },
@@ -252,5 +252,6 @@ const styles = StyleSheet.create({
   invitoTitolo: { color: colors.bianco, fontFamily: fonts.titoloMedio, fontSize: 24, lineHeight: 29, textAlign: 'center', marginBottom: 16 },
   invitoTesto: { color: 'rgba(255,255,255,0.7)', fontFamily: fonts.corpo, fontSize: 17, lineHeight: 26, textAlign: 'center', maxWidth: 520, marginBottom: 32 },
   tasto: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 28, borderRadius: 3, backgroundColor: colors.azzurroScuro },
-  tastoTesto: { color: colors.bianco, fontFamily: fonts.corpo, fontSize: 15 },
+  // Sul sito .btn e' Manrope 500, peso che l'app non carica: il piu' vicino e' 600.
+  tastoTesto: { color: colors.bianco, fontFamily: fonts.corpoMedio, fontSize: 15 },
 });

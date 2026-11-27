@@ -95,6 +95,10 @@ function Contenuto({ foto, titolo, inizio, chiudi }: Visore & { inizio: number }
   };
 
   const altezzaFoto = height - 84 - top - bottom;
+  // Frecce come .lightbox-nav del sito: 48 px, e 40 px sotto i 640 px di larghezza.
+  const lato = width > 640 ? 48 : 40;
+  const tondo = { width: lato, height: lato, borderRadius: lato / 2, top: height / 2 - lato / 2 };
+  const segno = { fontSize: lato === 48 ? 24 : 20, lineHeight: lato === 48 ? 28 : 24 };
   return (
     <View style={styles.visore} accessibilityViewIsModal>
       <FlatList
@@ -125,11 +129,11 @@ function Contenuto({ foto, titolo, inizio, chiudi }: Visore & { inizio: number }
       <Text style={[styles.didascalia, { bottom: 24 + bottom }]}>{didascalia(titolo, indice, foto.length)}</Text>
       {foto.length > 1 ? (
         <>
-          <Pressable style={[styles.freccia, styles.sinistra, { top: height / 2 - 20 }]} onPress={() => vai(-1)} accessibilityRole="button" accessibilityLabel="Foto precedente">
-            <Text style={styles.frecciaTesto}>‹</Text>
+          <Pressable style={[styles.freccia, styles.sinistra, tondo]} onPress={() => vai(-1)} accessibilityRole="button" accessibilityLabel="Foto precedente">
+            <Text style={[styles.frecciaTesto, segno]}>‹</Text>
           </Pressable>
-          <Pressable style={[styles.freccia, styles.destra, { top: height / 2 - 20 }]} onPress={() => vai(1)} accessibilityRole="button" accessibilityLabel="Foto successiva">
-            <Text style={styles.frecciaTesto}>›</Text>
+          <Pressable style={[styles.freccia, styles.destra, tondo]} onPress={() => vai(1)} accessibilityRole="button" accessibilityLabel="Foto successiva">
+            <Text style={[styles.frecciaTesto, segno]}>›</Text>
           </Pressable>
         </>
       ) : null}

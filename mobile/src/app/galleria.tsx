@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
   sottotitolo: { color: 'rgba(255,255,255,0.65)', fontFamily: fonts.corpo, fontSize: 16 },
   corpo: { flexGrow: 1, backgroundColor: colors.bianco, paddingHorizontal: 24, paddingVertical: 48 },
   navAlbum: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 14, marginBottom: 24 },
-  indietro: { color: colors.navy, fontFamily: fonts.corpoForte, fontSize: 16 },
+  indietro: { color: colors.navy, fontFamily: fonts.corpoMedio, fontSize: 16 },
   vaiA: { flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 },
   vaiATesto: { color: '#64748B', fontFamily: fonts.corpo, fontSize: 13 },
   altri: { marginTop: 64, paddingTop: 40, borderTopWidth: 1, borderColor: '#F4F4F6' },
