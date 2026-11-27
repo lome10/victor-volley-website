@@ -6,6 +6,7 @@ import { Piede } from '~/components/Piede';
 import { Stato } from '~/components/Stato';
 import { AnteprimaGalleria } from '~/components/home/AnteprimaGalleria';
 import { InvitoGioca } from '~/components/home/InvitoGioca';
+import { Maglia } from '~/components/home/Maglia';
 import { ProssimePartite } from '~/components/home/ProssimePartite';
 import { SponsorHome } from '~/components/home/SponsorHome';
 import { ProssimaInBarra, StrisciaPartite } from '~/components/home/StrisciaPartite';
@@ -30,6 +31,7 @@ export default function Home() {
         ) : data ? (
           <View>
             <StrisciaPartite partite={data.partite} />
+            <Maglia maglia={data.maglia} />
             <UltimeNews articoli={data.articoli} />
             <ProssimePartite dati={data} />
             <AnteprimaGalleria album={data.album} />
