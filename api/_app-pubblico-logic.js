@@ -8,9 +8,11 @@
  * Si legge Firestore con l'API REST e la chiave pubblica del sito, quindi valgono le firestore.rules. In più ogni
  * campo che esce è scritto qui uno per uno (niente copie dell'intero documento) e valgono gli stessi filtri del sito.
  * "settings" e "siteData" si leggono SOLO documento per documento (settings/asd è privato).
- * Gli allenamenti non ci sono: il sito li mostra solo nell'area atleti.
+ * Allenamenti (orari settimanali) ed eccezioni di un giorno: li usa l'Area Atleti dell'app (sul sito js/atleta.js).
+ * Sono già leggibili da chiunque (firestore.rules: allow read: if true); chi ha modificato un'eccezione NON esce.
  *
- * Letture: una rigenerazione costa circa un documento per ogni elemento (~146 il 26/11/2026). La risposta resta
+ * Letture: una rigenerazione costa circa un documento per ogni elemento (~146 il 26/11/2026, +11 con gli allenamenti
+ * dal 27/11: 10 orari e 1 eccezione, circa 3 KB in più nel JSON). La risposta resta
  * in cache CACHE_SECONDI sulla CDN (per ogni zona) e in memoria nella funzione.
  */
 const news = require('./_news-anteprima-logic');
@@ -54,14 +56,15 @@ async function chiama(url, opzioni) {
   } finally { clearTimeout(t); }
 }
 
-async function leggiRaccolta(nome) {
+/** conId: aggiunge _docId, il nome del documento (gli allenamenti non hanno l'id tra i campi). */
+async function leggiRaccolta(nome, conId) {
   const docs = [];
   let pagina = '';
   for (let i = 0; i < 10; i++) {
     const res = await chiama(`${BASE}/${nome}?pageSize=300&key=${API_KEY}` + (pagina ? '&pageToken=' + encodeURIComponent(pagina) : ''));
     if (!res.ok) throw new Error(nome + ': HTTP ' + res.status);
     const data = await res.json();
-    (data.documents || []).forEach((d) => docs.push(oggetto(d.fields)));
+    (data.documents || []).forEach((d) => docs.push(conId ? Object.assign(oggetto(d.fields), { _docId: String(d.name || '').split('/').pop() }) : oggetto(d.fields)));
     pagina = data.nextPageToken;
     if (!pagina) return docs;
   }
@@ -100,6 +103,8 @@ const numero = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : typeof 
 const lista = (v) => (Array.isArray(v) ? v : []);
 const oggetti = (v) => lista(v).filter((x) => x && typeof x === 'object' && !Array.isArray(x));
 const testi = (v) => lista(v).filter((x) => typeof x === 'string' && x);
+/** Testo solo se c'è: nelle eccezioni "" vuol dire "tolto", campo assente vuol dire "come al solito" (js/atleta.js). */
+const seTesto = (v) => (typeof v === 'string' ? v : null);
 
 /** Immagine: indirizzo https, oppure file del sito reso assoluto. Mai base64 o altri schemi. */
 function immagine(v) {
@@ -304,18 +309,30 @@ function componi(d, adesso) {
     maglia: {
       enabled: !!maglia.enabled, title: testo(maglia.title), subtitle: testo(maglia.subtitle),
       revealDate: testo(maglia.revealDate), videoUrl: testo(maglia.videoUrl)
-    }
+    },
+    /* Orari settimanali: giorno 1 = lunedì … 7 = domenica; validoFino "AAAA-MM-GG" o "". */
+    allenamenti: oggetti(d.allenamenti).map((a) => ({
+      id: testo(a._docId), categoria: testo(a.categoria), giorno: numero(a.giorno),
+      oraInizio: testo(a.oraInizio), oraFine: testo(a.oraFine), luogo: testo(a.luogo), note: testo(a.note), validoFino: testo(a.validoFino)
+    })),
+    /* Un solo giorno diverso dal solito. id = "a-{id orario}-{data originale}", come la chiave di js/atleta.js. */
+    allenamentiEccezioni: oggetti(d.allenamentiEccezioni).map((e) => ({
+      id: testo(e._docId), orarioId: testo(e.orarioId), dataOriginale: testo(e.dataOriginale), categoria: testo(e.categoria),
+      annullato: e.annullato === true, data: seTesto(e.data), oraInizio: seTesto(e.oraInizio), oraFine: seTesto(e.oraFine), luogo: seTesto(e.luogo)
+    }))
   };
 }
 
 async function leggiTutto() {
-  const [articles, partite, albums, categories, players, staff, sponsor, seasons, maglia, livelli, categorieArticoli, gironeDoc] = await Promise.all([
+  const [articles, partite, albums, categories, players, staff, allenamenti, allenamentiEccezioni, sponsor, seasons, maglia, livelli, categorieArticoli, gironeDoc] = await Promise.all([
     leggiArticoli(),
     leggiRaccolta('partite'),
     leggiRaccolta('albums'),
     leggiRaccolta('categories'),
     leggiRaccolta('players'),
     leggiRaccolta('staff'),
+    leggiRaccolta('allenamenti', true),
+    leggiRaccolta('allenamentiEccezioni', true),
     leggiDocumento('settings/sponsor'),
     leggiDocumento('settings/seasons'),
     leggiDocumento('settings/maglia'),
@@ -325,7 +342,7 @@ async function leggiTutto() {
   ]);
   /* Come js/girone.js: senza il documento vale il file del sito. */
   const g = gironeDoc && gironeDoc.json ? JSON.parse(gironeDoc.json) : require('../data/girone.json');
-  return { articles, partite, albums, categories, players, staff, sponsor, seasons, maglia, livelli, categorieArticoli, girone: g };
+  return { articles, partite, albums, categories, players, staff, allenamenti, allenamentiEccezioni, sponsor, seasons, maglia, livelli, categorieArticoli, girone: g };
 }
 
 /* ---------------- richiesta ---------------- */
