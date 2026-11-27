@@ -20,6 +20,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useAvvisoDiretta } from '~/components/AvvisoDiretta';
 import { INSTAGRAM, linkAmmesso, rispondi, rispostaDinamica, useDatiBot, type Categoria, type DatiBot, type Domanda, type LinkBot } from '~/lib/chiedi';
 import { SITO, usePubblico, type Partita } from '~/lib/dati';
 import { oggiLocale } from '~/lib/diretta';
@@ -193,6 +194,8 @@ export function ChiediVictor() {
   const { data: pubblico } = usePubblico();
   const [aperto, setAperto] = useState(false);
   const [invito, setInvito] = useState(false);
+  // Con l'avviso "In diretta" la nuvoletta non compare: coprirebbe "Guarda →" e la X (scelta di Lorenzo, 27/11; come il sito).
+  const conAvviso = !!useAvvisoDiretta();
   const [anello] = useState(() => new Animated.Value(0));
 
   // Invito dopo 3,5 s, una volta sola.
@@ -201,6 +204,8 @@ export function ChiediVictor() {
     const t = setTimeout(() => setInvito(true), 3500);
     return () => clearTimeout(t);
   }, [dati]);
+  // Se l'avviso arriva quando la nuvoletta e' gia' aperta, la nuvoletta si chiude e non torna (come hideTip del sito).
+  if (conAvviso && invito) setInvito(false);
   // Anello che pulsa intorno al tasto (fermo con "riduci movimento").
   useEffect(() => {
     let anim: Animated.CompositeAnimation | null = null;
@@ -230,7 +235,7 @@ export function ChiediVictor() {
   return (
     <>
       <View style={[styles.angolo, { bottom: 12 + bottom }]} pointerEvents="box-none">
-        {invito && !aperto ? (
+        {invito && !aperto && !conAvviso ? (
           <View style={styles.invito}>
             <Pressable style={styles.invitoTasto} onPress={apri} accessibilityRole="button">
               <Text style={styles.invitoTesto}>{dati.invito}</Text>

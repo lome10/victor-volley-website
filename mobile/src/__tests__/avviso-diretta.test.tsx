@@ -1,8 +1,15 @@
-import { fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
+import { act, fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
 import { StyleSheet } from 'react-native';
 
 import { inFinestra, partitaInDiretta } from '~/components/AvvisoDiretta';
 import type { Partita } from '~/lib/dati';
+
+// Domande del sito (data/chatbot.json), per avere la nuvoletta "Ciao, sono Victor!".
+/* eslint-disable @typescript-eslint/no-require-imports */
+declare const __dirname: string;
+const path = require('path') as { join: (...p: string[]) => string };
+const BOT = require(path.join(__dirname, '..', '..', '..', 'data', 'chatbot.json')) as { invito: string };
+/* eslint-enable @typescript-eslint/no-require-imports */
 
 const p = (extra: Partial<Partita> = {}): Partita => ({
   id: 'x', stagione: '2026/2027', categoria: 'Prima Divisione', squadraCasa: 'VICTOR VOLLEY VITA', squadraOspite: 'DREAM VOLLEY',
@@ -35,7 +42,7 @@ describe('avviso a schermo', () => {
   const oggi = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   beforeEach(() => {
     const dati = { partite: [p({ data: oggi, ora: '' })], articoli: [], album: [], sponsor: [], stagioni: [], girone: { stagione: '', squadre: [], gironi: [] } };
-    globalThis.fetch = jest.fn(async () => ({ ok: true, status: 200, json: async () => dati })) as unknown as typeof fetch;
+    globalThis.fetch = jest.fn(async (url: string) => ({ ok: true, status: 200, json: async () => (url.includes('chatbot.json') ? BOT : dati) })) as unknown as typeof fetch;
   });
 
   it('compare nelle news, porta alla diretta, non compare nella galleria, si chiude con la X', async () => {
@@ -52,6 +59,30 @@ describe('avviso a schermo', () => {
     await renderRouter('./src/app', { initialUrl: '/calendario' });
     await waitFor(() => expect(screen.getByLabelText('Chiudi avviso')).toBeTruthy());
     await fireEvent.press(screen.getByLabelText('Chiudi avviso'));
+    expect(screen.queryByText('Guarda →')).toBeNull();
+  }, 60000);
+
+  // Scelta di Lorenzo (27/11): con l'avviso la nuvoletta non compare, perche' coprirebbe "Guarda →" e la X. Il tasto resta.
+  it('con l\'avviso la nuvoletta "Ciao, sono Victor!" non compare, il tasto si', async () => {
+    // Un'altra partita: la "x" e' gia' stata chiusa nel test precedente e resta chiusa finche' l'app e' aperta.
+    const dati = { partite: [p({ id: 'y', data: oggi, ora: '' })], articoli: [], album: [], sponsor: [], stagioni: [], girone: { stagione: '', squadre: [], gironi: [] } };
+    globalThis.fetch = jest.fn(async (url: string) => ({ ok: true, status: 200, json: async () => (url.includes('chatbot.json') ? BOT : dati) })) as unknown as typeof fetch;
+    await renderRouter('./src/app', { initialUrl: '/news' });
+    await waitFor(() => expect(screen.getByText('Guarda →')).toBeTruthy());
+    await waitFor(() => expect(screen.getByLabelText("Apri l'assistente Victor")).toBeTruthy());
+    // Passati i 3,5 s dell'invito: la nuvoletta deve restare chiusa.
+    await act(async () => {
+      jest.advanceTimersByTime(4200);
+    });
+    expect(screen.queryByText(BOT.invito)).toBeNull();
+    expect(screen.getByText('Guarda →')).toBeTruthy();
+  }, 60000);
+
+  it('controprova: senza partita in diretta la nuvoletta compare dopo 3,5 s', async () => {
+    const vuoti = { partite: [], articoli: [], album: [], sponsor: [], stagioni: [], girone: { stagione: '', squadre: [], gironi: [] } };
+    globalThis.fetch = jest.fn(async (url: string) => ({ ok: true, status: 200, json: async () => (url.includes('chatbot.json') ? BOT : vuoti) })) as unknown as typeof fetch;
+    await renderRouter('./src/app', { initialUrl: '/news' });
+    await waitFor(() => expect(screen.getByText(BOT.invito)).toBeTruthy(), { timeout: 6000 });
     expect(screen.queryByText('Guarda →')).toBeNull();
   }, 60000);
 });
