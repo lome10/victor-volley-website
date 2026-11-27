@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
   etichetta: { fontFamily: fonts.titolo, fontSize: 10, letterSpacing: 1, color: '#3aa6ff' },
   principale: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', columnGap: 12, rowGap: 4, minWidth: 0 },
   quando: { fontFamily: fonts.titoloForte, fontSize: 15, color: colors.bianco },
-  squadre: { flexShrink: 1, minWidth: 0, fontFamily: fonts.corpoForte, fontSize: 13, color: 'rgba(255,255,255,0.82)' },
+  squadre: { flexShrink: 1, minWidth: 0, fontFamily: fonts.corpoMedio, fontSize: 13, color: 'rgba(255,255,255,0.82)' },
   sponsor: { flexDirection: 'row', alignItems: 'center', gap: 10, flexShrink: 0 },
   presentato: { fontFamily: fonts.titolo, fontSize: 10, letterSpacing: 1, color: 'rgba(255,255,255,0.7)' },
   riquadro: { backgroundColor: colors.bianco, borderRadius: 10, padding: 3, borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
