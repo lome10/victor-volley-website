@@ -52,7 +52,8 @@ export default function Diretta() {
         </Text>
         <SponsorGold gold={gold} />
         <View style={styles.sezione}>
-          {video ? <VideoDiretta video={video} /> : <View style={styles.attesa} />}
+          {/* Tra video e tabellone 24 (gap della griglia del sito), dentro la colonna del tabellone 12. */}
+          <View style={styles.colonnaVideo}>{video ? <VideoDiretta video={video} /> : <View style={styles.attesa} />}</View>
           {tabellone ? (
             <TabelloneDiretta t={tabellone} squadre={dati?.girone.squadre ?? []} />
           ) : (
@@ -84,6 +85,7 @@ const styles = StyleSheet.create({
   tutto: { flexGrow: 1, justifyContent: 'space-between' },
   nascosto: { position: 'absolute', width: 1, height: 1, opacity: 0 },
   sezione: { paddingTop: 32, paddingBottom: 8, paddingHorizontal: 24, gap: 12, marginBottom: 12 },
+  colonnaVideo: { marginBottom: 12 },
   attesa: { width: '100%', aspectRatio: 16 / 9, borderRadius: 12, backgroundColor: '#000' },
   messaggio: { fontFamily: fonts.corpo, fontSize: 14, lineHeight: 20, color: colors.navy, textAlign: 'center', backgroundColor: '#F4F4F6', borderRadius: 10, paddingVertical: 10, paddingHorizontal: 16 },
   caricamento: { backgroundColor: colors.navy, borderRadius: 16, paddingVertical: 24, paddingHorizontal: 20 },
