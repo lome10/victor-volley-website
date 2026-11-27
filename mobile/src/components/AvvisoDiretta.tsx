@@ -70,14 +70,11 @@ function Pallino() {
   return <Animated.View style={[styles.pallino, { opacity: o }]} />;
 }
 
-export function AvvisoDiretta() {
+/** La partita dell'avviso, se l'avviso e' a schermo in questa pagina (null se no). La usa anche "Chiedi a Victor". */
+export function useAvvisoDiretta() {
   const pagina = usePathname();
-  const { bottom } = useSafeAreaInsets();
   const { data } = usePubblico();
-  // Se c'e' il tasto "Chiedi a Victor" (alto 58, a 12 dal fondo) l'avviso sta sopra, cosi' si vedono tutti e due (scelta di Lorenzo, 27/11).
-  const conTasto = !!useDatiBot().data;
   const [adesso, setAdesso] = useState(() => new Date());
-  const [, aggiorna] = useState(0);
   // Ricontrolla ogni minuto: la finestra si apre e si chiude da sola.
   useEffect(() => {
     const t = setInterval(() => setAdesso(new Date()), 60000);
@@ -85,7 +82,16 @@ export function AvvisoDiretta() {
   }, []);
   if (!data || !PAGINE_AVVISO.includes(pagina)) return null;
   const p = partitaInDiretta(data.partite, adesso);
-  if (!p || chiusi.has(p.id)) return null;
+  return p && !chiusi.has(p.id) ? p : null;
+}
+
+export function AvvisoDiretta() {
+  const { bottom } = useSafeAreaInsets();
+  // Se c'e' il tasto "Chiedi a Victor" (alto 58, a 12 dal fondo) l'avviso sta sopra, cosi' si vedono tutti e due (scelta di Lorenzo, 27/11).
+  const conTasto = !!useDatiBot().data;
+  const [, aggiorna] = useState(0);
+  const p = useAvvisoDiretta();
+  if (!p) return null;
   return (
     <View style={[styles.avviso, { bottom: (conTasto ? SOPRA_TASTO : 16) + bottom }]} accessibilityRole="summary" accessibilityLabel="Partita in diretta">
       <Pressable style={styles.link} onPress={() => router.push('/diretta')} accessibilityRole="link" accessibilityLabel={`In diretta: ${p.squadraCasa} – ${p.squadraOspite}. Guarda`}>

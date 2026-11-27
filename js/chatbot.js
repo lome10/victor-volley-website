@@ -283,11 +283,14 @@
     if (el.tip) el.tip.hidden = true;
     if (remember) { try { sessionStorage.setItem('vvbot_tip', '1'); } catch (e) { /* senza storage: l'invito riappare, nessun danno */ } }
   }
+  /* Con l'avviso «In diretta» (js/live-banner.js) la nuvoletta non compare: lo coprirebbe ("Guarda →" e la X).
+     Il tasto resta. Scelta di Lorenzo, 27/11. */
+  function avvisoDiretta() { return !!document.getElementById('liveBanner'); }
   function showTipLater() {
     var seen = false;
     try { seen = sessionStorage.getItem('vvbot_tip') === '1'; } catch (e) { /* ignora */ }
     if (seen || !state.data.invito) return;
-    setTimeout(function () { if (!state.open) { el.tip.hidden = false; } }, 3500);
+    setTimeout(function () { if (!state.open && !avvisoDiretta()) { el.tip.hidden = false; } }, 3500);
   }
 
   function setOpen(open) {
@@ -380,6 +383,8 @@
     root.appendChild(el.btn);
     document.body.appendChild(root);
 
+    /* L'avviso può arrivare dopo la nuvoletta (le partite si caricano a parte): allora la nuvoletta si chiude. */
+    document.addEventListener('vv:avviso-diretta', function () { hideTip(false); });
     document.addEventListener('keydown', function (ev) {
       if (ev.key === 'Escape' && state.open) { setOpen(false); el.btn.focus(); }
     });
