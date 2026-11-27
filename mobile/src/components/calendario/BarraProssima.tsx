@@ -1,5 +1,6 @@
 // Barra fissa del calendario (.cal-sticky del sito): prossima partita della categoria e sponsor.
 import { Image } from 'expo-image';
+import { useState } from 'react';
 import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { dataEstesa, type PartitaCalendario } from '~/lib/calendario';
@@ -10,13 +11,18 @@ import { colors, fonts } from '~/lib/theme';
 type Props = { prossima: PartitaCalendario | null; sponsor: Sponsor | null; stretto: boolean; vai: () => void };
 
 export function BarraProssima({ prossima, sponsor, stretto, vai }: Props) {
+  // Come il sito: altezza fissa (46, 38 sul telefono), larghezza secondo le proporzioni del logo, al massimo 150 (110).
+  const [proporzione, setProporzione] = useState(1);
   if (!prossima && !sponsor) return <View />;
+  const alto = stretto ? 38 : 46;
+  const largo = Math.min(stretto ? 110 : 150, Math.round(alto * proporzione));
   const link = sponsor && /^https?:\/\//.test(sponsor.url || '') ? sponsor.url : '';
   const logo = sponsor ? (
     <Image
       source={{ uri: immagineLarga(sponsor.logo, 160) }}
-      style={[styles.logo, stretto ? styles.logoStretto : styles.logoLargo]}
+      style={[styles.logo, { height: alto, width: largo }]}
       contentFit="contain"
+      onLoad={(e) => { if (e.source.width && e.source.height) setProporzione(e.source.width / e.source.height); }}
       accessibilityLabel={sponsor.nome}
     />
   ) : null;
@@ -66,6 +72,4 @@ const styles = StyleSheet.create({
   presentato: { fontFamily: fonts.titolo, fontSize: 10, letterSpacing: 1, color: 'rgba(255,255,255,0.7)' },
   riquadro: { backgroundColor: colors.bianco, borderRadius: 10, padding: 3, borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
   logo: { borderRadius: 7 },
-  logoLargo: { height: 46, width: 110 },
-  logoStretto: { height: 38, width: 90 },
 });
