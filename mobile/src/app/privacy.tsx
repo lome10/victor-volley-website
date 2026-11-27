@@ -97,7 +97,6 @@ function Parte({ b }: { b: Blocco }) {
         <View style={styles.elenco}>
           {b.voci.map((v, i) => (
             <View key={i} style={styles.voce}>
-              <Text style={styles.puntino}>•</Text>
               <Text style={[styles.testo, styles.voceTesto]}>
                 <Pezzi pezzi={v} />
               </Text>
@@ -159,9 +158,9 @@ const styles = StyleSheet.create({
   corsivo: { fontStyle: 'italic' },
   codice: { fontFamily: 'monospace', fontSize: 14 },
   link: { color: colors.azzurro, textDecorationLine: 'underline' },
-  elenco: { marginBottom: 14, paddingLeft: 8 },
+  // Il sito toglie i puntini a tutti gli elenchi (ul { list-style: none }): resta solo il rientro di 22 px.
+  elenco: { marginBottom: 14, paddingLeft: 22 },
   voce: { flexDirection: 'row', marginBottom: 6 },
-  puntino: { color: TESTO, fontSize: 15, lineHeight: 25.5, width: 14 },
   voceTesto: { flex: 1 },
   riquadro: { backgroundColor: GRIGIO, borderLeftWidth: 4, borderLeftColor: colors.azzurro, borderRadius: 6, paddingVertical: 16, paddingHorizontal: 18, marginBottom: 18 },
   tabellaScorre: { marginBottom: 18, flexGrow: 0 },
