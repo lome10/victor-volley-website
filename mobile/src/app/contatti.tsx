@@ -93,7 +93,7 @@ export default function Contatti() {
                 {social.map(({ nome, url, svg }) => (
                   <Pressable key={nome} style={[styles.tondo, FONDO_SOCIAL[nome] ? { backgroundColor: FONDO_SOCIAL[nome] } : null]} onPress={() => Linking.openURL(url)} hitSlop={2} accessibilityRole="link" accessibilityLabel={nome}>
                     {nome === 'Instagram' ? <FondoInstagram /> : null}
-                    <SvgXml xml={svg} width={20} height={20} color={colors.bianco} />
+                    <View style={styles.sopraFondo}><SvgXml xml={svg} width={20} height={20} color={colors.bianco} /></View>
                   </Pressable>
                 ))}
               </View>,
@@ -154,10 +154,11 @@ const styles = StyleSheet.create({
   icona: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(0,140,253,0.1)', alignItems: 'center', justifyContent: 'center' },
   iconaMagenta: { backgroundColor: 'rgba(203,33,104,0.1)' },
   voceTesti: { flex: 1 },
-  voceTitolo: { fontFamily: fonts.titoloMedio, fontSize: 14, color: colors.navy, marginBottom: 4 },
+  voceTitolo: { fontFamily: fonts.titoloMedio, fontSize: 14, lineHeight: 22, color: colors.navy, marginBottom: 4 },
   valore: { fontFamily: fonts.corpo, fontSize: 14, lineHeight: 22, color: '#666' },
   link: { color: colors.azzurro },
   social: { flexDirection: 'row', gap: 10, alignItems: 'center', marginTop: 4 },
+  sopraFondo: { position: 'relative', zIndex: 1 },
   tondo: { width: 40, height: 40, borderRadius: 20, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
   bottone: { alignSelf: 'flex-start', marginTop: 8, minHeight: 44, justifyContent: 'center', paddingVertical: 12, paddingHorizontal: 28, borderRadius: 3, backgroundColor: colors.azzurroScuro },
   bottoneTesto: { fontFamily: fonts.corpoMedio, fontSize: 15, color: colors.bianco },

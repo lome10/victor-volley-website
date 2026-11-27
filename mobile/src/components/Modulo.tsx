@@ -114,7 +114,7 @@ export function Modulo({ campi, coppie = [], testoInvio, ok, compatto, invia, mo
             accessibilityRole="button"
             accessibilityLabel={c.etichetta}
             accessibilityHint={mostrato || c.vuoto}>
-            <Text style={[styles.testoCasello, !mostrato && styles.segnaposto]} numberOfLines={1}>{mostrato || c.vuoto}</Text>
+            <Text style={styles.testoCasello} numberOfLines={1}>{mostrato || c.vuoto}</Text>
             <Text style={styles.freccia}>▾</Text>
           </Pressable>
           {errore}
@@ -179,6 +179,9 @@ export function Modulo({ campi, coppie = [], testoInvio, ok, compatto, invia, mo
           <View key={r[0].nome} style={styles.coppia}>
             {r.map((c) => <View key={c.nome} style={styles.meta}>{campo(c)}</View>)}
           </View>
+        ) : r.length === 2 ? (
+          // .form-row su telefono: una colonna con gap 16 tra i due campi.
+          r.map((c, i) => <View key={c.nome} style={i === 0 && styles.primoDellaCoppia}>{campo(c)}</View>)
         ) : (
           r.map(campo)
         ),
@@ -221,7 +224,8 @@ const styles = StyleSheet.create({
   gruppo: { marginBottom: 20 },
   coppia: { flexDirection: 'row', gap: 16 },
   meta: { flex: 1, minWidth: 0 },
-  etichetta: { fontFamily: fonts.corpoMedio, fontSize: 14, color: colors.navy, marginBottom: 6 },
+  primoDellaCoppia: { marginBottom: 16 },
+  etichetta: { fontFamily: fonts.corpoMedio, fontSize: 14, lineHeight: 22, color: colors.navy, marginBottom: 6 },
   obbligatorio: { color: colors.magenta },
   casello: {
     minHeight: 48, paddingVertical: 11, paddingHorizontal: 14, fontFamily: fonts.corpo, fontSize: 15, color: colors.testo,
@@ -231,7 +235,6 @@ const styles = StyleSheet.create({
   bordoErrore: { borderColor: '#c82828' },
   tendina: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   testoCasello: { flex: 1, fontFamily: fonts.corpo, fontSize: 15, color: colors.testo },
-  segnaposto: { color: '#8a8a96' },
   freccia: { fontSize: 14, color: colors.navy },
   errore: { marginTop: 6, fontFamily: fonts.corpo, fontSize: 13, lineHeight: 18, color: '#c82828' },
   spuntaRiga: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
