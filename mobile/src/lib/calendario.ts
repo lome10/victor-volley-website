@@ -186,7 +186,7 @@ export function sponsorCalendario<T extends { nome: string; logo: string }>(spon
 /* ---- File .ics, come icsEvent/downloadIcs di calendario-1.js ----
    Orario "flottante" (ora locale di chi apre il file), durata 2 ore; senza orario: giorno intero. */
 const icsTesto = (t: string | null | undefined) =>
-  String(t ?? '').replace(/\/g, '\\').replace(/\n/g, '\n').replace(/,/g, '\,').replace(/;/g, '\;');
+  String(t ?? '').replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;');
 function icsPiega(riga: string) {
   const out: string[] = [];
   while (riga.length > 74) { out.push(riga.slice(0, 74)); riga = ' ' + riga.slice(74); }

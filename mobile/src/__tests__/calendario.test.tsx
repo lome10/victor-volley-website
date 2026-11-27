@@ -97,29 +97,17 @@ describe('regole del calendario (come js/pages/calendario-1.js)', () => {
       partita({ id: 'a2', data: '2026-12-31', ora: '', palazzetto: '' }),
       partita({ id: 'a3', data: '2026-12-05', ora: '22:30' }),
     ], adesso);
-    expect(testo.startsWith('BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//Victor Volley//Calendario//IT
-CALSCALE:GREGORIAN
-METHOD:PUBLISH
-')).toBe(true);
-    expect(testo.endsWith('END:VCALENDAR
-')).toBe(true);
-    expect(testo).toContain('UID:partita-a1@victorvolley.it
-DTSTAMP:20261127T090507Z
-DTSTART:20261129T190000
-DTEND:20261129T210000');
+    expect(testo.startsWith('BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Victor Volley//Calendario//IT\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\n')).toBe(true);
+    expect(testo.endsWith('END:VCALENDAR\r\n')).toBe(true);
+    expect(testo).toContain('UID:partita-a1@victorvolley.it\r\nDTSTAMP:20261127T090507Z\r\nDTSTART:20261129T190000\r\nDTEND:20261129T210000');
     expect(testo).toContain('SUMMARY:ASD Olimpius - Victor Volley Vita (Prima Divisione)');
-    expect(testo).toContain('LOCATION:Pallone\, Parabita\; lato B');
-    expect(testo).toContain('DTSTART;VALUE=DATE:20261231
-DTEND;VALUE=DATE:20270101');
-    expect(testo).toContain('DTSTART:20261205T223000
-DTEND:20261205T235900');
+    expect(testo).toContain('LOCATION:Pallone\\, Parabita\\; lato B');
+    expect(testo).toContain('DTSTART;VALUE=DATE:20261231\r\nDTEND;VALUE=DATE:20270101');
+    expect(testo).toContain('DTSTART:20261205T223000\r\nDTEND:20261205T235900');
     expect(testo.match(/BEGIN:VEVENT/g)).toHaveLength(3);
     // Righe piegate a 74 caratteri come il sito.
     const lunga = fileIcs([partita({ palazzetto: 'x'.repeat(100) })], adesso);
-    expect(lunga.split('
-').every((riga) => riga.length <= 75)).toBe(true);
+    expect(lunga.split('\r\n').every((riga) => riga.length <= 75)).toBe(true);
     expect(nomeFileIcs('Prima Divisione', '')).toBe('victor-volley-prima-divisione.ics');
     expect(nomeFileIcs('Under 13', 'Città Nuova')).toBe('victor-volley-under-13-citta-nuova.ics');
   });
