@@ -57,6 +57,12 @@ export function GrigliaFoto({ foto, titolo, larghezza, apri }: { foto: FotoAlbum
   );
 }
 
+/** La foto intera dentro lo spazio libero, senza deformarla (w e h vengono dall'API). */
+function misuraFoto(f: FotoAlbum, larga: number, alta: number) {
+  const r = f.w > 0 && f.h > 0 ? f.w / f.h : 4 / 3;
+  return larga / r <= alta ? { width: larga, height: larga / r } : { width: alta * r, height: alta };
+}
+
 type Visore = {
   foto: FotoAlbum[];
   titolo: string;
@@ -109,7 +115,10 @@ function Contenuto({ foto, titolo, inizio, chiudi }: Visore & { inizio: number }
         initialNumToRender={1}
         renderItem={({ item }) => (
           <Pressable style={[styles.pagina, { width, paddingTop: top }]} onPress={chiudi} accessibilityLabel="Chiudi">
-            <Image source={fotoIntera(item.id)} style={{ width: width * 0.96, height: altezzaFoto }} contentFit="contain" accessibilityLabel={titolo} />
+            {/* Come il sito: chiude il tocco sul fondo scuro, non quello sulla foto. */}
+            <View onStartShouldSetResponder={() => true} style={misuraFoto(item, width * 0.96, altezzaFoto)}>
+              <Image source={fotoIntera(item.id)} style={StyleSheet.absoluteFill} contentFit="contain" accessibilityLabel={titolo} />
+            </View>
           </Pressable>
         )}
       />
