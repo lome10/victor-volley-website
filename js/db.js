@@ -391,6 +391,27 @@
       }, cb, saved);
       return saved;
     },
+    /* Cambia SOLO alcuni campi di uno o più album (ordine, copertina) in un'unica scrittura (update, non set):
+       le foto non si riscrivono, così un caricamento in corso o un altro admin aperto non perdono foto (VVW-43).
+       changes = [{ id, fields }]; log = { id, label, campo, prima, dopo } → una sola riga di registro. */
+    saveAlbumFields: function (changes, what, log, cb) {
+      var batch = global.db.batch(), manca = false;
+      changes.forEach(function (c) {
+        var fid = _fid('albums', c.id);
+        if (!fid) { manca = true; return; }
+        batch.update(_col('albums').doc(fid), c.fields);
+      });
+      var write = manca ? Promise.reject(new Error('Album non trovato sul server: ricarica la pagina.')) : batch.commit();
+      if (!manca) changes.forEach(function (c) { var a = VV.getAlbum(c.id); if (a) Object.assign(a, c.fields); });
+      _after('albums', what, write, function () {
+        if (log) _audit('album', String(log.id), 'Album — ' + log.label, 'update', [{ campo: log.campo, prima: log.prima, dopo: log.dopo }]);
+      }, cb);
+      return true;
+    },
+    /* true se è in corso un salvataggio che inizia con `prefix` (es. 'saveAlbum': album interi e campi). */
+    isSaving: function (prefix) {
+      return Object.keys(_inflight).some(function (k) { return k.indexOf(prefix) === 0; });
+    },
     deleteAlbum: function (id, cb) {
       var before = VV.getAlbum(id);
       VV.deleteAlbum(id);
@@ -539,7 +560,7 @@
 
   /* Blocco del doppio salvataggio: se la stessa operazione sullo stesso record è già in corso (secondo tocco,
      Invio, codice) la seconda chiamata viene ignorata e restituisce null. Tutti i salvataggi/eliminazioni passano di qui. */
-  ['saveArticle', 'deleteArticle', 'savePartita', 'deletePartita', 'saveAlbum', 'deleteAlbum', 'saveCategory', 'deleteCategory',
+  ['saveArticle', 'deleteArticle', 'savePartita', 'deletePartita', 'saveAlbum', 'saveAlbumFields', 'deleteAlbum', 'saveCategory', 'deleteCategory',
    'savePlayer', 'deletePlayer', 'saveStaffMember', 'deleteStaffMember', 'saveCategorieArticoli', 'saveStats', 'saveSponsors',
    'saveMaglia', 'saveLivelliSponsorSub', 'saveSeason', 'deleteSeason', 'setCurrentSeason'].forEach(function (name) {
     var orig = DB[name];

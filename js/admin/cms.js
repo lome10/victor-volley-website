@@ -740,8 +740,10 @@
     refreshAlbumsGrid();
   }
 
+  var _photoUploading = false;
   function refreshAlbumsGrid() {
-    var albums = VV.getAlbums();
+    /* Nell'ordine del sito e dell'app (VV.sortAlbums): i tasti ← → lo cambiano. */
+    var albums = VV.sortAlbums(VV.getAlbums());
     var grid   = document.getElementById('albumsGrid');
 
     if (!albums.length) {
@@ -751,7 +753,9 @@
 
     var albumIds = albums.map(function (a) { return a.id; });
     PhotoDB.getCovers(albumIds, function (covers) {
-      grid.innerHTML = albums.map(function (album) {
+      var ARROW_L = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M15 18l-6-6 6-6"/></svg>';
+      var ARROW_R = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M9 18l6-6-6-6"/></svg>';
+      grid.innerHTML = albums.map(function (album, i) {
         var thumb = covers[album.id]
           ? '<img src="' + esc(covers[album.id]) + '" alt="">'
           : '<div class="album-thumb-placeholder">🖼️</div>';
@@ -762,6 +766,10 @@
             '<div class="album-meta">' + VV.formatDateShort(album.date) + ' · ' + esc(album.category) + '</div>' +
             '<div class="album-footer">' +
               '<span class="chip chip--blue">' + (album.photoCount || 0) + ' foto</span>' +
+              '<span class="album-move">' +
+                '<button class="btn-icon" ' + (i === 0 ? 'disabled ' : '') + 'onclick="event.stopPropagation();AdminActions.moveAlbum(' + album.id + ',-1)" title="Sposta prima" aria-label="Sposta prima">' + ARROW_L + '</button>' +
+                '<button class="btn-icon" ' + (i === albums.length - 1 ? 'disabled ' : '') + 'onclick="event.stopPropagation();AdminActions.moveAlbum(' + album.id + ',1)" title="Sposta dopo" aria-label="Sposta dopo">' + ARROW_R + '</button>' +
+              '</span>' +
               '<button class="btn-icon btn-icon--danger" onclick="event.stopPropagation();AdminActions.deleteAlbum(' + album.id + ')" title="Elimina album">' +
                 '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>' +
               '</button>' +
@@ -808,10 +816,15 @@
         grid.innerHTML = '<div class="empty-state"><p>Nessuna foto ancora. Carica le prime!</p></div>';
         return;
       }
+      /* La copertina (miniatura dell'album in Galleria, admin e app) si sceglie qui: tasto "Copertina" su ogni foto. */
+      var coverId = VV.albumCoverId(VV.getAlbum(albumId));
       grid.innerHTML = photos.map(function (p) {
-        return '<div class="photo-item">' +
+        var isCover = p.id === coverId;
+        return '<div class="photo-item' + (isCover ? ' is-cover' : '') + '">' +
           '<img src="' + esc(p.thumb) + '" alt="' + esc(p.name) + '" loading="lazy" decoding="async">' +
+          (isCover ? '<span class="photo-cover-badge">★ Copertina</span>' : '') +
           '<div class="photo-item-overlay">' +
+            (isCover ? '' : '<button class="photo-cover" data-pid="' + esc(p.id) + '" onclick="AdminActions.setAlbumCover(this.dataset.pid)">Copertina</button>') +
             '<button class="photo-delete" data-pid="' + esc(p.id) + '" onclick="AdminActions.deletePhoto(this.dataset.pid)">Elimina</button>' +
           '</div>' +
         '</div>';
@@ -838,6 +851,7 @@
     }
 
     var input = this;
+    _photoUploading = true;   /* frecce e Copertina ferme finché il caricamento non finisce */
     PhotoDB.addPhotos(_currentAlbumId, files,
       function (done, total) {
         var pct = Math.round(done / total * 100);
@@ -845,6 +859,7 @@
         text.textContent = done + ' / ' + total + ' foto caricate';
       },
       function (count, failed) {
+        _photoUploading = false;
         setTimeout(function () { progress.classList.add('is-hidden'); }, 800);
         loadPhotos(_currentAlbumId);
         input.value = '';
@@ -2197,6 +2212,19 @@
         DB.deletePartita(id, refreshMatchTable);
       });
     },
+    /* Ordine degli album (scelta di Lorenzo, 27/11): sposta di un posto e salva il nuovo `order` degli album che cambiano. */
+    /* Scrive solo il campo `order` (DB.saveAlbumFields), mai le foto. Fermo mentre si caricano foto o un album si sta salvando. */
+    moveAlbum: function (id, delta) {
+      if (_photoUploading || DB.isSaving('saveAlbum')) { A.avviso('Attendi: c’è un salvataggio o un caricamento di foto in corso.'); return; }
+      var album = VV.getAlbum(id);
+      var prima = VV.sortAlbums(VV.getAlbums()).findIndex(function (a) { return a.id === id; }) + 1;
+      var changed = VV.moveAlbum(VV.getAlbums(), id, delta);
+      if (!changed.length || !album) return;
+      var r = DB.saveAlbumFields(changed.map(function (a) { return { id: a.id, fields: { order: a.order } }; }), 'lo spostamento dell’album',
+        { id: id, label: album.title, campo: 'posizione', prima: prima, dopo: prima + delta }, refreshAlbumsGrid);
+      if (r === null) A.avviso('Lo spostamento precedente non è ancora salvato: riprova tra un attimo.');
+      refreshAlbumsGrid();
+    },
     deleteAlbum: function (id) {
       var album = VV.getAlbum(id);
       var ids = album && album.photos ? album.photos.map(function (p) { return p.id; }) : [];
@@ -2208,6 +2236,17 @@
           });
         });
       });
+    },
+    /* Sceglie la foto di copertina dell'album aperto (campo `cover`). */
+    setAlbumCover: function (photoId) {
+      var album = VV.getAlbum(_currentAlbumId);
+      if (!album || !(album.photos || []).some(function (p) { return p.id === photoId; }) || album.cover === photoId) return;
+      if (_photoUploading || DB.isSaving('saveAlbum')) { A.avviso('Attendi: c’è un salvataggio o un caricamento di foto in corso.'); return; }
+      var id = _currentAlbumId;
+      var r = DB.saveAlbumFields([{ id: id, fields: { cover: photoId } }], 'la scelta della copertina',
+        { id: id, label: album.title, campo: 'copertina', prima: album.cover || '', dopo: photoId }, function () { if (_currentAlbumId === id) loadPhotos(id); });
+      if (r === null) A.avviso('La copertina precedente non è ancora salvata: riprova tra un attimo.');
+      loadPhotos(id);
     },
     deletePhoto: function (photoId) {
       var album = VV.getAlbum(_currentAlbumId);

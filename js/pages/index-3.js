@@ -23,9 +23,8 @@
     return out;
   }
   DB.loadOrError(['albums'], 'galleryPreviewGrid', function () {
-    var albums = VV.getAlbums()
-      .filter(function (a) { return a.photos && a.photos.length; })
-      .sort(function (a, b) { return (b.date || '') < (a.date || '') ? -1 : (b.date || '') > (a.date || '') ? 1 : 0; });
+    /* Il primo album nell'ordine scelto in admin (VV.sortAlbums, js/data.js), come la pagina Galleria. */
+    var albums = VV.sortAlbums(VV.getAlbums().filter(function (a) { return a.photos && a.photos.length; }));
     if (!albums.length) { document.getElementById('galleryPreviewGrid').innerHTML = ''; return; }
     var album = albums[0];
     var photos = [];

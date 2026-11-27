@@ -102,13 +102,8 @@
 
   /* ---- Helpers ---- */
   function hasPhotos(a) { return a.photos && a.photos.length; }
-  function sortAlbums(list) {
-    return list.slice().sort(function (a, b) {
-      var da = a.date || '', db = b.date || '';
-      if (da !== db) return da < db ? 1 : -1;
-      return b.id - a.id;
-    });
-  }
+  /* L'ordine scelto in admin (VV.sortAlbums, js/data.js): uguale in Home, admin e app. */
+  function sortAlbums(list) { return VV.sortAlbums(list); }
   function albumHref(a) { return '/galleria/' + encodeURIComponent(VV.getAlbumSlug(a)); }
   function albumMeta(a) {
     return [a.date ? VV.formatDateShort(a.date) : '', (a.photos || []).length + ' foto'].filter(Boolean).join(' · ');

@@ -101,6 +101,8 @@ export type Album = {
   category: string;
   photoCount: number;
   photos: FotoAlbum[];
+  /** Id della foto di copertina scelta in admin (se no la prima). Facoltativo finche' il sito nuovo non e' online. */
+  copertina?: string;
 };
 
 export type Maglia = { enabled: boolean; title: string; subtitle: string; revealDate: string; videoUrl: string };
@@ -144,7 +146,7 @@ export type Pubblico = {
   girone: Girone;
   giocatori: Giocatore[];
   staff: Persona[];
-  /** Gia' ordinati dal piu' recente, solo quelli con foto. */
+  /** Gia' nell'ordine scelto in admin (i nuovi in cima, VVW-43), solo quelli con foto: l'app non li riordina. */
   album: Album[];
   /** Gia' ordinati per "order". */
   sponsor: Sponsor[];

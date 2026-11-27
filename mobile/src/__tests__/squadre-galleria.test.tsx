@@ -1,6 +1,6 @@
 import { fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
 
-import { copertina, dataBreve, didascalia, fotoIntera, giro, infoAlbum, miniatura } from '~/lib/galleria';
+import { copertina, copertinaAlbum, dataBreve, didascalia, fotoIntera, giro, infoAlbum, miniatura } from '~/lib/galleria';
 import { gruppiPerRuolo, iniziali, inStagione, nomeRuolo, ordinaStaff, stagioneCorrente } from '~/lib/squadre';
 
 const persona = (id: number, name: string, role: string, extra: object = {}) => ({
@@ -62,6 +62,13 @@ describe('regole della pagina Galleria', () => {
     expect(copertina('vv/a b')).toBe('https://res.cloudinary.com/plbxnqlc/image/upload/c_fill,g_auto,w_500,h_375,f_auto,q_auto/vv/a%20b');
     expect(miniatura('vv/a')).toContain('/c_fill,g_auto,w_600,h_450,f_auto,q_auto/vv/a');
     expect(fotoIntera('vv/a')).toContain('/c_limit,w_2000,f_auto,q_auto/vv/a');
+  });
+  it("copertina: quella scelta in admin se c'e' ancora nell'album, se no la prima (VV.albumCoverId)", () => {
+    const photos = [{ id: 'vv/a' }, { id: 'vv/b' }];
+    expect(copertinaAlbum({ photos })).toBe('vv/a');
+    expect(copertinaAlbum({ photos, copertina: 'vv/b' })).toBe('vv/b');
+    expect(copertinaAlbum({ photos, copertina: 'vv/cancellata' })).toBe('vv/a');
+    expect(copertinaAlbum({ photos: [], copertina: 'vv/b' })).toBe('');
   });
 
   it('date, didascalia e giro delle foto', () => {

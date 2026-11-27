@@ -134,6 +134,19 @@ function slugAlbum(album, tutti) {
   return doppio ? base + '-' + album.id : base;
 }
 
+/** Come VV.sortAlbums: prima gli album senza `order` (i nuovi), dal più recente; poi quelli ordinati in admin. */
+function ordinaAlbum(lista) {
+  const conOrdine = (a) => typeof a.order === 'number' && Number.isFinite(a.order);
+  return lista.slice().sort((a, b) => {
+    const oa = conOrdine(a), ob = conOrdine(b);
+    if (oa !== ob) return oa ? 1 : -1;
+    if (oa && a.order !== b.order) return a.order - b.order;
+    const da = a.date || '', db = b.date || '';
+    if (da !== db) return da < db ? 1 : -1;
+    return b.id - a.id;
+  });
+}
+
 function chiaveSquadra(nome) {
   return String(nome || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
     .replace(/[^a-z0-9]+/g, ' ').replace(/\b(asd|ssd|srl|arl|ssdarl|a s d|s s d|s r l)\b/g, ' ')
@@ -266,13 +279,15 @@ function componi(d, adesso) {
   const inRosa = (p) => visibili.has(numero(p.categoryId));
 
   const albumGrezzi = oggetti(d.albums);
-  const album = albumGrezzi.map((a) => {
+  const album = ordinaAlbum(albumGrezzi.map((a) => Object.assign({}, a, { id: numero(a.id), order: numero(a.order), date: testo(a.date) }))).map((a) => {
     const photos = oggetti(a.photos).filter((f) => testo(f.id)).map((f) => ({ id: testo(f.id), w: numero(f.w), h: numero(f.h) }));
     return {
       id: numero(a.id), slug: slugAlbum(a, albumGrezzi), title: testo(a.title), date: testo(a.date),
-      category: testo(a.category), photoCount: photos.length, photos
+      category: testo(a.category), photoCount: photos.length, photos,
+      /* Miniatura: la foto scelta in admin se c'è ancora, se no la prima (come VV.albumCoverId). */
+      copertina: photos.some((f) => f.id === testo(a.cover)) ? testo(a.cover) : (photos[0] ? photos[0].id : '')
     };
-  }).filter((a) => a.photos.length).sort((a, b) => (b.date < a.date ? -1 : b.date > a.date ? 1 : b.id - a.id));   /* come galleria-1.js */
+  }).filter((a) => a.photos.length);   /* nell'ordine scelto in admin, come galleria-1.js */
 
   const stagioni = oggetti(d.seasons && d.seasons.items);
   const catArticoli = d.categorieArticoli && Array.isArray(d.categorieArticoli.items) ? testi(d.categorieArticoli.items) : null;
@@ -405,6 +420,6 @@ async function gestisci(req, res) {
 module.exports = {
   gestisci, componi, azzera, CACHE_SECONDI, ERRORE_SECONDI,
   /* esportate per il confronto con js/data.js nei test */
-  slugAlbum, chiaveSquadra, trovaSquadra, girone,
+  slugAlbum, ordinaAlbum, chiaveSquadra, trovaSquadra, girone,
   predefiniti: { STAGIONI_PREDEFINITE, CATEGORIE_ARTICOLI_PREDEFINITE, MAGLIA_PREDEFINITA, LIVELLI_PREDEFINITI }
 };

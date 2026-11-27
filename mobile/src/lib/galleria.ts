@@ -11,6 +11,9 @@ const indirizzo = (trasformazione: string, id: string) =>
   'https://res.cloudinary.com/' + CLOUD + '/image/upload/' + trasformazione + '/' + encodeURI(id);
 
 export const copertina = (id: string) => indirizzo(COPERTINA, id);
+/** Foto di copertina: quella scelta in admin (VV.albumCoverId del sito) se e' ancora nell'album, se no la prima. */
+export const copertinaAlbum = (a: { copertina?: string; photos: { id: string }[] }) =>
+  a.copertina && a.photos.some((f) => f.id === a.copertina) ? a.copertina : (a.photos[0]?.id ?? '');
 export const miniatura = (id: string) => indirizzo(MINIATURA, id);
 export const fotoIntera = (id: string) => indirizzo(INTERA, id);
 

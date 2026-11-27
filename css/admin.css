@@ -712,6 +712,8 @@ button { font-family: var(--font-body); cursor: pointer; }
 .album-title { font-size: 13px; font-weight: 600; color: var(--a-text); margin-bottom: 4px; }
 .album-meta  { font-size: 11px; color: var(--a-muted); }
 .album-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+.album-move { display: inline-flex; gap: 6px; margin-left: auto; margin-right: 6px; }
+.btn-icon:disabled { opacity: .35; cursor: default; pointer-events: none; }
 
 /* Photos view */
 .photos-toolbar {
@@ -767,6 +769,16 @@ button { font-family: var(--font-body); cursor: pointer; }
   transition: opacity var(--a-t);
 }
 .photo-item:hover .photo-item-overlay { opacity: 1; }
+.photo-item-overlay { gap: 8px; }
+.photo-item.is-cover { outline: 3px solid var(--a-blue); outline-offset: -3px; }
+.photo-cover-badge {
+  position: absolute; top: 6px; left: 6px; z-index: 1;
+  background: var(--a-blue); color: #fff; border-radius: 4px; padding: 2px 7px; font-size: 11px; font-weight: 700;
+}
+.photo-cover {
+  background: #fff; color: var(--a-blue); border: none; border-radius: 6px;
+  padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer;
+}
 
 .photo-delete {
   background: var(--a-red);
