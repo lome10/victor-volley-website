@@ -33,8 +33,9 @@ export default function Galleria() {
   const titolo = nonTrovato ? 'Album non trovato' : album ? album.title : 'Galleria';
   const sottotitolo = nonTrovato ? '' : album ? infoAlbum(album) : 'Momenti di gioco, allenamento ed eventi';
 
-  const link = (testo: string, azione: () => void) => (
-    <Text style={styles.link} onPress={azione} accessibilityRole="link">
+  // Le briciole sul sito sono grigie come il resto (.page-header .breadcrumb a); azzurro solo "Vedi tutti".
+  const link = (testo: string, azione: () => void, stile: typeof styles.link | null = styles.link) => (
+    <Text style={stile} onPress={azione} accessibilityRole="link">
       {testo}
     </Text>
   );
@@ -46,11 +47,11 @@ export default function Galleria() {
       refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={() => void refetch()} tintColor={colors.navy} />}>
       <View style={styles.testata}>
         <Text style={styles.briciole}>
-          {link('Home', () => router.dismissTo('/'))}
+          {link('Home', () => router.dismissTo('/'), null)}
           {slug ? (
             <>
               {' / '}
-              {link('Galleria', tuttiGliAlbum)}
+              {link('Galleria', tuttiGliAlbum, null)}
               {album ? ' / ' + album.title : ''}
             </>
           ) : (

@@ -1,7 +1,7 @@
 // Pezzi della pagina Squadre del sito (css/squadre.css): scheda giocatore, staff a nastro, scaffale per ruolo.
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Line } from 'react-native-svg';
 
@@ -94,6 +94,9 @@ export function StrisciaStaff({ staff }: { staff: Persona[] }) {
 /** Un ruolo: titolo e schede. Su telefono, con piu' di due schede, scorre di lato e parte centrato sulla seconda. */
 export function Scaffale({ gruppo, larghezza, telefono }: { gruppo: Gruppo<Giocatore>; larghezza: number; telefono: boolean }) {
   const scorre = telefono && gruppo.persone.length > 2;
+  // Parte centrato sulla seconda scheda come il sito; contentOffset vale solo su iPhone, quindi scrollTo una volta sola.
+  const scaffale = useRef<ScrollView>(null);
+  const centrato = useRef(false);
   const margine = (larghezza - SCHEDA) / 2;
   const colonne = Math.max(1, Math.floor((larghezza + 20) / (SCHEDA + 20)));
   const misura = telefono ? SCHEDA : Math.floor((larghezza - 20 * (colonne - 1)) / colonne);
@@ -106,7 +109,12 @@ export function Scaffale({ gruppo, larghezza, telefono }: { gruppo: Gruppo<Gioca
           showsHorizontalScrollIndicator={false}
           snapToInterval={SCHEDA + SPAZIO_SCORRE}
           decelerationRate="fast"
-          contentOffset={{ x: SCHEDA + SPAZIO_SCORRE, y: 0 }}
+          ref={scaffale}
+          onContentSizeChange={() => {
+            if (centrato.current) return;
+            centrato.current = true;
+            scaffale.current?.scrollTo({ x: SCHEDA + SPAZIO_SCORRE, animated: false });
+          }}
           style={{ marginHorizontal: -24 }}
           contentContainerStyle={{ paddingHorizontal: margine + 24, gap: SPAZIO_SCORRE, paddingVertical: 6 }}>
           {gruppo.persone.map((p, i) => (
@@ -114,7 +122,7 @@ export function Scaffale({ gruppo, larghezza, telefono }: { gruppo: Gruppo<Gioca
           ))}
         </ScrollView>
       ) : (
-        <View style={[styles.griglia, { gap: telefono ? 20 : 20 }]}>
+        <View style={[styles.griglia, { gap: 20 }]}>
           {gruppo.persone.map((p, i) => (
             <SchedaGiocatore key={p.id ?? i} p={p} caldo={gruppo.caldo} larghezza={misura} />
           ))}
