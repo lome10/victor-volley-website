@@ -3,6 +3,8 @@ import * as Clipboard from 'expo-clipboard';
 import { fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
 
 import { RESET_INVIATO, richiediReset } from '~/lib/accesso';
+import { condividiIcs } from '~/lib/condividiIcs';
+import { condividiPdf } from '~/lib/stampaPdf';
 import {
   daFare,
   dataIso,
@@ -24,9 +26,11 @@ import {
 } from '~/lib/atleti';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const { azzera, finto, esci, leggiAvvisi } = require('../../test/firebaseFinto') as typeof import('../../test/firebaseFinto');
+const { azzera, finto, esci, leggiAvvisi, salvaPresenza, salvaPromemoria, cambiaPassword } = require('../../test/firebaseFinto') as typeof import('../../test/firebaseFinto');
 
 jest.mock('expo-clipboard', () => ({ setStringAsync: jest.fn(async () => true) }));
+jest.mock('~/lib/condividiIcs', () => ({ condividiIcs: jest.fn(async () => {}) }));
+jest.mock('~/lib/stampaPdf', () => ({ FinestraBloccata: class extends Error {}, condividiPdf: jest.fn(async () => {}) }));
 
 const ADESSO = new Date(2026, 10, 27, 10, 0); // 27/11/2026
 const tra = (giorni: number, da = new Date()) => dataIso(new Date(da.getFullYear(), da.getMonth(), da.getDate() + giorni));
@@ -254,9 +258,12 @@ describe('pagina Area atleti (Firebase finto)', () => {
     expect(screen.queryByText(/avvisi? non lett/)).toBeNull();
     expect(screen.getByRole('tab', { name: 'Avvisi' })).toBeTruthy();
 
-    // Le sezioni non ancora fatte rimandano al sito.
+    // Documenti: le 4 schede del sito.
     await fireEvent.press(screen.getByRole('tab', { name: 'Documenti' }));
-    expect(screen.getByRole('button', { name: 'Apri l’area atleti del sito' })).toBeTruthy();
+    expect(screen.getByRole('header', { name: 'Certificato Medico' })).toBeTruthy();
+    expect(screen.getByRole('header', { name: 'Quote e Pagamenti' })).toBeTruthy();
+    expect(screen.getByRole('header', { name: 'Ricevute di pagamento' })).toBeTruthy();
+    expect(screen.getByRole('header', { name: 'Modulo di Iscrizione' })).toBeTruthy();
 
     await fireEvent.press(screen.getByRole('button', { name: 'Esci' }));
     expect(esci).toHaveBeenCalled();
@@ -280,5 +287,205 @@ describe('pagina Area atleti (Firebase finto)', () => {
     expect(screen.getByText('Tutto in regola, non c’è niente da fare.')).toBeTruthy();
     await fireEvent.press(screen.getByRole('tab', { name: 'Avvisi' }));
     expect(await screen.findByText('Non è stato possibile caricare gli avvisi. Riprova più tardi.')).toBeTruthy();
+  }, 60000);
+
+  it('Calendario: impegni per giorno, Ci sarò / Non ci sarò (finto), errore che torna indietro, risultati, .ics', async () => {
+    const oggi = new Date();
+    const domani = tra(1, oggi);
+    finto.utente = { uid: 'u-famiglia', email: finto.credenziali.email };
+    finto.schede = { conAccesso: [sara], propria: null, errore: false };
+    const keyAll = 'a-o1-' + tra(2, oggi);
+    finto.presenze = { 'atl-sara': { [keyAll]: 'no' } };
+    const pubblico = {
+      partite: [
+        { id: 'p1', stagione: '2026/2027', categoria: 'Under 13', squadraCasa: 'Victor Volley', squadraOspite: 'Avversaria', data: domani, ora: '18:00', palazzetto: 'Palazzetto ARKÉ', stato: 'programmata', setCasa: null, setOspite: null, sppCode: null },
+        { id: 'v1', stagione: '2026/2027', categoria: 'Under 13', squadraCasa: 'Altra', squadraOspite: 'Victor Volley', data: tra(-7, oggi), ora: '18:00', palazzetto: '', stato: 'conclusa', setCasa: 1, setOspite: 3, sppCode: null },
+      ],
+      articoli: [],
+      sponsor: [],
+      allenamenti: [{ id: 'o1', categoria: 'Under 13', giorno: ((new Date(oggi.getFullYear(), oggi.getMonth(), oggi.getDate() + 2).getDay() + 6) % 7) + 1, oraInizio: '17:00', oraFine: '18:30', luogo: 'Palestra', note: 'Portare le ginocchiere', validoFino: '' }],
+      allenamentiEccezioni: [],
+    };
+    globalThis.fetch = jest.fn(async () => ({ ok: true, status: 200, json: async () => pubblico })) as unknown as typeof fetch;
+
+    await renderRouter('./src/app', { initialUrl: '/area-atleti' });
+    expect(await screen.findByRole('header', { name: 'Sara Prova' })).toBeTruthy();
+    await fireEvent.press(screen.getByRole('tab', { name: 'Calendario' }));
+
+    expect(await screen.findByText('Prossimi impegni')).toBeTruthy();
+    expect(screen.getByRole('header', { name: /^Domani · / })).toBeTruthy();
+    expect(screen.getByText('Victor Volley – Avversaria')).toBeTruthy();
+    expect(screen.getByText('Casa')).toBeTruthy();
+    // L'allenamento settimanale cade 2 volte nei 14 giorni: 3 impegni, 3 righe di risposta.
+    expect(screen.getAllByText('Portare le ginocchiere')).toHaveLength(2);
+    expect(screen.getAllByText('Sara:')).toHaveLength(3);
+
+    // Risposta gia' data al primo allenamento: "Non ci sarò" e' acceso; il secondo e' senza risposta.
+    await waitFor(() => expect(screen.getAllByRole('button', { name: /^Non ci sarò, Allenamento/ })[0].props.accessibilityState).toMatchObject({ selected: true }));
+    expect(screen.getAllByRole('button', { name: /^Non ci sarò, Allenamento/ })[1].props.accessibilityState).toMatchObject({ selected: false });
+
+    // "Ci sarò" alla partita: si vede subito e va al Firebase finto con i dati giusti.
+    await fireEvent.press(screen.getByRole('button', { name: /^Ci sarò, Victor Volley/ }));
+    expect(salvaPresenza).toHaveBeenCalledWith(expect.objectContaining({ key: 'p-p1', tipo: 'partita', eventoId: 'p1', date: domani }), { uid: 'atl-sara', categoria: 'Under 13' }, 'si', 'u-famiglia');
+    expect(screen.getByRole('button', { name: /^Ci sarò, Victor Volley/ }).props.accessibilityState).toMatchObject({ selected: true });
+    expect(finto.presenze['atl-sara']['p-p1']).toBe('si');
+
+    // Stessa risposta: nessun nuovo salvataggio.
+    await fireEvent.press(screen.getByRole('button', { name: /^Ci sarò, Victor Volley/ }));
+    expect(salvaPresenza).toHaveBeenCalledTimes(1);
+
+    // Il salvataggio non riesce: messaggio e la risposta torna "Ci sarò".
+    finto.presenzaFallisce = true;
+    await fireEvent.press(screen.getByRole('button', { name: /^Non ci sarò, Victor Volley/ }));
+    expect(await screen.findByText('Non sono riuscito a salvare la risposta. Riprova.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^Ci sarò, Victor Volley/ }).props.accessibilityState).toMatchObject({ selected: true });
+    expect(screen.getByRole('button', { name: /^Non ci sarò, Victor Volley/ }).props.accessibilityState).toMatchObject({ selected: false });
+
+    // Ultimi risultati: vinta in trasferta 1-3.
+    expect(screen.getByText('Ultimi risultati')).toBeTruthy();
+    expect(screen.getByText('Vinta')).toBeTruthy();
+    expect(screen.getByText('1–3')).toBeTruthy();
+
+    // .ics: tutto il calendario, poi una sola partita.
+    const tasti = screen.getAllByRole('button', { name: 'Aggiungi al calendario' });
+    await fireEvent.press(tasti[0]);
+    const [testo, nome] = (condividiIcs as jest.Mock).mock.calls[0];
+    expect(nome).toBe('victor-volley-under-13.ics');
+    expect(testo).toContain('SUMMARY:Victor Volley – Avversaria');
+    expect(testo).toContain('SUMMARY:Allenamento Under 13');
+    await fireEvent.press(tasti[1]);
+    expect((condividiIcs as jest.Mock).mock.calls[1][0]).not.toContain('Allenamento');
+  }, 60000);
+
+  it('Squadra: staff e giocatori della categoria e della stagione corrente', async () => {
+    finto.utente = { uid: 'u-famiglia', email: finto.credenziali.email };
+    finto.schede = { conAccesso: [sara], propria: null, errore: false };
+    const persona = { photo: '', photoFocus: '', id: null };
+    const pubblico = {
+      partite: [],
+      articoli: [],
+      sponsor: [],
+      stagioni: [
+        { id: '2025/2026', name: '2025/2026', current: false },
+        { id: '2026/2027', name: '2026/2027', current: true },
+      ],
+      categorie: [{ id: 13, name: 'Under 13', abbr: 'U13', color: '', description: '', schedule: '', showInSquadre: true }],
+      staff: [{ ...persona, categoriaId: 13, stagione: '2026/2027', name: 'Anna Allenatrice', role: 'Allenatore', order: 1 }],
+      giocatori: [
+        { ...persona, categoriaId: 13, stagione: '2026/2027', name: 'Bea Bianchi', role: 'Palleggiatore', order: null, number: 7, gender: 'F' },
+        { ...persona, categoriaId: 13, stagione: '2026/2027', name: 'Ada Rossi', role: 'Libero', order: null, number: 3, gender: 'F' },
+        { ...persona, categoriaId: 13, stagione: '2025/2026', name: 'Vecchia Stagione', role: 'Centrale', order: null, number: 1, gender: 'F' },
+        { ...persona, categoriaId: 19, stagione: '2026/2027', name: 'Altra Squadra', role: 'Centrale', order: null, number: 2, gender: 'F' },
+      ],
+    };
+    globalThis.fetch = jest.fn(async () => ({ ok: true, status: 200, json: async () => pubblico })) as unknown as typeof fetch;
+    await renderRouter('./src/app', { initialUrl: '/area-atleti' });
+    expect(await screen.findByRole('header', { name: 'Sara Prova' })).toBeTruthy();
+    await fireEvent.press(screen.getByRole('tab', { name: 'Squadra' }));
+    expect(await screen.findByText('Stagione 2026/2027')).toBeTruthy();
+    expect(screen.getByText('Anna Allenatrice')).toBeTruthy();
+    expect(screen.getByText('Palleggiatrice')).toBeTruthy();
+    // In ordine di numero: Ada (3) prima di Bea (7).
+    const nomi = screen.getAllByText(/^(Ada Rossi|Bea Bianchi)$/).map((t) => t.props.children);
+    expect(nomi).toEqual(['Ada Rossi', 'Bea Bianchi']);
+    expect(screen.queryByText('Vecchia Stagione')).toBeNull();
+    expect(screen.queryByText('Altra Squadra')).toBeNull();
+  }, 60000);
+
+  it('Documenti: certificato, quote con riepilogo PDF, ricevute in PDF (finto), errore del PDF', async () => {
+    finto.utente = { uid: 'u-famiglia', email: finto.credenziali.email };
+    finto.schede = { conAccesso: [{ ...sara, certMedicoScadenza: tra(10), certMedicoUrl: 'https://drive.google.com/file/d/ABC123/view?usp=sharing' }], propria: null, errore: false };
+    finto.rate = {
+      'atl-sara': [
+        { note: '1ª tranche', importo: 150, scadenza: tra(200), scadenzaPagamento: tra(-5), pagata: false },
+        { note: 'Iscrizione', importo: 50, scadenza: tra(200), pagata: true, dataPagamento: tra(-20) },
+      ],
+    };
+    finto.ricevute = {
+      'atl-sara': [
+        { id: 'r1', numero: '1/2026', data: '2026-10-01', progressivo: 1, importo: 50, causale: 'Iscrizione', stato: 'emessa' },
+        { id: 'r2', numero: '2/2026', data: '2026-11-01', progressivo: 2, importo: 150, causale: '1ª tranche', stato: 'annullata' },
+      ],
+    };
+    await renderRouter('./src/app', { initialUrl: '/area-atleti' });
+    expect(await screen.findByRole('header', { name: 'Sara Prova' })).toBeTruthy();
+    await fireEvent.press(screen.getByRole('tab', { name: 'Documenti' }));
+
+    expect(screen.getByText('In scadenza')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Apri PDF' })).toBeTruthy();
+    expect(await screen.findByText('In ritardo')).toBeTruthy();
+    expect(screen.getByText('Pagata')).toBeTruthy();
+    expect(screen.getByText('Saldato: €50.00  ·  Dovuto: €150.00')).toBeTruthy();
+
+    // Ricevute: la piu' recente prima, l'annullata segnata.
+    expect(await screen.findByText('Ricevuta 2/2026')).toBeTruthy();
+    const numeri = screen.getAllByText(/^Ricevuta \d/).map((t) => [].concat(t.props.children).join(''));
+    expect(numeri).toEqual(['Ricevuta 2/2026', 'Ricevuta 1/2026']);
+    expect(screen.getByText('Annullata')).toBeTruthy();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Riepilogo PDF' }));
+    const [html, nome] = (condividiPdf as jest.Mock).mock.calls[0];
+    expect(nome).toBe('Riepilogo quote - Sara Prova.pdf');
+    expect(html).toContain('<h1>Sara Prova</h1>');
+    expect(html).toContain('200,00 €');
+
+    await fireEvent.press(screen.getAllByRole('button', { name: 'Scarica PDF' })[1]);
+    expect((condividiPdf as jest.Mock).mock.calls[1][1]).toBe('Ricevuta 1-2026.pdf');
+    expect((condividiPdf as jest.Mock).mock.calls[1][0]).toContain('RICEVUTA DI PAGAMENTO');
+
+    (condividiPdf as jest.Mock).mockRejectedValueOnce(new Error('niente'));
+    await fireEvent.press(screen.getAllByRole('button', { name: 'Scarica PDF' })[0]);
+    expect(await screen.findByText('Non è stato possibile creare il PDF. Riprova.')).toBeTruthy();
+  }, 60000);
+
+  it('Documenti: quote e ricevute che non si caricano', async () => {
+    finto.utente = { uid: 'u-famiglia', email: finto.credenziali.email };
+    finto.schede = { conAccesso: [sara], propria: null, errore: false };
+    finto.ricevuteErrore = true;
+    await renderRouter('./src/app', { initialUrl: '/area-atleti' });
+    expect(await screen.findByRole('header', { name: 'Sara Prova' })).toBeTruthy();
+    await fireEvent.press(screen.getByRole('tab', { name: 'Documenti' }));
+    expect(await screen.findByText('Non è stato possibile caricare le ricevute. Riprova più tardi.')).toBeTruthy();
+    expect(screen.getByText('Nessuna quota inserita.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Riepilogo PDF' })).toBeNull();
+  }, 60000);
+
+  it('Profilo: promemoria (finto) che torna indietro se non si salva, cambio password con i controlli del sito', async () => {
+    finto.utente = { uid: 'u-famiglia', email: finto.credenziali.email };
+    finto.schede = { conAccesso: [sara], propria: null, errore: false };
+    await renderRouter('./src/app', { initialUrl: '/area-atleti' });
+    expect(await screen.findByRole('header', { name: 'Sara Prova' })).toBeTruthy();
+    await fireEvent.press(screen.getByRole('tab', { name: 'Profilo' }));
+    expect(screen.getByText(finto.credenziali.email)).toBeTruthy();
+
+    const casella = await screen.findByLabelText('Ricevi un’email prima delle scadenze di quote e certificato medico');
+    await waitFor(() => expect(casella.props.value).toBe(true));
+    await fireEvent(casella, 'valueChange', false);
+    expect(salvaPromemoria).toHaveBeenCalledWith('u-famiglia', false);
+    expect(await screen.findByText('Promemoria disattivati: non riceverai più email di scadenza.')).toBeTruthy();
+
+    (salvaPromemoria as jest.Mock).mockRejectedValueOnce(new Error('permesso negato'));
+    await fireEvent(screen.getByLabelText('Ricevi un’email prima delle scadenze di quote e certificato medico'), 'valueChange', true);
+    expect(await screen.findByText('Non è stato possibile salvare la preferenza. Riprova.')).toBeTruthy();
+    expect(screen.getByLabelText('Ricevi un’email prima delle scadenze di quote e certificato medico').props.value).toBe(false);
+
+    const scrivi = async (a: string, n: string, c: string) => {
+      await fireEvent.changeText(screen.getByLabelText('Password attuale'), a);
+      await fireEvent.changeText(screen.getByLabelText('Nuova password'), n);
+      await fireEvent.changeText(screen.getByLabelText('Conferma nuova password'), c);
+      await fireEvent.press(screen.getByRole('button', { name: 'Salva password' }));
+    };
+    await scrivi('vecchia-vecchia', 'corta', 'corta');
+    expect(screen.getByText('La nuova password deve avere almeno 10 caratteri.')).toBeTruthy();
+    await scrivi('vecchia-vecchia', 'nuova-nuova-1', 'nuova-nuova-2');
+    expect(screen.getByText('Le due password non coincidono.')).toBeTruthy();
+    await scrivi('stessa-stessa', 'stessa-stessa', 'stessa-stessa');
+    expect(screen.getByText('La nuova password deve essere diversa da quella attuale.')).toBeTruthy();
+    expect(cambiaPassword).not.toHaveBeenCalled();
+
+    await scrivi('vecchia-vecchia', 'nuova-nuova-1', 'nuova-nuova-1');
+    expect(cambiaPassword).toHaveBeenCalledWith('vecchia-vecchia', 'nuova-nuova-1');
+    expect(await screen.findByText('Password aggiornata.')).toBeTruthy();
+    expect(screen.getByLabelText('Nuova password').props.value).toBe('');
   }, 60000);
 });

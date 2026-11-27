@@ -7,6 +7,8 @@ export type Atleta = {
   cognome?: string;
   categoria?: string;
   certMedicoScadenza?: string;
+  /** Link Drive del certificato (bottone "Apri PDF"). */
+  certMedicoUrl?: string;
   moduloIscrizioneUrl?: string;
   accessUids?: string[];
 };

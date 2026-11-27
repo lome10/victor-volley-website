@@ -3,14 +3,23 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Image, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AvvisiAtleta } from '~/components/atleti/AvvisiAtleta';
+import { CalendarioAtleta, type Risposta } from '~/components/atleti/CalendarioAtleta';
+import { DocumentiAtleta } from '~/components/atleti/DocumentiAtleta';
 import { HomeAtleta, type Vista } from '~/components/atleti/HomeAtleta';
-import { Icona, Scheda, TastoLeggero, al, stili as base } from '~/components/atleti/Pezzi';
+import { ProfiloAtleta } from '~/components/atleti/ProfiloAtleta';
+import { SquadraAtleta } from '~/components/atleti/SquadraAtleta';
+import { Icona, al, stili as base } from '~/components/atleti/Pezzi';
 import { leggiUltimaLettura, salvaUltimaLettura } from '~/lib/accesso';
-import { agenda, daConfermare, prossimoImpegno } from '~/lib/agenda';
+import { agenda, daConfermare, icsAtleta, nomeFileIcsAtleta, prossimoImpegno, ultimiRisultati, type Impegno } from '~/lib/agenda';
+import { condividiIcs } from '~/lib/condividiIcs';
+import { htmlRiepilogoQuote, nomeFileRiepilogo, ordinaRicevute } from '~/lib/documentiAtleta';
+import { htmlRicevuta, titoloRicevuta, type Ricevuta } from '~/lib/ricevutaDoc';
+import { FinestraBloccata, condividiPdf } from '~/lib/stampaPdf';
+import { rosaAtleta } from '~/lib/squadraAtleta';
 import {
   categorieAvvisi,
   daFare,
@@ -25,8 +34,20 @@ import {
   testoBadge,
   unisciSchede,
 } from '~/lib/atleti';
-import { SITO, usePubblico } from '~/lib/dati';
-import { esci, leggiAvvisi, leggiPresenze, leggiRate, leggiSchede, type Utente } from '~/lib/firebase';
+import { usePubblico } from '~/lib/dati';
+import {
+  cambiaPassword,
+  esci,
+  leggiAvvisi,
+  leggiPresenze,
+  leggiPromemoria,
+  leggiRate,
+  leggiRicevute,
+  leggiSchede,
+  salvaPresenza,
+  salvaPromemoria,
+  type Utente,
+} from '~/lib/firebase';
 import { fonts } from '~/lib/theme';
 
 const SEZIONI: { vista: Vista; nome: string }[] = [
@@ -39,7 +60,7 @@ const SEZIONI: { vista: Vista; nome: string }[] = [
 ];
 
 /** Le chiavi dei dati riservati: all'uscita si cancellano tutte. */
-export const CHIAVI_RISERVATE = ['atleti', 'avvisi', 'rate', 'presenze'];
+export const CHIAVI_RISERVATE = ['atleti', 'avvisi', 'rate', 'presenze', 'ricevute', 'promemoria'];
 
 export function Cruscotto({ utente }: { utente: Utente }) {
   const qc = useQueryClient();
@@ -70,6 +91,15 @@ export function Cruscotto({ utente }: { utente: Utente }) {
     queryFn: () => leggiPresenze(atletaId),
     enabled: !!atletaId,
   });
+
+  const ricevute = useQuery({
+    queryKey: ['ricevute', atletaId],
+    queryFn: async () => ordinaRicevute(await leggiRicevute(atletaId)),
+    enabled: !!atletaId,
+  });
+
+  // Preferenza dell'account (non dell'atleta): promemoria via email attivi se manca il documento.
+  const promemoria = useQuery({ queryKey: ['promemoria', utente.uid], queryFn: () => leggiPromemoria(utente.uid) });
 
   // Partite e allenamenti della squadra: dati pubblici (/api/app-pubblico), non Firestore.
   const pubblico = usePubblico();
@@ -109,6 +139,50 @@ export function Cruscotto({ utente }: { utente: Utente }) {
     };
   }, [vista, datiAvvisi, letti, atletaId, utente.uid]);
 
+  // "Ci sarò / Non ci sarò" (_setPresenza): la risposta si vede subito; se il salvataggio non riesce torna com'era.
+  const [messaggioCal, setMessaggioCal] = useState('');
+  const rispondi = (ev: Impegno, r: Risposta) => {
+    if (!atleta) return;
+    const chiave = ['presenze', atletaId];
+    const prima = qc.getQueryData<Record<string, Risposta>>(chiave) ?? {};
+    if (prima[ev.key] === r) return;
+    setMessaggioCal('');
+    qc.setQueryData(chiave, { ...prima, [ev.key]: r });
+    salvaPresenza(ev, { uid: atleta.uid, categoria: atleta.categoria }, r, utente.uid).catch(() => {
+      qc.setQueryData<Record<string, Risposta>>(chiave, (ora) => {
+        const dopo = { ...(ora ?? {}) };
+        if (prima[ev.key]) dopo[ev.key] = prima[ev.key];
+        else delete dopo[ev.key];
+        return dopo;
+      });
+      setMessaggioCal('Non sono riuscito a salvare la risposta. Riprova.');
+    });
+  };
+  const aggiungi = (soloPartita?: string) => {
+    if (!atleta?.categoria || !datiPubblici) return;
+    condividiIcs(
+      icsAtleta(atleta.categoria, datiPubblici.partite, datiPubblici.allenamenti ?? [], new Date(), soloPartita),
+      nomeFileIcsAtleta(atleta.categoria),
+    ).catch(() => setMessaggioCal('Non è stato possibile aprire il calendario del telefono.'));
+  };
+
+  // PDF del riepilogo quote e delle ricevute (sul telefono: "Condividi"; sul web: la stampa, come il sito).
+  const [msgRate, setMsgRate] = useState('');
+  const [msgRicevute, setMsgRicevute] = useState('');
+  const errorePdf = (e: unknown) =>
+    e instanceof FinestraBloccata
+      ? 'Il browser ha bloccato la finestra del PDF. Consenti i popup per questo sito e riprova.'
+      : 'Non è stato possibile creare il PDF. Riprova.';
+  const riepilogoPdf = () => {
+    if (!atleta || !rate.data?.length) return;
+    setMsgRate('');
+    condividiPdf(htmlRiepilogoQuote(atleta, rate.data, new Date()), nomeFileRiepilogo(atleta)).catch((e) => setMsgRate(errorePdf(e)));
+  };
+  const ricevutaPdf = (r: Ricevuta) => {
+    setMsgRicevute('');
+    condividiPdf(htmlRicevuta(r, new Date()), titoloRicevuta(r) + '.pdf').catch((e) => setMsgRicevute(errorePdf(e)));
+  };
+
   const apri = (v: Vista) => {
     if (v === 'avvisi') setPrima(letti?.id === atletaId ? letti.valore : '');
     setVista(v);
@@ -118,6 +192,9 @@ export function Cruscotto({ utente }: { utente: Utente }) {
     if (id === atletaId) return;
     setScelto(id);
     setLetti(null);
+    setMessaggioCal('');
+    setMsgRate('');
+    setMsgRicevute('');
   };
 
   const fuori = async () => {
@@ -131,6 +208,7 @@ export function Cruscotto({ utente }: { utente: Utente }) {
       void avvisi.refetch();
       void rate.refetch();
       void presenze.refetch();
+      void ricevute.refetch();
     }
     void pubblico.refetch();
   };
@@ -186,15 +264,42 @@ export function Cruscotto({ utente }: { utente: Utente }) {
             adesso={adesso}
             vai={apri}
           />
+        ) : vista === 'calendario' ? (
+          <CalendarioAtleta
+            atleta={atleta}
+            impegni={impegni}
+            risposte={presenze.data ?? {}}
+            errore={messaggioCal}
+            risultati={datiPubblici ? ultimiRisultati(atleta.categoria, datiPubblici.partite) : []}
+            adesso={adesso}
+            rispondi={rispondi}
+            aggiungiTutto={() => aggiungi()}
+            aggiungiPartita={(id) => aggiungi(id)}
+          />
+        ) : vista === 'squadra' ? (
+          <SquadraAtleta rosa={datiPubblici ? rosaAtleta(atleta.categoria, datiPubblici) : null} caricamento={!datiPubblici} />
+        ) : vista === 'documenti' ? (
+          <DocumentiAtleta
+            atleta={atleta}
+            rate={rate.data ?? []}
+            rateErrore={rate.isError}
+            ricevute={ricevute.data ?? []}
+            ricevuteErrore={ricevute.isError}
+            msgRate={msgRate}
+            msgRicevute={msgRicevute}
+            adesso={adesso}
+            riepilogoPdf={riepilogoPdf}
+            ricevutaPdf={ricevutaPdf}
+          />
         ) : vista === 'avvisi' ? (
           <AvvisiAtleta avvisi={avvisi.isError ? [] : datiAvvisi} errore={avvisi.isError} primaDiAprire={primaDiAprire} adesso={adesso} />
         ) : (
-          <Scheda>
-            <View style={[base.corpo, stili.inArrivo]}>
-              <Text style={base.spento}>Questa sezione arriva presto nell’app. Intanto la trovi nell’area atleti del sito.</Text>
-              <TastoLeggero testo="Apri l’area atleti del sito" onPress={() => void Linking.openURL(SITO + '/atleta')} />
-            </View>
-          </Scheda>
+          <ProfiloAtleta
+            email={utente.email ?? ''}
+            promemoria={promemoria.isSuccess ? promemoria.data : promemoria.isError ? true : null}
+            salvaPromemoria={(v) => salvaPromemoria(utente.uid, v)}
+            cambiaPassword={cambiaPassword}
+          />
         )}
       </View>
     );
@@ -302,7 +407,6 @@ const stili = StyleSheet.create({
   nome: { fontFamily: fonts.titolo, fontSize: 20, lineHeight: 23, color: al.testo },
   chip: { alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 3, borderRadius: 20, backgroundColor: '#EFF6FF' },
   chipTesto: { fontFamily: fonts.corpoMedio, fontSize: 12, color: al.bluScuro },
-  inArrivo: { gap: 14 },
   barra: {
     position: 'absolute',
     left: 0,

@@ -23,8 +23,8 @@ type Props = {
   vai: (v: Vista) => void;
 };
 
-/** "Pagamenti: coordinate per il bonifico", sempre in cima alla Home. */
-function Bonifico() {
+/** "Copia IBAN" (js-iban-copy): per 2,5 secondi dice se la copia e' riuscita. */
+export function TastoCopiaIban({ largo }: { largo?: boolean }) {
   const [stato, setStato] = useState<'' | 'ok' | 'no'>('');
   const tempo = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => {
@@ -36,6 +36,17 @@ function Bonifico() {
     if (tempo.current) clearTimeout(tempo.current);
     tempo.current = setTimeout(() => setStato(''), 2500);
   };
+  return (
+    <TastoLeggero
+      largo={largo}
+      testo={stato === 'ok' ? 'IBAN copiato' : stato === 'no' ? 'Selezionalo e copialo a mano' : 'Copia IBAN'}
+      onPress={() => void copia()}
+    />
+  );
+}
+
+/** "Pagamenti: coordinate per il bonifico", sempre in cima alla Home. */
+function Bonifico() {
   return (
     <Scheda style={base.fissato}>
       <View style={base.corpo}>
@@ -53,11 +64,7 @@ function Bonifico() {
           <Text style={[stili.valore, stili.iban]} selectable>
             {IBAN_LEGGIBILE}
           </Text>
-          <TastoLeggero
-            largo
-            testo={stato === 'ok' ? 'IBAN copiato' : stato === 'no' ? 'Selezionalo e copialo a mano' : 'Copia IBAN'}
-            onPress={() => void copia()}
-          />
+          <TastoCopiaIban largo />
         </View>
         <Text style={stili.testo}>
           <Text style={stili.forte}>Causale.</Text> Scrivi sempre il nome e cognome dell’atleta e la tranche che stai pagando (1ª, 2ª o 3ª).

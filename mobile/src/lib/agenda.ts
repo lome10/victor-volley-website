@@ -123,3 +123,141 @@ export function prossimoImpegno(categoria: string | undefined, impegni: Impegno[
     sotto: (p.tipo === 'partita' ? p.title : 'Allenamento') + (p.luogo ? ' — ' + p.luogo : ''),
   };
 }
+
+/** "Oggi · Venerdì 27 novembre", "Domani · …" o solo il giorno (_dayLabel). */
+export function etichettaGiorno(iso: string, adesso: Date) {
+  const oggi = dataIso(adesso);
+  const t = giornoEsteso(iso);
+  return iso === oggi ? 'Oggi · ' + t : iso === piuGiorni(oggi, 1) ? 'Domani · ' + t : t;
+}
+
+/** Impegni divisi per giorno, nell'ordine dell'agenda. */
+export function perGiorno(impegni: Impegno[]) {
+  const giorni: { data: string; impegni: Impegno[] }[] = [];
+  for (const ev of impegni) {
+    const ultimo = giorni[giorni.length - 1];
+    if (ultimo && ultimo.data === ev.date) ultimo.impegni.push(ev);
+    else giorni.push({ data: ev.date, impegni: [ev] });
+  }
+  return giorni;
+}
+
+/** Link a Google Maps per il luogo (_mapsLink). */
+export const linkMappa = (luogo: string) => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(luogo);
+
+/** "27/11/2026" (_fmtDate). */
+const dataCorta = (iso: string) => {
+  const [a, m, g] = iso.split('-');
+  return g + '/' + m + '/' + a;
+};
+
+/** Ultime 3 partite concluse della squadra, con il risultato (card "Ultimi risultati"). */
+export function ultimiRisultati(categoria: string | undefined, partite: Partita[]) {
+  if (!categoria) return [];
+  return partite
+    .filter((p) => p.categoria === categoria && p.stato === 'conclusa' && p.setCasa != null && p.setOspite != null)
+    .sort((x, y) => y.data.localeCompare(x.data))
+    .slice(0, 3)
+    .map((p) => {
+      const casa = /victor/i.test(p.squadraCasa || '');
+      const vinta = casa ? Number(p.setCasa) > Number(p.setOspite) : Number(p.setOspite) > Number(p.setCasa);
+      return {
+        id: p.id,
+        vinta,
+        partita: p.squadraCasa + ' – ' + p.squadraOspite,
+        risultato: p.setCasa + '–' + p.setOspite,
+        data: dataCorta(p.data),
+      };
+    });
+}
+
+// ---------- file .ics (_buildIcs del sito) ----------
+
+const due = (n: number) => (n < 10 ? '0' : '') + n;
+const icsTesto = (s: string) =>
+  String(s || '')
+    .replace(/\\/g, '\\\\')
+    .replace(/;/g, '\\;')
+    .replace(/,/g, '\\,')
+    .replace(/\r?\n/g, '\\n');
+function icsPiega(riga: string) {
+  const out: string[] = [];
+  while (riga.length > 73) {
+    out.push(riga.slice(0, 73));
+    riga = ' ' + riga.slice(73);
+  }
+  out.push(riga);
+  return out.join('\r\n');
+}
+/** Orari "floating" (senza fuso): il telefono li legge all'ora locale, cioe' quella italiana. */
+const icsData = (iso: string, ora: string) => iso.replace(/-/g, '') + 'T' + (ora || '00:00').replace(':', '') + '00';
+function icsPiuMinuti(iso: string, ora: string, minuti: number) {
+  const [a, m, g] = iso.split('-').map(Number);
+  const [h, mi] = (ora || '00:00').split(':').map(Number);
+  const d = new Date(a, m - 1, g, h, mi + minuti);
+  return icsData(dataIso(d), due(d.getHours()) + ':' + due(d.getMinutes()));
+}
+
+/** Calendario della squadra: partite future e allenamenti settimanali; con soloPartita una sola partita. */
+export function icsAtleta(categoria: string, partite: Partita[], orari: Orario[], adesso: Date, soloPartita?: string) {
+  const timbro = adesso.toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
+  const oggi = dataIso(adesso);
+  const righe = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Victor Volley//Area Atleti//IT', 'CALSCALE:GREGORIAN', 'X-WR-CALNAME:' + icsTesto('Victor Volley — ' + categoria)];
+  partite
+    .filter((p) => p.categoria === categoria && p.stato !== 'conclusa' && p.data >= oggi && (soloPartita == null || String(p.id) === String(soloPartita)))
+    .forEach((p) => {
+      const ora = p.ora || '00:00';
+      righe.push(
+        'BEGIN:VEVENT',
+        'UID:partita-' + p.id + '@victorvolley',
+        'DTSTAMP:' + timbro,
+        'DTSTART:' + icsData(p.data, ora),
+        'DTEND:' + icsPiuMinuti(p.data, ora, 120),
+        'SUMMARY:' + icsTesto((p.squadraCasa || '') + ' – ' + (p.squadraOspite || '')),
+        'LOCATION:' + icsTesto(p.palazzetto || ''),
+        'DESCRIPTION:' + icsTesto('Partita ' + categoria + (/victor/i.test(p.squadraCasa || '') ? ' (in casa)' : ' (in trasferta)')),
+        'END:VEVENT',
+      );
+    });
+  if (soloPartita == null) {
+    orari
+      .filter((t) => t.categoria === categoria)
+      .forEach((t) => {
+        let primo: string | null = null;
+        for (let i = 0; i < 7; i++) {
+          const g = piuGiorni(oggi, i);
+          if (giornoSettimana(g) === Number(t.giorno)) {
+            primo = g;
+            break;
+          }
+        }
+        if (!primo || (t.validoFino && primo > t.validoFino)) return;
+        const fine = t.oraFine ? icsData(primo, t.oraFine) : icsPiuMinuti(primo, t.oraInizio, 90);
+        righe.push(
+          'BEGIN:VEVENT',
+          'UID:allenamento-' + t.id + '@victorvolley',
+          'DTSTAMP:' + timbro,
+          'DTSTART:' + icsData(primo, t.oraInizio),
+          'DTEND:' + fine,
+          'RRULE:FREQ=WEEKLY;' + (t.validoFino ? 'UNTIL=' + t.validoFino.replace(/-/g, '') + 'T235959' : 'COUNT=52'),
+          'SUMMARY:' + icsTesto('Allenamento ' + categoria),
+          'LOCATION:' + icsTesto(t.luogo || ''),
+          'DESCRIPTION:' + icsTesto(t.note || ''),
+          'END:VEVENT',
+        );
+      });
+  }
+  righe.push('END:VCALENDAR');
+  return righe.map(icsPiega).join('\r\n') + '\r\n';
+}
+
+/** "victor-volley-under-13.ics". */
+export function nomeFileIcsAtleta(categoria: string) {
+  const s = (categoria || 'calendario')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+  return 'victor-volley-' + s + '.ics';
+}

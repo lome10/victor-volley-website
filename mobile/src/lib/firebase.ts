@@ -22,6 +22,7 @@ import { collection, doc, getDoc, getDocs, getFirestore, query, setDoc, where } 
 import { Platform } from 'react-native';
 
 import type { Atleta, Avviso, RataGrezza } from '~/lib/atleti';
+import type { Ricevuta } from '~/lib/ricevutaDoc';
 
 /** Configurazione pubblica di js/firebase-config.js (la chiave web di Firebase non e' un segreto: la proteggono le regole). */
 const CONFIG = {
@@ -100,6 +101,12 @@ export async function leggiAvvisi(categorie: string[]): Promise<Avviso[]> {
 export async function leggiRate(atletaId: string): Promise<RataGrezza[]> {
   const snap = await getDocs(query(collection(db(), 'rateAtleti'), where('atletaId', '==', atletaId)));
   return snap.docs.map((d) => d.data() as RataGrezza);
+}
+
+/** Ricevute dei pagamenti dell'atleta, emesse dai dirigenti: qui solo lettura (_loadRicevute). */
+export async function leggiRicevute(atletaId: string): Promise<Ricevuta[]> {
+  const snap = await getDocs(query(collection(db(), 'ricevute'), where('atletaId', '==', atletaId)));
+  return snap.docs.map((d) => ({ ...(d.data() as Omit<Ricevuta, 'id'>), id: d.id }));
 }
 
 /** Risposte "ci sarò / non ci sarò" dell'atleta: eventKey -> 'si' | 'no'. */
