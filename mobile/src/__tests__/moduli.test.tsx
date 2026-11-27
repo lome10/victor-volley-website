@@ -97,3 +97,18 @@ describe('pagina Partner', () => {
     expect(invio).toHaveBeenCalledWith(expect.objectContaining({ subject: 'Richiesta informazioni: Ada Lo', categoria: 'Minivolley' }));
   }, 60000);
 });
+
+describe('pagina Contatti', () => {
+  it('recapiti, social, bottone per Unisciti e modulo', async () => {
+    await renderRouter('./src/app', { initialUrl: '/contatti' });
+    expect(screen.getByRole('header', { name: 'Contatti' })).toBeTruthy();
+    expect(screen.getByText('Palazzetto ARKÉ')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Instagram' })).toBeTruthy();
+    expect(screen.getByRole('header', { name: 'Dove siamo' })).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Invia' }));
+    expect(screen.getAllByText('Campo obbligatorio.')).toHaveLength(4);
+    expect(invio).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByRole('button', { name: 'Vieni a giocare con noi' }));
+    expect(screen).toHavePathname('/unisciti-a-noi');
+  }, 60000);
+});
