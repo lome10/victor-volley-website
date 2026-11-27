@@ -135,8 +135,7 @@ describe('Chiedi a Victor a schermo', () => {
   ])('non c\'e\' in %s', async (href, titolo) => {
     await renderRouter('./src/app', { initialUrl: href });
     expect(screen.getByRole('header', { name: titolo })).toBeTruthy();
-    // Aspetta che i dati del tasto siano arrivati: nelle altre pagine a questo punto il tasto c'e'.
-    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledWith(expect.stringContaining('chatbot.json')));
-    expect(screen.queryByLabelText("Apri l'assistente Victor")).toBeNull();
+    // Il tasto non deve comparire nemmeno dopo che i suoi dati sono arrivati (nelle altre pagine compare subito).
+    await expect(screen.findByLabelText("Apri l'assistente Victor", {}, { timeout: 1500 })).rejects.toThrow();
   }, 60000);
 });
