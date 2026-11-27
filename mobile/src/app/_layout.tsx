@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
 import { BarraAlta } from '~/components/BarraAlta';
+import { AvvisoDiretta } from '~/components/AvvisoDiretta';
 import { MenuLaterale } from '~/components/MenuLaterale';
 import { creaClient, seguiPrimoPiano } from '~/lib/dati';
 import { colors } from '~/lib/theme';
@@ -24,6 +25,7 @@ export default function RootLayout() {
       <StatusBar style="light" />
       <BarraAlta apriMenu={() => setMenuAperto(true)} />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.notte } }} />
+      <AvvisoDiretta />
       <MenuLaterale aperto={menuAperto} chiudi={() => setMenuAperto(false)} />
     </View>
     </QueryClientProvider>
