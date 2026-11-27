@@ -110,16 +110,12 @@ export async function leggiRicevute(atletaId: string): Promise<Ricevuta[]> {
 }
 
 /**
- * Chi e' l'account nell'area dirigenti (_checkRole di js/admin.js): prima `dirigenti/{uid}`, poi `allenatori/{uid}`.
- * Come il sito, un errore di lettura vale "nessuno" (accesso negato). Sola lettura.
+ * Chi e' l'account nell'area dirigenti (_checkRole di js/admin.js): e' in `dirigenti/{uid}`? e in `allenatori/{uid}`?
+ * Un errore di lettura (rete assente) NON vale "nessuno": la promessa fallisce e la pagina dice di riprovare. Sola lettura.
  */
-export async function ruoloAccount(uid: string): Promise<'dirigente' | 'allenatore' | 'nessuno'> {
-  try {
-    if ((await getDoc(doc(db(), 'dirigenti', uid))).exists()) return 'dirigente';
-    return (await getDoc(doc(db(), 'allenatori', uid))).exists() ? 'allenatore' : 'nessuno';
-  } catch {
-    return 'nessuno';
-  }
+export async function ruoloAccount(uid: string): Promise<{ dirigente: boolean; allenatore: boolean }> {
+  const [dirigente, allenatore] = await Promise.all([getDoc(doc(db(), 'dirigenti', uid)), getDoc(doc(db(), 'allenatori', uid))]);
+  return { dirigente: dirigente.exists(), allenatore: allenatore.exists() };
 }
 
 /** ID token dell'utente collegato, per le funzioni del server (/api/allenatore-*); null se non c'e' nessuno. */

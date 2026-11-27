@@ -19,6 +19,7 @@ import { condividiIcs } from '~/lib/condividiIcs';
 import { htmlRiepilogoQuote, nomeFileRiepilogo, ordinaRicevute } from '~/lib/documentiAtleta';
 import { htmlRicevuta, titoloRicevuta, type Ricevuta } from '~/lib/ricevutaDoc';
 import { FinestraBloccata, condividiPdf } from '~/lib/stampaPdf';
+import { esciEPulisci } from '~/lib/uscita';
 import { rosaAtleta } from '~/lib/squadraAtleta';
 import {
   categorieAvvisi,
@@ -37,7 +38,6 @@ import {
 import { usePubblico } from '~/lib/dati';
 import {
   cambiaPassword,
-  esci,
   leggiAvvisi,
   leggiPresenze,
   leggiPromemoria,
@@ -60,8 +60,7 @@ const SEZIONI: { vista: Vista; nome: string }[] = [
 ];
 
 /** Le chiavi dei dati riservati: all'uscita si cancellano tutte. */
-// 'allenatore' e 'ruolo' = area allenatore (telefoni dei genitori): stesso account Firebase, si cancellano da entrambe le uscite.
-export const CHIAVI_RISERVATE = ['atleti', 'avvisi', 'rate', 'presenze', 'ricevute', 'promemoria', 'allenatore', 'ruolo'];
+export { CHIAVI_RISERVATE } from '~/lib/uscita';
 
 export function Cruscotto({ utente }: { utente: Utente }) {
   const qc = useQueryClient();
@@ -198,10 +197,7 @@ export function Cruscotto({ utente }: { utente: Utente }) {
     setMsgRicevute('');
   };
 
-  const fuori = async () => {
-    await esci();
-    for (const k of CHIAVI_RISERVATE) qc.removeQueries({ queryKey: [k] });
-  };
+  const fuori = () => esciEPulisci(qc);
 
   const aggiorna = () => {
     void schede.refetch();

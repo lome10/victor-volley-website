@@ -278,7 +278,7 @@ describe('revisione di Anselmo (A-D)', () => {
     expect(await screen.findByText('Bianchi Anna', {}, { timeout: 10000 })).toBeTruthy();
   }, 60000);
 
-  it('B) dirigente che e' anche allenatore: tasto "Area allenatore" (solo a lui), come /allenatore sul sito', async () => {
+  it('B) dirigente che è anche allenatore: tasto "Area allenatore" (solo a lui), come /allenatore sul sito', async () => {
     sitoFinto();
     finto.ruolo = 'entrambi';
     await renderRouter('./src/app', { initialUrl: '/area-dirigenti' });
@@ -295,7 +295,7 @@ describe('revisione di Anselmo (A-D)', () => {
     expect(screen.queryByRole('button', { name: 'Area allenatore' })).toBeNull();
   }, 60000);
 
-  it('C) se l'uscita da Firebase fallisce, i dati riservati sono gia' cancellati', async () => {
+  it('C) se l’uscita da Firebase fallisce, i dati riservati sono già cancellati', async () => {
     const qc = new QueryClient();
     qc.setQueryData(['allenatore', 'atleti', 'u-mister'], ATLETI);
     qc.setQueryData(['atleti', 'u-famiglia'], []);

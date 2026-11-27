@@ -10,7 +10,6 @@ import { AtletiAllenatore } from '~/components/allenatore/AtletiAllenatore';
 import { Pillole, scuro, st } from '~/components/allenatore/Pezzi';
 import { PresenzeAllenatore } from '~/components/allenatore/PresenzeAllenatore';
 import { StatAllenatore } from '~/components/allenatore/StatAllenatore';
-import { CHIAVI_RISERVATE } from '~/components/atleti/Cruscotto';
 import { al, Icona } from '~/components/atleti/Pezzi';
 import {
   AccessoNegato,
@@ -25,8 +24,9 @@ import {
   type Ordine,
   type StatoPresenza,
 } from '~/lib/allenatore';
-import { esci, type Utente } from '~/lib/firebase';
+import { type Utente } from '~/lib/firebase';
 import { fonts } from '~/lib/theme';
+import { esciEPulisci } from '~/lib/uscita';
 
 type Vista = 'atleti' | 'presenze' | 'stat';
 const SEZIONI: [Vista, string, string][] = [
@@ -58,10 +58,7 @@ export function AreaAllenatore({ utente }: { utente: Utente }) {
     staleTime: Infinity,
   });
 
-  const fuori = async () => {
-    await esci();
-    for (const k of CHIAVI_RISERVATE) qc.removeQueries({ queryKey: [k] });
-  };
+  const fuori = () => esciEPulisci(qc);
 
   // 401 = la sessione non vale piu': si esce, come il sito (signOut + ricarica).
   const scaduta = atleti.error instanceof SessioneScaduta || presenze.error instanceof SessioneScaduta;
@@ -198,7 +195,18 @@ export function AreaAllenatore({ utente }: { utente: Utente }) {
 }
 
 /** #deniedScreen di allenatore.html: account senza accesso da allenatore (o accesso tolto). */
-export function Negato({ fuori, titolo = 'Accesso non abilitato', testo }: { fuori: () => void; titolo?: string; testo?: string }) {
+/** `altro`: un tasto in piu' sopra Esci (Riprova, Area allenatore). */
+export function Negato({
+  fuori,
+  titolo = 'Accesso non abilitato',
+  testo,
+  altro,
+}: {
+  fuori: () => void;
+  titolo?: string;
+  testo?: string;
+  altro?: { testo: string; onPress: () => void };
+}) {
   return (
     <LinearGradient colors={al.notte} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.negato}>
       <View style={s.negatoBox}>
@@ -207,7 +215,12 @@ export function Negato({ fuori, titolo = 'Accesso non abilitato', testo }: { fuo
           {titolo}
         </Text>
         <Text style={s.negatoTesto}>{testo ?? 'Questo account non è abilitato come allenatore.\nChiedi alla segreteria di attivarlo.'}</Text>
-        <Pressable style={({ pressed }) => [s.negatoTasto, pressed && { opacity: 0.85 }]} onPress={fuori} accessibilityRole="button">
+        {altro ? (
+          <Pressable style={({ pressed }) => [s.negatoTasto, pressed && { opacity: 0.85 }]} onPress={altro.onPress} accessibilityRole="button">
+            <Text style={s.negatoTastoTesto}>{altro.testo}</Text>
+          </Pressable>
+        ) : null}
+        <Pressable style={({ pressed }) => [altro ? s.negatoTastoLeggero : s.negatoTasto, pressed && { opacity: 0.85 }]} onPress={fuori} accessibilityRole="button">
           <Text style={s.negatoTastoTesto}>Esci</Text>
         </Pressable>
       </View>
@@ -247,5 +260,6 @@ const s = StyleSheet.create({
   negatoTitolo: { fontFamily: fonts.titolo, fontSize: 22, color: '#fff', textAlign: 'center' },
   negatoTesto: { fontFamily: fonts.corpo, fontSize: 14, lineHeight: 20, color: 'rgba(255,255,255,0.75)', textAlign: 'center' },
   negatoTasto: { marginTop: 8, alignSelf: 'stretch', minHeight: 46, alignItems: 'center', justifyContent: 'center', borderRadius: 10, backgroundColor: al.blu },
+  negatoTastoLeggero: { alignSelf: 'stretch', minHeight: 46, alignItems: 'center', justifyContent: 'center', borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
   negatoTastoTesto: { fontFamily: fonts.corpoForte, fontSize: 15, color: '#fff' },
 });
