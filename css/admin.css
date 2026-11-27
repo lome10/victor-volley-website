@@ -712,6 +712,8 @@ button { font-family: var(--font-body); cursor: pointer; }
 .album-title { font-size: 13px; font-weight: 600; color: var(--a-text); margin-bottom: 4px; }
 .album-meta  { font-size: 11px; color: var(--a-muted); }
 .album-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+.album-move { display: inline-flex; gap: 6px; margin-left: auto; margin-right: 6px; }
+.btn-icon:disabled { opacity: .35; cursor: default; pointer-events: none; }
 
 /* Photos view */
 .photos-toolbar {

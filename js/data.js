@@ -103,6 +103,31 @@
       _write(KEYS.albums, arr);
       return album;
     },
+    /* Ordine degli album, uguale ovunque (pagina Galleria, anteprima in Home, admin, app): quello scelto in admin
+       (campo `order`, 1 = primo). Gli album senza `order` (i nuovi) vanno in cima, dal più recente. Scelta di Lorenzo, 27/11. */
+    sortAlbums: function (list) {
+      var hasOrder = function (a) { return typeof a.order === 'number' && isFinite(a.order); };
+      return (list || []).slice().sort(function (a, b) {
+        var oa = hasOrder(a), ob = hasOrder(b);
+        if (oa !== ob) return oa ? 1 : -1;
+        if (oa && a.order !== b.order) return a.order - b.order;
+        var da = a.date || '', db = b.date || '';
+        if (da !== db) return da < db ? 1 : -1;
+        return b.id - a.id;
+      });
+    },
+    /* Sposta un album di una posizione (delta -1 = prima, +1 = dopo) nell'ordine di sortAlbums.
+       Ritorna gli album da salvare con il nuovo `order` (1..n per tutti, solo quelli che cambiano); [] se non si muove. */
+    moveAlbum: function (list, id, delta) {
+      var sorted = this.sortAlbums(list);
+      var i = sorted.findIndex(function (a) { return a.id === id; });
+      var j = i + delta;
+      if (i < 0 || j < 0 || j >= sorted.length) return [];
+      var moved = sorted.splice(i, 1)[0];
+      sorted.splice(j, 0, moved);
+      return sorted.map(function (a, k) { return a.order === k + 1 ? null : Object.assign({}, a, { order: k + 1 }); })
+        .filter(Boolean);
+    },
     /* Slug dell'album = indirizzo della sua pagina (/galleria/<slug>). Se l'album non ne ha uno salvato
        (creato prima dello slug) lo ricavo dal titolo; in caso di doppioni il più vecchio tiene il nome
        pulito e gli altri ricevono il proprio id come suffisso. */

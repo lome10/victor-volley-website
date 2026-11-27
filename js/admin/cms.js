@@ -741,7 +741,8 @@
   }
 
   function refreshAlbumsGrid() {
-    var albums = VV.getAlbums();
+    /* Nell'ordine del sito e dell'app (VV.sortAlbums): i tasti ← → lo cambiano. */
+    var albums = VV.sortAlbums(VV.getAlbums());
     var grid   = document.getElementById('albumsGrid');
 
     if (!albums.length) {
@@ -751,7 +752,9 @@
 
     var albumIds = albums.map(function (a) { return a.id; });
     PhotoDB.getCovers(albumIds, function (covers) {
-      grid.innerHTML = albums.map(function (album) {
+      var ARROW_L = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M15 18l-6-6 6-6"/></svg>';
+      var ARROW_R = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M9 18l6-6-6-6"/></svg>';
+      grid.innerHTML = albums.map(function (album, i) {
         var thumb = covers[album.id]
           ? '<img src="' + esc(covers[album.id]) + '" alt="">'
           : '<div class="album-thumb-placeholder">🖼️</div>';
@@ -762,6 +765,10 @@
             '<div class="album-meta">' + VV.formatDateShort(album.date) + ' · ' + esc(album.category) + '</div>' +
             '<div class="album-footer">' +
               '<span class="chip chip--blue">' + (album.photoCount || 0) + ' foto</span>' +
+              '<span class="album-move">' +
+                '<button class="btn-icon" ' + (i === 0 ? 'disabled ' : '') + 'onclick="event.stopPropagation();AdminActions.moveAlbum(' + album.id + ',-1)" title="Sposta prima" aria-label="Sposta prima">' + ARROW_L + '</button>' +
+                '<button class="btn-icon" ' + (i === albums.length - 1 ? 'disabled ' : '') + 'onclick="event.stopPropagation();AdminActions.moveAlbum(' + album.id + ',1)" title="Sposta dopo" aria-label="Sposta dopo">' + ARROW_R + '</button>' +
+              '</span>' +
               '<button class="btn-icon btn-icon--danger" onclick="event.stopPropagation();AdminActions.deleteAlbum(' + album.id + ')" title="Elimina album">' +
                 '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>' +
               '</button>' +
@@ -2196,6 +2203,12 @@
       confirm('Eliminare questa partita?', function () {
         DB.deletePartita(id, refreshMatchTable);
       });
+    },
+    /* Ordine degli album (scelta di Lorenzo, 27/11): sposta di un posto e salva il nuovo `order` degli album che cambiano. */
+    moveAlbum: function (id, delta) {
+      var changed = VV.moveAlbum(VV.getAlbums(), id, delta);
+      changed.forEach(function (a) { DB.saveAlbum(a); });
+      refreshAlbumsGrid();
     },
     deleteAlbum: function (id) {
       var album = VV.getAlbum(id);
