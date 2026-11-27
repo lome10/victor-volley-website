@@ -19,6 +19,8 @@ export const finto = {
   presenzaFallisce: false,
   ricevute: {} as Record<string, Ricevuta[]>,
   ricevuteErrore: false,
+  /** Chi e' l'account nell'area dirigenti. */
+  ruolo: 'nessuno' as 'dirigente' | 'allenatore' | 'nessuno',
   ascolti: new Set<Ascolto>(),
 };
 
@@ -34,6 +36,7 @@ export function azzera() {
   finto.presenzaFallisce = false;
   finto.ricevute = {};
   finto.ricevuteErrore = false;
+  finto.ruolo = 'nessuno';
   finto.ascolti.clear();
 }
 
@@ -80,3 +83,7 @@ export const salvaPresenza = jest.fn(async (ev: Evento, a: Pick<Atleta, 'uid' | 
 export const leggiPromemoria = jest.fn(async (_uid: string) => true);
 export const salvaPromemoria = jest.fn(async (_uid: string, _email: boolean) => {});
 export const cambiaPassword = jest.fn(async (_attuale: string, _nuova: string) => ({ ok: true, messaggio: 'Password aggiornata.' }));
+
+export const ruoloAccount = jest.fn(async (_uid: string) => finto.ruolo);
+/** Gettone finto: le funzioni del server non si chiamano mai davvero (fetch e' finto nei test). */
+export const idToken = jest.fn(async () => (finto.utente ? 'gettone-finto-' + finto.utente.uid : null));

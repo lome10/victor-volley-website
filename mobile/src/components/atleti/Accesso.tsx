@@ -8,7 +8,8 @@ import { RESET_INVIATO, richiediReset } from '~/lib/accesso';
 import { accedi } from '~/lib/firebase';
 import { fonts } from '~/lib/theme';
 
-export function Accesso() {
+/** `titolo`: "Area Atleti" (atleta.html) o "Area Dirigenti" (login di /admin, da cui entrano anche gli allenatori). */
+export function Accesso({ titolo = 'Area Atleti' }: { titolo?: string }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errore, setErrore] = useState('');
@@ -49,7 +50,7 @@ export function Accesso() {
           <View style={stili.riquadro}>
             <Image source={require('../../../assets/images/logo.png')} style={stili.logo} resizeMode="contain" accessibilityLabel="Victor Volley" />
             <Text style={stili.titolo} accessibilityRole="header">
-              Area Atleti
+              {titolo}
             </Text>
             <Text style={stili.sotto}>Victor Volley</Text>
             <TextInput

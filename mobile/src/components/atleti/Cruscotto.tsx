@@ -60,7 +60,8 @@ const SEZIONI: { vista: Vista; nome: string }[] = [
 ];
 
 /** Le chiavi dei dati riservati: all'uscita si cancellano tutte. */
-export const CHIAVI_RISERVATE = ['atleti', 'avvisi', 'rate', 'presenze', 'ricevute', 'promemoria'];
+// 'allenatore' e 'ruolo' = area allenatore (telefoni dei genitori): stesso account Firebase, si cancellano da entrambe le uscite.
+export const CHIAVI_RISERVATE = ['atleti', 'avvisi', 'rate', 'presenze', 'ricevute', 'promemoria', 'allenatore', 'ruolo'];
 
 export function Cruscotto({ utente }: { utente: Utente }) {
   const qc = useQueryClient();

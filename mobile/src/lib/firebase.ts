@@ -109,6 +109,25 @@ export async function leggiRicevute(atletaId: string): Promise<Ricevuta[]> {
   return snap.docs.map((d) => ({ ...(d.data() as Omit<Ricevuta, 'id'>), id: d.id }));
 }
 
+/**
+ * Chi e' l'account nell'area dirigenti (_checkRole di js/admin.js): prima `dirigenti/{uid}`, poi `allenatori/{uid}`.
+ * Come il sito, un errore di lettura vale "nessuno" (accesso negato). Sola lettura.
+ */
+export async function ruoloAccount(uid: string): Promise<'dirigente' | 'allenatore' | 'nessuno'> {
+  try {
+    if ((await getDoc(doc(db(), 'dirigenti', uid))).exists()) return 'dirigente';
+    return (await getDoc(doc(db(), 'allenatori', uid))).exists() ? 'allenatore' : 'nessuno';
+  } catch {
+    return 'nessuno';
+  }
+}
+
+/** ID token dell'utente collegato, per le funzioni del server (/api/allenatore-*); null se non c'e' nessuno. */
+export async function idToken(): Promise<string | null> {
+  const u = auth().currentUser;
+  return u ? u.getIdToken() : null;
+}
+
 /** Risposte "ci sarò / non ci sarò" dell'atleta: eventKey -> 'si' | 'no'. */
 export async function leggiPresenze(atletaId: string): Promise<Record<string, 'si' | 'no'>> {
   const snap = await getDocs(query(collection(db(), 'presenze'), where('atletaId', '==', atletaId)));
