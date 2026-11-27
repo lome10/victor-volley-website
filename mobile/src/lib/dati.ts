@@ -144,7 +144,7 @@ export type Pubblico = {
   girone: Girone;
   giocatori: Giocatore[];
   staff: Persona[];
-  /** Gia' ordinati dal piu' recente, solo quelli con foto. */
+  /** Gia' nell'ordine scelto in admin (i nuovi in cima, VVW-43), solo quelli con foto: l'app non li riordina. */
   album: Album[];
   /** Gia' ordinati per "order". */
   sponsor: Sponsor[];
