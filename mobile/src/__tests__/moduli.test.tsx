@@ -1,4 +1,5 @@
 import { fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
+import { Linking } from 'react-native';
 
 import { CAMPI_CONTATTI, CAMPI_SPONSOR, CAMPI_UNISCITI, datiContatti, datiSponsor, datiUnisciti, errore, errori, inviaModulo } from '~/lib/moduli';
 
@@ -50,6 +51,29 @@ describe('regole dei moduli (come js/form-validate.js)', () => {
   });
 });
 
+describe('invio a Web3Forms come il sito (rete finta, nessun invio vero)', () => {
+  const vero = jest.requireActual('~/lib/moduli') as typeof import('~/lib/moduli');
+
+  it('manda JSON con la chiave pubblica del sito e legge success', async () => {
+    const rete = jest.fn(async () => ({ ok: true, status: 200, json: async () => ({ success: true }) }));
+    globalThis.fetch = rete as unknown as typeof fetch;
+    expect(await vero.inviaModulo(datiContatti({ nome: 'Ada', email: 'a@b.it', oggetto: 'Ciao', messaggio: 'Testo' }))).toBe(true);
+    const [url, opzioni] = rete.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe('https://api.web3forms.com/submit');
+    expect(opzioni.method).toBe('POST');
+    expect(JSON.parse(String(opzioni.body))).toEqual(expect.objectContaining({
+      access_key: 'c7fbab29-7da0-4cef-ade0-7ae64a201e97', subject: 'Ciao', nome: 'Ada', consenso_privacy: 'sì',
+    }));
+  });
+
+  it('false se Web3Forms dice no o la rete cade', async () => {
+    globalThis.fetch = jest.fn(async () => ({ ok: true, status: 200, json: async () => ({ success: false }) })) as unknown as typeof fetch;
+    expect(await vero.inviaModulo({ a: 'b' })).toBe(false);
+    globalThis.fetch = jest.fn(async () => { throw new Error('rete'); }) as unknown as typeof fetch;
+    expect(await vero.inviaModulo({ a: 'b' })).toBe(false);
+  });
+});
+
 describe('pagina Partner', () => {
   it('livelli, card, livello vuoto e modulo con controlli e invio', async () => {
     await renderRouter('./src/app', { initialUrl: '/sponsor' });
@@ -69,9 +93,9 @@ describe('pagina Partner', () => {
     expect(screen.getByText('Per inviare devi spuntare questa casella.')).toBeTruthy();
     expect(invio).not.toHaveBeenCalled();
 
-    fireEvent.changeText(screen.getByLabelText('Azienda o attività'), 'Bar Centrale');
-    fireEvent.changeText(screen.getByLabelText('Referente'), 'Ada Lo');
-    fireEvent.changeText(screen.getByLabelText('Email'), 'ada@bar.it');
+    await fireEvent.changeText(screen.getByLabelText('Azienda o attività'), 'Bar Centrale');
+    await fireEvent.changeText(screen.getByLabelText('Referente'), 'Ada Lo');
+    await fireEvent.changeText(screen.getByLabelText('Email'), 'ada@bar.it');
     await fireEvent.press(screen.getByRole('button', { name: 'Livello di interesse' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Non so / vorrei saperne di più' }));
     await fireEvent.press(screen.getByRole('checkbox'));
@@ -85,10 +109,10 @@ describe('pagina Partner', () => {
     await renderRouter('./src/app', { initialUrl: '/unisciti-a-noi' });
     expect(screen.getByRole('header', { name: 'Vieni a giocare con noi' })).toBeTruthy();
     expect(screen.getByText('Questo non è un modulo di tesseramento ufficiale.')).toBeTruthy();
-    fireEvent.changeText(screen.getByLabelText('Nome'), 'Ada');
-    fireEvent.changeText(screen.getByLabelText('Cognome'), 'Lo');
-    fireEvent.changeText(screen.getByLabelText('Email'), 'ada@lo.it');
-    fireEvent.changeText(screen.getByLabelText('Età (o data di nascita)'), '9 anni');
+    await fireEvent.changeText(screen.getByLabelText('Nome'), 'Ada');
+    await fireEvent.changeText(screen.getByLabelText('Cognome'), 'Lo');
+    await fireEvent.changeText(screen.getByLabelText('Email'), 'ada@lo.it');
+    await fireEvent.changeText(screen.getByLabelText('Età (o data di nascita)'), '9 anni');
     await fireEvent.press(screen.getByRole('button', { name: 'Categoria di interesse' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Minivolley (5-10 anni)' }));
     await fireEvent.press(screen.getByRole('checkbox'));
@@ -102,12 +126,16 @@ describe('pagina Contatti', () => {
   it('recapiti, social, bottone per Unisciti e modulo', async () => {
     await renderRouter('./src/app', { initialUrl: '/contatti' });
     expect(screen.getByRole('header', { name: 'Contatti' })).toBeTruthy();
-    expect(screen.getByText('Palazzetto ARKÉ')).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Instagram' })).toBeTruthy();
+    expect(screen.getAllByText('Palazzetto ARKÉ')).toHaveLength(2);
+    expect(screen.getAllByRole('link', { name: 'Instagram' }).length).toBe(2);
     expect(screen.getByRole('header', { name: 'Dove siamo' })).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'Invia' }));
     expect(screen.getAllByText('Campo obbligatorio.')).toHaveLength(4);
     expect(invio).not.toHaveBeenCalled();
+    const apri = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
+    await fireEvent.press(screen.getByRole('button', { name: 'Apri in Mappe' }));
+    expect(apri).toHaveBeenCalledWith(expect.stringContaining('39.9654525'));
+    apri.mockRestore();
     await fireEvent.press(screen.getByRole('button', { name: 'Vieni a giocare con noi' }));
     expect(screen).toHavePathname('/unisciti-a-noi');
   }, 60000);

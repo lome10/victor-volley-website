@@ -1,7 +1,7 @@
 // Contatti: copia di contatti.html (js/pages/contatti-1.js, css/style.css).
 import { usePathname } from 'expo-router';
 import { useRef, type ComponentRef, type ReactNode } from 'react';
-import { Linking, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import Svg, { Circle, Defs, RadialGradient, Stop, SvgXml } from 'react-native-svg';
 
 import { Modulo } from '~/components/Modulo';
@@ -16,6 +16,17 @@ import { vai } from '~/lib/vai';
 const PIN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>';
 const POSTA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg>';
 const FB = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>';
+
+// Mappa: niente Google Maps incorporato (cookie); il tasto apre le mappe del telefono (Lorenzo, 27/11, VVW-41).
+const LAT = 39.9654525, LNG = 18.1160189;
+const NOME_LUOGO = 'Palazzetto ARKÉ Melissano';
+const linkMappe = (os: string) =>
+  os === 'ios'
+    ? 'https://maps.apple.com/?ll=' + LAT + ',' + LNG + '&q=' + encodeURIComponent(NOME_LUOGO)
+    : os === 'android'
+      ? 'geo:' + LAT + ',' + LNG + '?q=' + LAT + ',' + LNG + '(' + encodeURIComponent(NOME_LUOGO) + ')'
+      : 'https://www.google.com/maps?q=' + LAT + ',' + LNG;
+const apriMappe = () => Linking.openURL(linkMappe(Platform.OS)).catch(() => Linking.openURL(linkMappe('web')));
 
 // .social-btn--fb / --ig / --tt
 const FONDO_SOCIAL: Record<string, string> = { Facebook: '#1877f2', TikTok: '#010101' };
@@ -95,8 +106,14 @@ export default function Contatti() {
 
           <View style={!piccolo && styles.colonna}>
             <Text style={[styles.titolo, h2]} accessibilityRole="header">Dove siamo</Text>
-            {/* Qui va la mappa del Palazzetto ARKÉ: come mostrarla lo decide Lorenzo (VVW-41). */}
-            <View style={styles.mappa} />
+            <View style={styles.mappa}>
+              <View style={styles.mappaIcona}><SvgXml xml={PIN} width={26} height={26} color={colors.azzurro} /></View>
+              <Text style={styles.mappaNome}>Palazzetto ARKÉ</Text>
+              <Text style={styles.mappaIndirizzo}>Via Don Marino Manco, Melissano (LE)</Text>
+              <Pressable style={[styles.bottone, styles.bottoneCentro]} onPress={apriMappe} accessibilityRole="button" accessibilityLabel="Apri in Mappe">
+                <Text style={styles.bottoneTesto}>Apri in Mappe</Text>
+              </Pressable>
+            </View>
           </View>
         </View>
       </View>
@@ -144,7 +161,11 @@ const styles = StyleSheet.create({
   tondo: { width: 40, height: 40, borderRadius: 20, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
   bottone: { alignSelf: 'flex-start', marginTop: 8, minHeight: 44, justifyContent: 'center', paddingVertical: 12, paddingHorizontal: 28, borderRadius: 3, backgroundColor: colors.azzurroScuro },
   bottoneTesto: { fontFamily: fonts.corpoMedio, fontSize: 15, color: colors.bianco },
-  mappa: { width: '100%', height: 380, borderRadius: 12, backgroundColor: '#F4F4F6' },
+  bottoneCentro: { alignSelf: 'center', marginTop: 0 },
+  mappa: { width: '100%', minHeight: 240, borderRadius: 12, backgroundColor: '#F4F4F6', alignItems: 'center', justifyContent: 'center', padding: 24, gap: 6 },
+  mappaIcona: { width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(0,140,253,0.1)', alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
+  mappaNome: { fontFamily: fonts.titoloMedio, fontSize: 18, color: colors.navy, textAlign: 'center' },
+  mappaIndirizzo: { fontFamily: fonts.corpo, fontSize: 14, lineHeight: 22, color: '#666', textAlign: 'center', marginBottom: 10 },
   testaModulo: { width: '100%', maxWidth: 640, alignSelf: 'center', marginBottom: 36 },
   titoloModulo: { fontFamily: fonts.titoloMedio, color: colors.navy, marginBottom: 8, textAlign: 'center' },
   testoModulo: { fontFamily: fonts.corpo, fontSize: 16, lineHeight: 26, color: '#555', textAlign: 'center' },

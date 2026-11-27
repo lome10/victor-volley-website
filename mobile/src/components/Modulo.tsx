@@ -1,6 +1,6 @@
 // Modulo pubblico come quelli del sito (.form-group, .form-input, .form-check, .form-notice di css/style.css
 // e js/form-validate.js): errori sotto i campi, "Invio in corso…", riquadro ok/errore sopra il modulo.
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Linking, Modal, Pressable, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
 
 import { errori, type Campo, type Valori } from '~/lib/moduli';
@@ -34,25 +34,34 @@ export function Modulo({ campi, coppie = [], testoInvio, ok, compatto, invia, mo
   const [esito, setEsito] = useState<'ok' | 'errore' | null>(null);
   const [scelta, setScelta] = useState<Campo | null>(null);
 
+  // Ultimi valori scritti: "Invia" li legge da qui, cosi' un tocco subito dopo l'ultima modifica non perde niente.
+  const ultimi = useRef<Valori>({});
+
   const cambia = (nome: string, v: string) => {
-    setValori((x) => ({ ...x, [nome]: v }));
+    ultimi.current = { ...ultimi.current, [nome]: v };
+    setValori(ultimi.current);
     setSbagli((x) => (x[nome] ? { ...x, [nome]: '' } : x));
   };
 
   const manda = async () => {
+    if (occupato) return;
+    const adesso = ultimi.current;
     setEsito(null);
-    const e = errori(campi, valori);
+    const e = errori(campi, adesso);
     setSbagli(e);
     if (Object.keys(e).length) return;
     setOccupato(true);
     let arrivato = false;
     try {
-      arrivato = await invia(valori);
+      arrivato = await invia(adesso);
     } catch {
       arrivato = false;
     }
     setOccupato(false);
-    if (arrivato) setValori({});
+    if (arrivato) {
+      ultimi.current = {};
+      setValori({});
+    }
     setEsito(arrivato ? 'ok' : 'errore');
     mostra?.();
   };
@@ -60,7 +69,7 @@ export function Modulo({ campi, coppie = [], testoInvio, ok, compatto, invia, mo
   const campo = (c: Campo) => {
     const sbaglio = sbagli[c.nome];
     const etichetta = (
-      <Text style={styles.etichetta} nativeID={'et-' + c.nome}>
+      <Text style={styles.etichetta}>
         {c.etichetta}
         {c.obbligatorio ? <Text style={styles.obbligatorio}> *</Text> : null}
       </Text>
@@ -123,7 +132,6 @@ export function Modulo({ campi, coppie = [], testoInvio, ok, compatto, invia, mo
           placeholder={c.segnaposto}
           placeholderTextColor="#8a8a96"
           accessibilityLabel={c.etichetta}
-          aria-labelledby={'et-' + c.nome}
           keyboardType={c.tipo === 'email' ? 'email-address' : c.tipo === 'tel' ? 'phone-pad' : 'default'}
           autoCapitalize={c.tipo === 'email' ? 'none' : 'sentences'}
           autoCorrect={c.tipo !== 'email'}

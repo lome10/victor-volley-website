@@ -129,10 +129,27 @@ export function datiUnisciti(v: Valori) {
   };
 }
 
-/**
- * Invio di un modulo: true se arrivato. NON ancora collegato: dove mandare lo decide Lorenzo (VVW-41).
- * Finche' non e' deciso il modulo mostra il riquadro "Invio non riuscito" con l'email della Victor.
- */
-export async function inviaModulo(_dati: Record<string, string>): Promise<boolean> {
-  return false;
+// Come il sito (js/form-validate.js): POST JSON a Web3Forms con la chiave pubblica dei moduli del sito
+// (e' gia' scritta nel JS di sponsor-3.js, contatti-1.js e unisciti-a-noi-1.js), timeout 15 secondi.
+const WEB3FORMS = 'https://api.web3forms.com/submit';
+const CHIAVE_PUBBLICA = 'c7fbab29-7da0-4cef-ade0-7ae64a201e97';
+
+/** Invio di un modulo: true solo se Web3Forms risponde success (deciso da Lorenzo il 27/11, VVW-41). */
+export async function inviaModulo(dati: Record<string, string>, attesa = 15000): Promise<boolean> {
+  const ferma = new AbortController();
+  const timer = setTimeout(() => ferma.abort(), attesa);
+  try {
+    const r = await fetch(WEB3FORMS, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ access_key: CHIAVE_PUBBLICA, ...dati }),
+      signal: ferma.signal,
+    });
+    const risposta = (await r.json()) as { success?: boolean } | null;
+    return !!risposta?.success;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
 }
