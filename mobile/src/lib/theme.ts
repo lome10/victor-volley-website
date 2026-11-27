@@ -13,7 +13,13 @@ export const colors = {
 
 export const fonts = {
   titolo: 'Barlow_700Bold',
+  /** Titoli a 800 del sito (font-weight 800: squadre, staff, schede). */
+  titoloForte: 'Barlow_800ExtraBold',
   titoloMedio: 'Barlow_600SemiBold',
   corpo: 'Manrope_400Regular',
+  /** Testo a 600 del sito (nomi delle squadre, etichette, tasti). */
+  corpoMedio: 'Manrope_600SemiBold',
   corpoForte: 'Manrope_700Bold',
+  /** Testo a 800 del sito (chi vince, riga Victor, punti in classifica). */
+  corpoExtra: 'Manrope_800ExtraBold',
 } as const;

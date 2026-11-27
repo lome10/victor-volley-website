@@ -1,0 +1,2763 @@
+{
+ "stagione": "2026/27",
+ "squadre": [
+  {
+   "id": "victor-volley",
+   "nome": "Victor Volley Vita",
+   "logo": "https://www.victorvolley.it/assets/logo.png",
+   "home": true
+  },
+  {
+   "id": "citta-di-otranto",
+   "nome": "Città di Otranto",
+   "logo": "https://res.cloudinary.com/plbxnqlc/image/upload/v1791022327/rgvsx7bboljeh1ltzesg.png",
+   "home": false
+  },
+  {
+   "id": "cesp-olimpius-parabita",
+   "nome": "Cesp Olimpius Parabita",
+   "logo": "https://res.cloudinary.com/plbxnqlc/image/upload/v1791022389/xmrhxal6cngbaozjhng0.png",
+   "home": false
+  },
+  {
+   "id": "magic-volley-galatina",
+   "nome": "Magic Volley Galatina",
+   "logo": "https://res.cloudinary.com/plbxnqlc/image/upload/v1791022424/j20i9ut6dllygkvotxqt.png",
+   "home": false
+  },
+  {
+   "id": "mb-volley-ruffano",
+   "nome": "M.B. Volley Ruffano",
+   "logo": "https://res.cloudinary.com/plbxnqlc/image/upload/v1791022460/lj8ona2iwmal4ivwxuhr.png",
+   "home": false
+  },
+  {
+   "id": "volley-alezio-98",
+   "nome": "Volley Alezio 98",
+   "logo": "https://res.cloudinary.com/plbxnqlc/image/upload/v1791022473/r8jljfuw49jts6kwygog.png",
+   "home": false
+  },
+  {
+   "id": "dream-volley-nardo",
+   "nome": "Dream Volley Nardò",
+   "logo": "https://res.cloudinary.com/plbxnqlc/image/upload/v1791022487/nggx2jd6nget4qvjzrnz.png",
+   "home": false
+  },
+  {
+   "id": "flyarmida-volley",
+   "nome": "Flyarmida Volley",
+   "logo": "https://res.cloudinary.com/plbxnqlc/image/upload/v1792164109/n8m8whql3eygpo3icuym.png",
+   "home": false
+  },
+  {
+   "id": "astra-volley-presicce-acquarica",
+   "nome": "Astra Volley Presicce-Acquarica",
+   "logo": "https://res.cloudinary.com/plbxnqlc/image/upload/v1791022508/vczrpunylc9oath965ef.png",
+   "home": false
+  },
+  {
+   "id": "green-volley-galatone",
+   "nome": "Green Volley Galatone",
+   "logo": "https://res.cloudinary.com/plbxnqlc/image/upload/v1791022524/gmsjep2nhb5iyomcekyf.png",
+   "home": false
+  },
+  {
+   "id": "cutrofiano-volley",
+   "nome": "Cutrofiano Volley",
+   "logo": "https://www.victorvolley.it/assets/squadre/cutrofiano-volley.png",
+   "home": false
+  },
+  {
+   "id": "aradeo-volley-1977",
+   "nome": "Aradeo Volley 1977",
+   "logo": "https://res.cloudinary.com/plbxnqlc/image/upload/v1791022556/bao7aceuvwfzbpcpynip.png",
+   "home": false
+  },
+  {
+   "id": "polisportiva-supersano",
+   "nome": "Polisportiva Supersano",
+   "logo": "https://res.cloudinary.com/plbxnqlc/image/upload/v1791022570/frslevhjzavrngdhqtva.png",
+   "home": false
+  },
+  {
+   "id": "spongano",
+   "nome": "Spongano",
+   "logo": "https://res.cloudinary.com/plbxnqlc/image/upload/v1791700992/r5t0lnlzo5wdurkdi2ux.png",
+   "home": false
+  }
+ ],
+ "gironi": [
+  {
+   "categoria": "Prima Divisione",
+   "girone": "B",
+   "squadre": [
+    "victor-volley",
+    "citta-di-otranto",
+    "cesp-olimpius-parabita",
+    "magic-volley-galatina",
+    "mb-volley-ruffano",
+    "volley-alezio-98",
+    "dream-volley-nardo",
+    "flyarmida-volley",
+    "astra-volley-presicce-acquarica",
+    "green-volley-galatone",
+    "cutrofiano-volley",
+    "aradeo-volley-1977",
+    "polisportiva-supersano"
+   ],
+   "partite": [
+    {
+     "id": "p1d-269",
+     "giornata": 1,
+     "data": "2026-10-31",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello sport - Otranto",
+     "squadra_casa": "citta-di-otranto",
+     "squadra_ospite": "cesp-olimpius-parabita",
+     "set_casa": 0,
+     "set_ospite": 3,
+     "parziali": [
+      [
+       15,
+       25
+      ],
+      [
+       21,
+       25
+      ],
+      [
+       8,
+       25
+      ]
+     ]
+    },
+    {
+     "id": "p1d-270",
+     "giornata": 1,
+     "data": "2026-10-31",
+     "ora": "18:30",
+     "palazzetto": "Palazzetto dello Sport \"Fernando Panico\" - Galatina",
+     "squadra_casa": "magic-volley-galatina",
+     "squadra_ospite": "flyarmida-volley",
+     "set_casa": 3,
+     "set_ospite": 0,
+     "parziali": [
+      [
+       25,
+       8
+      ],
+      [
+       25,
+       7
+      ],
+      [
+       25,
+       17
+      ]
+     ]
+    },
+    {
+     "id": "p1d-271",
+     "giornata": 1,
+     "data": "2026-11-01",
+     "ora": "10:30",
+     "palazzetto": "Palazzetto dello Sport \"Pala Federico\" - Alezio",
+     "squadra_casa": "volley-alezio-98",
+     "squadra_ospite": "dream-volley-nardo",
+     "set_casa": 3,
+     "set_ospite": 2,
+     "parziali": [
+      [
+       25,
+       23
+      ],
+      [
+       21,
+       25
+      ],
+      [
+       22,
+       25
+      ],
+      [
+       25,
+       7
+      ],
+      [
+       16,
+       14
+      ]
+     ]
+    },
+    {
+     "id": "p1d-272",
+     "giornata": 1,
+     "data": "2026-11-01",
+     "ora": "11:00",
+     "palazzetto": "Palazzetto dello Sport - Acquarica del Capo",
+     "squadra_casa": "astra-volley-presicce-acquarica",
+     "squadra_ospite": "victor-volley",
+     "set_casa": 1,
+     "set_ospite": 3,
+     "parziali": [
+      [
+       24,
+       26
+      ],
+      [
+       16,
+       25
+      ],
+      [
+       25,
+       15
+      ],
+      [
+       18,
+       25
+      ]
+     ]
+    },
+    {
+     "id": "p1d-273",
+     "giornata": 1,
+     "data": "2026-11-01",
+     "ora": "10:30",
+     "palazzetto": "Palasport \"Cesari\" - Cutrofiano",
+     "squadra_casa": "cutrofiano-volley",
+     "squadra_ospite": "aradeo-volley-1977",
+     "set_casa": 2,
+     "set_ospite": 3,
+     "parziali": [
+      [
+       25,
+       20
+      ],
+      [
+       21,
+       25
+      ],
+      [
+       25,
+       16
+      ],
+      [
+       23,
+       25
+      ],
+      [
+       12,
+       15
+      ]
+     ]
+    },
+    {
+     "id": "p1d-274",
+     "giornata": 1,
+     "data": "2026-11-01",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport - Galatone",
+     "squadra_casa": "green-volley-galatone",
+     "squadra_ospite": "mb-volley-ruffano",
+     "set_casa": 3,
+     "set_ospite": 1,
+     "parziali": [
+      [
+       27,
+       25
+      ],
+      [
+       28,
+       30
+      ],
+      [
+       25,
+       18
+      ],
+      [
+       25,
+       17
+      ]
+     ]
+    },
+    {
+     "id": "p1d-275",
+     "giornata": 2,
+     "data": "2026-11-08",
+     "ora": "10:30",
+     "palazzetto": "Palestra Scuola Media \"G. B. Tafuri\" - Nardò",
+     "squadra_casa": "dream-volley-nardo",
+     "squadra_ospite": "citta-di-otranto",
+     "set_casa": 3,
+     "set_ospite": 0,
+     "parziali": [
+      [
+       25,
+       13
+      ],
+      [
+       25,
+       14
+      ],
+      [
+       25,
+       17
+      ]
+     ]
+    },
+    {
+     "id": "p1d-276",
+     "giornata": 2,
+     "data": "2026-11-08",
+     "ora": "18:30",
+     "palazzetto": "Tensostatico Parco Ricchello - Taviano",
+     "squadra_casa": "flyarmida-volley",
+     "squadra_ospite": "astra-volley-presicce-acquarica",
+     "set_casa": 2,
+     "set_ospite": 3,
+     "parziali": [
+      [
+       25,
+       19
+      ],
+      [
+       28,
+       26
+      ],
+      [
+       14,
+       25
+      ],
+      [
+       17,
+       25
+      ],
+      [
+       8,
+       15
+      ]
+     ]
+    },
+    {
+     "id": "p1d-277",
+     "giornata": 2,
+     "data": "2026-11-18",
+     "ora": "20:30",
+     "palazzetto": "Pallone Tensostatico - Parabita",
+     "squadra_casa": "cesp-olimpius-parabita",
+     "squadra_ospite": "polisportiva-supersano",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-278",
+     "giornata": 2,
+     "data": "2026-11-08",
+     "ora": "19:00",
+     "palazzetto": "Palazzetto ARKÉ - Melissano",
+     "squadra_casa": "victor-volley",
+     "squadra_ospite": "cutrofiano-volley",
+     "set_casa": 3,
+     "set_ospite": 0,
+     "parziali": [
+      [
+       25,
+       12
+      ],
+      [
+       30,
+       28
+      ],
+      [
+       25,
+       14
+      ]
+     ]
+    },
+    {
+     "id": "p1d-279",
+     "giornata": 2,
+     "data": "2026-11-07",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport \"MARCELLO BISANTI\" - Ruffano",
+     "squadra_casa": "mb-volley-ruffano",
+     "squadra_ospite": "volley-alezio-98",
+     "set_casa": 0,
+     "set_ospite": 3,
+     "parziali": [
+      [
+       22,
+       25
+      ],
+      [
+       17,
+       25
+      ],
+      [
+       20,
+       25
+      ]
+     ]
+    },
+    {
+     "id": "p1d-280",
+     "giornata": 2,
+     "data": "2026-11-08",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport - Galatone",
+     "squadra_casa": "green-volley-galatone",
+     "squadra_ospite": "aradeo-volley-1977",
+     "set_casa": 3,
+     "set_ospite": 2,
+     "parziali": [
+      [
+       25,
+       13
+      ],
+      [
+       25,
+       27
+      ],
+      [
+       25,
+       14
+      ],
+      [
+       22,
+       25
+      ],
+      [
+       15,
+       6
+      ]
+     ]
+    },
+    {
+     "id": "p1d-281",
+     "giornata": 3,
+     "data": "2026-11-15",
+     "ora": "11:00",
+     "palazzetto": "Palazzetto dello Sport - Acquarica del Capo",
+     "squadra_casa": "astra-volley-presicce-acquarica",
+     "squadra_ospite": "magic-volley-galatina",
+     "set_casa": 0,
+     "set_ospite": 3,
+     "parziali": [
+      [
+       19,
+       25
+      ],
+      [
+       20,
+       25
+      ],
+      [
+       23,
+       25
+      ]
+     ]
+    },
+    {
+     "id": "p1d-282",
+     "giornata": 3,
+     "data": "2026-11-15",
+     "ora": "10:30",
+     "palazzetto": "Palestra Scuola Media \"G. B. Tafuri\" - Nardò",
+     "squadra_casa": "dream-volley-nardo",
+     "squadra_ospite": "cesp-olimpius-parabita",
+     "set_casa": 3,
+     "set_ospite": 0,
+     "parziali": [
+      [
+       25,
+       17
+      ],
+      [
+       25,
+       16
+      ],
+      [
+       25,
+       16
+      ]
+     ]
+    },
+    {
+     "id": "p1d-283",
+     "giornata": 3,
+     "data": "2026-11-15",
+     "ora": "10:30",
+     "palazzetto": "Palasport \"Cesari\" - Cutrofiano",
+     "squadra_casa": "cutrofiano-volley",
+     "squadra_ospite": "flyarmida-volley",
+     "set_casa": 0,
+     "set_ospite": 3,
+     "parziali": [
+      [
+       21,
+       25
+      ],
+      [
+       21,
+       25
+      ],
+      [
+       14,
+       25
+      ]
+     ]
+    },
+    {
+     "id": "p1d-284",
+     "giornata": 3,
+     "data": "2026-11-14",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello sport - Otranto",
+     "squadra_casa": "citta-di-otranto",
+     "squadra_ospite": "mb-volley-ruffano",
+     "set_casa": 0,
+     "set_ospite": 3,
+     "parziali": [
+      [
+       18,
+       25
+      ],
+      [
+       18,
+       25
+      ],
+      [
+       18,
+       25
+      ]
+     ]
+    },
+    {
+     "id": "p1d-285",
+     "giornata": 3,
+     "data": "2026-11-14",
+     "ora": "17:30",
+     "palazzetto": "Palestra Comunale - Supersano",
+     "squadra_casa": "polisportiva-supersano",
+     "squadra_ospite": "victor-volley",
+     "set_casa": 1,
+     "set_ospite": 3,
+     "parziali": [
+      [
+       21,
+       25
+      ],
+      [
+       25,
+       21
+      ],
+      [
+       18,
+       25
+      ],
+      [
+       19,
+       25
+      ]
+     ]
+    },
+    {
+     "id": "p1d-286",
+     "giornata": 3,
+     "data": "2026-11-15",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport \"Pala Federico\" - Alezio",
+     "squadra_casa": "volley-alezio-98",
+     "squadra_ospite": "aradeo-volley-1977",
+     "set_casa": 3,
+     "set_ospite": 0,
+     "parziali": [
+      [
+       25,
+       20
+      ],
+      [
+       25,
+       20
+      ],
+      [
+       25,
+       16
+      ]
+     ]
+    },
+    {
+     "id": "p1d-287",
+     "giornata": 4,
+     "data": "2026-11-21",
+     "ora": "18:30",
+     "palazzetto": "Palazzetto dello Sport \"Fernando Panico\" - Galatina",
+     "squadra_casa": "magic-volley-galatina",
+     "squadra_ospite": "cutrofiano-volley",
+     "set_casa": 3,
+     "set_ospite": 0,
+     "parziali": [
+      [
+       25,
+       10
+      ],
+      [
+       25,
+       6
+      ],
+      [
+       25,
+       17
+      ]
+     ]
+    },
+    {
+     "id": "p1d-288",
+     "giornata": 4,
+     "data": "2026-11-21",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport \"MARCELLO BISANTI\" - Ruffano",
+     "squadra_casa": "mb-volley-ruffano",
+     "squadra_ospite": "cesp-olimpius-parabita",
+     "set_casa": 2,
+     "set_ospite": 3,
+     "parziali": [
+      [
+       14,
+       25
+      ],
+      [
+       32,
+       30
+      ],
+      [
+       25,
+       23
+      ],
+      [
+       21,
+       25
+      ],
+      [
+       16,
+       18
+      ]
+     ]
+    },
+    {
+     "id": "p1d-289",
+     "giornata": 4,
+     "data": "2026-11-22",
+     "ora": "11:00",
+     "palazzetto": "Palazzetto dello Sport - Acquarica del Capo",
+     "squadra_casa": "astra-volley-presicce-acquarica",
+     "squadra_ospite": "green-volley-galatone",
+     "set_casa": 1,
+     "set_ospite": 3,
+     "parziali": [
+      [
+       19,
+       25
+      ],
+      [
+       23,
+       25
+      ],
+      [
+       26,
+       24
+      ],
+      [
+       23,
+       25
+      ]
+     ]
+    },
+    {
+     "id": "p1d-290",
+     "giornata": 4,
+     "data": "2026-11-22",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport - Aradeo",
+     "squadra_casa": "aradeo-volley-1977",
+     "squadra_ospite": "polisportiva-supersano",
+     "set_casa": 1,
+     "set_ospite": 3,
+     "parziali": [
+      [
+       19,
+       25
+      ],
+      [
+       25,
+       16
+      ],
+      [
+       24,
+       26
+      ],
+      [
+       13,
+       25
+      ]
+     ]
+    },
+    {
+     "id": "p1d-291",
+     "giornata": 4,
+     "data": "2026-11-21",
+     "ora": "19:00",
+     "palazzetto": "Tensostatico Parco Ricchello - Taviano",
+     "squadra_casa": "flyarmida-volley",
+     "squadra_ospite": "volley-alezio-98",
+     "set_casa": 1,
+     "set_ospite": 3,
+     "parziali": [
+      [
+       11,
+       25
+      ],
+      [
+       25,
+       23
+      ],
+      [
+       7,
+       25
+      ],
+      [
+       24,
+       26
+      ]
+     ]
+    },
+    {
+     "id": "p1d-292",
+     "giornata": 4,
+     "data": "2026-11-22",
+     "ora": "10:30",
+     "palazzetto": "Palazzetto ARKÉ - Melissano",
+     "squadra_casa": "victor-volley",
+     "squadra_ospite": "dream-volley-nardo",
+     "set_casa": 3,
+     "set_ospite": 1,
+     "parziali": [
+      [
+       28,
+       26
+      ],
+      [
+       23,
+       25
+      ],
+      [
+       31,
+       29
+      ],
+      [
+       25,
+       21
+      ]
+     ]
+    },
+    {
+     "id": "p1d-293",
+     "giornata": 5,
+     "data": "2026-11-29",
+     "ora": "10:30",
+     "palazzetto": "Palasport \"Cesari\" - Cutrofiano",
+     "squadra_casa": "cutrofiano-volley",
+     "squadra_ospite": "mb-volley-ruffano",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-294",
+     "giornata": 5,
+     "data": "2026-11-29",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport \"Pala Federico\" - Alezio",
+     "squadra_casa": "volley-alezio-98",
+     "squadra_ospite": "magic-volley-galatina",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-295",
+     "giornata": 5,
+     "data": "2026-11-28",
+     "ora": "17:30",
+     "palazzetto": "Palestra Comunale - Supersano",
+     "squadra_casa": "polisportiva-supersano",
+     "squadra_ospite": "astra-volley-presicce-acquarica",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-296",
+     "giornata": 5,
+     "data": "2026-11-29",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport - Galatone",
+     "squadra_casa": "green-volley-galatone",
+     "squadra_ospite": "flyarmida-volley",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-297",
+     "giornata": 5,
+     "data": "2026-11-28",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello sport - Otranto",
+     "squadra_casa": "citta-di-otranto",
+     "squadra_ospite": "aradeo-volley-1977",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-298",
+     "giornata": 5,
+     "data": "2026-11-29",
+     "ora": "19:00",
+     "palazzetto": "Pallone Tensostatico - Parabita",
+     "squadra_casa": "cesp-olimpius-parabita",
+     "squadra_ospite": "victor-volley",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-299",
+     "giornata": 6,
+     "data": "2026-12-06",
+     "ora": "11:00",
+     "palazzetto": "Palazzetto dello Sport - Acquarica del Capo",
+     "squadra_casa": "astra-volley-presicce-acquarica",
+     "squadra_ospite": "cutrofiano-volley",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-300",
+     "giornata": 6,
+     "data": "2026-12-05",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport \"MARCELLO BISANTI\" - Ruffano",
+     "squadra_casa": "mb-volley-ruffano",
+     "squadra_ospite": "dream-volley-nardo",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-301",
+     "giornata": 6,
+     "data": "2026-11-07",
+     "ora": "18:30",
+     "palazzetto": "Palazzetto dello Sport \"Fernando Panico\" - Galatina",
+     "squadra_casa": "magic-volley-galatina",
+     "squadra_ospite": "polisportiva-supersano",
+     "set_casa": 3,
+     "set_ospite": 0,
+     "parziali": [
+      [
+       25,
+       18
+      ],
+      [
+       25,
+       19
+      ],
+      [
+       25,
+       12
+      ]
+     ]
+    },
+    {
+     "id": "p1d-302",
+     "giornata": 6,
+     "data": "2026-12-06",
+     "ora": "10:30",
+     "palazzetto": "Palazzetto ARKÉ - Melissano",
+     "squadra_casa": "victor-volley",
+     "squadra_ospite": "green-volley-galatone",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-303",
+     "giornata": 6,
+     "data": "2026-12-05",
+     "ora": "19:00",
+     "palazzetto": "Tensostatico Parco Ricchello - Taviano",
+     "squadra_casa": "flyarmida-volley",
+     "squadra_ospite": "citta-di-otranto",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-304",
+     "giornata": 6,
+     "data": "2026-12-06",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport - Aradeo",
+     "squadra_casa": "aradeo-volley-1977",
+     "squadra_ospite": "cesp-olimpius-parabita",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-305",
+     "giornata": 7,
+     "data": "2026-12-12",
+     "ora": "18:30",
+     "palazzetto": "Palestra Comunale - Supersano",
+     "squadra_casa": "polisportiva-supersano",
+     "squadra_ospite": "cutrofiano-volley",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-306",
+     "giornata": 7,
+     "data": "2026-12-13",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport - Galatone",
+     "squadra_casa": "green-volley-galatone",
+     "squadra_ospite": "magic-volley-galatina",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-307",
+     "giornata": 7,
+     "data": "2026-12-13",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport \"Pala Federico\" - Alezio",
+     "squadra_casa": "volley-alezio-98",
+     "squadra_ospite": "astra-volley-presicce-acquarica",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-308",
+     "giornata": 7,
+     "data": "2026-12-13",
+     "ora": "19:00",
+     "palazzetto": "Pallone Tensostatico - Parabita",
+     "squadra_casa": "cesp-olimpius-parabita",
+     "squadra_ospite": "flyarmida-volley",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-309",
+     "giornata": 7,
+     "data": "2026-12-13",
+     "ora": "10:30",
+     "palazzetto": "Palestra Scuola Media \"G. B. Tafuri\" - Nardò",
+     "squadra_casa": "dream-volley-nardo",
+     "squadra_ospite": "aradeo-volley-1977",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-310",
+     "giornata": 7,
+     "data": "2026-12-12",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello sport - Otranto",
+     "squadra_casa": "citta-di-otranto",
+     "squadra_ospite": "victor-volley",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-311",
+     "giornata": 8,
+     "data": "2026-12-20",
+     "ora": "10:30",
+     "palazzetto": "Palasport \"Cesari\" - Cutrofiano",
+     "squadra_casa": "cutrofiano-volley",
+     "squadra_ospite": "green-volley-galatone",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-312",
+     "giornata": 8,
+     "data": "2026-12-20",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport - Aradeo",
+     "squadra_casa": "aradeo-volley-1977",
+     "squadra_ospite": "mb-volley-ruffano",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-313",
+     "giornata": 8,
+     "data": "2026-12-19",
+     "ora": "18:30",
+     "palazzetto": "Palazzetto dello Sport \"Fernando Panico\" - Galatina",
+     "squadra_casa": "magic-volley-galatina",
+     "squadra_ospite": "citta-di-otranto",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-314",
+     "giornata": 8,
+     "data": "2026-12-20",
+     "ora": "18:30",
+     "palazzetto": "Tensostatico Parco Ricchello - Taviano",
+     "squadra_casa": "flyarmida-volley",
+     "squadra_ospite": "polisportiva-supersano",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-315",
+     "giornata": 8,
+     "data": "2026-12-20",
+     "ora": "11:00",
+     "palazzetto": "Palazzetto dello Sport - Acquarica del Capo",
+     "squadra_casa": "astra-volley-presicce-acquarica",
+     "squadra_ospite": "dream-volley-nardo",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-316",
+     "giornata": 8,
+     "data": "2026-12-20",
+     "ora": "10:30",
+     "palazzetto": "Palazzetto ARKÉ - Melissano",
+     "squadra_casa": "victor-volley",
+     "squadra_ospite": "volley-alezio-98",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-317",
+     "giornata": 9,
+     "data": "2027-01-10",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport - Galatone",
+     "squadra_casa": "green-volley-galatone",
+     "squadra_ospite": "polisportiva-supersano",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-318",
+     "giornata": 9,
+     "data": "2027-01-10",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport \"Pala Federico\" - Alezio",
+     "squadra_casa": "volley-alezio-98",
+     "squadra_ospite": "cutrofiano-volley",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-319",
+     "giornata": 9,
+     "data": "2027-01-09",
+     "ora": "20:00",
+     "palazzetto": "Palazzetto dello Sport \"MARCELLO BISANTI\" - Ruffano",
+     "squadra_casa": "mb-volley-ruffano",
+     "squadra_ospite": "victor-volley",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-320",
+     "giornata": 9,
+     "data": "2027-01-10",
+     "ora": "19:00",
+     "palazzetto": "Pallone Tensostatico - Parabita",
+     "squadra_casa": "cesp-olimpius-parabita",
+     "squadra_ospite": "magic-volley-galatina",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-321",
+     "giornata": 9,
+     "data": "2027-01-09",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello sport - Otranto",
+     "squadra_casa": "citta-di-otranto",
+     "squadra_ospite": "astra-volley-presicce-acquarica",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-322",
+     "giornata": 9,
+     "data": "2027-01-10",
+     "ora": "10:30",
+     "palazzetto": "Palestra Scuola Media \"G. B. Tafuri\" - Nardò",
+     "squadra_casa": "dream-volley-nardo",
+     "squadra_ospite": "flyarmida-volley",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-323",
+     "giornata": 10,
+     "data": "2027-01-16",
+     "ora": "18:30",
+     "palazzetto": "Palestra Comunale - Supersano",
+     "squadra_casa": "polisportiva-supersano",
+     "squadra_ospite": "volley-alezio-98",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-324",
+     "giornata": 10,
+     "data": "2027-01-17",
+     "ora": "10:30",
+     "palazzetto": "Palasport \"Cesari\" - Cutrofiano",
+     "squadra_casa": "cutrofiano-volley",
+     "squadra_ospite": "citta-di-otranto",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-325",
+     "giornata": 10,
+     "data": "2027-01-17",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport - Galatone",
+     "squadra_casa": "green-volley-galatone",
+     "squadra_ospite": "dream-volley-nardo",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-326",
+     "giornata": 10,
+     "data": "2027-01-16",
+     "ora": "18:30",
+     "palazzetto": "Palazzetto dello Sport \"Fernando Panico\" - Galatina",
+     "squadra_casa": "magic-volley-galatina",
+     "squadra_ospite": "aradeo-volley-1977",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-327",
+     "giornata": 10,
+     "data": "2027-01-17",
+     "ora": "18:30",
+     "palazzetto": "Tensostatico Parco Ricchello - Taviano",
+     "squadra_casa": "flyarmida-volley",
+     "squadra_ospite": "mb-volley-ruffano",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-328",
+     "giornata": 10,
+     "data": "2027-01-17",
+     "ora": "11:00",
+     "palazzetto": "Palazzetto dello Sport - Acquarica del Capo",
+     "squadra_casa": "astra-volley-presicce-acquarica",
+     "squadra_ospite": "cesp-olimpius-parabita",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-329",
+     "giornata": 11,
+     "data": "2027-01-24",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport \"Pala Federico\" - Alezio",
+     "squadra_casa": "volley-alezio-98",
+     "squadra_ospite": "green-volley-galatone",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-330",
+     "giornata": 11,
+     "data": "2027-01-23",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello sport - Otranto",
+     "squadra_casa": "citta-di-otranto",
+     "squadra_ospite": "polisportiva-supersano",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-331",
+     "giornata": 11,
+     "data": "2027-01-24",
+     "ora": "19:00",
+     "palazzetto": "Pallone Tensostatico - Parabita",
+     "squadra_casa": "cesp-olimpius-parabita",
+     "squadra_ospite": "cutrofiano-volley",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-332",
+     "giornata": 11,
+     "data": "2027-01-24",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport - Aradeo",
+     "squadra_casa": "aradeo-volley-1977",
+     "squadra_ospite": "victor-volley",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-333",
+     "giornata": 11,
+     "data": "2027-01-23",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport \"MARCELLO BISANTI\" - Ruffano",
+     "squadra_casa": "mb-volley-ruffano",
+     "squadra_ospite": "astra-volley-presicce-acquarica",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-334",
+     "giornata": 11,
+     "data": "2027-01-24",
+     "ora": "10:30",
+     "palazzetto": "Palestra Scuola Media \"G. B. Tafuri\" - Nardò",
+     "squadra_casa": "dream-volley-nardo",
+     "squadra_ospite": "magic-volley-galatina",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-335",
+     "giornata": 12,
+     "data": "2027-01-31",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport - Galatone",
+     "squadra_casa": "green-volley-galatone",
+     "squadra_ospite": "citta-di-otranto",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-336",
+     "giornata": 12,
+     "data": "2027-01-31",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport \"Pala Federico\" - Alezio",
+     "squadra_casa": "volley-alezio-98",
+     "squadra_ospite": "cesp-olimpius-parabita",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-337",
+     "giornata": 12,
+     "data": "2027-01-31",
+     "ora": "10:30",
+     "palazzetto": "Palasport \"Cesari\" - Cutrofiano",
+     "squadra_casa": "cutrofiano-volley",
+     "squadra_ospite": "dream-volley-nardo",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-338",
+     "giornata": 12,
+     "data": "2027-01-30",
+     "ora": "18:30",
+     "palazzetto": "Palazzetto dello Sport \"Fernando Panico\" - Galatina",
+     "squadra_casa": "magic-volley-galatina",
+     "squadra_ospite": "victor-volley",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-339",
+     "giornata": 12,
+     "data": "2027-01-31",
+     "ora": "18:30",
+     "palazzetto": "Tensostatico Parco Ricchello - Taviano",
+     "squadra_casa": "flyarmida-volley",
+     "squadra_ospite": "aradeo-volley-1977",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-340",
+     "giornata": 12,
+     "data": "2027-01-30",
+     "ora": "18:30",
+     "palazzetto": "Palestra Comunale - Supersano",
+     "squadra_casa": "polisportiva-supersano",
+     "squadra_ospite": "mb-volley-ruffano",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-341",
+     "giornata": 13,
+     "data": "2027-02-06",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello sport - Otranto",
+     "squadra_casa": "citta-di-otranto",
+     "squadra_ospite": "volley-alezio-98",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-342",
+     "giornata": 13,
+     "data": "2027-02-07",
+     "ora": "10:30",
+     "palazzetto": "Palestra Scuola Media \"G. B. Tafuri\" - Nardò",
+     "squadra_casa": "dream-volley-nardo",
+     "squadra_ospite": "polisportiva-supersano",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-343",
+     "giornata": 13,
+     "data": "2027-02-07",
+     "ora": "19:00",
+     "palazzetto": "Pallone Tensostatico - Parabita",
+     "squadra_casa": "cesp-olimpius-parabita",
+     "squadra_ospite": "green-volley-galatone",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-344",
+     "giornata": 13,
+     "data": "2027-02-07",
+     "ora": "10:30",
+     "palazzetto": "Palazzetto ARKÉ - Melissano",
+     "squadra_casa": "victor-volley",
+     "squadra_ospite": "flyarmida-volley",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-345",
+     "giornata": 13,
+     "data": "2027-02-07",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport - Aradeo",
+     "squadra_casa": "aradeo-volley-1977",
+     "squadra_ospite": "astra-volley-presicce-acquarica",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-346",
+     "giornata": 13,
+     "data": "2027-02-06",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport \"MARCELLO BISANTI\" - Ruffano",
+     "squadra_casa": "mb-volley-ruffano",
+     "squadra_ospite": "magic-volley-galatina",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-347",
+     "giornata": 14,
+     "data": "2027-02-14",
+     "ora": "19:00",
+     "palazzetto": "Pallone Tensostatico - Parabita",
+     "squadra_casa": "cesp-olimpius-parabita",
+     "squadra_ospite": "citta-di-otranto",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-348",
+     "giornata": 14,
+     "data": "2027-02-14",
+     "ora": "18:30",
+     "palazzetto": "Tensostatico Parco Ricchello - Taviano",
+     "squadra_casa": "flyarmida-volley",
+     "squadra_ospite": "magic-volley-galatina",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-349",
+     "giornata": 14,
+     "data": "2027-02-14",
+     "ora": "10:30",
+     "palazzetto": "Palestra Scuola Media \"G. B. Tafuri\" - Nardò",
+     "squadra_casa": "dream-volley-nardo",
+     "squadra_ospite": "volley-alezio-98",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-350",
+     "giornata": 14,
+     "data": "2027-02-14",
+     "ora": "10:30",
+     "palazzetto": "Palazzetto ARKÉ - Melissano",
+     "squadra_casa": "victor-volley",
+     "squadra_ospite": "astra-volley-presicce-acquarica",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-351",
+     "giornata": 14,
+     "data": "2027-02-14",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport - Aradeo",
+     "squadra_casa": "aradeo-volley-1977",
+     "squadra_ospite": "cutrofiano-volley",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-352",
+     "giornata": 14,
+     "data": "2027-02-13",
+     "ora": "20:00",
+     "palazzetto": "Palazzetto dello Sport \"MARCELLO BISANTI\" - Ruffano",
+     "squadra_casa": "mb-volley-ruffano",
+     "squadra_ospite": "green-volley-galatone",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-353",
+     "giornata": 15,
+     "data": "2027-02-21",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello sport - Otranto",
+     "squadra_casa": "citta-di-otranto",
+     "squadra_ospite": "dream-volley-nardo",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-354",
+     "giornata": 15,
+     "data": "2027-02-21",
+     "ora": "11:00",
+     "palazzetto": "Palazzetto dello Sport - Acquarica del Capo",
+     "squadra_casa": "astra-volley-presicce-acquarica",
+     "squadra_ospite": "flyarmida-volley",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-355",
+     "giornata": 15,
+     "data": "2027-02-20",
+     "ora": "18:30",
+     "palazzetto": "Palestra Comunale - Supersano",
+     "squadra_casa": "polisportiva-supersano",
+     "squadra_ospite": "cesp-olimpius-parabita",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-356",
+     "giornata": 15,
+     "data": "2027-02-21",
+     "ora": "10:30",
+     "palazzetto": "Palasport \"Cesari\" - Cutrofiano",
+     "squadra_casa": "cutrofiano-volley",
+     "squadra_ospite": "victor-volley",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-357",
+     "giornata": 15,
+     "data": "2027-02-21",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport \"Pala Federico\" - Alezio",
+     "squadra_casa": "volley-alezio-98",
+     "squadra_ospite": "mb-volley-ruffano",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-358",
+     "giornata": 15,
+     "data": "2027-02-21",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport - Galatone",
+     "squadra_casa": "green-volley-galatone",
+     "squadra_ospite": "aradeo-volley-1977",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-359",
+     "giornata": 16,
+     "data": "2027-02-27",
+     "ora": "18:30",
+     "palazzetto": "Palazzetto dello Sport \"Fernando Panico\" - Galatina",
+     "squadra_casa": "magic-volley-galatina",
+     "squadra_ospite": "astra-volley-presicce-acquarica",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-360",
+     "giornata": 16,
+     "data": "2027-02-28",
+     "ora": "19:00",
+     "palazzetto": "Pallone Tensostatico - Parabita",
+     "squadra_casa": "cesp-olimpius-parabita",
+     "squadra_ospite": "dream-volley-nardo",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-361",
+     "giornata": 16,
+     "data": "2027-02-27",
+     "ora": "19:00",
+     "palazzetto": "Tensostatico Parco Ricchello - Taviano",
+     "squadra_casa": "flyarmida-volley",
+     "squadra_ospite": "cutrofiano-volley",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-362",
+     "giornata": 16,
+     "data": "2027-02-27",
+     "ora": "20:00",
+     "palazzetto": "Palazzetto dello Sport \"MARCELLO BISANTI\" - Ruffano",
+     "squadra_casa": "mb-volley-ruffano",
+     "squadra_ospite": "citta-di-otranto",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-363",
+     "giornata": 16,
+     "data": "2027-02-28",
+     "ora": "10:30",
+     "palazzetto": "Palazzetto ARKÉ - Melissano",
+     "squadra_casa": "victor-volley",
+     "squadra_ospite": "polisportiva-supersano",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-364",
+     "giornata": 16,
+     "data": "2027-02-28",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport - Aradeo",
+     "squadra_casa": "aradeo-volley-1977",
+     "squadra_ospite": "volley-alezio-98",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-365",
+     "giornata": 17,
+     "data": "2027-03-07",
+     "ora": "10:30",
+     "palazzetto": "Palasport \"Cesari\" - Cutrofiano",
+     "squadra_casa": "cutrofiano-volley",
+     "squadra_ospite": "magic-volley-galatina",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-366",
+     "giornata": 17,
+     "data": "2027-03-07",
+     "ora": "19:00",
+     "palazzetto": "Pallone Tensostatico - Parabita",
+     "squadra_casa": "cesp-olimpius-parabita",
+     "squadra_ospite": "mb-volley-ruffano",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-367",
+     "giornata": 17,
+     "data": "2027-03-07",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport - Galatone",
+     "squadra_casa": "green-volley-galatone",
+     "squadra_ospite": "astra-volley-presicce-acquarica",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-368",
+     "giornata": 17,
+     "data": "2027-03-06",
+     "ora": "18:30",
+     "palazzetto": "Palestra Comunale - Supersano",
+     "squadra_casa": "polisportiva-supersano",
+     "squadra_ospite": "aradeo-volley-1977",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-369",
+     "giornata": 17,
+     "data": "2027-03-07",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport \"Pala Federico\" - Alezio",
+     "squadra_casa": "volley-alezio-98",
+     "squadra_ospite": "flyarmida-volley",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-370",
+     "giornata": 17,
+     "data": "2027-03-07",
+     "ora": "10:30",
+     "palazzetto": "Palestra Scuola Media \"G. B. Tafuri\" - Nardò",
+     "squadra_casa": "dream-volley-nardo",
+     "squadra_ospite": "victor-volley",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-371",
+     "giornata": 18,
+     "data": "2027-03-12",
+     "ora": "20:00",
+     "palazzetto": "Palazzetto dello Sport \"MARCELLO BISANTI\" - Ruffano",
+     "squadra_casa": "mb-volley-ruffano",
+     "squadra_ospite": "cutrofiano-volley",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-372",
+     "giornata": 18,
+     "data": "2027-03-13",
+     "ora": "18:30",
+     "palazzetto": "Palazzetto dello Sport \"Fernando Panico\" - Galatina",
+     "squadra_casa": "magic-volley-galatina",
+     "squadra_ospite": "volley-alezio-98",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-373",
+     "giornata": 18,
+     "data": "2027-03-14",
+     "ora": "11:00",
+     "palazzetto": "Palazzetto dello Sport - Acquarica del Capo",
+     "squadra_casa": "astra-volley-presicce-acquarica",
+     "squadra_ospite": "polisportiva-supersano",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-374",
+     "giornata": 18,
+     "data": "2027-03-14",
+     "ora": "18:30",
+     "palazzetto": "Tensostatico Parco Ricchello - Taviano",
+     "squadra_casa": "flyarmida-volley",
+     "squadra_ospite": "green-volley-galatone",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-375",
+     "giornata": 18,
+     "data": "2027-03-14",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport - Aradeo",
+     "squadra_casa": "aradeo-volley-1977",
+     "squadra_ospite": "citta-di-otranto",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-376",
+     "giornata": 18,
+     "data": "2027-03-14",
+     "ora": "10:30",
+     "palazzetto": "Palazzetto ARKÉ - Melissano",
+     "squadra_casa": "victor-volley",
+     "squadra_ospite": "cesp-olimpius-parabita",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-377",
+     "giornata": 19,
+     "data": "2027-03-21",
+     "ora": "10:30",
+     "palazzetto": "Palasport \"Cesari\" - Cutrofiano",
+     "squadra_casa": "cutrofiano-volley",
+     "squadra_ospite": "astra-volley-presicce-acquarica",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-378",
+     "giornata": 19,
+     "data": "2027-03-21",
+     "ora": "10:30",
+     "palazzetto": "Palestra Scuola Media \"G. B. Tafuri\" - Nardò",
+     "squadra_casa": "dream-volley-nardo",
+     "squadra_ospite": "mb-volley-ruffano",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-379",
+     "giornata": 19,
+     "data": "2027-03-20",
+     "ora": "18:30",
+     "palazzetto": "Palestra Comunale - Supersano",
+     "squadra_casa": "polisportiva-supersano",
+     "squadra_ospite": "magic-volley-galatina",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-380",
+     "giornata": 19,
+     "data": "2027-03-21",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport - Galatone",
+     "squadra_casa": "green-volley-galatone",
+     "squadra_ospite": "victor-volley",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-381",
+     "giornata": 19,
+     "data": "2027-03-20",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello sport - Otranto",
+     "squadra_casa": "citta-di-otranto",
+     "squadra_ospite": "flyarmida-volley",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-382",
+     "giornata": 19,
+     "data": "2027-03-21",
+     "ora": "19:00",
+     "palazzetto": "Pallone Tensostatico - Parabita",
+     "squadra_casa": "cesp-olimpius-parabita",
+     "squadra_ospite": "aradeo-volley-1977",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-383",
+     "giornata": 20,
+     "data": "2027-04-04",
+     "ora": "10:30",
+     "palazzetto": "Palasport \"Cesari\" - Cutrofiano",
+     "squadra_casa": "cutrofiano-volley",
+     "squadra_ospite": "polisportiva-supersano",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-384",
+     "giornata": 20,
+     "data": "2027-04-03",
+     "ora": "18:30",
+     "palazzetto": "Palazzetto dello Sport \"Fernando Panico\" - Galatina",
+     "squadra_casa": "magic-volley-galatina",
+     "squadra_ospite": "green-volley-galatone",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-385",
+     "giornata": 20,
+     "data": "2027-04-04",
+     "ora": "11:00",
+     "palazzetto": "Palazzetto dello Sport - Acquarica del Capo",
+     "squadra_casa": "astra-volley-presicce-acquarica",
+     "squadra_ospite": "volley-alezio-98",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-386",
+     "giornata": 20,
+     "data": "2027-04-04",
+     "ora": "18:30",
+     "palazzetto": "Tensostatico Parco Ricchello - Taviano",
+     "squadra_casa": "flyarmida-volley",
+     "squadra_ospite": "cesp-olimpius-parabita",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-387",
+     "giornata": 20,
+     "data": "2027-04-04",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport - Aradeo",
+     "squadra_casa": "aradeo-volley-1977",
+     "squadra_ospite": "dream-volley-nardo",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-388",
+     "giornata": 20,
+     "data": "2027-04-04",
+     "ora": "10:30",
+     "palazzetto": "Palazzetto ARKÉ - Melissano",
+     "squadra_casa": "victor-volley",
+     "squadra_ospite": "citta-di-otranto",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-389",
+     "giornata": 21,
+     "data": "2027-04-11",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport - Galatone",
+     "squadra_casa": "green-volley-galatone",
+     "squadra_ospite": "cutrofiano-volley",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-390",
+     "giornata": 21,
+     "data": "2027-04-10",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport \"MARCELLO BISANTI\" - Ruffano",
+     "squadra_casa": "mb-volley-ruffano",
+     "squadra_ospite": "aradeo-volley-1977",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-391",
+     "giornata": 21,
+     "data": "2027-04-10",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello sport - Otranto",
+     "squadra_casa": "citta-di-otranto",
+     "squadra_ospite": "magic-volley-galatina",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-392",
+     "giornata": 21,
+     "data": "2027-04-10",
+     "ora": "18:30",
+     "palazzetto": "Palestra Comunale - Supersano",
+     "squadra_casa": "polisportiva-supersano",
+     "squadra_ospite": "flyarmida-volley",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-393",
+     "giornata": 21,
+     "data": "2027-04-11",
+     "ora": "10:30",
+     "palazzetto": "Palestra Scuola Media \"G. B. Tafuri\" - Nardò",
+     "squadra_casa": "dream-volley-nardo",
+     "squadra_ospite": "astra-volley-presicce-acquarica",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-394",
+     "giornata": 21,
+     "data": "2027-04-11",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport \"Pala Federico\" - Alezio",
+     "squadra_casa": "volley-alezio-98",
+     "squadra_ospite": "victor-volley",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-395",
+     "giornata": 22,
+     "data": "2027-04-17",
+     "ora": "18:30",
+     "palazzetto": "Palestra Comunale - Supersano",
+     "squadra_casa": "polisportiva-supersano",
+     "squadra_ospite": "green-volley-galatone",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-396",
+     "giornata": 22,
+     "data": "2027-04-18",
+     "ora": "10:30",
+     "palazzetto": "Palasport \"Cesari\" - Cutrofiano",
+     "squadra_casa": "cutrofiano-volley",
+     "squadra_ospite": "volley-alezio-98",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-397",
+     "giornata": 22,
+     "data": "2027-04-18",
+     "ora": "10:30",
+     "palazzetto": "Palazzetto ARKÉ - Melissano",
+     "squadra_casa": "victor-volley",
+     "squadra_ospite": "mb-volley-ruffano",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-398",
+     "giornata": 22,
+     "data": "2027-04-17",
+     "ora": "18:30",
+     "palazzetto": "Palazzetto dello Sport \"Fernando Panico\" - Galatina",
+     "squadra_casa": "magic-volley-galatina",
+     "squadra_ospite": "cesp-olimpius-parabita",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-399",
+     "giornata": 22,
+     "data": "2027-04-18",
+     "ora": "11:00",
+     "palazzetto": "Palazzetto dello Sport - Acquarica del Capo",
+     "squadra_casa": "astra-volley-presicce-acquarica",
+     "squadra_ospite": "citta-di-otranto",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-400",
+     "giornata": 22,
+     "data": "2027-04-18",
+     "ora": "18:30",
+     "palazzetto": "Tensostatico Parco Ricchello - Taviano",
+     "squadra_casa": "flyarmida-volley",
+     "squadra_ospite": "dream-volley-nardo",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-401",
+     "giornata": 23,
+     "data": "2027-04-25",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport \"Pala Federico\" - Alezio",
+     "squadra_casa": "volley-alezio-98",
+     "squadra_ospite": "polisportiva-supersano",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-402",
+     "giornata": 23,
+     "data": "2027-04-24",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello sport - Otranto",
+     "squadra_casa": "citta-di-otranto",
+     "squadra_ospite": "cutrofiano-volley",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-403",
+     "giornata": 23,
+     "data": "2027-04-25",
+     "ora": "10:30",
+     "palazzetto": "Palestra Scuola Media \"G. B. Tafuri\" - Nardò",
+     "squadra_casa": "dream-volley-nardo",
+     "squadra_ospite": "green-volley-galatone",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-404",
+     "giornata": 23,
+     "data": "2027-04-25",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport - Aradeo",
+     "squadra_casa": "aradeo-volley-1977",
+     "squadra_ospite": "magic-volley-galatina",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-405",
+     "giornata": 23,
+     "data": "2027-04-24",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport \"MARCELLO BISANTI\" - Ruffano",
+     "squadra_casa": "mb-volley-ruffano",
+     "squadra_ospite": "flyarmida-volley",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-406",
+     "giornata": 23,
+     "data": "2027-04-25",
+     "ora": "19:00",
+     "palazzetto": "Pallone Tensostatico - Parabita",
+     "squadra_casa": "cesp-olimpius-parabita",
+     "squadra_ospite": "astra-volley-presicce-acquarica",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-407",
+     "giornata": 24,
+     "data": "2027-05-02",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport - Galatone",
+     "squadra_casa": "green-volley-galatone",
+     "squadra_ospite": "volley-alezio-98",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-408",
+     "giornata": 24,
+     "data": "2027-05-01",
+     "ora": "18:30",
+     "palazzetto": "Palestra Comunale - Supersano",
+     "squadra_casa": "polisportiva-supersano",
+     "squadra_ospite": "citta-di-otranto",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-409",
+     "giornata": 24,
+     "data": "2027-05-02",
+     "ora": "10:30",
+     "palazzetto": "Palasport \"Cesari\" - Cutrofiano",
+     "squadra_casa": "cutrofiano-volley",
+     "squadra_ospite": "cesp-olimpius-parabita",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-410",
+     "giornata": 24,
+     "data": "2027-05-02",
+     "ora": "10:30",
+     "palazzetto": "Palazzetto ARKÉ - Melissano",
+     "squadra_casa": "victor-volley",
+     "squadra_ospite": "aradeo-volley-1977",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-411",
+     "giornata": 24,
+     "data": "2027-05-02",
+     "ora": "11:00",
+     "palazzetto": "Palazzetto dello Sport - Acquarica del Capo",
+     "squadra_casa": "astra-volley-presicce-acquarica",
+     "squadra_ospite": "mb-volley-ruffano",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-412",
+     "giornata": 24,
+     "data": "2027-05-01",
+     "ora": "18:30",
+     "palazzetto": "Palazzetto dello Sport \"Fernando Panico\" - Galatina",
+     "squadra_casa": "magic-volley-galatina",
+     "squadra_ospite": "dream-volley-nardo",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-413",
+     "giornata": 25,
+     "data": "2027-05-08",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello sport - Otranto",
+     "squadra_casa": "citta-di-otranto",
+     "squadra_ospite": "green-volley-galatone",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-414",
+     "giornata": 25,
+     "data": "2027-05-09",
+     "ora": "19:00",
+     "palazzetto": "Pallone Tensostatico - Parabita",
+     "squadra_casa": "cesp-olimpius-parabita",
+     "squadra_ospite": "volley-alezio-98",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-415",
+     "giornata": 25,
+     "data": "2027-05-09",
+     "ora": "10:30",
+     "palazzetto": "Palestra Scuola Media \"G. B. Tafuri\" - Nardò",
+     "squadra_casa": "dream-volley-nardo",
+     "squadra_ospite": "cutrofiano-volley",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-416",
+     "giornata": 25,
+     "data": "2027-05-09",
+     "ora": "10:30",
+     "palazzetto": "Palazzetto ARKÉ - Melissano",
+     "squadra_casa": "victor-volley",
+     "squadra_ospite": "magic-volley-galatina",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-417",
+     "giornata": 25,
+     "data": "2027-05-09",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport - Aradeo",
+     "squadra_casa": "aradeo-volley-1977",
+     "squadra_ospite": "flyarmida-volley",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-418",
+     "giornata": 25,
+     "data": "2027-05-08",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport \"MARCELLO BISANTI\" - Ruffano",
+     "squadra_casa": "mb-volley-ruffano",
+     "squadra_ospite": "polisportiva-supersano",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-419",
+     "giornata": 26,
+     "data": "2027-05-16",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport \"Pala Federico\" - Alezio",
+     "squadra_casa": "volley-alezio-98",
+     "squadra_ospite": "citta-di-otranto",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-420",
+     "giornata": 26,
+     "data": "2027-05-15",
+     "ora": "18:30",
+     "palazzetto": "Palestra Comunale - Supersano",
+     "squadra_casa": "polisportiva-supersano",
+     "squadra_ospite": "dream-volley-nardo",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-421",
+     "giornata": 26,
+     "data": "2027-05-16",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport - Galatone",
+     "squadra_casa": "green-volley-galatone",
+     "squadra_ospite": "cesp-olimpius-parabita",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-422",
+     "giornata": 26,
+     "data": "2027-05-16",
+     "ora": "18:30",
+     "palazzetto": "Tensostatico Parco Ricchello - Taviano",
+     "squadra_casa": "flyarmida-volley",
+     "squadra_ospite": "victor-volley",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-423",
+     "giornata": 26,
+     "data": "2027-05-16",
+     "ora": "11:00",
+     "palazzetto": "Palazzetto dello Sport - Acquarica del Capo",
+     "squadra_casa": "astra-volley-presicce-acquarica",
+     "squadra_ospite": "aradeo-volley-1977",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "p1d-424",
+     "giornata": 26,
+     "data": "2027-05-15",
+     "ora": "18:30",
+     "palazzetto": "Palazzetto dello Sport \"Fernando Panico\" - Galatina",
+     "squadra_casa": "magic-volley-galatina",
+     "squadra_ospite": "mb-volley-ruffano",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    }
+   ]
+  },
+  {
+   "categoria": "Under 19",
+   "girone": "D",
+   "squadre": [
+    "victor-volley",
+    "mb-volley-ruffano",
+    "flyarmida-volley",
+    "astra-volley-presicce-acquarica",
+    "spongano"
+   ],
+   "partite": [
+    {
+     "id": "u19-117",
+     "giornata": 1,
+     "data": "2026-10-21",
+     "ora": "19:30",
+     "palazzetto": "Palazzetto dello Sport \"MARCELLO BISANTI\" - Ruffano",
+     "squadra_casa": "mb-volley-ruffano",
+     "squadra_ospite": "spongano",
+     "set_casa": 3,
+     "set_ospite": 1,
+     "parziali": [
+      [
+       16,
+       25
+      ],
+      [
+       25,
+       21
+      ],
+      [
+       25,
+       16
+      ],
+      [
+       25,
+       23
+      ]
+     ]
+    },
+    {
+     "id": "u19-118",
+     "giornata": 1,
+     "data": "2026-10-21",
+     "ora": "19:00",
+     "palazzetto": "Tensostatico Parco Ricchello - Taviano",
+     "squadra_casa": "flyarmida-volley",
+     "squadra_ospite": "victor-volley",
+     "set_casa": 3,
+     "set_ospite": 0,
+     "parziali": [
+      [
+       25,
+       7
+      ],
+      [
+       25,
+       11
+      ],
+      [
+       25,
+       14
+      ]
+     ]
+    },
+    {
+     "id": "u19-119",
+     "giornata": 2,
+     "data": "2026-10-28",
+     "ora": "17:00",
+     "palazzetto": "Tensostatico Comunale \"Karol Wojtyla\" - Spongano",
+     "squadra_casa": "spongano",
+     "squadra_ospite": "flyarmida-volley",
+     "set_casa": 0,
+     "set_ospite": 3,
+     "parziali": [
+      [
+       11,
+       25
+      ],
+      [
+       10,
+       25
+      ],
+      [
+       16,
+       25
+      ]
+     ]
+    },
+    {
+     "id": "u19-120",
+     "giornata": 2,
+     "data": "2026-10-27",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto ARKÉ - Melissano",
+     "squadra_casa": "victor-volley",
+     "squadra_ospite": "astra-volley-presicce-acquarica",
+     "set_casa": 0,
+     "set_ospite": 3,
+     "parziali": [
+      [
+       11,
+       25
+      ],
+      [
+       21,
+       25
+      ],
+      [
+       3,
+       25
+      ]
+     ]
+    },
+    {
+     "id": "u19-121",
+     "giornata": 3,
+     "data": "2026-11-04",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport - Acquarica del Capo",
+     "squadra_casa": "astra-volley-presicce-acquarica",
+     "squadra_ospite": "spongano",
+     "set_casa": 3,
+     "set_ospite": 0,
+     "parziali": [
+      [
+       25,
+       6
+      ],
+      [
+       25,
+       10
+      ],
+      [
+       25,
+       17
+      ]
+     ]
+    },
+    {
+     "id": "u19-122",
+     "giornata": 3,
+     "data": "2026-11-04",
+     "ora": "19:00",
+     "palazzetto": "Tensostatico Parco Ricchello - Taviano",
+     "squadra_casa": "flyarmida-volley",
+     "squadra_ospite": "mb-volley-ruffano",
+     "set_casa": 3,
+     "set_ospite": 0,
+     "parziali": [
+      [
+       25,
+       9
+      ],
+      [
+       25,
+       13
+      ],
+      [
+       25,
+       13
+      ]
+     ]
+    },
+    {
+     "id": "u19-123",
+     "giornata": 4,
+     "data": "2026-11-11",
+     "ora": "17:00",
+     "palazzetto": "Tensostatico Comunale \"Karol Wojtyla\" - Spongano",
+     "squadra_casa": "spongano",
+     "squadra_ospite": "victor-volley",
+     "set_casa": 3,
+     "set_ospite": 2,
+     "parziali": [
+      [
+       25,
+       17
+      ],
+      [
+       25,
+       19
+      ],
+      [
+       14,
+       25
+      ],
+      [
+       13,
+       25
+      ],
+      [
+       15,
+       8
+      ]
+     ]
+    },
+    {
+     "id": "u19-124",
+     "giornata": 4,
+     "data": "2026-11-11",
+     "ora": "19:30",
+     "palazzetto": "Palazzetto dello Sport \"MARCELLO BISANTI\" - Ruffano",
+     "squadra_casa": "mb-volley-ruffano",
+     "squadra_ospite": "astra-volley-presicce-acquarica",
+     "set_casa": 0,
+     "set_ospite": 3,
+     "parziali": [
+      [
+       19,
+       25
+      ],
+      [
+       9,
+       25
+      ],
+      [
+       16,
+       25
+      ]
+     ]
+    },
+    {
+     "id": "u19-125",
+     "giornata": 5,
+     "data": "2026-11-19",
+     "ora": "18:00",
+     "palazzetto": "Pallone Tensostatico - Melissano",
+     "squadra_casa": "victor-volley",
+     "squadra_ospite": "mb-volley-ruffano",
+     "set_casa": 1,
+     "set_ospite": 3,
+     "parziali": [
+      [
+       25,
+       18
+      ],
+      [
+       22,
+       25
+      ],
+      [
+       15,
+       25
+      ],
+      [
+       20,
+       25
+      ]
+     ]
+    },
+    {
+     "id": "u19-126",
+     "giornata": 5,
+     "data": "2026-11-18",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport - Acquarica del Capo",
+     "squadra_casa": "astra-volley-presicce-acquarica",
+     "squadra_ospite": "flyarmida-volley",
+     "set_casa": 3,
+     "set_ospite": 0,
+     "parziali": [
+      [
+       25,
+       13
+      ],
+      [
+       25,
+       22
+      ],
+      [
+       25,
+       12
+      ]
+     ]
+    },
+    {
+     "id": "u19-127",
+     "giornata": 6,
+     "data": "2026-11-25",
+     "ora": "17:00",
+     "palazzetto": "Tensostatico Comunale \"Karol Wojtyla\" - Spongano",
+     "squadra_casa": "spongano",
+     "squadra_ospite": "mb-volley-ruffano",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "u19-128",
+     "giornata": 6,
+     "data": "2026-11-24",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto ARKÉ - Melissano",
+     "squadra_casa": "victor-volley",
+     "squadra_ospite": "flyarmida-volley",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "u19-129",
+     "giornata": 7,
+     "data": "2026-12-02",
+     "ora": "19:00",
+     "palazzetto": "Tensostatico Parco Ricchello - Taviano",
+     "squadra_casa": "flyarmida-volley",
+     "squadra_ospite": "spongano",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "u19-130",
+     "giornata": 7,
+     "data": "2026-12-02",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport - Acquarica del Capo",
+     "squadra_casa": "astra-volley-presicce-acquarica",
+     "squadra_ospite": "victor-volley",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "u19-131",
+     "giornata": 8,
+     "data": "2026-12-09",
+     "ora": "17:00",
+     "palazzetto": "Tensostatico Comunale \"Karol Wojtyla\" - Spongano",
+     "squadra_casa": "spongano",
+     "squadra_ospite": "astra-volley-presicce-acquarica",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "u19-132",
+     "giornata": 8,
+     "data": "2026-12-09",
+     "ora": "19:30",
+     "palazzetto": "Palazzetto dello Sport \"MARCELLO BISANTI\" - Ruffano",
+     "squadra_casa": "mb-volley-ruffano",
+     "squadra_ospite": "flyarmida-volley",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "u19-133",
+     "giornata": 9,
+     "data": "2026-12-15",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto ARKÉ - Melissano",
+     "squadra_casa": "victor-volley",
+     "squadra_ospite": "spongano",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "u19-134",
+     "giornata": 9,
+     "data": "2026-12-16",
+     "ora": "18:00",
+     "palazzetto": "Palazzetto dello Sport - Acquarica del Capo",
+     "squadra_casa": "astra-volley-presicce-acquarica",
+     "squadra_ospite": "mb-volley-ruffano",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "u19-135",
+     "giornata": 10,
+     "data": "2026-12-23",
+     "ora": "19:30",
+     "palazzetto": "Palazzetto dello Sport \"MARCELLO BISANTI\" - Ruffano",
+     "squadra_casa": "mb-volley-ruffano",
+     "squadra_ospite": "victor-volley",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    },
+    {
+     "id": "u19-136",
+     "giornata": 10,
+     "data": "2026-12-23",
+     "ora": "19:00",
+     "palazzetto": "Tensostatico Parco Ricchello - Taviano",
+     "squadra_casa": "flyarmida-volley",
+     "squadra_ospite": "astra-volley-presicce-acquarica",
+     "set_casa": null,
+     "set_ospite": null,
+     "parziali": []
+    }
+   ]
+  }
+ ]
+}
