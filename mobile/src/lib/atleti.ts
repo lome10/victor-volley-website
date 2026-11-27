@@ -205,7 +205,7 @@ export function daFare(base: Cosa[], nonLetti: number, nonLettiImportanti: boole
 /* ---------------- avvisi ---------------- */
 
 /** Categorie degli avvisi da leggere: sempre 'tutte', piu' la squadra se c'e' (le regole vogliono questa query). */
-export const categorieAvvisi = (a: Atleta) => (a.categoria ? ['tutte', a.categoria] : ['tutte']);
+export const categorieAvvisi = (categoria?: string) => (categoria ? ['tutte', categoria] : ['tutte']);
 
 /** Avviso fissato in alto: `fissato` e, se c'e', `fissatoFino` (AAAA-MM-GG, incluso). */
 export function fissatoAttivo(v: Avviso, adesso: Date) {

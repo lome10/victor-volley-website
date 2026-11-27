@@ -77,7 +77,7 @@ export function Cruscotto({ utente }: { utente: Utente }) {
 
   const avvisi = useQuery({
     queryKey: ['avvisi', utente.uid, categoria],
-    queryFn: async () => ordinaAvvisi(await leggiAvvisi(categorieAvvisi({ uid: atletaId, categoria })), new Date()),
+    queryFn: async () => ordinaAvvisi(await leggiAvvisi(categorieAvvisi(categoria)), new Date()),
     enabled: !!atletaId,
   });
   const rate = useQuery({
