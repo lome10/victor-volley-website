@@ -45,7 +45,16 @@ const raccolte = {
     { id: 2, categoryId: 2, name: 'SEGRETO-categoria-spenta' },
     { id: 3, categoryId: 3, name: 'SEGRETO-categoria-nascosta' }
   ],
-  staff: [{ id: 1, categoryId: 1, name: 'Mister Finto', role: 'Allenatore', telefono: 'SEGRETO-tel' }, { id: 2, categoryId: 2, name: 'SEGRETO-staff' }]
+  staff: [{ id: 1, categoryId: 1, name: 'Mister Finto', role: 'Allenatore', telefono: 'SEGRETO-tel' }, { id: 2, categoryId: 2, name: 'SEGRETO-staff' }],
+  /* Come i documenti veri (27/11): l'id è il nome del documento, non un campo. */
+  allenamenti: [
+    { _id: 'o1', categoria: 'Prima Divisione', giorno: 4, oraInizio: '20:00', oraFine: '22:00', luogo: 'Arkè - Melissano', note: '', validoFino: '2027-06-30' },
+    { _id: 'o2', categoria: 'Under 13', giorno: '2', oraInizio: '18:30', luogo: 'Palestra' }
+  ],
+  allenamentiEccezioni: [
+    { _id: 'a-o1-2026-11-12', orarioId: 'o1', dataOriginale: '2026-11-12', categoria: 'Prima Divisione', annullato: false, data: '2026-11-13', oraInizio: '19:00', oraFine: '', aggiornatoDa: 'SEGRETO-uid', aggiornatoIl: '2026-11-12T10:00:00Z' },
+    { _id: 'a-o2-2026-11-17', orarioId: 'o2', dataOriginale: '2026-11-17', categoria: 'Under 13', annullato: true }
+  ]
 };
 const girone = { stagione: '2026/2027', squadre: [{ id: 'victor-volley', nome: 'Victor Volley', logo: 'assets/logo.png', home: true }], gironi: [{ categoria: 'Prima Divisione', girone: 'B', squadre: ['victor-volley'], partite: [{ id: 'g1', giornata: 1, squadra_casa: 'Victor Volley', squadra_ospite: 'Altra', set_casa: 3, set_ospite: 1, parziali: [[25, 20]], arbitro: 'SEGRETO-arbitro' }] }] };
 const documenti = {
@@ -74,7 +83,9 @@ global.fetch = async (url, opt) => {
     return ok(trovati.length ? trovati.map((a) => ({ document: { fields: campi(a) } })) : [{ readTime: 'x' }]);
   }
   const nome = percorso.slice(1);
-  if (raccolte[nome]) return ok({ documents: raccolte[nome].map((d) => ({ fields: campi(d) })) });
+  if (raccolte[nome]) {
+    return ok({ documents: raccolte[nome].map(({ _id, ...d }) => Object.assign({ fields: campi(d) }, _id ? { name: 'projects/victor-volley/databases/(default)/documents/' + nome + '/' + _id } : {})) });
+  }
   if (documenti[nome]) return ok({ fields: campi(documenti[nome]) });
   return { ok: false, status: 404, json: async () => ({}) };
 };
@@ -98,18 +109,18 @@ async function t(nome, fn) {
 const silenzia = console.error;
 
 (async () => {
-  await t('elenco: nessun dato privato, nessuna bozza, nessun allenamento', async () => {
+  await t('elenco: nessun dato privato, nessuna bozza', async () => {
     const r = await chiedi({ app: '1' });
     assert.strictEqual(r.code, 200);
     const s = JSON.stringify(r.body);
     assert.ok(!s.includes('SEGRETO'), 'dato privato nel JSON: ' + s.slice(s.indexOf('SEGRETO') - 80, s.indexOf('SEGRETO') + 40));
     assert.ok(!('content' in r.body.articoli[0]));
-    assert.deepStrictEqual(Object.keys(r.body).sort(), ['album', 'articoli', 'categorie', 'categorieArticoli', 'generatoIl', 'giocatori', 'girone', 'livelliSponsor', 'maglia', 'partite', 'sponsor', 'staff', 'stagioni', 'versione']);
+    assert.deepStrictEqual(Object.keys(r.body).sort(), ['album', 'allenamenti', 'allenamentiEccezioni', 'articoli', 'categorie', 'categorieArticoli', 'generatoIl', 'giocatori', 'girone', 'livelliSponsor', 'maglia', 'partite', 'sponsor', 'staff', 'stagioni', 'versione']);
   });
 
   await t('letture: solo queste, una volta; mai settings/asd, mai un elenco di settings o siteData; Referer del sito', async () => {
     await chiedi({ app: '1' });
-    assert.deepStrictEqual(letture.slice().sort(), ['/albums', '/categories', '/partite', '/players', '/settings/categorieArticoli', '/settings/livelliSponsorSub', '/settings/maglia', '/settings/seasons', '/settings/sponsor', '/siteData/girone', '/staff', ':runQuery']);
+    assert.deepStrictEqual(letture.slice().sort(), ['/albums', '/allenamenti', '/allenamentiEccezioni', '/categories', '/partite', '/players', '/settings/categorieArticoli', '/settings/livelliSponsorSub', '/settings/maglia', '/settings/seasons', '/settings/sponsor', '/siteData/girone', '/staff', ':runQuery']);
     assert.ok(referer.every((x) => x === 'https://www.victorvolley.it/'));
   });
 
@@ -135,6 +146,23 @@ const silenzia = console.error;
     assert.deepStrictEqual(b.categorieArticoli, L.predefiniti.CATEGORIE_ARTICOLI_PREDEFINITE);
   });
 
+  await t('allenamenti ed eccezioni: id dal nome del documento, campi come js/atleta.js', async () => {
+    const b = (await chiedi({ app: '1' })).body;
+    assert.deepStrictEqual(b.allenamenti, [
+      { id: 'o1', categoria: 'Prima Divisione', giorno: 4, oraInizio: '20:00', oraFine: '22:00', luogo: 'Arkè - Melissano', note: '', validoFino: '2027-06-30' },
+      { id: 'o2', categoria: 'Under 13', giorno: 2, oraInizio: '18:30', oraFine: '', luogo: 'Palestra', note: '', validoFino: '' }
+    ]);
+    /* "" resta "" (orario di fine tolto), un campo assente diventa null (come al solito). */
+    assert.deepStrictEqual(b.allenamentiEccezioni, [
+      { id: 'a-o1-2026-11-12', orarioId: 'o1', dataOriginale: '2026-11-12', categoria: 'Prima Divisione', annullato: false, data: '2026-11-13', oraInizio: '19:00', oraFine: '', luogo: null },
+      { id: 'a-o2-2026-11-17', orarioId: 'o2', dataOriginale: '2026-11-17', categoria: 'Under 13', annullato: true, data: null, oraInizio: null, oraFine: null, luogo: null }
+    ]);
+    /* La chiave che js/atleta.js costruisce per cercare l'eccezione è proprio l'id. */
+    const atleta = fs.readFileSync(path.join(radice, 'js/atleta.js'), 'utf8');
+    assert.ok(atleta.includes("_safeId('a-' + t.id + '-' + day)"), 'js/atleta.js ha cambiato la chiave delle eccezioni');
+    assert.ok(atleta.includes("db.collection('allenamenti')") && atleta.includes("db.collection('allenamentiEccezioni')"));
+  });
+
   await t('regole copiate uguali a js/data.js', async () => {
     const finestra = {};
     vm.runInNewContext(fs.readFileSync(path.join(radice, 'js/data.js'), 'utf8'), { window: finestra });
@@ -158,7 +186,7 @@ const silenzia = console.error;
   await t('cache: una sola rigenerazione per richieste insieme o ravvicinate', async () => {
     await Promise.all([chiedi({ app: '1' }), chiedi({ app: '1' })]);
     const r = await chiedi({ app: '1' });
-    assert.strictEqual(letture.length, 12);
+    assert.strictEqual(letture.length, 14);
     assert.ok(/^public, s-maxage=(900|8\d\d), stale-while-revalidate=900$/.test(r.headers['Cache-Control']), r.headers['Cache-Control']);
   });
 
@@ -170,10 +198,10 @@ const silenzia = console.error;
       await chiedi({ app: '1' });
       ora += 600 * 1000;
       assert.strictEqual((await chiedi({ app: '1' })).headers['Cache-Control'], 'public, s-maxage=300, stale-while-revalidate=900');
-      assert.strictEqual(letture.length, 12);
+      assert.strictEqual(letture.length, 14);
       ora += 301 * 1000;
       await chiedi({ app: '1' });
-      assert.strictEqual(letture.length, 24);
+      assert.strictEqual(letture.length, 28);
     } finally { Date.now = vero; }
   });
 
