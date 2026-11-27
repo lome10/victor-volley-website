@@ -815,10 +815,15 @@
         grid.innerHTML = '<div class="empty-state"><p>Nessuna foto ancora. Carica le prime!</p></div>';
         return;
       }
+      /* La copertina (miniatura dell'album in Galleria, admin e app) si sceglie qui: tasto "Copertina" su ogni foto. */
+      var coverId = VV.albumCoverId(VV.getAlbum(albumId));
       grid.innerHTML = photos.map(function (p) {
-        return '<div class="photo-item">' +
+        var isCover = p.id === coverId;
+        return '<div class="photo-item' + (isCover ? ' is-cover' : '') + '">' +
           '<img src="' + esc(p.thumb) + '" alt="' + esc(p.name) + '" loading="lazy" decoding="async">' +
+          (isCover ? '<span class="photo-cover-badge">★ Copertina</span>' : '') +
           '<div class="photo-item-overlay">' +
+            (isCover ? '' : '<button class="photo-cover" data-pid="' + esc(p.id) + '" onclick="AdminActions.setAlbumCover(this.dataset.pid)">Copertina</button>') +
             '<button class="photo-delete" data-pid="' + esc(p.id) + '" onclick="AdminActions.deletePhoto(this.dataset.pid)">Elimina</button>' +
           '</div>' +
         '</div>';
@@ -2221,6 +2226,14 @@
           });
         });
       });
+    },
+    /* Sceglie la foto di copertina dell'album aperto (campo `cover`). */
+    setAlbumCover: function (photoId) {
+      var album = VV.getAlbum(_currentAlbumId);
+      if (!album || !(album.photos || []).some(function (p) { return p.id === photoId; }) || album.cover === photoId) return;
+      var id = _currentAlbumId;
+      DB.saveAlbum(Object.assign({}, album, { cover: photoId }), function () { if (_currentAlbumId === id) loadPhotos(id); });
+      loadPhotos(id);
     },
     deletePhoto: function (photoId) {
       var album = VV.getAlbum(_currentAlbumId);

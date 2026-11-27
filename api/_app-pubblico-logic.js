@@ -283,7 +283,9 @@ function componi(d, adesso) {
     const photos = oggetti(a.photos).filter((f) => testo(f.id)).map((f) => ({ id: testo(f.id), w: numero(f.w), h: numero(f.h) }));
     return {
       id: numero(a.id), slug: slugAlbum(a, albumGrezzi), title: testo(a.title), date: testo(a.date),
-      category: testo(a.category), photoCount: photos.length, photos
+      category: testo(a.category), photoCount: photos.length, photos,
+      /* Miniatura: la foto scelta in admin se c'è ancora, se no la prima (come VV.albumCoverId). */
+      copertina: photos.some((f) => f.id === testo(a.cover)) ? testo(a.cover) : (photos[0] ? photos[0].id : '')
     };
   }).filter((a) => a.photos.length);   /* nell'ordine scelto in admin, come galleria-1.js */
 

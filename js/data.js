@@ -116,6 +116,13 @@
         return b.id - a.id;
       });
     },
+    /* Foto di copertina (miniatura) dell'album: quella scelta in admin (campo `cover`, id della foto) se è ancora
+       nell'album, altrimenti la prima foto, come prima. '' se l'album non ha foto. Scelta di Lorenzo, 27/11. */
+    albumCoverId: function (album) {
+      var photos = (album && album.photos) || [];
+      var chosen = album && album.cover && photos.some(function (p) { return p && p.id === album.cover; });
+      return chosen ? album.cover : (photos[0] && photos[0].id) || '';
+    },
     /* Sposta un album di una posizione (delta -1 = prima, +1 = dopo) nell'ordine di sortAlbums.
        Ritorna gli album da salvare con il nuovo `order` (1..n per tutti, solo quelli che cambiano); [] se non si muove. */
     moveAlbum: function (list, id, delta) {

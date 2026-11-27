@@ -62,5 +62,22 @@ t('/api/app-pubblico: stessa regola di js/data.js', () => {
   assert.deepStrictEqual(ids(corpo.album), [3, 2, 1], 'nuovo in cima, poi l\'ordine di admin; senza foto non c\'è');
 });
 
+t('copertina: scelta in admin se c\'è ancora, se no la prima foto; uguale nel sito e in /api/app-pubblico', () => {
+  const ph = [{ id: 'vv/a' }, { id: 'vv/b' }];
+  assert.strictEqual(VV.albumCoverId({ photos: ph }), 'vv/a');
+  assert.strictEqual(VV.albumCoverId({ photos: ph, cover: 'vv/b' }), 'vv/b');
+  assert.strictEqual(VV.albumCoverId({ photos: ph, cover: 'vv/cancellata' }), 'vv/a');
+  assert.strictEqual(VV.albumCoverId({ photos: [] , cover: 'vv/b' }), '');
+  assert.strictEqual(VV.albumCoverId(null), '');
+  const foto = [{ id: 'vv/a', w: 1, h: 1 }, { id: 'vv/b', w: 1, h: 1 }];
+  const corpo = L.componi({ albums: [
+    { id: 1, date: '2026-01-01', title: 'x', photos: foto, cover: 'vv/b' },
+    { id: 2, date: '2026-02-01', title: 'y', photos: foto },
+    { id: 3, date: '2026-03-01', title: 'z', photos: foto, cover: 'vv/cancellata' }
+  ] }, new Date());
+  assert.deepStrictEqual(corpo.album.map((a) => [a.id, a.copertina]), [[3, 'vv/a'], [2, 'vv/a'], [1, 'vv/b']]);
+  corpo.album.forEach((a) => assert.strictEqual(a.copertina, VV.albumCoverId({ photos: a.photos, cover: [null, 'vv/b', null, 'vv/cancellata'][a.id] })));
+});
+
 if (errori) { console.error('check-album-ordine: ' + errori + ' errori'); process.exit(1); }
 console.log('check-album-ordine: ' + n + ' controlli superati');

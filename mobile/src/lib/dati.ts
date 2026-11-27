@@ -101,6 +101,8 @@ export type Album = {
   category: string;
   photoCount: number;
   photos: FotoAlbum[];
+  /** Id della foto di copertina scelta in admin (se no la prima). Facoltativo finche' il sito nuovo non e' online. */
+  copertina?: string;
 };
 
 export type Maglia = { enabled: boolean; title: string; subtitle: string; revealDate: string; videoUrl: string };

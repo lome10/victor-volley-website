@@ -200,12 +200,12 @@
       cb((album && album.photos ? album.photos : []).map(_decorate));
     },
 
-    /* Anteprima di copertina di ogni album (la prima foto). cb({albumId: url}) */
+    /* Anteprima di copertina di ogni album (quella scelta in admin, se no la prima foto: VV.albumCoverId). cb({albumId: url}) */
     getCovers: function (albumIds, cb) {
       var covers = {};
       albumIds.forEach(function (aid) {
-        var album = global.VV.getAlbum(aid);
-        if (album && album.photos && album.photos.length) covers[aid] = _url(COVER_TRANSFORM, album.photos[0].id);
+        var id = global.VV.albumCoverId(global.VV.getAlbum(aid));
+        if (id) covers[aid] = _url(COVER_TRANSFORM, id);
       });
       cb(covers);
     },

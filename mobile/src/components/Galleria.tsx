@@ -6,7 +6,7 @@ import { FlatList, Modal, Pressable, StyleSheet, Text, View, useWindowDimensions
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { Album, FotoAlbum } from '~/lib/dati';
-import { copertina, didascalia, fotoIntera, giro, infoAlbum, miniatura } from '~/lib/galleria';
+import { copertina, copertinaAlbum, didascalia, fotoIntera, giro, infoAlbum, miniatura } from '~/lib/galleria';
 import { colors, fonts } from '~/lib/theme';
 
 /** .album-card-pub: copertina 4:3, velo scuro, titolo e "data · N foto". */
@@ -14,7 +14,7 @@ export function SchedaAlbum({ album, larghezza, apri }: { album: Album; larghezz
   return (
     <Pressable style={[styles.album, { width: larghezza, height: (larghezza * 3) / 4 }]} onPress={apri} accessibilityRole="link" accessibilityLabel={'Apri album: ' + album.title}>
       <LinearGradient colors={['#053063', '#008CFD']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-      {album.photos[0] ? <Image source={copertina(album.photos[0].id)} style={StyleSheet.absoluteFill} contentFit="cover" /> : null}
+      {copertinaAlbum(album) ? <Image source={copertina(copertinaAlbum(album))} style={StyleSheet.absoluteFill} contentFit="cover" /> : null}
       <LinearGradient colors={['rgba(3,12,28,0)', 'rgba(3,12,28,0.85)']} locations={[0.35, 1]} style={StyleSheet.absoluteFill} />
       <View style={styles.albumCorpo}>
         <Text style={styles.albumTitolo}>{album.title}</Text>
