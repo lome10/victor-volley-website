@@ -2,7 +2,7 @@ import { fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-li
 
 import { dataBreve, fotoTagliata, mosaico, sparse } from '~/components/home/AnteprimaGalleria';
 import { divisioneSponsor } from '~/components/home/SponsorHome';
-import { partiteStriscia } from '~/components/home/StrisciaPartite';
+import { partiteStriscia, prossimaInBarra } from '~/components/home/StrisciaPartite';
 import { ultimeSei } from '~/components/home/UltimeNews';
 import type { ArticoloInElenco, Partita, Pubblico, Sponsor } from '~/lib/dati';
 
@@ -30,6 +30,9 @@ describe('regole della home (uguali al sito)', () => {
     const partite = [partita('a', '2026-11-01', 'conclusa'), partita('b', '2026-11-22', 'conclusa'), partita('c', '2026-11-14', 'conclusa'), partita('d', '2026-11-29', 'programmata')];
     expect(partiteStriscia(partite).map((p) => p.id)).toEqual(['b', 'c']);
     expect(partiteStriscia([partita('d', '2026-11-29', 'programmata')])).toEqual([]);
+    // Barra in alto (js/components.js): la prima non conclusa per data.
+    expect(prossimaInBarra([partita('x', '2026-12-05', 'programmata'), ...partite])?.id).toBe('d');
+    expect(prossimaInBarra([partita('a', '2026-11-01', 'conclusa')])).toBeNull();
   });
 
   it('ultime news: le 6 piu\' recenti', () => {
@@ -90,12 +93,14 @@ describe('schermata', () => {
   it('mostra tutte le sezioni nell\'ordine del sito e cambia categoria', async () => {
     await renderRouter('./src/app', { initialUrl: '/' });
     await waitFor(() => expect(screen.getByText('Partite concluse')).toBeTruthy());
+    expect(screen.getByText('Prossima partita')).toBeTruthy();
     expect(screen.getByLabelText(/DREAM VOLLEY NARDO, 3 a 1/)).toBeTruthy();
     expect(screen.getByText('Ultime news')).toBeTruthy();
     expect(screen.getByLabelText('Notizia 2')).toBeTruthy();
     // Prima Divisione: in trasferta a Parabita, classifica del girone B.
     expect(screen.getByText('Trasferta')).toBeTruthy();
-    expect(screen.getByText('ASD OLIMPIUS PARABITA')).toBeTruthy();
+    // Una volta nella barra in alto e una nella card.
+    expect(screen.getAllByText('ASD OLIMPIUS PARABITA')).toHaveLength(2);
     expect(screen.getByText('Prima Divisione · Girone B')).toBeTruthy();
     await fireEvent.press(screen.getByRole('tab', { name: 'Under 19' }));
     expect(screen.getByText('Casa')).toBeTruthy();

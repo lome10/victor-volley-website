@@ -49,13 +49,13 @@ function Squadra({ nome, logo, vince }: { nome: string; logo: string; vince?: bo
   );
 }
 
-export function SchedaPartita({ p }: { p: Partita }) {
+export function SchedaPartita({ p, inBarra }: { p: Partita; inBarra?: boolean }) {
   const conclusa = p.stato === 'conclusa';
   const sc = p.setCasa ?? 0;
   const so = p.setOspite ?? 0;
   const vinceCasa = sc > so;
   return (
-    <View style={styles.scheda} accessible accessibilityLabel={`${p.categoria}, ${p.squadraCasa} contro ${p.squadraOspite}` + (conclusa ? `, ${sc} a ${so}` : '')}>
+    <View style={[styles.scheda, inBarra && styles.schedaInBarra]} accessible accessibilityLabel={`${p.categoria}, ${p.squadraCasa} contro ${p.squadraOspite}` + (conclusa ? `, ${sc} a ${so}` : '')}>
       <View style={styles.alto}>
         <Text style={[styles.categoria, p.categoria === 'Prima Divisione' && styles.magenta]}>{p.categoria}</Text>
         <Text style={styles.data} numberOfLines={1}>
@@ -82,6 +82,23 @@ export function SchedaPartita({ p }: { p: Partita }) {
   );
 }
 
+/** La prima partita non conclusa, come la riga "Prossima partita" della barra in alto del sito (js/components.js). */
+export function prossimaInBarra(partite: Partita[]) {
+  return partite.filter((p) => p.stato !== 'conclusa').sort((a, b) => (a.data > b.data ? 1 : -1))[0] ?? null;
+}
+
+/** Seconda riga della barra in alto del sito, solo in home: resta ferma mentre la pagina scorre. */
+export function ProssimaInBarra({ partite }: { partite: Partita[] }) {
+  const p = prossimaInBarra(partite);
+  if (!p) return null;
+  return (
+    <View style={styles.inBarra}>
+      <Text style={styles.titolo}>Prossima partita</Text>
+      <SchedaPartita p={p} inBarra />
+    </View>
+  );
+}
+
 export function StrisciaPartite({ partite }: { partite: Partita[] }) {
   const voci = partiteStriscia(partite);
   return (
@@ -104,6 +121,8 @@ const styles = StyleSheet.create({
   barra: { backgroundColor: colors.notte, paddingVertical: 10, paddingHorizontal: 16 },
   titolo: { fontFamily: fonts.corpoForte, fontSize: 9, letterSpacing: 1.1, textTransform: 'uppercase', color: 'rgba(255,255,255,0.45)', marginBottom: 6 },
   fila: { gap: 8 },
+  inBarra: { backgroundColor: colors.notte, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.07)', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.08)', paddingTop: 8, paddingHorizontal: 12, paddingBottom: 10 },
+  schedaInBarra: { width: '100%', borderWidth: 0, backgroundColor: 'transparent' },
   scheda: { width: 260, backgroundColor: '#0c2240', borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)', borderRadius: 10, paddingVertical: 9, paddingHorizontal: 12, gap: 7 },
   alto: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   categoria: { fontFamily: fonts.corpoForte, fontSize: 7, letterSpacing: 0.6, textTransform: 'uppercase', color: colors.bianco, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6, overflow: 'hidden', backgroundColor: 'rgba(0,140,253,0.75)' },
