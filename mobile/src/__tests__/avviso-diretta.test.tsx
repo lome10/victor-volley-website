@@ -1,4 +1,5 @@
 import { fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
+import { StyleSheet } from 'react-native';
 
 import { inFinestra, partitaInDiretta } from '~/components/AvvisoDiretta';
 import type { Partita } from '~/lib/dati';
@@ -40,6 +41,8 @@ describe('avviso a schermo', () => {
   it('compare nelle news, porta alla diretta, non compare nella galleria, si chiude con la X', async () => {
     await renderRouter('./src/app', { initialUrl: '/news' });
     await waitFor(() => expect(screen.getByText('VICTOR VOLLEY VITA – DREAM VOLLEY')).toBeTruthy());
+    // Sopra il tasto "Chiedi a Victor" (in questo test i dati del tasto arrivano): 12 + 58 + 12.
+    expect(StyleSheet.flatten(screen.getByLabelText('Partita in diretta').props.style).bottom).toBe(82);
     await fireEvent.press(screen.getByText('Guarda →'));
     expect(screen).toHavePathname('/diretta');
     expect(screen.queryByText('In diretta')).toBeNull();

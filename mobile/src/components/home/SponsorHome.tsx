@@ -2,7 +2,7 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Animated, Easing, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Linking, Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 
 import { Sezione, Tasto } from '~/components/home/Sezione';
 import type { Sponsor } from '~/lib/dati';
@@ -38,7 +38,7 @@ const apri = (url: string) => {
   if (url) void Linking.openURL(url);
 };
 
-function Fascia({ voci }: { voci: Sponsor[] }) {
+export function Fascia({ voci, style }: { voci: Sponsor[]; style?: ViewStyle }) {
   const [x] = useState(() => new Animated.Value(0));
   const giro = voci.length * VOCE;
   // Come l'animazione CSS: un giro in max(15, n*4) secondi, poi riparte (la lista e' doppia, quindi non si vede lo stacco).
@@ -50,7 +50,7 @@ function Fascia({ voci }: { voci: Sponsor[] }) {
     return () => anim.stop();
   }, [x, giro, voci.length]);
   return (
-    <View style={styles.fascia}>
+    <View style={[styles.fascia, style]}>
       <Animated.View style={[styles.fasciaFila, { width: giro * 2, transform: [{ translateX: x }] }]}>
         {[...voci, ...voci].map((s, i) => (
           <Pressable key={s.id + '-' + i} style={styles.voce} onPress={() => apri(s.url)} disabled={!s.url} accessibilityRole={s.url ? 'link' : 'image'} accessibilityLabel={s.nome}>
