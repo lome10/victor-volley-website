@@ -19,8 +19,10 @@ export const finto = {
   presenzaFallisce: false,
   ricevute: {} as Record<string, Ricevuta[]>,
   ricevuteErrore: false,
-  /** Chi e' l'account nell'area dirigenti. */
-  ruolo: 'nessuno' as 'dirigente' | 'allenatore' | 'nessuno',
+  /** Chi e' l'account nell'area dirigenti ('entrambi' = in dirigenti e in allenatori). */
+  ruolo: 'nessuno' as 'dirigente' | 'allenatore' | 'entrambi' | 'nessuno',
+  /** La lettura del ruolo fallisce (rete assente). */
+  ruoloErrore: false,
   ascolti: new Set<Ascolto>(),
 };
 
@@ -37,6 +39,7 @@ export function azzera() {
   finto.ricevute = {};
   finto.ricevuteErrore = false;
   finto.ruolo = 'nessuno';
+  finto.ruoloErrore = false;
   finto.ascolti.clear();
 }
 
@@ -84,6 +87,14 @@ export const leggiPromemoria = jest.fn(async (_uid: string) => true);
 export const salvaPromemoria = jest.fn(async (_uid: string, _email: boolean) => {});
 export const cambiaPassword = jest.fn(async (_attuale: string, _nuova: string) => ({ ok: true, messaggio: 'Password aggiornata.' }));
 
-export const ruoloAccount = jest.fn(async (_uid: string) => finto.ruolo);
+export const ruoloAccount = jest.fn(async (_uid: string) => {
+  if (finto.ruoloErrore) throw new Error('rete assente');
+  return { dirigente: finto.ruolo === 'dirigente' || finto.ruolo === 'entrambi', allenatore: finto.ruolo === 'allenatore' || finto.ruolo === 'entrambi' };
+});
+/** Fa sapere alla pagina che l'utente e' cambiato (sessione scaduta, uscita da un'altra schermata) senza passare da Esci. */
+export function cambiaUtente(u: Utente | null) {
+  finto.utente = u;
+  avvisa();
+}
 /** Gettone finto: le funzioni del server non si chiamano mai davvero (fetch e' finto nei test). */
 export const idToken = jest.fn(async () => (finto.utente ? 'gettone-finto-' + finto.utente.uid : null));

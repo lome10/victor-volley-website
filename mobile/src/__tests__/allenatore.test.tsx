@@ -1,7 +1,10 @@
 // Area Allenatore (allenatore.html): regole e pagina, con Firebase finto e fetch finto. Nessuna chiamata vera al sito,
 // nessuna scrittura vera: i salvataggi delle presenze arrivano a un fetch finto che li registra.
+import { QueryClient } from '@tanstack/react-query';
 import { Linking } from 'react-native';
-import { fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
+import { act, fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
+
+import { esciEPulisci } from '~/lib/uscita';
 
 import {
   AccessoNegato,
@@ -24,7 +27,7 @@ import {
 } from '~/lib/allenatore';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const { azzera, finto, esci } = require('../../test/firebaseFinto') as typeof import('../../test/firebaseFinto');
+const { azzera, finto, esci, cambiaUtente } = require('../../test/firebaseFinto') as typeof import('../../test/firebaseFinto');
 
 const OGGI = '2026-11-27'; // venerdi'
 const g = (data: string, oraInizio = '18:00') => ({ data, dataOriginale: data, orarioId: 'o1', oraInizio, oraFine: '19:30', luogo: 'Palestra' });
@@ -253,5 +256,68 @@ describe('pagina Area dirigenti / allenatore (Firebase e sito finti)', () => {
     expect(screen.getByLabelText('Presenza 0 per cento')).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: '‹ Statistiche' }));
     expect(screen.getByText('39%')).toBeTruthy();
+  }, 60000);
+});
+
+describe('revisione di Anselmo (A-D)', () => {
+  beforeEach(() => {
+    azzera();
+    jest.clearAllMocks();
+    finto.utente = { uid: 'u-mister', email: 'mister@prova.it' };
+    finto.ruolo = 'allenatore';
+  });
+
+  it('A) rete assente: "Controlla la connessione" e Riprova, non "Accesso non autorizzato"', async () => {
+    sitoFinto();
+    finto.ruoloErrore = true;
+    await renderRouter('./src/app', { initialUrl: '/area-dirigenti' });
+    expect(await screen.findByText(/Controlla la connessione/, {}, { timeout: 10000 })).toBeTruthy();
+    expect(screen.queryByRole('header', { name: 'Accesso non autorizzato' })).toBeNull();
+    finto.ruoloErrore = false;
+    await fireEvent.press(screen.getByRole('button', { name: 'Riprova' }));
+    expect(await screen.findByText('Bianchi Anna', {}, { timeout: 10000 })).toBeTruthy();
+  }, 60000);
+
+  it('B) dirigente che e' anche allenatore: tasto "Area allenatore" (solo a lui), come /allenatore sul sito', async () => {
+    sitoFinto();
+    finto.ruolo = 'entrambi';
+    await renderRouter('./src/app', { initialUrl: '/area-dirigenti' });
+    expect(await screen.findByText(/Il pannello dei dirigenti nell’app è in arrivo/, {}, { timeout: 10000 })).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Area allenatore' }));
+    expect(await screen.findByText('Bianchi Anna', {}, { timeout: 10000 })).toBeTruthy();
+  }, 60000);
+
+  it('B) solo dirigente: nessun tasto "Area allenatore"', async () => {
+    sitoFinto();
+    finto.ruolo = 'dirigente';
+    await renderRouter('./src/app', { initialUrl: '/area-dirigenti' });
+    expect(await screen.findByText(/Il pannello dei dirigenti nell’app è in arrivo/, {}, { timeout: 10000 })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Area allenatore' })).toBeNull();
+  }, 60000);
+
+  it('C) se l'uscita da Firebase fallisce, i dati riservati sono gia' cancellati', async () => {
+    const qc = new QueryClient();
+    qc.setQueryData(['allenatore', 'atleti', 'u-mister'], ATLETI);
+    qc.setQueryData(['atleti', 'u-famiglia'], []);
+    qc.setQueryData(['pubblico'], { ok: true });
+    esci.mockRejectedValueOnce(new Error('rete assente'));
+    await esciEPulisci(qc);
+    expect(qc.getQueryData(['allenatore', 'atleti', 'u-mister'])).toBeUndefined();
+    expect(qc.getQueryData(['atleti', 'u-famiglia'])).toBeUndefined();
+    expect(qc.getQueryData(['pubblico'])).toEqual({ ok: true }); // i dati pubblici restano
+  });
+
+  it('D) utente che torna null senza Esci: i dati del mister non restano in memoria', async () => {
+    const chiamate = sitoFinto();
+    const letture = () => chiamate.filter((c) => c.url.endsWith('/api/allenatore-atleti')).length;
+    await renderRouter('./src/app', { initialUrl: '/area-dirigenti' });
+    expect(await screen.findByText('Bianchi Anna', {}, { timeout: 10000 })).toBeTruthy();
+    expect(letture()).toBe(1);
+    await act(async () => cambiaUtente(null));
+    expect(await screen.findByLabelText('Email')).toBeTruthy();
+    await act(async () => cambiaUtente({ uid: 'u-mister', email: 'mister@prova.it' }));
+    expect(await screen.findByText('Bianchi Anna', {}, { timeout: 10000 })).toBeTruthy();
+    // Se i dati fossero rimasti in memoria, l'elenco arriverebbe dalla cache senza una nuova lettura.
+    expect(letture()).toBe(2);
   }, 60000);
 });
