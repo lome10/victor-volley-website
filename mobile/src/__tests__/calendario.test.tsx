@@ -121,7 +121,7 @@ beforeEach(() => {
 
 describe('schermata Calendario', () => {
   it('testata, barra, girone con giornate e classifica, poi categoria senza girone col filtro', async () => {
-    const apri = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+    const apri = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
     await renderRouter('./src/app', { initialUrl: '/calendario' });
     await waitFor(() => expect(screen.getByText('1ª giornata')).toBeTruthy());
     expect(screen.getByText('Calendario e risultati')).toBeTruthy();
