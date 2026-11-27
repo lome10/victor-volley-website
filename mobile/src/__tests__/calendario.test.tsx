@@ -1,15 +1,19 @@
 import { fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
 import { Linking } from 'react-native';
 
+import { condividiIcs } from '~/lib/condividiIcs';
+
 import {
   categorie,
   dataBreve,
   dataEstesa,
   dataScheda,
   elencoCategoria,
+  fileIcs,
   giornate,
   intervallo,
   linkGoogleCalendar,
+  nomeFileIcs,
   prossimaDellaCategoria,
   quantoManca,
   slug,
@@ -27,6 +31,9 @@ const path = require('path') as { join: (...p: string[]) => string };
 
 // Girone vero letto da /api/app-pubblico il 27/11/2026 (stesso file del test di girone.ts).
 const vero: Girone = JSON.parse(fs.readFileSync(path.join(__dirname, 'dati', 'girone-27-11-2026.json'), 'utf8'));
+
+// Il modulo nativo di condivisione non c'e' nei test: si controlla solo cosa gli arriva.
+jest.mock('~/lib/condividiIcs', () => ({ condividiIcs: jest.fn(async () => undefined) }));
 
 // Date relative a oggi, cosi' il test non scade.
 const giorno = (n: number) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
@@ -83,6 +90,40 @@ describe('regole del calendario (come js/pages/calendario-1.js)', () => {
     expect(prossimaDellaCategoria(tutte, 'Under 13', '2026/2027', giorno(0))?.squadraOspite).toBe('Alfa');
   });
 
+  it('file .ics come il sito: orario flottante di 2 ore, giorno intero senza orario, testo protetto', () => {
+    const adesso = new Date(Date.UTC(2026, 10, 27, 9, 5, 7));
+    const testo = fileIcs([
+      partita({ id: 'a1', data: '2026-11-29', ora: '19:00', squadraCasa: 'ASD Olimpius', squadraOspite: 'Victor Volley Vita', categoria: 'Prima Divisione', palazzetto: 'Pallone, Parabita; lato B' }),
+      partita({ id: 'a2', data: '2026-12-31', ora: '', palazzetto: '' }),
+      partita({ id: 'a3', data: '2026-12-05', ora: '22:30' }),
+    ], adesso);
+    expect(testo.startsWith('BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Victor Volley//Calendario//IT
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+')).toBe(true);
+    expect(testo.endsWith('END:VCALENDAR
+')).toBe(true);
+    expect(testo).toContain('UID:partita-a1@victorvolley.it
+DTSTAMP:20261127T090507Z
+DTSTART:20261129T190000
+DTEND:20261129T210000');
+    expect(testo).toContain('SUMMARY:ASD Olimpius - Victor Volley Vita (Prima Divisione)');
+    expect(testo).toContain('LOCATION:Pallone\, Parabita\; lato B');
+    expect(testo).toContain('DTSTART;VALUE=DATE:20261231
+DTEND;VALUE=DATE:20270101');
+    expect(testo).toContain('DTSTART:20261205T223000
+DTEND:20261205T235900');
+    expect(testo.match(/BEGIN:VEVENT/g)).toHaveLength(3);
+    // Righe piegate a 74 caratteri come il sito.
+    const lunga = fileIcs([partita({ palazzetto: 'x'.repeat(100) })], adesso);
+    expect(lunga.split('
+').every((riga) => riga.length <= 75)).toBe(true);
+    expect(nomeFileIcs('Prima Divisione', '')).toBe('victor-volley-prima-divisione.ics');
+    expect(nomeFileIcs('Under 13', 'Città Nuova')).toBe('victor-volley-under-13-citta-nuova.ics');
+  });
+
   it('sponsor del calendario per nome, solo con logo', () => {
     expect(sponsorCalendario([{ nome: 'PUGLIA IN FOOD srl', logo: '' }, { nome: 'Puglia in Food', logo: 'x.png' }])?.logo).toBe('x.png');
     expect(sponsorCalendario([{ nome: 'Altro', logo: 'y.png' }])).toBeNull();
@@ -107,6 +148,7 @@ describe('regole del calendario (come js/pages/calendario-1.js)', () => {
 const PUGLIA = { id: 1, nome: 'Puglia in food', logo: 'https://res.cloudinary.com/x/image/upload/v1/p.png', url: '', order: 2, livello: 'gold', ripetizioni: 1 };
 const PARTITE = [
   partita({ categoria: 'Prima Divisione', squadraOspite: 'Otranto', data: giorno(3) }),
+  partita({ categoria: 'Prima Divisione', squadraOspite: 'Nardò', data: giorno(10) }),
   partita({ squadraOspite: 'Alfa', data: giorno(-4), stato: 'conclusa', setCasa: 3, setOspite: 1 }),
   partita({ squadraCasa: 'Beta', squadraOspite: 'Victor Volley', data: giorno(6) }),
 ];
@@ -136,6 +178,10 @@ describe('schermata Calendario', () => {
     // Col girone il filtro e le schede non ci sono (come il sito).
     expect(screen.queryByText('Squadra avversaria')).toBeNull();
 
+    // "Aggiungi tutte" anche col girone, come il sito: le partite future della categoria.
+    await fireEvent.press(screen.getByRole('button', { name: 'Aggiungi tutte al calendario' }));
+    expect(condividiIcs).toHaveBeenCalledWith(expect.stringContaining('SUMMARY:Victor Volley - Nardò (Prima Divisione)'), 'victor-volley-prima-divisione.ics');
+
     await fireEvent.press(screen.getAllByText('Aggiungi al calendario')[0]);
     expect(apri).toHaveBeenCalledWith(expect.stringContaining('https://calendar.google.com/calendar/render?action=TEMPLATE'));
 
@@ -152,6 +198,8 @@ describe('schermata Calendario', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Beta' }));
     expect(screen.queryByText('Alfa')).toBeNull();
     expect(screen.getAllByText('Beta')).toHaveLength(2);
+    // Una sola partita futura: "Aggiungi tutte" sparisce (il sito lo mostra da 2 in su).
+    expect(screen.queryByRole('button', { name: 'Aggiungi tutte al calendario' })).toBeNull();
 
     await fireEvent.press(screen.getByRole('button', { name: '2025/2026' }));
     expect(screen.getByText('Stagione 2025/2026')).toBeTruthy();

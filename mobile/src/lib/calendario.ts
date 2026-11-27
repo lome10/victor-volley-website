@@ -182,3 +182,48 @@ export function sponsorCalendario<T extends { nome: string; logo: string }>(spon
   const k = chiaveSquadra(SPONSOR_CALENDARIO);
   return sponsor.find((s) => chiaveSquadra(s.nome) === k && s.logo) ?? null;
 }
+
+/* ---- File .ics, come icsEvent/downloadIcs di calendario-1.js ----
+   Orario "flottante" (ora locale di chi apre il file), durata 2 ore; senza orario: giorno intero. */
+const icsTesto = (t: string | null | undefined) =>
+  String(t ?? '').replace(/\/g, '\\').replace(/\n/g, '\n').replace(/,/g, '\,').replace(/;/g, '\;');
+function icsPiega(riga: string) {
+  const out: string[] = [];
+  while (riga.length > 74) { out.push(riga.slice(0, 74)); riga = ' ' + riga.slice(74); }
+  out.push(riga);
+  return out.join('\r\n');
+}
+const icsOra = (d: Date) =>
+  d.getUTCFullYear() + pad2(d.getUTCMonth() + 1) + pad2(d.getUTCDate()) + 'T' + pad2(d.getUTCHours()) + pad2(d.getUTCMinutes()) + pad2(d.getUTCSeconds()) + 'Z';
+
+function icsEvento(p: PartitaCalendario, adesso: Date) {
+  const ymd = p.data.replace(/-/g, '');
+  const m = /^(\d{1,2}):(\d{2})/.exec(p.ora || '');
+  const righe = ['BEGIN:VEVENT', 'UID:partita-' + p.id + '@victorvolley.it', 'DTSTAMP:' + icsOra(adesso)];
+  if (m) {
+    const h = +m[1], mi = +m[2], fine = h + 2;
+    righe.push('DTSTART:' + ymd + 'T' + pad2(h) + pad2(mi) + '00');
+    righe.push('DTEND:' + ymd + 'T' + (fine > 23 ? '235900' : pad2(fine) + pad2(mi) + '00'));
+  } else {
+    const dopo = new Date(p.data + 'T00:00:00');
+    dopo.setDate(dopo.getDate() + 1);
+    righe.push('DTSTART;VALUE=DATE:' + ymd);
+    righe.push('DTEND;VALUE=DATE:' + dopo.getFullYear() + pad2(dopo.getMonth() + 1) + pad2(dopo.getDate()));
+  }
+  righe.push('SUMMARY:' + icsTesto(p.squadraCasa + ' - ' + p.squadraOspite + (p.categoria ? ' (' + p.categoria + ')' : '')));
+  if (p.palazzetto) righe.push('LOCATION:' + icsTesto(p.palazzetto));
+  righe.push('END:VEVENT');
+  return righe.map(icsPiega).join('\r\n');
+}
+
+/** Contenuto del file .ics con tutte le partite date. */
+export function fileIcs(partite: PartitaCalendario[], adesso = new Date()) {
+  return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Victor Volley//Calendario//IT', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH']
+    .concat(partite.map((p) => icsEvento(p, adesso)))
+    .concat(['END:VCALENDAR'])
+    .join('\r\n') + '\r\n';
+}
+
+/** Nome del file come sul sito: victor-volley-<categoria>[-<avversario>].ics */
+export const nomeFileIcs = (categoria: string, avversario: string) =>
+  'victor-volley-' + slug(categoria) + (avversario ? '-' + slug(avversario) : '') + '.ics';

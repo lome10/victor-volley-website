@@ -1,23 +1,23 @@
 // Calendario e risultati: copia di calendario.html (js/pages/calendario-1.js, css/calendario.css).
 import { router } from 'expo-router';
 import { useMemo, useRef, useState, type ComponentRef } from 'react';
-import { Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Alert, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import Svg, { Defs, Ellipse, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import { BarraProssima } from '~/components/calendario/BarraProssima';
 import { Classifica } from '~/components/calendario/Classifica';
 import { GiornateGirone } from '~/components/calendario/GiornateGirone';
+import { IconaCalendario } from '~/components/calendario/Icone';
 import { SchedaPartita } from '~/components/calendario/SchedaPartita';
 import { Piede } from '~/components/Piede';
 import { Stato } from '~/components/Stato';
-import { categorie, elencoCategoria, oggiIso, prossimaDellaCategoria, slug, sponsorCalendario } from '~/lib/calendario';
+import { categorie, elencoCategoria, fileIcs, nomeFileIcs, oggiIso, prossimaDellaCategoria, slug, sponsorCalendario } from '~/lib/calendario';
+import { condividiIcs } from '~/lib/condividiIcs';
 import { usePubblico } from '~/lib/dati';
 import { gironiRisolti } from '~/lib/girone';
 import { colors, fonts } from '~/lib/theme';
 
 const NOTTE_SPORT = '#050e1f';
-// "Aggiungi tutte al calendario" (.ics) serve un modulo nativo (file + condividi): resta spento finche' Lorenzo non decide.
-const ICS_PRONTO = false;
 
 export default function Calendario() {
   const { width } = useWindowDimensions();
@@ -113,7 +113,7 @@ export default function Calendario() {
           </Pressable>
         ) : null}
       </View>
-      {elenco && ((!conGirone && elenco.avversari.length > 1) || (ICS_PRONTO && elenco.future.length > 1)) ? (
+      {elenco && ((!conGirone && elenco.avversari.length > 1) || elenco.future.length > 1) ? (
         <View style={[styles.strumenti, conGirone && styles.strumentiADestra]}>
           {!conGirone && elenco.avversari.length > 1 ? (
           <View style={[styles.filtro, stretto && styles.filtroStretto]}>
@@ -124,7 +124,18 @@ export default function Calendario() {
             </Pressable>
           </View>
           ) : null}
-          {/* Qui va "Aggiungi tutte al calendario" (le partite future di elenco.future), anche col girone come sul sito. */}
+          {elenco.future.length > 1 && attiva ? (
+            <Pressable
+              style={styles.icsTutte}
+              onPress={() => {
+                condividiIcs(fileIcs(elenco.future), nomeFileIcs(attiva, elenco.filtro)).catch(() =>
+                  Alert.alert('Calendario', 'Non sono riuscito a preparare il file. Riprova tra poco.'));
+              }}
+              accessibilityRole="button">
+              <IconaCalendario colore={colors.azzurro} />
+              <Text style={styles.saltaTesto}>Aggiungi tutte al calendario</Text>
+            </Pressable>
+          ) : null}
         </View>
       ) : null}
       {conGirone && girone ? (
@@ -258,6 +269,7 @@ const styles = StyleSheet.create({
   saltaTesto: { fontFamily: fonts.corpoMedio, fontSize: 12.5, color: colors.azzurro },
   strumenti: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', columnGap: 16, rowGap: 12, paddingTop: 18 },
   strumentiADestra: { justifyContent: 'flex-end' },
+  icsTutte: { flexDirection: 'row', alignItems: 'center', gap: 7, minHeight: 44, paddingHorizontal: 16, borderRadius: 99, backgroundColor: 'rgba(0,140,253,0.12)', borderWidth: 1, borderColor: 'rgba(0,140,253,0.3)' },
   filtro: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   filtroStretto: { flexWrap: 'wrap', width: '100%' },
   filtroEtichetta: { fontFamily: fonts.corpoMedio, fontSize: 13, color: 'rgba(255,255,255,0.75)' },
