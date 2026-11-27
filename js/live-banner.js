@@ -53,6 +53,8 @@
       box.parentNode.removeChild(box);
     });
     document.body.appendChild(box);
+    /* js/chatbot.js chiude la nuvoletta "Ciao, sono Victor!", che coprirebbe l'avviso. */
+    try { document.dispatchEvent(new CustomEvent('vv:avviso-diretta')); } catch (e) { /* browser molto vecchi: niente */ }
   }
 
   DB.load(['partite'], function () {
