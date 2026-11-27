@@ -1,5 +1,5 @@
 // "Chiedi a Victor": tasto in basso a destra, invito dopo 3,5 s e pannello con le risposte fisse del sito (js/chatbot.js, css/chatbot.css).
-// Sul sito c'e' in tutte le pagine pubbliche tranne la Diretta.
+// Sul sito c'e' in tutte le pagine pubbliche tranne Diretta e aree riservate.
 import { router, usePathname, type Href } from 'expo-router';
 import { useEffect, useRef, useState, type ComponentRef } from 'react';
 import {
@@ -25,7 +25,8 @@ import { SITO, usePubblico, type Partita } from '~/lib/dati';
 import { oggiLocale } from '~/lib/diretta';
 import { colors, fonts } from '~/lib/theme';
 
-export const PAGINE_SENZA_BOT = ['/diretta'];
+// Come il sito: niente assistente in diretta.html, atleta, allenatore e admin (qui: Diretta, Area Atleti, Area Dirigenti).
+export const PAGINE_SENZA_BOT = ['/diretta', '/area-atleti', '/area-dirigenti'];
 const APP: Record<string, string> = { '/atleta': '/area-atleti' }; // pagine del sito con un altro indirizzo nell'app
 const PAGINE_APP = ['/', '/squadre', '/calendario', '/news', '/galleria', '/sponsor', '/contatti', '/unisciti-a-noi', '/privacy', '/area-atleti', '/area-dirigenti', '/diretta'];
 

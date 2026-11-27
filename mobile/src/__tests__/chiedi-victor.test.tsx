@@ -127,4 +127,15 @@ describe('Chiedi a Victor a schermo', () => {
     await waitFor(() => expect(screen.getByText('Entra a far parte della famiglia Victor')).toBeTruthy());
     expect(screen.queryByLabelText("Apri l'assistente Victor")).toBeNull();
   }, 60000);
+
+  // Come il sito, che non lo carica in atleta, allenatore e admin.
+  it.each([
+    ['/area-atleti', 'Area Atleti'],
+    ['/area-dirigenti', 'Area Dirigenti'],
+  ])('non c\'e\' in %s', async (href, titolo) => {
+    await renderRouter('./src/app', { initialUrl: href });
+    expect(screen.getByRole('header', { name: titolo })).toBeTruthy();
+    // Il tasto non deve comparire nemmeno dopo che i suoi dati sono arrivati (nelle altre pagine compare subito).
+    await expect(screen.findByLabelText("Apri l'assistente Victor", {}, { timeout: 1500 })).rejects.toThrow();
+  }, 60000);
 });
