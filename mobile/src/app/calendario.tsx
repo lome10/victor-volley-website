@@ -16,6 +16,8 @@ import { gironiRisolti } from '~/lib/girone';
 import { colors, fonts } from '~/lib/theme';
 
 const NOTTE_SPORT = '#050e1f';
+// "Aggiungi tutte al calendario" (.ics) serve un modulo nativo (file + condividi): resta spento finche' Lorenzo non decide.
+const ICS_PRONTO = false;
 
 export default function Calendario() {
   const { width } = useWindowDimensions();
@@ -45,12 +47,12 @@ export default function Calendario() {
   const sponsor = sponsorCalendario(data?.sponsor ?? []);
 
   // Posizioni per "vai alla prossima partita": pannello nel contenuto + colonna + punto nel blocco.
-  const pos = useRef({ pannello: 0, colonna: 0, girone: 0, card: -1, elenco: 0, riga: -1 });
+  const pos = useRef({ zona: 0, pannello: 0, colonna: 0, girone: 0, card: -1, elenco: 0, riga: -1 });
   const vaiAllaProssima = () => {
     const p = pos.current;
     const dentro = p.card >= 0 && conGirone ? p.girone + p.card : p.riga >= 0 ? p.elenco + p.riga : -1;
     if (dentro < 0) return;
-    scorri.current?.scrollTo({ y: Math.max(0, p.pannello + p.colonna + dentro - 140), animated: true });
+    scorri.current?.scrollTo({ y: Math.max(0, p.zona + p.pannello + p.colonna + dentro - 140), animated: true });
   };
 
   const testata = (
@@ -111,8 +113,9 @@ export default function Calendario() {
           </Pressable>
         ) : null}
       </View>
-      {!conGirone && elenco && elenco.avversari.length > 1 ? (
-        <View style={styles.strumenti}>
+      {elenco && ((!conGirone && elenco.avversari.length > 1) || (ICS_PRONTO && elenco.future.length > 1)) ? (
+        <View style={[styles.strumenti, conGirone && styles.strumentiADestra]}>
+          {!conGirone && elenco.avversari.length > 1 ? (
           <View style={[styles.filtro, stretto && styles.filtroStretto]}>
             <Text style={styles.filtroEtichetta}>Squadra avversaria</Text>
             <Pressable style={[styles.tendina, stretto && styles.tendinaStretta]} onPress={() => setFoglio(true)} accessibilityRole="button" accessibilityLabel="Squadra avversaria">
@@ -120,7 +123,8 @@ export default function Calendario() {
               <Text style={styles.tendinaFreccia}>▾</Text>
             </Pressable>
           </View>
-          {/* "Aggiungi tutte al calendario" (.ics): in attesa della decisione di Lorenzo (moduli file + condividi). */}
+          ) : null}
+          {/* Qui va "Aggiungi tutte al calendario" (le partite future di elenco.future), anche col girone come sul sito. */}
         </View>
       ) : null}
       {conGirone && girone ? (
@@ -160,7 +164,7 @@ export default function Calendario() {
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={() => void refetch()} tintColor={colors.bianco} />}>
         {testata}
         <BarraProssima prossima={prossima} sponsor={sponsor} stretto={stretto} vai={vaiAllaProssima} />
-        <View style={styles.zona}>
+        <View style={styles.zona} onLayout={(e) => { pos.current.zona = e.nativeEvent.layout.y; }}>
           {!stagione ? (
             <Stato titolo="Calendario in arrivo" testo="Le date saranno pubblicate appena la federazione le comunica." />
           ) : (
@@ -253,6 +257,7 @@ const styles = StyleSheet.create({
   salta: { paddingVertical: 7, paddingHorizontal: 14, borderRadius: 99, backgroundColor: 'rgba(0,140,253,0.12)', borderWidth: 1, borderColor: 'rgba(0,140,253,0.3)' },
   saltaTesto: { fontFamily: fonts.corpoForte, fontSize: 12.5, color: colors.azzurro },
   strumenti: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', columnGap: 16, rowGap: 12, paddingTop: 18 },
+  strumentiADestra: { justifyContent: 'flex-end' },
   filtro: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   filtroStretto: { flexWrap: 'wrap', width: '100%' },
   filtroEtichetta: { fontFamily: fonts.corpoForte, fontSize: 13, color: 'rgba(255,255,255,0.75)' },
