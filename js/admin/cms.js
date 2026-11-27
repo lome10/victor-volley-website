@@ -740,6 +740,7 @@
     refreshAlbumsGrid();
   }
 
+  var _photoUploading = false;
   function refreshAlbumsGrid() {
     /* Nell'ordine del sito e dell'app (VV.sortAlbums): i tasti ← → lo cambiano. */
     var albums = VV.sortAlbums(VV.getAlbums());
@@ -850,6 +851,7 @@
     }
 
     var input = this;
+    _photoUploading = true;   /* frecce e Copertina ferme finché il caricamento non finisce */
     PhotoDB.addPhotos(_currentAlbumId, files,
       function (done, total) {
         var pct = Math.round(done / total * 100);
@@ -857,6 +859,7 @@
         text.textContent = done + ' / ' + total + ' foto caricate';
       },
       function (count, failed) {
+        _photoUploading = false;
         setTimeout(function () { progress.classList.add('is-hidden'); }, 800);
         loadPhotos(_currentAlbumId);
         input.value = '';
@@ -2210,9 +2213,16 @@
       });
     },
     /* Ordine degli album (scelta di Lorenzo, 27/11): sposta di un posto e salva il nuovo `order` degli album che cambiano. */
+    /* Scrive solo il campo `order` (DB.saveAlbumFields), mai le foto. Fermo mentre si caricano foto o un album si sta salvando. */
     moveAlbum: function (id, delta) {
+      if (_photoUploading || DB.isSaving('saveAlbum')) { A.avviso('Attendi: c’è un salvataggio o un caricamento di foto in corso.'); return; }
+      var album = VV.getAlbum(id);
+      var prima = VV.sortAlbums(VV.getAlbums()).findIndex(function (a) { return a.id === id; }) + 1;
       var changed = VV.moveAlbum(VV.getAlbums(), id, delta);
-      changed.forEach(function (a) { DB.saveAlbum(a); });
+      if (!changed.length || !album) return;
+      var r = DB.saveAlbumFields(changed.map(function (a) { return { id: a.id, fields: { order: a.order } }; }), 'lo spostamento dell’album',
+        { id: id, label: album.title, campo: 'posizione', prima: prima, dopo: prima + delta }, refreshAlbumsGrid);
+      if (r === null) A.avviso('Lo spostamento precedente non è ancora salvato: riprova tra un attimo.');
       refreshAlbumsGrid();
     },
     deleteAlbum: function (id) {
@@ -2231,8 +2241,11 @@
     setAlbumCover: function (photoId) {
       var album = VV.getAlbum(_currentAlbumId);
       if (!album || !(album.photos || []).some(function (p) { return p.id === photoId; }) || album.cover === photoId) return;
+      if (_photoUploading || DB.isSaving('saveAlbum')) { A.avviso('Attendi: c’è un salvataggio o un caricamento di foto in corso.'); return; }
       var id = _currentAlbumId;
-      DB.saveAlbum(Object.assign({}, album, { cover: photoId }), function () { if (_currentAlbumId === id) loadPhotos(id); });
+      var r = DB.saveAlbumFields([{ id: id, fields: { cover: photoId } }], 'la scelta della copertina',
+        { id: id, label: album.title, campo: 'copertina', prima: album.cover || '', dopo: photoId }, function () { if (_currentAlbumId === id) loadPhotos(id); });
+      if (r === null) A.avviso('La copertina precedente non è ancora salvata: riprova tra un attimo.');
       loadPhotos(id);
     },
     deletePhoto: function (photoId) {
