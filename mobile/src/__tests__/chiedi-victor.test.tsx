@@ -127,4 +127,16 @@ describe('Chiedi a Victor a schermo', () => {
     await waitFor(() => expect(screen.getByText('Entra a far parte della famiglia Victor')).toBeTruthy());
     expect(screen.queryByLabelText("Apri l'assistente Victor")).toBeNull();
   }, 60000);
+
+  // Come il sito, che non lo carica in atleta, allenatore e admin.
+  it.each([
+    ['/area-atleti', 'Area Atleti'],
+    ['/area-dirigenti', 'Area Dirigenti'],
+  ])('non c\'e\' in %s', async (href, titolo) => {
+    await renderRouter('./src/app', { initialUrl: href });
+    expect(screen.getByRole('header', { name: titolo })).toBeTruthy();
+    // Aspetta che i dati del tasto siano arrivati: nelle altre pagine a questo punto il tasto c'e'.
+    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledWith(expect.stringContaining('chatbot.json')));
+    expect(screen.queryByLabelText("Apri l'assistente Victor")).toBeNull();
+  }, 60000);
 });
