@@ -16,8 +16,113 @@ export type Articolo = {
 };
 export type ArticoloInElenco = Articolo & { riassunto: string; heroOrder: number | null };
 export type ArticoloIntero = Articolo & { content: string };
-export type Sponsor = { id: number; nome: string; logo: string; url: string };
-export type Pubblico = { articoli: ArticoloInElenco[]; sponsor: Sponsor[] };
+export type Sponsor = {
+  id: number;
+  nome: string;
+  logo: string;
+  url: string;
+  order: number | null;
+  /** 'gold' | 'silver' | 'bronze' (il sito tratta il vuoto come 'silver'). */
+  livello: string;
+  ripetizioni: number;
+};
+
+export type Stagione = { id: string; name: string; current: boolean };
+
+export type Categoria = {
+  id: number | null;
+  name: string;
+  abbr: string;
+  color: string;
+  description: string;
+  schedule: string;
+  showInSquadre: boolean;
+};
+
+/** Partita del calendario (collection "partite"): squadre come nomi liberi, loghi gia' risolti. */
+export type Partita = {
+  id: string;
+  stagione: string;
+  categoria: string;
+  squadraCasa: string;
+  squadraOspite: string;
+  logoCasa: string;
+  logoOspite: string;
+  /** "AAAA-MM-GG" */
+  data: string;
+  /** "HH:MM" o vuoto */
+  ora: string;
+  palazzetto: string;
+  /** 'programmata' | 'conclusa' | ... */
+  stato: string;
+  setCasa: number | null;
+  setOspite: number | null;
+  sppCode: string | null;
+};
+
+export type SquadraGirone = { id: string; nome: string; logo: string; home: boolean };
+
+/** Partita del girone (siteData/girone): squadre come id dell'elenco squadre. */
+export type PartitaGirone = {
+  id: string;
+  giornata: number | null;
+  data: string;
+  ora: string;
+  palazzetto: string;
+  squadra_casa: string;
+  squadra_ospite: string;
+  set_casa: number | null;
+  set_ospite: number | null;
+  /** Punti di ogni set: [casa, ospite]. */
+  parziali: [number | null, number | null][];
+};
+
+export type GironeCategoria = { categoria: string; girone: string; squadre: string[]; partite: PartitaGirone[] };
+export type Girone = { stagione: string; squadre: SquadraGirone[]; gironi: GironeCategoria[] };
+
+export type Persona = {
+  id: number | null;
+  categoriaId: number | null;
+  stagione: string;
+  name: string;
+  role: string;
+  photo: string;
+  photoFocus: string;
+  order: number | null;
+};
+export type Giocatore = Persona & { number: number | null; gender: string };
+
+export type FotoAlbum = { id: string; w: number | null; h: number | null };
+export type Album = {
+  id: number | null;
+  slug: string;
+  title: string;
+  date: string;
+  category: string;
+  photoCount: number;
+  photos: FotoAlbum[];
+};
+
+export type Maglia = { enabled: boolean; title: string; subtitle: string; revealDate: string; videoUrl: string };
+
+export type Pubblico = {
+  versione: number;
+  generatoIl: string;
+  stagioni: Stagione[];
+  categorie: Categoria[];
+  articoli: ArticoloInElenco[];
+  categorieArticoli: string[];
+  partite: Partita[];
+  girone: Girone;
+  giocatori: Giocatore[];
+  staff: Persona[];
+  /** Gia' ordinati dal piu' recente, solo quelli con foto. */
+  album: Album[];
+  /** Gia' ordinati per "order". */
+  sponsor: Sponsor[];
+  livelliSponsor: { gold: string; silver: string; bronze: string };
+  maglia: Maglia;
+};
 
 export class NonTrovato extends Error {}
 
