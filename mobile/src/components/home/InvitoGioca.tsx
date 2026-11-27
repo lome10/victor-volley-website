@@ -1,24 +1,39 @@
-// "Vuoi giocare con noi?" della home del sito (.cta-banner). Da telefono le palline decorative non ci sono.
+// Banner blu con titolo, testo e due tasti (.cta-banner del sito). Da telefono le palline decorative non ci sono.
 import { router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Tasto } from '~/components/home/Sezione';
 import { colors, fonts } from '~/lib/theme';
 
-export function InvitoGioca() {
+type TastoInvito = { testo: string; tipo: 'pieno' | 'bordoBianco'; onPress: () => void };
+
+export function Invito({ titolo, testo, tasti }: { titolo: string; testo: string; tasti: TastoInvito[] }) {
   return (
     <View style={styles.banner}>
       <Text style={styles.titolo} accessibilityRole="header">
-        Vuoi giocare con noi?
+        {titolo}
       </Text>
-      <Text style={styles.testo}>
-        Siamo sempre alla ricerca di nuovi atleti, da qualsiasi età e livello. Contattaci e vieni a provare un allenamento gratuitamente.
-      </Text>
+      <Text style={styles.testo}>{testo}</Text>
       <View style={styles.tasti}>
-        <Tasto testo="Mandaci un messaggio" tipo="pieno" onPress={() => router.push('/unisciti-a-noi')} />
-        <Tasto testo="Dove siamo" tipo="bordoBianco" onPress={() => router.push('/contatti')} />
+        {tasti.map((t) => (
+          <Tasto key={t.testo} testo={t.testo} tipo={t.tipo} onPress={t.onPress} />
+        ))}
       </View>
     </View>
+  );
+}
+
+/** "Vuoi giocare con noi?" della home. */
+export function InvitoGioca() {
+  return (
+    <Invito
+      titolo="Vuoi giocare con noi?"
+      testo="Siamo sempre alla ricerca di nuovi atleti, da qualsiasi età e livello. Contattaci e vieni a provare un allenamento gratuitamente."
+      tasti={[
+        { testo: 'Mandaci un messaggio', tipo: 'pieno', onPress: () => router.push('/unisciti-a-noi') },
+        { testo: 'Dove siamo', tipo: 'bordoBianco', onPress: () => router.push('/contatti') },
+      ]}
+    />
   );
 }
 

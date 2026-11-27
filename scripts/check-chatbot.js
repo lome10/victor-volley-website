@@ -68,7 +68,23 @@ const prove = [
   ['dove trovo le foto', 'galleria'],
   ['ultime news della società', 'news'],
   ['quando è nata la società', 'chi-siamo'],
+  // Le domande dei bottoni, scritte a mano, devono trovare se stesse (27/11: queste 4 non lo facevano).
+  ['Ci sono squadre maschili?', 'maschile-femminile'],
+  ['avete squadre maschili', 'maschile-femminile'],
+  ['Cosa devo portare agli allenamenti?', 'cosa-portare'],
+  ['cosa porto all allenamento', 'cosa-portare'],
+  ['Ho un problema con un allenatore o un compagno', 'comportamento'],
+  ["ho un problema con l'allenatore", 'comportamento'],
+  ['Chi sono i vostri sponsor?', 'chi-sono-sponsor'],
+  ['quali sponsor avete', 'chi-sono-sponsor'],
+  ['quando sono gli allenamenti', 'orari-allenamenti'],
+  ['voglio diventare sponsor', 'sponsor'],
 ];
+// Ogni domanda del json, scritta così com'è, risponde con se stessa.
+data.categorie.forEach((c) => c.domande.forEach((d) => {
+  const r = bot._search(d.q);
+  if (!(r[0] && r[0].s >= 2 && r[0].e.id === d.id && (!r[1] || r[0].s > r[1].s))) fail('la domanda "' + d.q + '" non trova se stessa');
+}));
 const detail = [];
 prove.forEach(([q, atteso]) => {
   const r = bot._search(q);

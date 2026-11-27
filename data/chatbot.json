@@ -239,7 +239,9 @@
             "femmine",
             "squadra maschile",
             "squadra femminile",
-            "misto"
+            "misto",
+            "maschili",
+            "squadre maschili"
           ],
           "risposta": "Sì: Under 12 e Under 13 hanno squadre sia maschili sia femminili, e il Minivolley S3 è aperto a bambini e bambine.",
           "link": {
@@ -364,7 +366,12 @@
             "equipaggiamento",
             "attrezzatura",
             "scarpe da ginnastica",
-            "vestiti"
+            "vestiti",
+            "portare",
+            "cosa devo portare",
+            "portare agli allenamenti",
+            "porto",
+            "cosa porto"
           ],
           "risposta": "Abbigliamento sportivo, come di solito. Si raccomanda sempre la borraccia; tutto il resto dell'equipaggiamento è consigliato."
         },
@@ -665,7 +672,10 @@
             "non va bene",
             "non sono contento",
             "scontento",
-            "comportamento"
+            "comportamento",
+            "problema con un allenatore",
+            "problema con l allenatore",
+            "problema con un compagno"
           ],
           "risposta": "Ci dispiace. Scrivici a victorvolley@libero.it spiegando cosa è successo: la società prende in carico la segnalazione con riservatezza.",
           "link": {
@@ -790,7 +800,10 @@
             "chi sponsorizza",
             "sponsor attuali",
             "partner attuali",
-            "elenco sponsor"
+            "elenco sponsor",
+            "vostri sponsor",
+            "chi sono i vostri sponsor",
+            "quali sponsor"
           ],
           "risposta": "I nostri partner sono presentati nella pagina Sponsor.",
           "link": {

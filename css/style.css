@@ -4135,6 +4135,9 @@ button[type="submit"][aria-busy="true"] { opacity: 0.7; cursor: progress; }
 .live-banner-close:hover { color: #fff; background: rgba(255, 255, 255, 0.08); }
 .live-banner-link:focus-visible, .live-banner-close:focus-visible { outline: 3px solid var(--c-azzurro); outline-offset: -3px; }
 @media (max-width: 900px) { .live-banner { left: 16px; max-width: none; } }
+/* Con il tasto «Chiedi a Victor» (js/chatbot.js, alto 58 px) l'avviso sta sopra il tasto: si vedono tutti e due (Lorenzo, 27/11) */
+body:has(.vvbot) .live-banner { bottom: 86px; }
+@media (max-width: 480px) { body:has(.vvbot) .live-banner { bottom: 82px; } }
 @media (prefers-reduced-motion: reduce) { .live-banner-dot { animation: none; } }
 
 .gc-footer a { color: var(--c-azzurro-dark); }

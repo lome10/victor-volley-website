@@ -105,6 +105,34 @@ export type Album = {
 
 export type Maglia = { enabled: boolean; title: string; subtitle: string; revealDate: string; videoUrl: string };
 
+/** Orario settimanale (collezione "allenamenti"). giorno: 1 = lunedi' … 7 = domenica; validoFino "AAAA-MM-GG" o "". */
+export type Allenamento = {
+  id: string;
+  categoria: string;
+  giorno: number | null;
+  oraInizio: string;
+  oraFine: string;
+  luogo: string;
+  note: string;
+  validoFino: string;
+};
+
+/**
+ * Un solo giorno diverso dal solito. id = "a-{id orario}-{data originale}" (la chiave che usa js/atleta.js).
+ * Come il sito: oraFine e luogo valgono anche se "" (tolti); null = come al solito. data e oraInizio valgono solo se pieni.
+ */
+export type EccezioneAllenamento = {
+  id: string;
+  orarioId: string;
+  dataOriginale: string;
+  categoria: string;
+  annullato: boolean;
+  data: string | null;
+  oraInizio: string | null;
+  oraFine: string | null;
+  luogo: string | null;
+};
+
 export type Pubblico = {
   versione: number;
   generatoIl: string;
@@ -122,6 +150,9 @@ export type Pubblico = {
   sponsor: Sponsor[];
   livelliSponsor: { gold: string; silver: string; bronze: string };
   maglia: Maglia;
+  /** Dal 27/11 (sito 8271992). Facoltativi: finche' quel commit non e' online l'endpoint non li manda. */
+  allenamenti?: Allenamento[];
+  allenamentiEccezioni?: EccezioneAllenamento[];
 };
 
 export class NonTrovato extends Error {}
