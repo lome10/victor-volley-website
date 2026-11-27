@@ -96,7 +96,7 @@ describe('regole dell\'area allenatore (js/allenatore.js)', () => {
 
   it('giorni unici, giorno iniziale, nota del giorno', () => {
     const cat = categoria();
-    cat.giorni.push({ ...g('2026-11-25', '19:30'), orarioId: 'o2' });
+    cat.giorni.splice(3, 0, { ...g('2026-11-25', '19:30'), orarioId: 'o2' }); // subito dopo l'altro orario del 25/11
     const giorni = giorniUnici(cat);
     expect(giorni.map((x) => x.data)[0]).toBe('2026-10-20');
     expect(giorni.find((x) => x.data === '2026-11-25')!.ore).toEqual(['19:30', '17:30']);
@@ -175,7 +175,7 @@ describe('pagina Area dirigenti / allenatore (Firebase e sito finti)', () => {
     expect(screen.getByLabelText('Email')).toBeTruthy();
   }, 60000);
 
-  it('dirigente: "in arrivo" con Esci; nessun ruolo: accesso non autorizzato', async () => {
+  it('dirigente: "in arrivo" con Esci', async () => {
     sitoFinto();
     finto.ruolo = 'dirigente';
     await renderRouter('./src/app', { initialUrl: '/area-dirigenti' });
@@ -185,13 +185,14 @@ describe('pagina Area dirigenti / allenatore (Firebase e sito finti)', () => {
     expect(await screen.findByLabelText('Email')).toBeTruthy();
   }, 60000);
 
-  it('nessun ruolo e allenatore tolto (403): accesso negato', async () => {
+  it('nessun ruolo: accesso non autorizzato', async () => {
     sitoFinto();
     finto.ruolo = 'nessuno';
-    const { unmount } = await renderRouter('./src/app', { initialUrl: '/area-dirigenti' });
+    await renderRouter('./src/app', { initialUrl: '/area-dirigenti' });
     expect(await screen.findByRole('header', { name: 'Accesso non autorizzato' })).toBeTruthy();
-    unmount();
-    finto.ruolo = 'allenatore';
+  }, 60000);
+
+  it('allenatore tolto (403 dal server): accesso non abilitato', async () => {
     sitoFinto({ atletiStato: 403 });
     await renderRouter('./src/app', { initialUrl: '/area-dirigenti' });
     expect(await screen.findByRole('header', { name: 'Accesso non abilitato' })).toBeTruthy();
@@ -199,9 +200,10 @@ describe('pagina Area dirigenti / allenatore (Firebase e sito finti)', () => {
 
   it('Atleti: nome del mister, ricerca, telefono del genitore da chiamare', async () => {
     sitoFinto();
-    const apri = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+    const apri = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
     await renderRouter('./src/app', { initialUrl: '/area-dirigenti' });
-    expect(await screen.findByText('Bianchi Anna')).toBeTruthy();
+    // Il primo caricamento della pagina nei test supera il secondo di attesa standard.
+    expect(await screen.findByText('Bianchi Anna', {}, { timeout: 10000 })).toBeTruthy();
     expect(screen.getByText('Mario Mister')).toBeTruthy();
     expect(screen.getByText(/Nato il 4\/3\/2012/)).toBeTruthy();
     expect(screen.getByText('Porta le ginocchiere')).toBeTruthy();
@@ -216,7 +218,7 @@ describe('pagina Area dirigenti / allenatore (Firebase e sito finti)', () => {
   it('Presenze: oggi, "Tutti presenti", un salvataggio fallisce e torna indietro solo quello', async () => {
     const chiamate = sitoFinto({ postFallisce: ['a2'] });
     await renderRouter('./src/app', { initialUrl: '/area-dirigenti' });
-    await fireEvent.press(await screen.findByRole('tab', { name: 'Presenze' }));
+    await fireEvent.press(await screen.findByRole('tab', { name: 'Presenze' }, { timeout: 10000 }));
     expect(await screen.findByRole('header', { name: 'Oggi · Venerdì 27 novembre · 18:00' })).toBeTruthy();
     expect(screen.getByText('0 su 3 segnati')).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'Tutti presenti' }));
@@ -228,19 +230,19 @@ describe('pagina Area dirigenti / allenatore (Firebase e sito finti)', () => {
     expect(screen.getByRole('button', { name: 'Rossi Sara, ven 27/11: presente' }).props.accessibilityState).toMatchObject({ selected: false });
     expect(screen.getByRole('button', { name: 'Bianchi Anna, ven 27/11: presente' }).props.accessibilityState).toMatchObject({ selected: true });
 
-    // Un altro giorno: 25/11, Rossi assente; toccare di nuovo "No" toglie la risposta (stato '').
+    // Un altro giorno: 25/11, Bianchi presente; toccare di nuovo "Sì" toglie la risposta (stato '').
     await fireEvent.press(screen.getByRole('button', { name: 'Mercoledì 25 novembre' }));
     expect(screen.getByText('2 su 3 segnati')).toBeTruthy();
-    await fireEvent.press(screen.getByRole('button', { name: 'Rossi Sara, mer 25/11: assente' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Bianchi Anna, mer 25/11: presente' }));
     await waitFor(() => expect(chiamate.filter((c) => c.metodo === 'POST')).toHaveLength(4));
-    expect(chiamate[chiamate.length - 1].corpo).toEqual({ categoria: 'Under 14 F', data: '2026-11-25', atletaId: 'a2', stato: '' });
-    expect(screen.getByText('1 su 3 segnati')).toBeTruthy();
+    expect(chiamate[chiamate.length - 1].corpo).toEqual({ categoria: 'Under 14 F', data: '2026-11-25', atletaId: 'a1', stato: '' });
+    expect(await screen.findByText('1 su 3 segnati')).toBeTruthy(); // react-query avvisa lo schermo un attimo dopo
   }, 60000);
 
   it('Statistiche: media, presenza piu\' bassa prima, scheda dell\'atleta e ritorno', async () => {
     sitoFinto();
     await renderRouter('./src/app', { initialUrl: '/area-dirigenti' });
-    await fireEvent.press(await screen.findByRole('tab', { name: 'Statistiche' }));
+    await fireEvent.press(await screen.findByRole('tab', { name: 'Statistiche' }, { timeout: 10000 }));
     expect(await screen.findByText('39%')).toBeTruthy(); // (67 + 50 + 0) / 3
     expect(screen.getByText('4')).toBeTruthy(); // allenamenti fatti negli ultimi 30 giorni
     const voci = screen.getAllByRole('button', { name: /, presenza / }).map((b) => b.props.accessibilityLabel);

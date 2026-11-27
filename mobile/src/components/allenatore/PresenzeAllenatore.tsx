@@ -1,6 +1,6 @@
 // Sezione "Presenze", un giorno alla volta (vistaGiorno di js/allenatore.js): striscia dei giorni, conteggi,
 // "Tutti presenti", filtro e Si'/No per ogni atleta. Ogni tocco si salva da solo (vedi AreaAllenatore: imposta).
-import { useRef } from 'react';
+import { useRef, type ComponentRef } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Nessuno, Pillole, scuro, SiNo, st } from '~/components/allenatore/Pezzi';
@@ -35,7 +35,7 @@ type Props = {
 };
 
 export function PresenzeAllenatore({ cat, oggi, giorno, setGiorno, filtro, setFiltro, imposta }: Props) {
-  const striscia = useRef<ScrollView>(null);
+  const striscia = useRef<ComponentRef<typeof ScrollView>>(null);
   const giorni = giorniUnici(cat);
   if (!giorni.length) return <Nessuno testo="Per questa squadra non ci sono allenamenti in calendario." />;
   if (!cat.atleti.length) return <Nessuno testo="Non ci sono ancora atleti in questa squadra." />;
