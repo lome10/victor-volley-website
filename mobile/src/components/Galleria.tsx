@@ -59,7 +59,7 @@ export function GrigliaFoto({ foto, titolo, larghezza, apri }: { foto: FotoAlbum
 
 /** La foto intera dentro lo spazio libero, senza deformarla (w e h vengono dall'API). */
 function misuraFoto(f: FotoAlbum, larga: number, alta: number) {
-  const r = f.w > 0 && f.h > 0 ? f.w / f.h : 4 / 3;
+  const r = f.w && f.h && f.w > 0 && f.h > 0 ? f.w / f.h : 4 / 3;
   return larga / r <= alta ? { width: larga, height: larga / r } : { width: alta * r, height: alta };
 }
 

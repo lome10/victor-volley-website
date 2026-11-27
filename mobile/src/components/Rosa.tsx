@@ -1,7 +1,7 @@
 // Pezzi della pagina Squadre del sito (css/squadre.css): scheda giocatore, staff a nastro, scaffale per ruolo.
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRef, useState } from 'react';
+import { useRef, useState, type ComponentRef } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Line } from 'react-native-svg';
 
@@ -95,7 +95,7 @@ export function StrisciaStaff({ staff }: { staff: Persona[] }) {
 export function Scaffale({ gruppo, larghezza, telefono }: { gruppo: Gruppo<Giocatore>; larghezza: number; telefono: boolean }) {
   const scorre = telefono && gruppo.persone.length > 2;
   // Parte centrato sulla seconda scheda come il sito; contentOffset vale solo su iPhone, quindi scrollTo una volta sola.
-  const scaffale = useRef<ScrollView>(null);
+  const scaffale = useRef<ComponentRef<typeof ScrollView>>(null);
   const centrato = useRef(false);
   const margine = (larghezza - SCHEDA) / 2;
   const colonne = Math.max(1, Math.floor((larghezza + 20) / (SCHEDA + 20)));
