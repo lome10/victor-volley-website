@@ -111,7 +111,8 @@ describe('schermata Diretta', () => {
     await waitFor(() => expect(screen.getByText('Partita conclusa')).toBeTruthy());
     expect(screen.getByLabelText('Set vinti 2 a 1')).toBeTruthy();
     expect(screen.getByText('25–20')).toBeTruthy();
-    expect(screen.getByText('Victor Volley')).toBeTruthy();
+    // "Victor Volley" c'e' anche nella barra in alto: qui conta che ci sia anche nel tabellone.
+    expect(screen.getAllByText('Victor Volley').length).toBeGreaterThanOrEqual(2);
     expect(screen.getByText('Asd Dream Volley Nardo')).toBeTruthy();
     expect(oggi).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   }, 60000);

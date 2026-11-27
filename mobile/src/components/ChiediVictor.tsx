@@ -1,7 +1,7 @@
 // "Chiedi a Victor": tasto in basso a destra, invito dopo 3,5 s e pannello con le risposte fisse del sito (js/chatbot.js, css/chatbot.css).
 // Sul sito c'e' in tutte le pagine pubbliche tranne la Diretta.
 import { router, usePathname, type Href } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ComponentRef } from 'react';
 import {
   AccessibilityInfo,
   Animated,
@@ -47,7 +47,7 @@ function Conversazione({ dati, partite, chiudi }: { dati: DatiBot; partite: Part
   const [chips, setChips] = useState<{ voci: Chip[]; colonna?: boolean } | null>(null);
   const [testo, setTesto] = useState('');
   const conta = useRef(0);
-  const lista = useRef<ScrollView>(null);
+  const lista = useRef<ComponentRef<typeof ScrollView>>(null);
 
   const scrivi = (chi: Messaggio['chi'], t: string, link?: LinkBot | null) => setMessaggi((m) => [...m, { id: ++conta.current, chi, testo: t, link }]);
 
@@ -275,7 +275,7 @@ export function ChiediVictor() {
 const styles = StyleSheet.create({
   angolo: { position: 'absolute', right: 12, zIndex: 9000, alignItems: 'flex-end' },
   tasto: { height: 58, flexDirection: 'row', alignItems: 'center', gap: 10, paddingLeft: 18, paddingRight: 24, borderRadius: 29, borderWidth: 2, borderColor: colors.bianco, backgroundColor: colors.magenta, shadowColor: colors.magenta, shadowOpacity: 0.55, shadowRadius: 13, shadowOffset: { width: 0, height: 8 }, elevation: 8 },
-  anello: { ...StyleSheet.absoluteFillObject, borderRadius: 29, backgroundColor: colors.magenta },
+  anello: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, borderRadius: 29, backgroundColor: colors.magenta },
   tastoIcona: { fontSize: 24 },
   tastoTesto: { fontFamily: fonts.titoloForte, fontSize: 17, letterSpacing: 0.3, color: colors.bianco },
   invito: { width: 260, marginBottom: 14, flexDirection: 'row', alignItems: 'flex-start', gap: 4, paddingVertical: 12, paddingLeft: 14, paddingRight: 8, borderRadius: 12, backgroundColor: colors.bianco, shadowColor: colors.navy, shadowOpacity: 0.35, shadowRadius: 15, shadowOffset: { width: 0, height: 10 }, elevation: 10 },
@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
   invitoX: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   invitoXTesto: { fontSize: 18, lineHeight: 20, color: '#5b5b66' },
   punta: { position: 'absolute', right: 36, bottom: -7, width: 14, height: 14, backgroundColor: colors.bianco, transform: [{ rotate: '45deg' }] },
-  velo: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(2,13,26,0.35)' },
+  velo: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: 'rgba(2,13,26,0.35)' },
   sotto: { flex: 1, justifyContent: 'flex-end' },
   pannello: { backgroundColor: colors.bianco, borderTopLeftRadius: 16, borderTopRightRadius: 16, overflow: 'hidden' },
   testa: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingVertical: 14, paddingHorizontal: 16, backgroundColor: colors.navy },

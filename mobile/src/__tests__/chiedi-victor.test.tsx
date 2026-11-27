@@ -38,10 +38,18 @@ describe('Chiedi a Victor: uguale al sito su tutte le domande vere', () => {
     }
   });
 
-  it('ogni domanda del json, scritta cosi\' com\'e\', trova se stessa', () => {
+  it('ogni domanda del json, scritta cosi\' com\'e\', trova se stessa (eccezioni del sito elencate)', () => {
+    // Come sul sito (27/11): scritte a mano, queste non trovano se stesse. Le chip invece rispondono giuste.
+    const eccezioni: Record<string, string> = {
+      'Ci sono squadre maschili?': 'forse',
+      'Cosa devo portare agli allenamenti?': 'Quando sono gli allenamenti?',
+      'Ho un problema con un allenatore o un compagno': 'forse',
+      'Chi sono i vostri sponsor?': 'Voglio diventare sponsor',
+    };
     for (const d of tutteLeDomande(DATI)) {
       const e = rispondi(DATI, d.q);
-      expect(e.tipo === 'risposta' ? e.d.q : e.tipo === 'forse' ? e.domande.map((x) => x.q) : e.tipo).toEqual(e.tipo === 'forse' ? expect.arrayContaining([d.q]) : d.q);
+      expect([d.q, e.tipo === 'risposta' ? e.d.q : e.tipo]).toEqual([d.q, eccezioni[d.q] ?? d.q]);
+      if (e.tipo === 'forse') expect(e.domande.map((x) => x.q)).toContain(d.q);
     }
     expect(rispondi(DATI, 'ciao').tipo).toBe('saluto');
     expect(rispondi(DATI, 'grazie mille').tipo).toBe('grazie');
