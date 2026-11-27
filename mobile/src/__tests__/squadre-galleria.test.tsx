@@ -63,8 +63,7 @@ describe('regole della pagina Galleria', () => {
     expect(miniatura('vv/a')).toContain('/c_fill,g_auto,w_600,h_450,f_auto,q_auto/vv/a');
     expect(fotoIntera('vv/a')).toContain('/c_limit,w_2000,f_auto,q_auto/vv/a');
   });
-
-  it('copertina: quella scelta in admin se c'e' ancora nell'album, se no la prima (VV.albumCoverId)', () => {
+  it("copertina: quella scelta in admin se c'e' ancora nell'album, se no la prima (VV.albumCoverId)", () => {
     const photos = [{ id: 'vv/a' }, { id: 'vv/b' }];
     expect(copertinaAlbum({ photos })).toBe('vv/a');
     expect(copertinaAlbum({ photos, copertina: 'vv/b' })).toBe('vv/b');
