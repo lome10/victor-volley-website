@@ -241,6 +241,55 @@ ta('Spese (VVW-26): Salva nel pannello non azzera il «Già speso» calcolato da
   assert.strictEqual(v.importoSostenuto, 80);
 });
 
+/* ---------- Materiali sponsor: Preventivato scritto a mano (richiesta di Lorenzo, 28/11) ---------- */
+ta('Spese: il Preventivato di una voce «Materiali sponsor» cambiato a mano viene segnato come manuale', async () => {
+  const v = voce({ id: 'vp', seasonId: 's1', categoria: 'Materiali sponsor — Pezzi', importoPreventivato: 1200 });
+  const scritture = [];
+  const dbx = { collection: () => ({ doc: () => ({ update: (p) => { scritture.push(p); return Promise.resolve(); } }) }) };
+  const B = { _currentSeasonId: 's1', _seasons: [{ id: 's1', nome: '2026/2027', materialiPezziVoceSpesaId: 'vp', materialiStampeVoceSpesaId: 'vs' }], _vociSpesa: [v], _sottospese: [], _categorieSpesa: [{ id: 'c1', nome: 'Federazione' }], _renderIvaRiepilogo: noop, _renderStatCards: noop, _renderCharts: noop, _renderBilancio: noop, _delIconSm: () => '', _speseFilterCategoriaId: '', _speseExpanded: {}, _trimestreIvaDaData: () => null };
+  const { DG, els } = caricaSpese(B, dbx);
+  DG.speseDrawerApri('vp');
+  assert.ok(els.speseDrawerRoot.innerHTML.includes('Calcolato dalla tabella «Materiali sponsor»'), 'il pannello dice da dove viene');
+  Object.assign(els.speDNome, { value: 'Materiali sponsor — Pezzi' }); els.speDCat.value = 'c1'; els.speDPrev.value = '900'; els.speDSost.value = '0';
+  els.speDIva.value = ''; els.speDIvaModo.value = 'netto'; els.speDData.value = ''; els.speDDoc.value = ''; els.speDNote.value = '';
+  DG.speseDrawerSalva();
+  await new Promise((r) => setTimeout(r, 20));
+  assert.ok(scritture.length === 1 && scritture[0].importoPreventivato === 900 && scritture[0].preventivatoManuale === true, JSON.stringify(scritture));
+  DG.speseDrawerApri('vp');
+  assert.ok(els.speseDrawerRoot.innerHTML.includes('Torna al calcolo dalla tabella'), 'si puo\' tornare al calcolo');
+  // una voce qualsiasi non prende il segno
+  const altra = voce({ id: 'vq', categoria: 'Palloni', importoPreventivato: 100 });
+  B._vociSpesa.push(altra); scritture.length = 0;
+  DG.speseDrawerApri('vq'); els.speDNome.value = 'Palloni'; els.speDPrev.value = '150';
+  DG.speseDrawerSalva();
+  await new Promise((r) => setTimeout(r, 20));
+  assert.ok(scritture.length === 1 && !('preventivatoManuale' in scritture[0]), JSON.stringify(scritture));
+});
+
+function caricaMateriali(B, dbx) {
+  const { doc } = ambienteDom();
+  const window = { Admin: { budgetShared: B, esc: (x) => String(x), cap: (x) => x, confirm: noop, goTo: noop, val: () => '', mapDoc: (d) => d, diff: () => [], logWrite: () => Promise.resolve(), openModal: noop, closeModal: noop, daysDiff: () => 0, fmtDate: (d) => d, fmtDateLong: (d) => d }, AdminActions: {} };
+  new Function('window', 'document', 'db', 'alert', fs.readFileSync(path.join(__dirname, '..', 'js', 'admin', 'budget', 'materiali.js'), 'utf8'))(window, doc, dbx, (m) => { throw new Error(m); });
+  return B;
+}
+ta('Materiali sponsor: la tabella non riscrive (ne\' cancella) un Preventivato scritto a mano; senza segno si', async () => {
+  const prova = async (manuale) => {
+    const scritture = [];
+    const dbx = { collection: (c) => ({ doc: (id) => ({ id: id || 'nuovo', update: (p) => { scritture.push([c, id, p]); return Promise.resolve(); }, delete: () => { scritture.push([c, id, 'delete']); return Promise.resolve(); }, set: (p) => { scritture.push([c, id, p]); return Promise.resolve(); } }) }) };
+    const vs = voce({ id: 'vs', seasonId: 's1', categoria: 'Materiali sponsor — Stampe', importoPreventivato: 500, preventivatoManuale: manuale });
+    const B = caricaMateriali({ _currentSeasonId: 's1', _seasons: [{ id: 's1', materialiStampeVoceSpesaId: 'vs', materialiPezziVoceSpesaId: '' }],
+      _sponsorizzazioni: [{ id: 'sp1', seasonId: 's1', stato: 'chiuso', pezzi: { Maglia: { dimensione: 'A4', prezzo: 10 } } }],
+      _vociSpesa: [vs], _sottospese: [], _renderSpese: noop, _renderStatCards: noop, _renderBilancio: noop, _syncSpesaIva: () => Promise.resolve() }, dbx);
+    await B._syncMaterialiSpesa();
+    return { scritture, vs };
+  };
+  const m = await prova(true);
+  assert.deepStrictEqual(m.scritture, [], 'manuale: nessuna scrittura');
+  assert.strictEqual(m.vs.importoPreventivato, 500);
+  const a = await prova(false);
+  assert.ok(a.scritture.some(([c, id, p]) => c === 'vociSpesa' && id === 'vs' && p.importoPreventivato === 10), 'automatico: segue la tabella ' + JSON.stringify(a.scritture));
+});
+
 /* ---------- sponsor senza piano di pagamento: entrate senza data ---------- */
 t('Bilancio: uno sponsor chiuso senza tranche va in «Entrate senza data» e i totali tornano', () => {
   const B = stato({

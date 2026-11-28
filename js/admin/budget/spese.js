@@ -438,6 +438,14 @@
     return b;
   }
 
+  /* Voce generata dalla tabella «Materiali sponsor» (stampe o pezzi): il Preventivato lo ricalcola materiali.js,
+     a meno che non sia stato scritto a mano (preventivatoManuale). */
+  function _voceMateriali(v) {
+    var s = B._seasons && B._seasons.find(function (x) { return x.id === (v.seasonId || B._currentSeasonId); });
+    return !!s && !!v.id && (s.materialiStampeVoceSpesaId === v.id || s.materialiPezziVoceSpesaId === v.id);
+  }
+  B._voceMateriali = _voceMateriali;
+
   function _renderDrawer() {
     var root = _drawerRoot();
     var v = B._vociSpesa.find(function (x) { return x.id === B._speseDrawerId; });
@@ -459,7 +467,10 @@
       '<div class="sp-f sp-full"><label for="speDNome">Voce di spesa</label><input type="text" id="speDNome" class="dg-form-input" value="' + esc(val0('speDNome', 'categoria', '')) + '"></div>' +
       '<div class="sp-f"><label for="speDCat">Categoria</label><select id="speDCat" class="dg-form-input">' + _categorieSpesaOptionsHtml(val0('speDCat', 'categoriaSpesaId', '')) + '</select></div>' +
       '<div class="sp-f"><label for="speDData">Data o scadenza</label><input type="date" id="speDData" class="dg-form-input" value="' + esc(val0('speDData', 'dataSpesa', '')) + '"><span class="sp-h">Conta nel Saldo mensile; senza data finisce in «Spese senza data».</span></div>' +
-      '<div class="sp-f"><label for="speDPrev">Preventivato (€)</label><input type="number" id="speDPrev" class="dg-form-input" min="0" step="any" value="' + esc(bozza && bozza.speDPrev != null ? bozza.speDPrev : (prevMostrato || 0)) + '"' + (prevDaSub ? ' readonly' : '') + '>' + (prevDaSub ? '<span class="sp-h">Somma dei preventivati dei pagamenti qui sotto.</span>' : (prevRateDiverso ? '<span class="sp-h">Totale scritto a mano: le rate qui sotto non lo cambiano.</span>' : '')) + '</div>' +
+      '<div class="sp-f"><label for="speDPrev">Preventivato (€)</label><input type="number" id="speDPrev" class="dg-form-input" min="0" step="any" value="' + esc(bozza && bozza.speDPrev != null ? bozza.speDPrev : (prevMostrato || 0)) + '"' + (prevDaSub ? ' readonly' : '') + '>' + (prevDaSub ? '<span class="sp-h">Somma dei preventivati dei pagamenti qui sotto.</span>' : (prevRateDiverso ? '<span class="sp-h">Totale scritto a mano: le rate qui sotto non lo cambiano.</span>' : '')) +
+        (!prevDaSub && _voceMateriali(v) ? (v.preventivatoManuale
+          ? '<span class="sp-h">Scritto a mano: la tabella «Materiali sponsor» non lo cambia più. <button type="button" class="dg-btn-ghost dg-btn-sm" data-id="' + esc(v.id) + '" onclick="DG.spesaPreventivatoAutomatico(this.dataset.id)">Torna al calcolo dalla tabella</button></span>'
+          : '<span class="sp-h">Calcolato dalla tabella «Materiali sponsor». Se lo cambi qui, resta come lo scrivi.</span>') : '') + '</div>' +
       '<div class="sp-f"><label for="speDSost">Già speso (€)</label><input type="number" id="speDSost" class="dg-form-input" min="0" step="any" value="' + esc(bozza && bozza.speDSost != null ? bozza.speDSost : (sostMostrato || 0)) + '"' + (haSub ? ' readonly' : '') + '>' + (haSub ? '<span class="sp-h">Somma dei pagati dei pagamenti qui sotto.</span>' : '') + '</div>' +
       '<div class="sp-f"><label for="speDIva">IVA %</label><input type="number" id="speDIva" class="dg-form-input" min="0" step="any" placeholder="0" value="' + esc(val0('speDIva', 'ivaAliquota', '') || '') + '"><span class="sp-h" id="speDIvaH"></span></div>' +
       '<div class="sp-f"><label for="speDIvaModo">L’importo inserito è</label><select id="speDIvaModo" class="dg-form-input"><option value="netto"' + (modoIva === 'lordo' ? '' : ' selected') + '>Netto (IVA da aggiungere)</option><option value="lordo"' + (modoIva === 'lordo' ? ' selected' : '') + '>Lordo (IVA inclusa)</option></select></div>' +
@@ -507,8 +518,20 @@
        al Salva, azzerava il Già speso appena calcolato. Li aggiorna solo _syncVoceDaSottospese. */
     if (_sottospeseSpesaOf(v.id).length > 0) { delete patch.importoSostenuto; delete patch.importoSostenutoLordo; }
     if (_preventivatoSegueRate(v.id)) { delete patch.importoPreventivato; delete patch.importoPreventivatoLordo; }
+    /* Preventivato di una voce «Materiali sponsor» cambiato a mano: da ora la tabella non lo riscrive (prima tornava com'era). */
+    if ('importoPreventivato' in patch && _voceMateriali(v) && !v.preventivatoManuale) patch.preventivatoManuale = true;
     if (!Object.keys(patch).length) { _chiudiDrawer(); A.avviso('Nessuna modifica da salvare.'); return; }
     _salvaCampi(v, patch).then(function () { _chiudiDrawer(); A.avviso('Voce «' + v.categoria + '» salvata.', 'ok'); })
+      .catch(function (e) { A.avviso('Errore: ' + e.message, 'errore'); });
+  };
+
+  /* Il Preventivato torna a seguire la tabella «Materiali sponsor»: si toglie il segno e si rifà subito il calcolo. */
+  DG.spesaPreventivatoAutomatico = function (id) {
+    var v = B._vociSpesa.find(function (x) { return x.id === id; });
+    if (!v || !v.preventivatoManuale) return;
+    _salvaCampi(v, { preventivatoManuale: false })
+      .then(function () { return B._syncMaterialiSpesa ? B._syncMaterialiSpesa() : null; })
+      .then(function () { if (B._speseDrawerId === id) _renderDrawer(); A.avviso('«' + v.categoria + '»: il preventivato segue di nuovo la tabella dei materiali.', 'ok'); })
       .catch(function (e) { A.avviso('Errore: ' + e.message, 'errore'); });
   };
 
@@ -654,7 +677,7 @@
      Risolve quando tutto è scritto e le schede dipendenti sono ridisegnate; rifiuta con l'errore di Firestore. */
   function _salvaCampi(v, patch) {
     var fields = Object.keys(patch), old = {}, testo = ['categoria', 'categoriaSpesaId', 'dataSpesa', 'note', 'documentoUrl'];
-    fields.forEach(function (f) { old[f] = testo.indexOf(f) !== -1 ? (v[f] || '') : (v[f] || 0); });
+    fields.forEach(function (f) { old[f] = f === 'preventivatoManuale' ? !!v[f] : testo.indexOf(f) !== -1 ? (v[f] || '') : (v[f] || 0); });
     Object.assign(v, patch);
     /* Se è la voce IVA stessa (non la sua «genitrice») e la scadenza non è mai stata forzata a mano,
        cambiare la data ricalcola in automatico il trimestre di versamento. */

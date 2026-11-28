@@ -753,6 +753,8 @@
   function _syncVoceAutomatica(season, fieldId, preventivato, categoria, note) {
     var v = season[fieldId] ? B._vociSpesa.find(function (x) { return x.id === season[fieldId]; }) : null;
     if (!preventivato && !v) return Promise.resolve();
+    /* Preventivato scritto a mano nelle Spese: la tabella non lo tocca più (ne' lo cancella) finche' non si torna al calcolo. */
+    if (v && v.preventivatoManuale) return Promise.resolve();
     if (v && (+v.importoPreventivato || 0) === preventivato) return Promise.resolve();
 
     if (!preventivato && v && !(+v.importoSostenuto || 0)) {
@@ -836,7 +838,7 @@
           'Preventivato automatico dai pezzi/gadget assegnati agli sponsor chiusi (tabella "Materiali sponsor") — il Sostenuto va aggiornato a mano qui sotto quando la spesa è effettiva');
       });
 
-    p.then(release, function (e) { release(); alert('Errore aggiornamento spesa materiali: ' + e.message); });
+    return p.then(release, function (e) { release(); alert('Errore aggiornamento spesa materiali: ' + e.message); });
   }
 
   function _attachKanbanEvents() {
@@ -868,5 +870,6 @@
   B._openAggiungiSponsorPopover = _openAggiungiSponsorPopover;
   B._renderDimensioniModalList = _renderDimensioniModalList;
   B._renderPezziSponsor = _renderPezziSponsor;
+  B._syncMaterialiSpesa = _syncMaterialiSpesa;
 
 })();
