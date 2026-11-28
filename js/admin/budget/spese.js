@@ -445,6 +445,8 @@
     return !!s && !!v.id && (s.materialiStampeVoceSpesaId === v.id || s.materialiPezziVoceSpesaId === v.id);
   }
   B._voceMateriali = _voceMateriali;
+  /* Segno nel campo della stagione (materialiStampeVoceSpesaId / materialiPezziVoceSpesaId) quando la voce e' stata tolta a mano. */
+  B.MATERIALI_TOLTA = 'tolta';
 
   function _renderDrawer() {
     var root = _drawerRoot();
@@ -699,7 +701,10 @@
     var v = B._vociSpesa.find(function (x) { return x.id === id; });
     if (!v) return;
     var figlieSottospesa = _sottospeseOf(id);
+    var stagioneMat = _voceMateriali(v) ? B._seasons.find(function (x) { return x.id === (v.seasonId || B._currentSeasonId); }) : null;
+    var campoMat = stagioneMat ? (stagioneMat.materialiStampeVoceSpesaId === id ? 'materialiStampeVoceSpesaId' : 'materialiPezziVoceSpesaId') : '';
     confirm('Eliminare la voce "' + v.categoria + '"?' +
+      (campoMat ? ' La tabella «Materiali sponsor» non la ricreerà più (si può rimettere dal suo riepilogo).' : '') +
       (v.ivaVoceSpesaId ? ' Verrà eliminata anche la relativa voce IVA.' : '') +
       (figlieSottospesa.length ? ' Verranno eliminate anche le ' + figlieSottospesa.length + ' sottospese collegate.' : ''), function () {
       var figlia = v.ivaVoceSpesaId ? B._vociSpesa.find(function (x) { return x.id === v.ivaVoceSpesaId; }) : null;
@@ -714,6 +719,15 @@
             return db.collection('sottospese').doc(s.id).delete()
               .then(function () { return _logWrite('sottospesa', s.id, 'Sottospesa — ' + v.categoria + ' / ' + s.descrizione, 'delete', [{ campo: '(record)', prima: 'presente', dopo: null }]); });
           }));
+        })
+        .then(function () {
+          /* voce «Materiali sponsor» tolta a mano: segno sulla stagione, cosi' la tabella non la ricrea (prima ricompariva) */
+          if (!campoMat) return null;
+          var patch = {}; patch[campoMat] = B.MATERIALI_TOLTA;
+          return db.collection('budgetSeasons').doc(stagioneMat.id).update(patch).then(function () {
+            stagioneMat[campoMat] = B.MATERIALI_TOLTA;
+            return _logWrite('stagione', stagioneMat.id, 'Stagione ' + (stagioneMat.nome || stagioneMat.id), 'update', _diff((function () { var o = {}; o[campoMat] = id; return o; })(), patch, [campoMat]));
+          });
         })
         .then(function () {
           B._vociSpesa = B._vociSpesa.filter(function (x) { return x.id !== id && (!figlia || x.id !== figlia.id); });

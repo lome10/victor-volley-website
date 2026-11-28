@@ -130,11 +130,11 @@ function ambienteDom() {
 const iso = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');   // data locale, come nel codice
 const oggi = iso(new Date());
 const tra = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return iso(d); };
-function caricaSpese(B, dbx) {
+function caricaSpese(B, dbx, adminExtra) {
   B._sponsorChiusi = B._sponsorChiusi || (() => B._sponsorizzazioni.filter((s) => s.seasonId === B._currentSeasonId && s.stato === 'chiuso'));   // come in state.js
   const { doc, els } = ambienteDom();
   const esc = (x) => String(x == null ? '' : x).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const window = { Admin: { budgetShared: B, esc, fmtDate: (d) => d, avviso: noop, logWrite: () => Promise.resolve(), diff: () => [] }, AdminActions: {} };
+  const window = { Admin: Object.assign({ budgetShared: B, esc, fmtDate: (d) => d, avviso: noop, logWrite: () => Promise.resolve(), diff: () => [] }, adminExtra || {}), AdminActions: {} };
   ['bilancio.js', 'spese.js'].forEach((f) => new Function('window', 'document', 'db', fs.readFileSync(path.join(__dirname, '..', 'js', 'admin', 'budget', f), 'utf8'))(window, doc, dbx || {}));
   return { B, els, DG: window.AdminActions };
 }
@@ -288,6 +288,29 @@ ta('Materiali sponsor: la tabella non riscrive (ne\' cancella) un Preventivato s
   assert.strictEqual(m.vs.importoPreventivato, 500);
   const a = await prova(false);
   assert.ok(a.scritture.some(([c, id, p]) => c === 'vociSpesa' && id === 'vs' && p.importoPreventivato === 10), 'automatico: segue la tabella ' + JSON.stringify(a.scritture));
+});
+
+ta('Spese: togliere a mano la voce «Materiali sponsor — Stampe» la segna come tolta e la tabella non la ricrea', async () => {
+  const v = voce({ id: 'vs', seasonId: 's1', categoria: 'Materiali sponsor — Stampe', importoPreventivato: 300 });
+  const scritture = [];
+  const dbx = { collection: (c) => ({ doc: (id) => ({ update: (p) => { scritture.push([c, id, p]); return Promise.resolve(); }, delete: () => { scritture.push([c, id, 'delete']); return Promise.resolve(); } }) }) };
+  const stagione = { id: 's1', nome: '2026/2027', materialiStampeVoceSpesaId: 'vs', materialiPezziVoceSpesaId: 'vp' };
+  const B = { _currentSeasonId: 's1', _seasons: [stagione], _vociSpesa: [v], _sottospese: [], _categorieSpesa: [{ id: 'c1', nome: 'Federazione' }], _renderIvaRiepilogo: noop, _renderStatCards: noop, _renderCharts: noop, _renderBilancio: noop, _delIconSm: () => '', _speseFilterCategoriaId: '', _speseExpanded: {}, _trimestreIvaDaData: () => null };
+  const { DG } = caricaSpese(B, dbx, { confirm: (m, fn) => { assert.ok(m.includes('non la ricreerà più'), m); fn(); } });
+  B._renderBilancio = noop;   // bilancio.js caricato nel test vorrebbe tutti i dati del bilancio
+  DG.deleteSpesa('vs');
+  await new Promise((r) => setTimeout(r, 20));
+  assert.ok(scritture.some(([c, id, p]) => c === 'vociSpesa' && id === 'vs' && p === 'delete'), 'voce cancellata');
+  assert.ok(scritture.some(([c, id, p]) => c === 'budgetSeasons' && id === 's1' && p.materialiStampeVoceSpesaId === 'tolta'), JSON.stringify(scritture));
+  assert.strictEqual(stagione.materialiStampeVoceSpesaId, 'tolta');
+  // la tabella poi non la ricrea
+  const scr2 = [];
+  const db2 = { collection: (c) => ({ doc: (id) => ({ id: id || 'nuovo', update: (p) => { scr2.push([c, id, p]); return Promise.resolve(); }, set: (p) => { scr2.push([c, id, p]); return Promise.resolve(); }, delete: () => Promise.resolve() }) }) };
+  const B2 = caricaMateriali({ MATERIALI_TOLTA: 'tolta', _currentSeasonId: 's1', _seasons: [{ id: 's1', materialiStampeVoceSpesaId: 'tolta', materialiPezziVoceSpesaId: '' }],
+    _sponsorizzazioni: [{ id: 'sp1', seasonId: 's1', stato: 'chiuso', pezzi: { Maglia: { dimensione: 'A4', prezzo: 10 } } }],
+    _vociSpesa: [], _sottospese: [], _renderSpese: noop, _renderStatCards: noop, _renderBilancio: noop, _syncSpesaIva: () => Promise.resolve() }, db2);
+  await B2._syncMaterialiSpesa();
+  assert.deepStrictEqual(scr2, [], 'nessuna voce ricreata: ' + JSON.stringify(scr2));
 });
 
 /* ---------- sponsor senza piano di pagamento: entrate senza data ---------- */

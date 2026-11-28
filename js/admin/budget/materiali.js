@@ -359,6 +359,10 @@
 
     var imponibile = imponibileStampe + imponibileMerce;
     if (!imponibile) { el.innerHTML = ''; return; }
+    var _tolta = function (campo) {
+      return season[campo] === B.MATERIALI_TOLTA ? '<div class="dg-muted" style="font-size:12px;margin-top:6px">Tolta a mano dalle Spese: questo totale non entra nel budget. ' +
+        '<button type="button" class="dg-btn-ghost dg-btn-sm" data-campo="' + campo + '" onclick="DG.materialiRimettiSpesa(this.dataset.campo)">Rimetti nelle Spese</button></div>' : '';
+    };
 
     var ivaStampe = Math.round(imponibileStampe * 22) / 100;
     var totaleStampe = Math.round((imponibileStampe + ivaStampe) * 100) / 100;
@@ -377,13 +381,13 @@
       '<div class="dg-pezzi-riepilogo-title">Stampe</div>' + (righeStampe || '<div class="dg-muted" style="font-size:12px">Nessuna stampa assegnata.</div>') +
       '<div class="dg-pezzi-riepilogo-row dg-pezzi-riepilogo-subtotal" style="margin-top:8px"><span>Imponibile</span><span>' + fmt(imponibileStampe) + '</span></div>' +
       '<div class="dg-pezzi-riepilogo-row"><span>IVA 22%</span><span>' + fmt(ivaStampe) + '</span></div>' +
-      '<div class="dg-pezzi-riepilogo-row dg-pezzi-riepilogo-total"><span>Totale stampe</span><span>' + fmt(totaleStampe) + '</span></div>' +
+      '<div class="dg-pezzi-riepilogo-row dg-pezzi-riepilogo-total"><span>Totale stampe</span><span>' + fmt(totaleStampe) + '</span></div>' + _tolta('materialiStampeVoceSpesaId') +
       '</div>' +
       '<div class="dg-pezzi-riepilogo">' +
       '<div class="dg-pezzi-riepilogo-title">Pezzi da produrre</div>' + (righePezzi || '<div class="dg-muted" style="font-size:12px">Nessun pezzo assegnato.</div>') +
       '<div class="dg-pezzi-riepilogo-row dg-pezzi-riepilogo-subtotal" style="margin-top:8px"><span>Imponibile</span><span>' + fmt(imponibileMerce) + '</span></div>' +
       '<div class="dg-pezzi-riepilogo-row"><span>IVA 22%</span><span>' + fmt(ivaMerce) + '</span></div>' +
-      '<div class="dg-pezzi-riepilogo-row dg-pezzi-riepilogo-total"><span>Totale pezzi</span><span>' + fmt(totaleMerce) + '</span></div>' +
+      '<div class="dg-pezzi-riepilogo-row dg-pezzi-riepilogo-total"><span>Totale pezzi</span><span>' + fmt(totaleMerce) + '</span></div>' + _tolta('materialiPezziVoceSpesaId') +
       '</div>' +
       '</div>' +
       '<div class="dg-pezzi-riepilogo dg-pezzi-riepilogo--grand">' +
@@ -751,6 +755,8 @@
      motivo la voce viene rimossa in automatico solo se anche il sostenuto è a zero: se l'utente
      ha già registrato una spesa reale, la voce resta anche a preventivato azzerato. */
   function _syncVoceAutomatica(season, fieldId, preventivato, categoria, note) {
+    /* Voce tolta a mano dalle Spese: non si ricrea (si rimette dal riepilogo qui sotto, «Rimetti nelle Spese»). */
+    if (season[fieldId] === B.MATERIALI_TOLTA) return Promise.resolve();
     var v = season[fieldId] ? B._vociSpesa.find(function (x) { return x.id === season[fieldId]; }) : null;
     if (!preventivato && !v) return Promise.resolve();
     /* Preventivato scritto a mano nelle Spese: la tabella non lo tocca più (ne' lo cancella) finche' non si torna al calcolo. */
@@ -871,5 +877,18 @@
   B._renderDimensioniModalList = _renderDimensioniModalList;
   B._renderPezziSponsor = _renderPezziSponsor;
   B._syncMaterialiSpesa = _syncMaterialiSpesa;
+
+  /* Rimette nelle Spese la voce Stampe o Pezzi tolta a mano: si toglie il segno e il calcolo la ricrea. */
+  DG.materialiRimettiSpesa = function (campo) {
+    var season = B._seasons.find(function (s) { return s.id === B._currentSeasonId; });
+    if (!season || season[campo] !== B.MATERIALI_TOLTA) return;
+    var patch = {}; patch[campo] = '';
+    db.collection('budgetSeasons').doc(season.id).update(patch).then(function () {
+      season[campo] = '';
+      return _logWrite('stagione', season.id, 'Stagione ' + (season.nome || season.id), 'update', _diff((function () { var o = {}; o[campo] = B.MATERIALI_TOLTA; return o; })(), patch, [campo]));
+    }).then(function () { return _syncMaterialiSpesa(); })
+      .then(function () { _renderPezziSponsor(); A.avviso && A.avviso('Voce rimessa nelle Spese.', 'ok'); })
+      .catch(function (e) { alert('Errore: ' + e.message); });
+  };
 
 })();
