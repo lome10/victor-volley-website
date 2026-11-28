@@ -81,7 +81,7 @@
   }
   /* IVA non ancora versata: il saldo per cassa (Panoramica/Bilancio) non l'ha ancora sottratta, quindi esce per intero alla scadenza. */
   function _impIvaDaVersare(v) { return Math.max(+v.importoPreventivato || 0, +v.importoSostenuto || 0); }
-  function _ivaDaVersare() { return B._vociSpesa.filter(function (v) { return v.isIva && !v.pagata && _impIvaDaVersare(v) > 0; }); }
+  function _ivaDaVersare() { return B._vociSpesa.filter(function (v) { return B._ivaDaVersare(v) && !v.pagata && _impIvaDaVersare(v) > 0; }); }
 
   /* ---- numeri unificati ---- */
   function _calcNumeri(oggi) {
@@ -106,7 +106,7 @@
     var segna = function (mappa, scad, importo) { var k = scad < oggi ? start : _mese(scad); mappa[k] = (mappa[k] || 0) + importo; if (k > ultimo) ultimo = k; };
     att.forEach(function (e) { if (e.scadenza) segna(ent, e.scadenza, e.importo); else senzaEnt += e.importo; });
     B._vociSpesa.forEach(function (v) {
-      if (v.isIva) return;
+      if (B._ivaDaVersare(v)) return;   // l'IVA di una spesa esce con la spesa, alla sua data
       var res = Math.max(0, (+v.importoPreventivato || 0) - (+v.importoSostenuto || 0));
       if (!res) return;
       if (v.dataSpesa) segna(usc, v.dataSpesa, res); else senzaUsc += res;

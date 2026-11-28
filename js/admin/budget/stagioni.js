@@ -33,11 +33,11 @@
   }
   function _csvUscite() {
     /* stesse uscite del Bilancio: sostenute (l'IVA solo se versata) */
-    var voci = B._vociSpesa.filter(function (v) { return +v.importoSostenuto > 0 && (!v.isIva || v.pagata); })
+    var voci = B._vociSpesa.filter(function (v) { return +v.importoSostenuto > 0 && (!B._ivaDaVersare(v) || v.pagata); })
       .sort(function (a, b) { return (a.dataSpesa || '9999') < (b.dataSpesa || '9999') ? -1 : 1; });
     return _csv(['Data', 'Voce', 'Categoria', 'Importo pagato', 'Preventivato', 'IVA %', 'Tipo', 'Note', 'Documento'], voci.map(function (v) {
       var c = v.categoriaSpesaId && B._categoriaSpesaById ? B._categoriaSpesaById(v.categoriaSpesaId) : null;
-      return [v.dataSpesa || '', v.categoria || '', c ? c.nome : '', _num(v.importoSostenuto), _num(v.importoPreventivato), v.ivaAliquota ? _num(v.ivaAliquota) : '', v.isIva ? 'Versamento IVA' : 'Spesa', v.note || '', v.documentoUrl || ''];
+      return [v.dataSpesa || '', v.categoria || '', c ? c.nome : '', _num(v.importoSostenuto), _num(v.importoPreventivato), v.ivaAliquota ? _num(v.ivaAliquota) : '', B._ivaDaVersare(v) ? 'Versamento IVA' : v.isIva ? 'IVA sulla spesa' : 'Spesa', v.note || '', v.documentoUrl || ''];
     }));
   }
   function _scarica(nome, testo) {
@@ -137,7 +137,7 @@
     var altre = d.altre.reduce(function (t, x) { return t + (x.pagata ? (+x.importo || 0) : 0); }, 0);
     var perCat = {}, spese = 0;
     d.voci.forEach(function (v) {
-      var s = +v.importoSostenuto || 0; if (!s || (v.isIva && !v.pagata)) return;
+      var s = +v.importoSostenuto || 0; if (!s || (B._ivaDaVersare(v, d.voci) && !v.pagata)) return;
       var c = v.categoriaSpesaId ? d.nomeCategoria(v.categoriaSpesaId) : 'Senza categoria';
       perCat[c] = (perCat[c] || 0) + s; spese += s;
     });

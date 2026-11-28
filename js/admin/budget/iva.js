@@ -35,7 +35,7 @@
   }
 
   function _calcIvaTotale() {
-    var tutte = B._vociSpesa.filter(function (v) { return v.isIva; })
+    var tutte = B._vociSpesa.filter(function (v) { return B._ivaDaVersare(v); })
       .slice().sort(function (a, b) { return (+b.importoSostenuto || 0) - (+a.importoSostenuto || 0); });
     var righe = tutte.filter(function (v) { return !v.ivaEscluso; });
     var esclusi = tutte.filter(function (v) { return v.ivaEscluso; });

@@ -3,6 +3,14 @@
 (function () {
   'use strict';
   var A = window.Admin, B = A.budgetShared;
+
+  /* IVA: solo quella degli SPONSOR si versa allo Stato (11%) e va nel Riepilogo IVA. L'IVA di una SPESA (voce figlia
+     «IVA <spesa>», collegata da ivaVoceSpesaId) e' parte del prezzo pagato al fornitore: conta come la spesa, non si
+     versa ne' si scarica (Lorenzo, 28/11). Una voce IVA senza voce di spesa madre resta «da versare» come prima. */
+  B._ivaSulPrezzo = function (v, voci) {
+    return !!v && !!v.isIva && !!v.id && (voci || B._vociSpesa || []).some(function (x) { return !x.isIva && x.ivaVoceSpesaId === v.id; });
+  };
+  B._ivaDaVersare = function (v, voci) { return !!v && !!v.isIva && !B._ivaSulPrezzo(v, voci); };
   var DG = window.AdminActions;
   var esc = A.esc, cap = A.cap, confirm = A.confirm, goTo = A.goTo, val = A.val,
       _mapDoc = A.mapDoc, _diff = A.diff, _logWrite = A.logWrite,
@@ -74,7 +82,7 @@
     var entrate = entrateSponsor.concat(entrateSenzaPiano, entrateRette, entrateTessere, entrateSupercoppa, entrateAltre);
     /* Le voci IVA sono "sostenute" ma non ancora un'uscita di cassa reale finché
        non vengono marcate come versate (v.pagata) nel Riepilogo IVA. */
-    var uscite = B._vociSpesa.filter(function (v) { return +v.importoSostenuto > 0 && (!v.isIva || v.pagata); });
+    var uscite = B._vociSpesa.filter(function (v) { return +v.importoSostenuto > 0 && (!B._ivaDaVersare(v) || v.pagata); });
     if (filtro && filtro.indexOf('fonte:') === 0) {
       entrate = entrate.filter(function (t) { return t.tipo === filtro.slice(6); });
       uscite = [];
@@ -146,7 +154,7 @@
     var totDaIncassare = entrate.reduce(function (s, r) { return s + r.daIncassare; }, 0);
 
     var perCat = {};
-    B._vociSpesa.filter(function (v) { return +v.importoSostenuto > 0 && (!v.isIva || v.pagata); }).forEach(function (v) {
+    B._vociSpesa.filter(function (v) { return +v.importoSostenuto > 0 && (!B._ivaDaVersare(v) || v.pagata); }).forEach(function (v) {
       var key = v.categoriaSpesaId || '';
       perCat[key] = (perCat[key] || 0) + (+v.importoSostenuto || 0);
     });

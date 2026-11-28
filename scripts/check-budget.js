@@ -183,10 +183,13 @@ t('Spese: l’elenco raggruppa per categoria, tiene fuori le voci IVA e mostra s
   assert.strictEqual((html.match(/class="sp-group"/g) || []).length, 2, 'due categorie');
   assert.strictEqual((html.match(/class="sp-row"/g) || []).length, 3, 'tre voci: l’IVA generata non è nell’elenco');
   assert.ok(!html.includes('IVA Abbigliamento</div>'), 'nessuna riga per la voce IVA');
-  assert.ok(html.includes('+ IVA 22% €220'), 'badge IVA sulla voce madre');
+  assert.ok(html.includes('€1000 + IVA 22% €220 = €1220') || html.includes('€1.000 + IVA 22% €220 = €1.220'), 'badge IVA sulla voce madre, con il totale: ' + html.match(/sp-b[^<]*<\/span>|sp-b"[^>]*>[^<]*/));
+  assert.ok(html.includes('<div class="sp-c">' + B._eur(1220) + '</div>'), 'la riga mostra il previsto IVA compresa (Lorenzo 28/11)');
   assert.ok(/Scaduta/.test(html) && /Pagata/.test(html) && /Da pagare/.test(html));
   assert.strictEqual((html.match(/data-pay=/g) || []).length, 2, '«Segna pagata» solo sulle voci non pagate');
-  assert.ok(els.speseFoot.innerHTML.includes('IVA collegata'), 'nota sull’IVA collegata nel piè di pagina');
+  // IVA di una spesa = parte del prezzo (Lorenzo 28/11): nel piè di pagina niente «da versare», il previsto e' IVA compresa
+  assert.ok(!els.speseFoot.innerHTML.includes('da versare'), 'nessuna IVA da versare per le spese');
+  assert.ok(els.speseFoot.innerHTML.includes('Previsto ' + B._eur(1920)), els.speseFoot.innerHTML);
   assert.ok(els.speseKpis.innerHTML.includes('Preventivato') && els.speseKpis.innerHTML.includes('Budget di spesa'));
 });
 t('Spese: filtri per stato, ricerca e categoria; i testi con HTML vengono escapati', () => {
@@ -724,6 +727,45 @@ t('IVA per cassa: sottratta dai saldi solo se «versata»; Panoramica = Bilancio
     assert.strictEqual(k.speso, 500 + (versata ? 220 : 0), 'Spese: l’IVA non versata non è «speso»');
     assert.strictEqual(p.righe[p.righe.length - 1].saldo, 2000 - 500 - 220, 'a fine previsione l’IVA è sottratta una volta sola, versata o no');
   });
+});
+
+/* ---------- IVA: quella delle SPESE e' parte del prezzo, solo quella degli SPONSOR (11%) si versa (Lorenzo, 28/11) ----------
+   Esempio: sponsor incassato 2.000; spesa Abbigliamento 1.000 + IVA 22% 220, pagata al fornitore; IVA sponsor 11% = 110, non ancora versata.
+                                   PRIMA          DOPO
+   Riepilogo IVA (da versare)      330            110   (solo lo sponsor)
+   Spese: speso                    1.000          1.220 (l'IVA della spesa e' pagata col prezzo)
+   Saldo per cassa (Panoramica)    1.000          780
+   Preventivato totale             1.330          1.330 (invariato)
+   Fine stagione (previsione)      670            670   (invariato)                                                                          */
+t('IVA: quella di una spesa conta col prezzo, solo l’IVA sponsor va nel Riepilogo IVA e «da versare»', () => {
+  const { doc } = ambienteDom();
+  const B = {
+    _currentSeasonId: 's1', _seasons: [{ id: 's1', nome: '2026/2027', dataFine: tra(300) }],
+    _sponsorizzazioni: [{ id: 'sp1', seasonId: 's1', aziendaId: 'az1', stato: 'chiuso', importoConfermato: 2000, ivaVoceSpesaId: 'siva' }],
+    _tranche: [{ sponsorizzazioneId: 'sp1', importo: 2000, scadenza: tra(-30), pagato: true, dataIncasso: tra(-30) }],
+    _categorieAtleti: [], _atletiRette: [], _rateAtleti: [], _altreEntrate: [], _tessere: [], _categorieSpesa: [{ id: 'c1', nome: 'Abbigliamento' }],
+    _vociSpesa: [
+      voce({ id: 'm1', categoria: 'Abbigliamento', categoriaSpesaId: 'c1', importoPreventivato: 1000, importoSostenuto: 1000, ivaAliquota: 22, ivaVoceSpesaId: 'i1', dataSpesa: tra(-20) }),
+      voce({ id: 'i1', categoria: 'IVA Abbigliamento', categoriaSpesaId: 'c1', isIva: true, importoPreventivato: 220, importoSostenuto: 220, ivaAliquota: 22, dataSpesa: tra(-20), pagata: false }),
+      voce({ id: 'siva', categoria: 'IVA az1', isIva: true, importoPreventivato: 110, importoSostenuto: 110, ivaAliquota: 11, dataSpesa: tra(-30), ivaScadenza: tra(40), pagata: false })],
+    _calcTessere: () => ({ prezzo: 0, assegnate: 0, pagate: 0, incassato: 0, daIncassare: 0, righe: [] }),
+    _calcRetteAtleti: () => ({ totIncassato: 0, totPrevisto: 0, righe: [] }),
+    _sponsorIncassato: () => 2000, _sponsorDaIncassare: () => 0, _aziendaById: (id) => ({ ragioneSociale: id }), _categoriaSpesaById: () => ({ nome: 'Abbigliamento' }),
+    _trimestreIvaDaData: () => null, _renderIvaRiepilogo: noop, _renderStatCards: noop, _renderCharts: noop, _renderBilancio: noop, _delIconSm: () => '', _speseFilterCategoriaId: '', _speseExpanded: {}, _sottospese: []
+  };
+  B._sponsorChiusi = () => B._sponsorizzazioni.filter((s) => s.seasonId === B._currentSeasonId && s.stato === 'chiuso');
+  const window = { Admin: { budgetShared: B, esc: (x) => String(x == null ? '' : x), fmtDate: (d) => d, fmtDateLong: (d) => d, avviso: noop, logWrite: () => Promise.resolve(), diff: () => [] }, AdminActions: {} };
+  ['bilancio.js', 'spese.js', 'riepilogo.js', 'cassa.js', 'iva.js'].forEach((f) => new Function('window', 'document', 'db', fs.readFileSync(path.join(__dirname, '..', 'js', 'admin', 'budget', f), 'utf8'))(window, doc, {}));
+  const oggi = tra(0), r = B._calcRiepilogo(), k = B._calcSpeseKpi(oggi), iva = B._calcIvaTotale(), prev = B._calcPrevisioneCassa(oggi), bil = B._calcBilancioMensile();
+  assert.deepStrictEqual(iva.righe.map((v) => v.id), ['siva'], 'nel Riepilogo IVA solo lo sponsor');
+  assert.strictEqual(iva.totale, 110);
+  assert.strictEqual(k.speso, 1220, 'speso IVA compresa');
+  assert.strictEqual(k.prev, 1330, 'preventivato invariato');
+  assert.strictEqual(r.saldo, 780, 'saldo per cassa: 2000 - 1220 (l’IVA sponsor non ancora versata non esce)');
+  assert.strictEqual(bil.totEntrate - bil.totUscite, 780, 'Bilancio = Panoramica');
+  assert.strictEqual(prev.inizio, 780);
+  assert.strictEqual(prev.righe[prev.righe.length - 1].saldo, 670, 'fine stagione invariato: 2000 - 1330');
+  assert.ok(B._ivaDaVersare(B._vociSpesa[2]) && !B._ivaDaVersare(B._vociSpesa[1]) && !B._ivaDaVersare(B._vociSpesa[0]));
 });
 
 Promise.all(asincrone).then(() => console.log(process.exitCode ? 'Collaudo fallito.' : 'OK: ' + passed + ' verifiche su Bilancio, Spese e cassa.'));

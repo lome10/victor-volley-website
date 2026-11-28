@@ -257,8 +257,8 @@
       var p = +v.importoPreventivato || 0, s = +v.importoSostenuto || 0;
       k.prev += p;
       /* IVA per cassa: finché non è «versata» non è speso, ed esce per intero. */
-      if (v.isIva && !v.pagata) { k.daPagare += Math.max(p, s); } else { k.speso += s; k.daPagare += Math.max(0, p - s); }
-      if (v.isIva) { k.ivaPrev += p; return; }
+      if (B._ivaDaVersare(v) && !v.pagata) { k.daPagare += Math.max(p, s); } else { k.speso += s; k.daPagare += Math.max(0, p - s); }
+      if (v.isIva) { if (B._ivaDaVersare(v)) k.ivaPrev += p; return; }
       if (_urgenzaVoce(v, oggi)) { k.entro30n++; k.entro30eur += Math.max(0, p - s); }
       if (!v.dataSpesa && _statoVoce(v) !== 'pagata') k.senzaData++;
       if (p === 0 && s > 0) k.anomalie++;
@@ -342,20 +342,29 @@
     });
     document.getElementById('speseList').innerHTML = html || '<div class="sp-empty">' + (B._vociSpesa.length ? 'Nessuna voce con questi filtri.' : 'Nessuna voce di spesa per questa stagione.') + '</div>';
 
-    var tp = items.reduce(function (t, v) { return t + (+v.importoPreventivato || 0); }, 0), ts = items.reduce(function (t, v) { return t + (+v.importoSostenuto || 0); }, 0);
-    var ivaTot = B._vociSpesa.reduce(function (t, v) { return t + (v.isIva ? (+v.importoPreventivato || 0) : 0); }, 0);
+    /* totali IVA compresa: l'IVA di una spesa e' parte del suo prezzo */
+    var tp = items.reduce(function (t, v) { return t + _lordoRiga(v).p; }, 0), ts = items.reduce(function (t, v) { return t + _lordoRiga(v).s; }, 0);
+    var ivaTot = B._vociSpesa.reduce(function (t, v) { return t + (B._ivaDaVersare(v) ? (+v.importoPreventivato || 0) : 0); }, 0);
     document.getElementById('speseFoot').innerHTML = '<span>Totale' + (items.length !== B._vociSpesa.filter(function (v) { return !v.isIva; }).length ? ' (filtrato)' : '') + '</span>' +
-      '<span>Previsto ' + B._eur(tp) + ' · Speso ' + B._eur(ts) + ' · Da pagare ' + B._eur(items.reduce(function (t, v) { return t + _residuoVoce(v); }, 0)) + '</span>' +
-      (ivaTot ? '<span class="sp-foot-note">IVA collegata (preventivata): ' + B._eur(ivaTot) + ' · si versa dal Bilancio, sezione IVA</span>' : '');
+      '<span>Previsto ' + B._eur(tp) + ' · Speso ' + B._eur(ts) + ' · Da pagare ' + B._eur(items.reduce(function (t, v) { var l = _lordoRiga(v); return t + Math.max(0, l.p - l.s); }, 0)) + ' (IVA compresa)</span>' +
+      (ivaTot ? '<span class="sp-foot-note">IVA degli sponsor da versare (preventivata): ' + B._eur(ivaTot) + ' · si versa dal Bilancio, sezione IVA</span>' : '');
     if (B._speseDrawerId) _renderDrawer();
   }
 
-  function _rigaVoceHtml(v, oggi) {
-    var e = _etichettaVoce(v, oggi), p = +v.importoPreventivato || 0, s = +v.importoSostenuto || 0, pcv = p ? Math.round(s / p * 100) : 0;
+  /* Importi della riga IVA compresa: netto della voce + la sua voce IVA figlia (che e' parte del prezzo). */
+  function _lordoRiga(v) {
     var figlia = v.ivaVoceSpesaId ? B._vociSpesa.find(function (x) { return x.id === v.ivaVoceSpesaId; }) : null;
+    return { p: (+v.importoPreventivato || 0) + (figlia ? +figlia.importoPreventivato || 0 : 0), s: (+v.importoSostenuto || 0) + (figlia ? +figlia.importoSostenuto || 0 : 0), figlia: figlia };
+  }
+  B._lordoRiga = _lordoRiga;
+
+  function _rigaVoceHtml(v, oggi) {
+    var l = _lordoRiga(v), figlia = l.figlia;
+    var e = _etichettaVoce(v, oggi), p = l.p, s = l.s, pcv = p ? Math.round(s / p * 100) : 0;
     var iva = figlia ? (+figlia.importoPreventivato || 0) : (+v.ivaAliquota > 0 ? _dividiIva(v.ivaModo === 'lordo' ? _lordoDi(v, 'Preventivato') : p, v.ivaAliquota, v.ivaModo).iva : 0);
+    var netto = +v.importoPreventivato || 0;
     var nSub = _sottospeseOf(v.id).length, gestitaDaSub = _sottospeseSpesaOf(v.id).length > 0;
-    var badge = (iva ? '<span class="sp-b">' + (v.ivaModo === 'lordo' ? 'IVA incl. ' : '+ IVA ') + ((+v.ivaAliquota || 0).toLocaleString('it-IT') || '') + (+v.ivaAliquota ? '% ' : ' ') + B._eur(iva) + '</span>' : '') + (_linkValido(v.documentoUrl) ? '<a class="sp-tag" href="' + esc(v.documentoUrl) + '" target="_blank" rel="noopener noreferrer" title="Apri la cartella o il documento su Drive">Documenti ↗</a>' : '') + (nSub ? '<span class="sp-tag">' + nSub + (nSub === 1 ? ' pagamento' : ' pagamenti') + '</span>' : '');
+    var badge = (iva ? '<span class="sp-b" title="Importi della riga IVA compresa: IVA pagata al fornitore col prezzo">' + B._eur(netto) + ' + IVA ' + ((+v.ivaAliquota || 0).toLocaleString('it-IT') || '') + (+v.ivaAliquota ? '% ' : ' ') + B._eur(iva) + ' = ' + B._eur(netto + iva) + '</span>' : '') + (_linkValido(v.documentoUrl) ? '<a class="sp-tag" href="' + esc(v.documentoUrl) + '" target="_blank" rel="noopener noreferrer" title="Apri la cartella o il documento su Drive">Documenti ↗</a>' : '') + (nSub ? '<span class="sp-tag">' + nSub + (nSub === 1 ? ' pagamento' : ' pagamenti') + '</span>' : '');
     return '<div class="sp-row" tabindex="0" role="button" data-id="' + v.id + '" aria-label="Apri ' + esc(v.categoria) + '">' +
       '<div class="sp-name"><div class="sp-t">' + esc(v.categoria) + '</div>' + (badge ? '<div class="sp-m">' + badge + '</div>' : '') +
         '<div class="sp-m sp-m-mobile"><span>' + B._eur(s) + ' / ' + B._eur(p) + '</span><span>' + (v.dataSpesa ? esc(_fmtDate(v.dataSpesa)) : 'senza data') + '</span></div></div>' +
